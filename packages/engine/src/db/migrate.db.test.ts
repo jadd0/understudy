@@ -15,6 +15,13 @@ let pool: Pool | undefined;
 
 afterAll(async () => {
   await pool?.end();
+  // A closed client's server backend can outlive end() for a moment behind a WebSocket proxy; a forced drop then
+  // kills it and the termination reaches a client that is already closing, as an unhandled error. Wait it out first.
+  for (let i = 0; i < 50; i++) {
+    const { rows } = await admin.query("select count(*)::int as n from pg_stat_activity where datname = $1", [name]);
+    if (rows[0].n === 0) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
   await admin.query(`drop database if exists "${name}" with (force)`);
   await admin.end();
 });
