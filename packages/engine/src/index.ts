@@ -37,3 +37,4 @@ export type { PromptInput } from "./drafting/prompt";
 export { drawStyle, parseRates } from "./drafting/style-draw";
 export type { StyleDraw, StyleRates } from "./drafting/style-draw";
 export { drawFailures, enforceDraw } from "./drafting/verify";
+export { qualityNote } from "./turn/draft";

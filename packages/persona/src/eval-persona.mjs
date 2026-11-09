@@ -168,6 +168,7 @@ export const cardDrafter = Object.assign(
     prompt: `A fan commented on your Instagram post:\n\n"${pair.replying_to}"\n\nWrite your reply. Output only the reply text, nothing else.`,
     draw: null,
     finish: (text) => text,
+    retry: () => null,
   }),
   { label: "card alone as the system prompt, no retrieval, no style draw" },
 );
@@ -198,7 +199,16 @@ export async function evaluateItem({ pair, card, summary, claude, genModel, judg
     generated = await cached({ stage: "gen", model: genModel, thinking: "off", request: sha16(`${prepared.system}\n${prepared.prompt}`), draw }, async () => {
       const gen = await claude.complete({ model: genModel, system: prepared.system, prompt: prepared.prompt, maxTokens: 300 });
       budget.addClaude(gen.usage);
-      return prepared.finish(cleanReply(gen.text));
+      let text = prepared.finish(cleanReply(gen.text));
+      // One more draft, as the engine makes when a reply breaks the draw's length or pet limit; it replaces the first unless empty.
+      const again = prepared.retry?.(text);
+      if (again) {
+        const second = await claude.complete({ model: genModel, system: again.system, prompt: again.prompt, maxTokens: 300 });
+        budget.addClaude(second.usage);
+        const redone = prepared.finish(cleanReply(second.text));
+        if (redone !== "") text = redone;
+      }
+      return text;
     });
     if (real === "" || generated === "") throw new JudgeOutputError("empty_reply");
   } catch (error) {
@@ -248,7 +258,7 @@ const accuracyOf = (judgements) => {
   return { n: judgements.length, correct, accuracy: rate4(correct, judgements.length), wilson95: wilson(correct, judgements.length) };
 };
 
-const MARKER_KEYS = ["signoff_x", "mate", "babe", "pet_name", "emoji", "concrete_fact"];
+const MARKER_KEYS = ["signoff_x", "mate", "babe", "pet_name", "emoji", "concrete_fact", "multiline", "question"];
 
 /** Marker rates for her real replies and the bot's on the same items, and her train rates if given. */
 function markerTable(items, { pet = null, train = null } = {}) {
@@ -259,6 +269,7 @@ function markerTable(items, { pet = null, train = null } = {}) {
   return {
     n: both.length,
     rates: Object.fromEntries(MARKER_KEYS.map((k) => [k, { train: train?.[k] ?? null, real: real[k], bot: bot[k] }])),
+    length_p50: { train: train?.length_chars?.p50 ?? null, real: real.length_chars.p50, bot: bot.length_chars.p50 },
   };
 }
 
@@ -355,7 +366,18 @@ export function readingOf(blind) {
   return lines.join(" ");
 }
 
-const MARKER_LABELS = { signoff_x: 'sign-off "x"', mate: '"mate"', babe: '"babe"', pet_name: "pet's name", emoji: "emoji", concrete_fact: "concrete fact (price or place)" };
+const MARKER_LABELS = {
+  signoff_x: 'sign-off "x"',
+  mate: '"mate"',
+  babe: '"babe"',
+  pet_name: "pet's name",
+  emoji: "emoji",
+  concrete_fact: "concrete fact (price or place)",
+  multiline: "more than one line",
+  question: "a question",
+};
+
+const chars = (n) => (n === null || n === undefined ? "n/a" : String(n));
 
 /** The per-marker table: her train rate, her real test replies, the bot's. Empty when the run recorded none. */
 function markerRows(markers) {
@@ -367,6 +389,7 @@ function markerRows(markers) {
     "| marker | her train replies | her test replies | the bot |",
     "|---|---|---|---|",
     ...Object.entries(markers.rates).map(([key, r]) => `| ${MARKER_LABELS[key] ?? key} | ${pct(r.train)} | ${pct(r.real)} | ${pct(r.bot)} |`),
+    ...(markers.length_p50 ? [`| median length (characters) | ${chars(markers.length_p50.train)} | ${chars(markers.length_p50.real)} | ${chars(markers.length_p50.bot)} |`] : []),
   ];
 }
 
