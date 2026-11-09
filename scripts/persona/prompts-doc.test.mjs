@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const DOC = "docs/PERSONA-PROMPTS.md";
+const DOC = "docs/persona/PERSONA-PROMPTS.md";
 
 export function promptBlocks(markdown) {
   return [...markdown.matchAll(/<!-- prompt-src: (\S+) -->\n```text\n([\s\S]*?)\n```/g)].map((m) => ({ src: m[1], text: m[2] }));

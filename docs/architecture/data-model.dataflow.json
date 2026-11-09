@@ -52,7 +52,7 @@
       "title": "Reads",
       "items": [
         "Retrieval, the card read, configuration, the shortlist and fan memory all filter by creator.",
-        "Per-turn reads are keyed by conversation and measured under a millisecond at a million messages (docs/SCALING.md)."
+        "Per-turn reads are keyed by conversation and measured under a millisecond at a million messages (docs/operations/SCALING.md)."
       ]
     }
   ]

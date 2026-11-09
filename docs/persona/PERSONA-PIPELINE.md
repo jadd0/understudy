@@ -4,9 +4,9 @@ How a creator's Instagram-shaped export becomes the data the reply engine reads:
 bank, measured style figures, held-out splits, a drafted persona card, a retrieval corpus and a
 labelled query set. The creator committed here, Juno Vale, is synthetic; see [Sources](#sources).
 
-Diagram: [persona-pipeline.html](diagrams/persona-pipeline.html), generated from the
+Diagram: [persona-pipeline.html](persona-pipeline.html), generated from the
 [Diagram source](#diagram-source) at the end of this file (JSON spec:
-`diagrams/persona-pipeline.dataflow.json`).
+`persona-pipeline.dataflow.json`).
 
 Every prompt sent to Claude or Jev in this pipeline is quoted verbatim, with its state, options and
 scoring, in [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (a gate test keeps it matching the code).
@@ -280,7 +280,7 @@ Seven sections, fixed order:
 | Voice rules | case, length, emoji, emoticons, slang, Spanish, punctuation, opening | each cites a `style.json` key path and its value, e.g. `replies.lowercase_only_rate = 0.9898` |
 | Examples | 20 fan comment and reply pairs | rendered by the script, verbatim, from train ids the model picked |
 | Not known | what to deflect rather than invent (age, relationship, address) | everything absent from Identity; the card gives deflections in her voice |
-| Never | contact details, home location, real-world meetups, off-platform payment | policy; see [SAFETY.md](SAFETY.md) |
+| Never | contact details, home location, real-world meetups, off-platform payment | policy; see [SAFETY.md](../safety/SAFETY.md) |
 | Selling voice | how she teases a paid item | flirty, never explicit text |
 | AI honesty | answer truthfully if sincerely asked, still in voice | a fan who sincerely asks must be told truthfully |
 
@@ -329,9 +329,9 @@ rapid eval), then `--judge-model` makes two separate calls:
    count, and the share of "A" answers beside the share of items where the bot sat in A, so a judge
    biased to one letter shows.
 
-Output: `docs/evals/persona.json` holds one entry per card version (models, seed, token total,
+Output: `docs/quality/evals/persona.json` holds one entry per card version (models, seed, token total,
 aggregate, and every item with the fan comment, her reply, the generated reply, the scores with a
-one-line reason each, and the blind choice), and the persona section of [EVALS.md](EVALS.md) between its
+one-line reason each, and the blind choice), and the persona section of [EVALS.md](../quality/EVALS.md) between its
 `<!-- persona:start/end -->` markers is regenerated from it. Her replies are synthetic and already in
 the bank under the anonymisation rules. Versions and models are never pooled. Each entry
 records the sha of the card text it was run against (`card_sha`), so a result is recognisable as stale
@@ -354,7 +354,7 @@ test split ──▶ generate (card as system) ──▶ rubric judge ──▶ 
 ## Token cost of a build
 
 The card draft cost 34,366 tokens in and 7,590 out (`v1.meta.json`). The persona eval run on card v2 spent
-316,322 tokens over 144 calls (297,148 Claude in, 19,174 out; `docs/evals/persona.json`). Neither figure is a total
+316,322 tokens over 144 calls (297,148 Claude in, 19,174 out; `docs/quality/evals/persona.json`). Neither figure is a total
 for a full build: the other stages record no usage in a committed file. A run aborts if it passes `--budget`
 (default 2,000,000 tokens).
 
@@ -374,7 +374,7 @@ for a full build: the other stages record no usage in a committed file. A run ab
 ## What comes next
 
 - Chunks are loaded into `persona_chunks`; Voyage won recall@5 0.560 against full-text's 0.331
-  (`data/persona/eval/retrieval-results.json`, [EVALS.md](EVALS.md)).
+  (`data/persona/eval/retrieval-results.json`, [EVALS.md](../quality/EVALS.md)).
 - The rubric judge and blind test on the test split are built and have run on card v2.
 - Card v2 is the published card. It has no rapid-eval file.
 
@@ -423,7 +423,7 @@ handle from it appears anywhere in the tree.
 ## Diagram source
 
 Diagram type: data flow, left to right. Regenerate with the `archify` skill from these lists; the
-JSON form is `diagrams/persona-pipeline.dataflow.json`.
+JSON form is `persona-pipeline.dataflow.json`.
 
 Stages (columns): Source, Clean, Split, Derive, Card and eval.
 
@@ -436,7 +436,7 @@ Nodes:
 - `chunks`: Chunks. Retrieval corpus, 785 chunks. Stage Derive, bottom row.
 - `card`: Draft card. Claude, from style, posts and train pairs; writes `card/v1.md`. Stage Card and eval, top row.
 - `eval`: Rapid eval. Haiku replies, Jev judges, validation split, score 0.9571. Stage Card and eval, middle row.
-- `persona-eval`: Persona eval. Claude rubric judge and blind test, test split, written to `docs/evals/persona.json`. Stage Card and eval, fourth row.
+- `persona-eval`: Persona eval. Claude rubric judge and blind test, test split, written to `docs/quality/evals/persona.json`. Stage Card and eval, fourth row.
 - `queries`: Query set. 30 labelled fan questions for the retrieval eval. Stage Card and eval, bottom row.
 
 Edges:

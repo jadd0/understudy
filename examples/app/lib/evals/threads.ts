@@ -4,7 +4,7 @@ import { z } from "zod";
 import { THREADS } from "@understudy/engine";
 
 /**
- * The rows of the routing matrix in docs/SAFETY.md, in table order. A thread turn names the row it exercises;
+ * The rows of the routing matrix in docs/safety/SAFETY.md, in table order. A thread turn names the row it exercises;
  * the thread test fails if the table gains or loses a row without this list following.
  */
 export const MATRIX_ROWS = [

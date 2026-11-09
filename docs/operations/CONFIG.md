@@ -152,7 +152,7 @@ message is treated as not that. The safety floors are read as `floor.safety.<key
 | `sim.topup_payment_method` | `"pm_card_visa"` | the Stripe test payment method sim top-ups use | `examples/app/lib/sim/stripe.ts` |
 
 How many messages a sim fan sends is not a config row: it is the number of message beats in its persona file
-(`data/sim/personas/<slug>.json`, documented in `docs/FAN-SIM.md` section 3).
+(`data/sim/personas/<slug>.json`, documented in `docs/quality/FAN-SIM.md` section 3).
 
 ## Code constants
 

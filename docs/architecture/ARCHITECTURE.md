@@ -1,6 +1,6 @@
 # Message engine
 
-Status: as built. The sequence diagrams are under `docs/diagrams/`.
+Status: as built. The sequence diagrams are under `docs/engine/`.
 The prompts the engine sends are quoted under "Engine prompts", the config rows under "Config rows the engine reads".
 
 ## The turn
@@ -40,7 +40,7 @@ One turn (`packages/engine/src/turn/run.ts`):
    If `thread` is `still_typing` and no hard stop fired, the turn waits for one more message (up to the same
    cap and while the turn is younger than `engine.turn_budget_ms`) and, if the batch grew, reads the whole batch
    again (at most `engine.fold_in_max` times).
-6. **Route.** `route()` (pure) applies the matrix in `docs/SAFETY.md`. `hard_stop` and `hold_creator` skip the model.
+6. **Route.** `route()` (pure) applies the matrix in `docs/safety/SAFETY.md`. `hard_stop` and `hold_creator` skip the model.
    An AI-initiated pitch (small talk or flirt) needs pacing to allow it, no hardship, no open offer, no session start,
    `thread` `answers_her` or `same_topic`, and `pitch_fit` p(yes) at or above `pitch.fit_floor`; it offers `ppv` or
    `bundle` only. What he asked for (`buy_intent`, `explicit_request`) skips the fit check.
@@ -89,7 +89,7 @@ One turn (`packages/engine/src/turn/run.ts`):
 an in-process `Events` bus that waits each bubble's `deliverInMs` and then writes it to open server-sent streams and
 the signed webhook, and Fastify routes over `Chatter` (`handleMessage`, `takeOver`, `humanReply`, `handBack`). Takeover
 and the human reply live in the engine, so the app and the server share one permission rule: a creator actor holds only
-her own chats that are not on the Trust & Safety side; a T&S actor holds any. Diagram: `docs/diagrams/server.html`.
+her own chats that are not on the Trust & Safety side; a T&S actor holds any. Diagram: `docs/server/server.html`.
 
 Everything persisted or compared against stored rows uses the database clock (`now()`), the same clock the wallet
 uses for offer expiry. The clock port only sleeps and measures elapsed time.

@@ -2,7 +2,7 @@
 
 /*
  * Design tokens, taken from the founder's chat design
- * (claude.ai/code/artifact/0e4e6819-e8dd-40a3-9937-2fe29bdad60c). docs/DESIGN.md lists them.
+ * (claude.ai/code/artifact/0e4e6819-e8dd-40a3-9937-2fe29bdad60c). docs/app/DESIGN.md lists them.
  * Every screen uses these names; no screen introduces a colour of its own.
  */
 @theme {

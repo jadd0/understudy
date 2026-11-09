@@ -25,7 +25,7 @@ const SECTIONS = [
   "## 13. Adding a persona",
 ];
 
-describe("docs/FAN-SIM.md", () => {
+describe("docs/quality/FAN-SIM.md", () => {
   test("fan_sim_doc_has_every_section_and_persona", () => {
     for (const s of SECTIONS) expect(doc, s).toContain(`\n${s}\n`);
     expect(personas.length).toBeGreaterThanOrEqual(25);
@@ -56,8 +56,8 @@ describe("docs/FAN-SIM.md", () => {
     const sources = new Set(blocks.map((b) => b[1]));
     expect([...sources].sort()).toEqual(["examples/app/lib/sim/agent.ts", "examples/app/lib/sim/prompt.ts", "packages/engine/src/routing/questions.ts"]);
     expect(blocks.some((b) => b[2].startsWith("You are acting as a fan in a text chat"))).toBe(true);
-    expect(readFileSync("docs/README.md", "utf8")).toContain("[FAN-SIM.md](FAN-SIM.md)");
-    expect(readFileSync("docs/SAFETY.md", "utf8")).toContain("FAN-SIM.md");
+    expect(readFileSync("docs/README.md", "utf8")).toContain("[FAN-SIM.md](quality/FAN-SIM.md)");
+    expect(readFileSync("docs/safety/SAFETY.md", "utf8")).toContain("FAN-SIM.md");
   });
 });
 

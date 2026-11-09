@@ -6,7 +6,7 @@
  * warm-up) inside a transaction that rolls back, so writes leave nothing behind. For every statement the output
  * keeps p50 and p95 execution time, the rows, the index and scan nodes used, and any Seq Scan on a table over 10k rows.
  *
- *   DATABASE_URL=<test database> npx tsx examples/app/scripts/scale/explain.ts [--out docs/scaling/explain.json]
+ *   DATABASE_URL=<test database> npx tsx examples/app/scripts/scale/explain.ts [--out docs/operations/scaling/explain.json]
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -100,7 +100,7 @@ const squash = (s: string) => s.replace(/\s+/g, " ").trim();
 
 async function main() {
   assertTestDatabase(process.env.DATABASE_URL);
-  const out = process.argv.includes("--out") ? process.argv[process.argv.indexOf("--out") + 1] : "docs/scaling/explain.json";
+  const out = process.argv.includes("--out") ? process.argv[process.argv.indexOf("--out") + 1] : "docs/operations/scaling/explain.json";
 
   const { db } = await import("@/db/client");
   const { dbConfigPort } = await import("@/lib/config");

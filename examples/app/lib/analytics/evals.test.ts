@@ -6,8 +6,8 @@ import { handoffMean, readEvals, rubricMean } from "./evals";
 
 async function root(files: Record<string, string>) {
   const dir = await mkdtemp(path.join(os.tmpdir(), "evals-"));
-  await mkdir(path.join(dir, "docs/evals"), { recursive: true });
-  for (const [name, body] of Object.entries(files)) await writeFile(path.join(dir, "docs/evals", name), body);
+  await mkdir(path.join(dir, "docs/quality/evals"), { recursive: true });
+  for (const [name, body] of Object.entries(files)) await writeFile(path.join(dir, "docs/quality/evals", name), body);
   return dir;
 }
 

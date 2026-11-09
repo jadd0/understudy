@@ -1,14 +1,14 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-/** docs/evals/persona.json, written by the persona eval: rubric means and the blind test. */
+/** docs/quality/evals/persona.json, written by the persona eval: rubric means and the blind test. */
 export interface PersonaEval {
   /** Rubric criterion to mean score, 1 to 5. */
   rubric?: Record<string, number>;
   blindTest?: { accuracy?: number; low?: number; high?: number; n?: number };
 }
 
-/** docs/evals/engine.json, written by the engine eval: safety, handoff and route accuracy. */
+/** docs/quality/evals/engine.json, written by the engine eval: safety, handoff and route accuracy. */
 export interface EngineEval {
   safetyViolations?: number;
   /** Per queue (creator, ts). */
@@ -23,7 +23,7 @@ export interface Evals {
 
 async function readJson<T>(root: string, file: string): Promise<T | null> {
   try {
-    const raw = JSON.parse(await readFile(path.join(root, "docs/evals", file), "utf8"));
+    const raw = JSON.parse(await readFile(path.join(root, "docs/quality/evals", file), "utf8"));
     return raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as T) : null;
   } catch (e) {
     if ((e as NodeJS.ErrnoException)?.code !== "ENOENT") console.error(`analytics: ${file} unreadable ${(e as Error)?.name}`);

@@ -222,7 +222,7 @@ export const unlocks = pgTable(
   (t) => [primaryKey({ columns: [t.fanId, t.itemId] })],
 );
 
-// Fan simulator (docs/FAN-SIM.md). A run is one fresh `is_sim` fan working through one persona's beats.
+// Fan simulator (docs/quality/FAN-SIM.md). A run is one fresh `is_sim` fan working through one persona's beats.
 export const simRuns = pgTable(
   "sim_runs",
   {

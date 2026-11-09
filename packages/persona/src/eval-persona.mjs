@@ -6,7 +6,7 @@
 //   2. is shown her real reply and the generated one, unlabelled, once in each order, and says
 //      which one is hers (blind test). Accuracy is over all judgements; position bias is reported.
 // Per-marker rates (sign-off x, mate, ...) are reported for her real replies and the bot's.
-// Results go to docs/evals/persona.json and between the persona markers of docs/EVALS.md.
+// Results go to docs/quality/evals/persona.json and between the persona markers of docs/quality/EVALS.md.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { BudgetExceeded, isMain, loadEnvFile, parseArgs, readJson, readJsonl, sha16, stableSort, TokenBudget, writeJson } from "./lib/io.mjs";
@@ -398,7 +398,7 @@ export function renderSection(persona) {
   return [
     "## Persona (rubric judge and blind test)",
     "",
-    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.",
+    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.",
     "",
     "Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `.env.local`; interrupted runs resume from `data/persona/eval/cache/`).",
     "",
@@ -463,6 +463,6 @@ if (isMain(import.meta.url)) {
     limit,
   });
   if (limit) console.log(`--limit ${limit}: nothing written`);
-  else recordResult({ result, personaPath: "docs/evals/persona.json", evalsPath: "docs/EVALS.md" });
+  else recordResult({ result, personaPath: "docs/quality/evals/persona.json", evalsPath: "docs/quality/EVALS.md" });
   console.log(JSON.stringify({ tokens: result.tokens_this_run, aggregate: result.aggregate }, null, 1));
 }

@@ -2,7 +2,7 @@
 //   npm run eval:persona -- --card-version 2 --gen-model <id> --judge-model <id> [--limit n] [--seed s] [--budget tokens]
 // Each test pair's reply is built by the engine's prompt builder (card, lines retrieved from her train replies and
 // captions, this reply's style draw at her measured rates), written by the generator, then cleaned at its edges by the
-// engine's check. Results are recorded in docs/evals/persona.json and docs/EVALS.md like any other run.
+// engine's check. Results are recorded in docs/quality/evals/persona.json and docs/quality/EVALS.md like any other run.
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { buildPrompt, drawStyle, enforceDraw, parseRates } from "@understudy/engine";
@@ -71,7 +71,7 @@ async function main() {
     drafter: engineDrafter({ rates: markers, chunks: trainChunks(bankDir), seed }),
   });
   if (limit) console.log(`--limit ${limit}: nothing written`);
-  else recordResult({ result, personaPath: "docs/evals/persona.json", evalsPath: "docs/EVALS.md" });
+  else recordResult({ result, personaPath: "docs/quality/evals/persona.json", evalsPath: "docs/quality/EVALS.md" });
   console.log(JSON.stringify({ tokens: result.tokens_this_run, aggregate: result.aggregate }, null, 1));
 }
 

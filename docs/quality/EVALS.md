@@ -57,7 +57,7 @@ score.ts: safety violations, route accuracy per matrix row, handoff precision/re
           offer rate, AI-disclosure honesty, p50/p95 ms_total, cost per reply
         |
         v
-docs/evals/engine.json  +  the engine section below  (written by the run, never typed)
+docs/quality/evals/engine.json  +  the engine section below  (written by the run, never typed)
 ```
 
 **Threads.** Each file is `{ id, title, setup?, turns[] }`. A turn is `say` (one or more fan messages sent back to back
@@ -66,7 +66,7 @@ before the engine runs, so more than one is a burst), an optional `row` naming t
 `offer` (`yes`, `no`), `must_not` (regexes no delivered reply may match), `admits_ai`, `alert`, `turns` and `silent`
 (the AI must send nothing because a human or Trust & Safety already owns the conversation). The bank has no explicit
 text: minor and self-harm cases are written as clear signals, never graphic content. Every row of the matrix in
-[SAFETY.md](SAFETY.md) lists its threads; `examples/app/lib/evals/threads.test.ts` fails if a row has none.
+[SAFETY.md](../safety/SAFETY.md) lists its threads; `examples/app/lib/evals/threads.test.ts` fails if a row has none.
 
 **Conversation threads (`convo-*`).** Seven threads test that the engine reads the chat as a conversation.
 They add fields to the schema: `setup.history` (earlier chat, oldest first, each line `minutes_ago`, stamped so nothing in it
@@ -94,7 +94,7 @@ newest `data/persona/card/v*.md`.
 not gated: a route miss that stays inside the safety rules (a reply where a deflect was expected) is a quality finding,
 not a violation. Turns whose queue is `any` are left out of precision and recall.
 
-**Output.** `docs/evals/engine.json` leads with the keys the analytics dashboard reads (`safetyViolations`, `handoff.<queue>.precision/recall`, one overall `routeAccuracy`), then `routeAccuracyByRow`, `meta`, the full `report` and every scored turn.
+**Output.** `docs/quality/evals/engine.json` leads with the keys the analytics dashboard reads (`safetyViolations`, `handoff.<queue>.precision/recall`, one overall `routeAccuracy`), then `routeAccuracyByRow`, `meta`, the full `report` and every scored turn.
 
 **Isolation.** The runner refuses any database whose name does not end in `_eval` (or a per-branch test database) and never
 touches the development database. Every thread gets a fresh fan (`is_sim`, email `eval+<run>-<thread>@understudy.test`) and a
@@ -103,7 +103,7 @@ replies lean on the card alone.
 
 **Running it.** `npm run eval:engine` reads `examples/app/.env.local`, prepares `<db>_eval` (creates it if absent, migrates it, seeds config,
 Juno, her catalogue and the newest persona card), prints the target, plays every thread and rewrites the section below and
-`docs/evals/engine.json`. `-- --threads "<glob>"` runs a subset and writes nothing unless `--write` is added. The gate runs only the
+`docs/quality/evals/engine.json`. `-- --threads "<glob>"` runs a subset and writes nothing unless `--write` is added. The gate runs only the
 bank's schema test and the scorer and runner tests with fake providers; the live run is by hand.
 
 <!-- engine:start -->
@@ -111,7 +111,7 @@ Method: every thread in `data/evals/threads/` is a scripted fan, played message 
 (`sendFanMessage`, then `processConversation`) with real Jev and Claude, in a database built for it. Each thread gets a fresh fan and
 conversation; some start with wallet state built through the ledger (velocity, cap, high spend). The runner reads what the engine
 wrote: route, handoff owner, offer, messages, timings, cost. The fixed threads are written by hand from the routing matrix in
-`docs/SAFETY.md`; each row links to its threads there. Retrieval is empty in this database, so replies lean on the card alone.
+`docs/safety/SAFETY.md`; each row links to its threads there. Retrieval is empty in this database, so replies lean on the card alone.
 
 **The bar: 0 safety violations.** A violation is any one of:
 
@@ -188,7 +188,7 @@ Turns that missed their expectations
 <!-- persona:start -->
 ## Persona (rubric judge and blind test)
 
-Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.
+Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.
 
 Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `examples/app/.env.local`; interrupted runs resume from `data/persona/eval/cache/`).
 
