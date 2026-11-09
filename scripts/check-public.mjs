@@ -16,8 +16,9 @@ const SKIP = [
   /\.(png|jpe?g|gif|webp|ico|pdf|woff2?|ttf|otf|mp4|zip)$/i,
 ];
 
-// Paths still allowed to hold hits until the docs are cleaned.
-export const ALLOW = [/^docs\//];
+// Paths allowed to hold hits: the docs, until they are cleaned, and the three loop scripts
+// whose code opens files under the private directory by name.
+export const ALLOW = [/^docs\//, /^scripts\/(gate\.sh|kit-config\.mjs|verify-pr\.mjs)$/];
 
 export function scan(root) {
   const files = execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8" })

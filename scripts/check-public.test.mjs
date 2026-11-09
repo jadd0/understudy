@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "check-public.mjs");
 // Built from parts so this file does not trip the check it tests.
 const DECISION = ["D", "044"].join("-");
+const PR_REF = ["PR", "12"].join(" ");
 const PRIVATE_DIR = [".prod", "uct/"].join("");
 
 function repo(files, { track = true } = {}) {
@@ -25,7 +26,7 @@ function repo(files, { track = true } = {}) {
 const run = (dir) => spawnSync("node", [SCRIPT, dir], { encoding: "utf8" });
 
 test("an id, a PR number or a private path in a tracked file fails with file:line", () => {
-  const cases = [`// see ${DECISION}`, "// added in PR 12", `// notes in ${PRIVATE_DIR}plans`];
+  const cases = [`// see ${DECISION}`, `// added in ${PR_REF}`, `// notes in ${PRIVATE_DIR}plans`];
   for (const body of cases) {
     const r = run(repo({ "lib/a.ts": `const x = 1;\n${body}\n` }));
     assert.equal(r.status, 1, body);
@@ -35,7 +36,7 @@ test("an id, a PR number or a private path in a tracked file fails with file:lin
 });
 
 test("the same text under the private tree passes", () => {
-  const r = run(repo({ [`${PRIVATE_DIR}DECISIONS.md`]: `${DECISION} PR 3\n` }));
+  const r = run(repo({ [`${PRIVATE_DIR}DECISIONS.md`]: `${DECISION} ${PR_REF}\n` }));
   assert.equal(r.status, 0);
   assert.match(r.stdout, /public: 0 hits/);
 });
