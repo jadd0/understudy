@@ -1,15 +1,13 @@
 # Data model
 
-Source: `db/schema.ts` (Drizzle), migrations `drizzle/0000_*.sql` to `drizzle/0006_*.sql`. One Neon Postgres, accessed
+Source: `db/host-schema.ts` and `packages/engine/src/schema.ts` (Drizzle, re-exported by `db/schema.ts`), migrations `packages/engine/drizzle/` (applied first) and `drizzle/`. One Neon Postgres, accessed
 through `@neondatabase/serverless` with a WebSocket `Pool` so transactions are interactive.
 Conventions (AGENTS.md): ids are `uuid default gen_random_uuid()`; timestamps are `timestamptz`; money is
 integer cents in `_cents` columns; every top-level creator-owned row carries `creator_id` (child rows of a
 conversation, `messages`, `turns`, `offers` and `handoffs`, and `unlocks` reach their creator through a foreign key;
-`ledger_entries.creator_id` is null for a top-up); lock order is conversation, then wallet. The first migration creates the `vector` and `pg_trgm` extensions.
+`ledger_entries.creator_id` is null for a top-up); lock order is conversation, then wallet. The engine's first migration creates the `vector` and `pg_trgm` extensions.
 
-Every table is read and written by built code. Later migrations added the wallet columns (`0001`), the engine
-columns (`0002`), the `grant` ledger kind (`0003`), `uncredited_payments` and the append-only trigger (`0004`),
-`fan_typing_until` (`0005`) and the simulator tables (`0006`).
+Every table is read and written by built code. The engine's tables hold host rows (users, creators, catalogue items) by id only, with no foreign key; a few host tables point foreign keys at engine tables, so the engine's migrations run first.
 
 ## Enums
 
@@ -35,7 +33,7 @@ ai_disclosure).
 | `accounts` | user_id, type, provider, provider_account_id, tokens | Auth.js; pk (provider, provider_account_id); cascades from users |
 | `sessions` | session_token (pk), user_id, expires | database sessions; cascades from users |
 | `verification_tokens` | identifier, token, expires | one-time sign-in tokens; pk (identifier, token) |
-| `creators` | user_id (unique), handle (unique), display_name | the creator profile for a user; `ai_enabled` is the global AI switch |
+| `creators` | user_id (unique), handle (unique), display_name | the creator profile for a user |
 | `config` | key, creator_id (null = platform), value (jsonb), updated_at | model ids, prices, floors; read through `getConfig`, which throws if missing |
 
 ## Persona
@@ -47,6 +45,7 @@ ai_disclosure).
 | | embedding | `vector(1024)`, null until embedded; HNSW index, cosine |
 | | tsv | `tsvector` generated from `to_tsvector('simple', text)`; GIN index; the Postgres full-text side of the retrieval eval |
 | `fan_memory` | creator_id, fan_id, profile (jsonb), version | rolling per-fan profile; pk (creator_id, fan_id) |
+| `creator_settings` | creator_id (pk), ai_enabled, updated_at | the engine's per-creator AI switch; no row means on; `creator_id` is a host creator id with no foreign key |
 
 ## Conversation
 
@@ -117,6 +116,6 @@ The balance-equals-ledger-sum invariant is asserted by the wallet tests (`assert
 Tests never touch the dev database. `vitest.global-setup.ts` calls `scripts/test-db.mjs`, which creates
 `<db>_test_<branch-slug>` in the same Neon project if absent (the slug is the lower-cased branch name,
 non-alphanumerics collapsed to `_`, at most 40 characters; override with `TEST_DB_BRANCH`), applies
-`drizzle/`, and returns its URL. Global setup refuses to proceed unless the name contains `_test_`, then
+the engine's migrations and then `drizzle/`, and returns its URL. Global setup refuses to proceed unless the name contains `_test_`, then
 truncates every table except `__drizzle_migrations` and points `DATABASE_URL` at it. Parallel branches
 therefore never share test data while sharing one Neon project. Dev and demo use `neondb`.

@@ -34,7 +34,7 @@ Proof: `lib/conversations/read.db.test.ts` (`creator_never_lists_ts_conversation
 
 | Control | Writes | The engine reads it |
 |---|---|---|
-| Global AI switch | `creators.ai_enabled` | `acquireLease` checks it at the start of every turn |
+| Global AI switch | `creator_settings.ai_enabled` (engine table; no row means on) | `acquireLease` checks it at the start of every turn |
 | Per-conversation AI switch | `conversations.ai_enabled` | same lease check |
 | Never-talk-about list | `persona_cards.never_list` on her newest published version | each turn loads the newest published card and verifies the draft against it |
 | Catalogue price | `catalogue_items.price_cents` (integer cents, above zero) | the next offer copies it; an open offer keeps the price it copied |

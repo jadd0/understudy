@@ -61,16 +61,25 @@ send is the host's check, made before the call.
 In tests, build the same wiring from `FakeDecider`, `FakeGenerator`, `FakeHost` and `rig()` from
 `@understudy/engine/testing`, which also returns a ready chatter.
 
-## Tables
+## Tables and migrations
 
-The engine's tables (`conversations`, `messages`, `turns`, `offers`, `handoffs`, `fan_memory`, `persona_cards`,
-`persona_chunks`) are defined in `@understudy/engine/schema`, and the host re-exports them from its own schema so one
-migration history covers both. They still point at the host's `users`, `creators` and `catalogue_items` by foreign
-key; the package declares those three with an `id` column only (`src/host-tables.ts`) to describe the targets.
+The engine owns its tables (`conversations`, `messages`, `turns`, `offers`, `handoffs`, `fan_memory`, `persona_cards`,
+`persona_chunks`, `creator_settings`), defined in `@understudy/engine/schema`. They live in the `public` Postgres
+schema and know host rows (users, creators, catalogue items) by id only: those columns carry no foreign key, so the
+package creates its tables on a database that has none of the host's.
+
+The package ships its own migrations in `drizzle/`, recorded in `drizzle.__understudy_engine_migrations`. A host
+applies them with `chatter.migrate()` (or `migrateEngine(db)` from `@understudy/engine/migrate`) before its own
+migrations, because the host's tables may point foreign keys at the engine's. Both calls take a session advisory lock
+and are safe to repeat. Maintainers regenerate them with `npx drizzle-kit generate` in the package folder.
+
+## The AI switch
+
+`creator_settings` holds one row per creator that has switched the AI off or on. A creator with no row is on.
+`chatter.setCreatorAi(creatorId, on)` upserts it and `chatter.creatorAi(creatorId)` reads it; the lease's claim reads
+the table in the same statement that takes the conversation.
 
 ## Known limitation
 
-Two things keep the package from being standalone. Its tables carry those foreign keys, and the lease's claim reads
-the host's `creators.ai_enabled` in SQL. A later change gives the engine its own AI switch and migrations and drops
-both. Test support (the `testing` entry, `test-*.ts`) still uses the host's seed data, `dbHost` and the Postgres
-full-text retriever to build a world.
+Test support (the `testing` entry, `test-*.ts`) still uses the host's seed data, `dbHost` and the Postgres full-text
+retriever to build a world.
