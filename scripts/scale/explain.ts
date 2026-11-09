@@ -2,15 +2,17 @@
  * Runs the hot-path queries against the volume seed (`seed-volume.ts`) and records how Postgres executes them.
  *
  * Each path calls the real code once with real parameters from the seeded data while the driver records the SQL it
- * sends; that exact statement is then run under `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` 20 times (after one
+ * sends (two functions the engine does not export have their statement read out of the source instead); that exact statement is then run under `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` 20 times (after one
  * warm-up) inside a transaction that rolls back, so writes leave nothing behind. For every statement the output
  * keeps p50 and p95 execution time, the rows, the index and scan nodes used, and any Seq Scan on a table over 10k rows.
  *
  *   DATABASE_URL=<test database> npx tsx scripts/scale/explain.ts [--out docs/scaling/explain.json]
  */
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { and, desc, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
+import { createChatter, retrieveFts, retrieveVector } from "@understudy/engine";
+import { messages, personaCards } from "@understudy/engine/schema";
 import { Client, Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 import { assertTestDatabase } from "./seed-volume";
@@ -67,10 +69,26 @@ interface HotPath {
   name: string;
   /** What the statement is: where its SQL comes from. */
   source: string;
-  run: () => Promise<unknown>;
+  /** Calls the real code while the driver records what it sends. */
+  run?: () => Promise<unknown>;
   /** Picks the statements of the run worth explaining. */
-  pick: (c: Captured) => boolean;
-  after?: () => Promise<unknown>;
+  pick?: (c: Captured) => boolean;
+  /** For a function the engine does not export: its statement read out of the source file. */
+  fixed?: Captured;
+}
+
+/**
+ * The first `sql` template after `function <name>` in `file`, with each interpolation replaced by a numbered
+ * parameter in order. It is the text the function sends, read from the source so it cannot drift from it.
+ */
+function statementOf(file: string, name: string): string {
+  const src = readFileSync(file, "utf8");
+  const at = src.indexOf(`function ${name}`);
+  const open = src.indexOf("execute(sql`", at);
+  if (at < 0 || open < 0) throw new Error(`${name}: no sql template found in ${file}`);
+  const start = open + "execute(sql`".length;
+  let n = 0;
+  return src.slice(start, src.indexOf("`)", start)).replace(/\$\{[^}]*\}/g, () => "$" + ++n);
 }
 
 const squash = (s: string) => s.replace(/\s+/g, " ").trim();
@@ -82,16 +100,9 @@ async function main() {
   const { db } = await import("@/db/client");
   const { dbConfigPort } = await import("@/lib/config");
   const { dbHost } = await import("@/lib/host/engine-host");
-  const { acquireLease, releaseLease } = await import("../../packages/engine/src/lease");
-  const { loadFacts } = await import("../../packages/engine/src/facts");
-  const { loadInbound } = await import("../../packages/engine/src/turn");
-  const { retrieveFts, retrieveVector } = await import("../../packages/engine/src/retrieve");
-  const { sweep } = await import("../../packages/engine/src/sweep");
-  const { personaCards, messages } = await import("../../packages/engine/src/schema");
   const { listInbox } = await import("@/lib/conversations/read");
   const { getHandoffs } = await import("@/lib/analytics/handoffs");
   const { makeQuery } = await import("@/lib/analytics/query");
-  const { ne } = await import("drizzle-orm");
 
   const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
   const id = async (q: string) => String((await pool.query(q)).rows[0].id);
@@ -102,33 +113,34 @@ async function main() {
   const convBusy = await id(`select md5('seed:conv:100:100')::uuid as id`);
   const convPlain = await id(`select md5('seed:conv:100:1')::uuid as id`);
   const fanBusy = await id(`select md5('seed:fan:100:100')::uuid as id`);
-  const fanUnanswered = await id(`select md5('seed:fan:100:7')::uuid as id`);
 
-  const ctx = {
+  // The sweep reads the clock once to start and again before each conversation: the second read is past the start
+  // budget, so it scans for work and processes none.
+  let reads = 0;
+  const chatter = createChatter({
     db,
     config: dbConfigPort,
     host: dbHost,
-    // The sweep reads the clock once to start and again before each conversation: the second read is past the
-    // start budget, so it scans for work and processes none.
-    deps: { clock: { now: (() => { let n = 0; return () => (n++ === 0 ? 0 : 1e9); })(), sleep: async () => undefined } },
-  } as unknown as Parameters<typeof acquireLease>[0];
+    deps: { clock: { now: () => (reads++ === 0 ? 0 : 1e9), sleep: async () => undefined } },
+  } as unknown as Parameters<typeof createChatter>[0]);
   const vector = Array.from({ length: 1024 }, (_, i) => Math.sin(i));
   const retrieveDeps = { db, embedQuery: async () => vector };
 
-  let lease: Awaited<ReturnType<typeof acquireLease>> = null;
   const paths: HotPath[] = [
     {
       name: "lease claim",
-      source: "acquireLease (packages/engine/src/lease.ts)",
-      run: async () => (lease = await acquireLease(ctx, convPlain, 60_000)),
-      pick: (c) => /update conversations/.test(c.text),
-      after: async () => lease && releaseLease(ctx, lease),
+      source: "acquireLease (packages/engine/src/lease.ts), statement read from the source",
+      fixed: { text: statementOf("packages/engine/src/lease.ts", "acquireLease"), values: [crypto.randomUUID(), 60, convPlain] },
     },
-    { name: "inbound load", source: "loadInbound (packages/engine/src/turn.ts)", run: () => loadInbound(ctx, convUnanswered), pick: (c) => /from messages m/.test(c.text) },
+    {
+      name: "inbound load",
+      source: "loadInbound (packages/engine/src/turn.ts), statement read from the source",
+      fixed: { text: statementOf("packages/engine/src/turn.ts", "loadInbound"), values: [convUnanswered, convUnanswered] },
+    },
     {
       name: "facts",
       source: "loadFacts (packages/engine/src/facts.ts)",
-      run: () => loadFacts(ctx, convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60 }),
+      run: () => chatter.loadFacts(convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60 }),
       pick: (c) => /no_pitch_active/.test(c.text),
     },
     {
@@ -155,7 +167,7 @@ async function main() {
     {
       name: "sweep scan",
       source: "sweep (packages/engine/src/sweep.ts), run with a clock past its start budget so it scans and processes nothing",
-      run: () => sweep(ctx),
+      run: () => chatter.sweep(),
       pick: (c) => /group by c\.id/.test(c.text),
     },
     { name: "creator inbox page", source: "listInbox (lib/conversations/read.ts)", run: () => listInbox({ id: creatorUserId, role: "creator" }), pick: (c) => /from "conversations"/.test(c.text) },
@@ -179,8 +191,7 @@ async function main() {
 
   const results = [];
   for (const path of paths) {
-    const statements = (await capture(path.run)).filter(path.pick);
-    if (path.after) await path.after();
+    const statements = path.fixed ? [path.fixed] : (await capture(path.run!)).filter(path.pick!);
     if (statements.length === 0) throw new Error(`${path.name}: no statement matched`);
     // The longest matching statement is the one that does the work.
     const statement = statements.sort((a, b) => b.text.length - a.text.length)[0];

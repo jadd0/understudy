@@ -65,7 +65,8 @@ describe("engine config through the port", () => {
     expect(config.queries).toHaveLength(1);
     expect(config.queries[0].prefixes).toEqual(["price."]);
     expect(config.queries[0].creatorId).toBe(CREATOR);
-    expect(Object.keys(cfg.prices).sort()).toEqual([cfg.jevModel, cfg.generateModel, cfg.memoryModel].filter((m, i, a) => a.indexOf(m) === i).sort());
+    // The fallback generator's model is priced too, so a turn it serves is costed at its own rows.
+    expect(Object.keys(cfg.prices).sort()).toEqual([cfg.jevModel, cfg.generateModel, cfg.memoryModel, ENGINE_CONFIG["model.generate_fallback"] as string].filter((m, i, a) => a.indexOf(m) === i).sort());
     expect(cfg.prices[cfg.generateModel].input).toBe(ENGINE_CONFIG[`price.${cfg.generateModel}.input_per_mtok`]);
   });
 });
