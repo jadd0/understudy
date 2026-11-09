@@ -74,6 +74,8 @@ export interface Facts extends PitchFacts {
   capCents: number;
   highValue: boolean;
   hasUnresolvedHandoff: boolean;
+  /** The sweep settled a hold by policy not long ago: the same chat is answered, not held again, until this lapses. */
+  holdSuppressed: boolean;
   hasOpenOffer: boolean;
   /** He has unlocked something from this creator before: online plans like a game are then allowed. */
   hasUnlocked: boolean;

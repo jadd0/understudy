@@ -3,7 +3,7 @@ import type { EngineCtx } from "./ctx";
 import { ConfigMissing } from "./ports/config";
 import { conversations, messages, personaCards, turns } from "./schema";
 import type { Events } from "./ports/events";
-import { getConfig, loadEngineConfig, type EngineCfg } from "./cfg";
+import { getConfig, loadEngineConfig, loadSla, type EngineCfg } from "./cfg";
 import { bubbleGap } from "./bubbles";
 import { CostLedger, costMicros } from "./cost";
 import { waitForMore, waitForQuiet, type InboundState, type WaitDeps, type WaitStats } from "./debounce";
@@ -11,7 +11,7 @@ import { eventJevLines, eventRecord, hasPendingEvents, loadEvents, loadOfferOutc
 import { loadFacts } from "./facts";
 import { canPitch } from "./pacing";
 import { acquireLease, commitTurn, recordFailure, releaseLease, type CommitPlan, type CommitResult, type Lease, type TurnRecord } from "./lease";
-import { extractMemory, loadProfile } from "./memory";
+import { EMPTY_PROFILE, extractMemory, loadProfile } from "./memory";
 import { buildOwnedShortlist, buildShortlist, openOfferId, ownsEverything, pickOffer, type ShortlistItem } from "./offer";
 import { buildPrompt } from "./prompt";
 import { dropRepeatedEmoji, recentEmoji } from "./emoji";
@@ -98,6 +98,7 @@ export async function runTurn(ctx: EngineCtx, conversationId: string): Promise<T
   // Read before the lease, like the lease length: a failure later in the turn (a missing engine row included)
   // still knows when to hand over, and a missing row here fails the turn before anything is held.
   const maxAttempts = await getConfig<number>(ctx, "engine.max_attempts", conv.creatorId);
+  const sla = await loadSla(ctx, conv.creatorId);
   const lease = await acquireLease(ctx, conversationId, leaseMs);
   if (!lease) return { status: "busy" };
 
@@ -122,7 +123,7 @@ export async function runTurn(ctx: EngineCtx, conversationId: string): Promise<T
   } catch (e) {
     console.error(`engine: turn failed ${describeError(e)}`);
     try {
-      const failure = await recordFailure(ctx, lease, acc, maxAttempts);
+      const failure = await recordFailure(ctx, lease, acc, maxAttempts, sla);
       return { status: "error", turnId: failure.turnId };
     } catch (inner) {
       console.error(`engine: could not record failure ${describeError(inner)}`);
@@ -276,6 +277,7 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
       setMode: null,
       hardStop: null,
       alert: route.alert,
+      sla: cfg.sla,
       hardshipCooldownHours: route.hardship ? cfg.hardshipCooldownHours : null,
       typing: {
         cps: cfg.typingCps,
@@ -283,6 +285,71 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
         gapMs: bubbleGap(cfg.bubbleGapMsMin, cfg.bubbleGapMsMax, ctx.deps.random ?? Math.random),
       },
     };
+  };
+
+  /**
+   * The line a held chat sends while the creator is away: one draft, the same verify as any reply, and nothing
+   * sent unless every check passes. A failed check or a provider error sends nothing and the hold goes ahead.
+   */
+  const draftFiller = async (
+    route: Route,
+    history: ChatMessage[],
+    facts: Facts,
+    sessionGap: number | null,
+    jevState: { earlier_messages: ReturnType<typeof jevLines>; new_messages: string[] },
+    thread: JevIn["thread"],
+    batchText: string,
+  ): Promise<string | null> => {
+    try {
+      const recent = recentEmoji(history);
+      const built = buildPrompt({
+        cardBody: card.body,
+        neverList: card.neverList,
+        chunks: [],
+        profile: EMPTY_PROFILE,
+        route,
+        offer: null,
+        history,
+        thread,
+        sessionGapMs: sessionGap,
+        paid: facts.hasUnlocked,
+        recentEmoji: recent,
+        historyRounds: cfg.historyRounds,
+        gapMarkerMinutes: cfg.gapMarkerMinutes,
+      });
+      const t0 = clock.now();
+      const gen = await ctx.deps.generator.generate({
+        system: built.system,
+        messages: built.messages,
+        maxTokens: cfg.maxTokens,
+        model: cfg.generateModel,
+      });
+      acc.msGen = (acc.msGen ?? 0) + (clock.now() - t0);
+      addCost("generate", cfg.prices[cfg.generateModel], gen.usage);
+      const text = dropRepeatedEmoji(gen.text.trim(), recent);
+      acc.draft = text;
+      const verdict = await verifyDraft(
+        decider,
+        {
+          draft: text,
+          fanMessage: batchText,
+          earlier: jevState.earlier_messages,
+          route: route.name,
+          neverList: card.neverList,
+          stopReason: gen.stopReason,
+          paid: facts.hasUnlocked,
+        },
+        () => clock.now(),
+      );
+      acc.msJevOut = (acc.msJevOut ?? 0) + verdict.ms;
+      if (verdict.usage) addCost("jev_out", cfg.prices[cfg.jevModel], verdict.usage);
+      trail.push({ filler: true, failures: verdict.failures, answers: verdict.jevOut });
+      return verdict.ok && text !== "" ? text : null;
+    } catch (e) {
+      console.error(`engine: hold filler failed ${describeError(e)}`);
+      trail.push({ filler: true, error: describeError(e) });
+      return null;
+    }
   };
 
   /** One read of the chat: wait for the fan to settle, classify, route, and (when the route speaks) draft and verify. */
@@ -389,6 +456,8 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
         plan.outcome = "handoff";
         plan.setMode = "handoff_creator";
         plan.handoff = { queue: "creator", reason: route.reason! };
+        const filler = await draftFiller(route, history, facts, sessionGap, jevState, jevIn.thread, batchText);
+        if (filler) plan.reply = { body: filler, kind: "sent" };
       }
       return { kind: "final", plan, batchText, route };
     }

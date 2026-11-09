@@ -2,6 +2,7 @@ import type { EngineCtx } from "./ctx";
 import { ConfigMissing, type ConfigRow } from "./ports/config";
 import { SAFETY_KEYS, type RouteCfg } from "./types";
 import type { Prices } from "./cost";
+import type { HandoffSla } from "./handoff";
 
 export interface EngineCfg {
   jevModel: string;
@@ -29,6 +30,7 @@ export interface EngineCfg {
   velocityWindowMinutes: number;
   hardshipCooldownHours: number;
   supportEmail: string;
+  sla: HandoffSla;
   route: RouteCfg;
   prices: Record<string, Prices>;
 }
@@ -56,6 +58,8 @@ const KEYS = [
   "engine.event_window_minutes",
   "engine.offer_history_count",
   "platform.support_email",
+  "escalation.creator_sla_minutes",
+  "escalation.ts_sla_minutes",
   "floor.intent",
   "floor.buy_intent_runner_up",
   ...SAFETY_KEYS.map((k) => `floor.safety.${k}`),
@@ -149,6 +153,7 @@ export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId
     velocityWindowMinutes: get("pitch.velocity_window_minutes"),
     hardshipCooldownHours: get("pitch.hardship_cooldown_hours"),
     supportEmail: get("platform.support_email"),
+    sla: { creatorMinutes: get("escalation.creator_sla_minutes"), tsMinutes: get("escalation.ts_sla_minutes") },
     route: {
       floors,
       minGapRounds: get("pitch.min_gap_rounds"),
@@ -158,4 +163,13 @@ export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId
     },
     prices,
   };
+}
+
+/** The two handoff due times, read on their own so a turn that fails before its full config loads can still open a handoff. */
+export async function loadSla(ctx: Pick<EngineCtx, "config">, creatorId: string): Promise<HandoffSla> {
+  const [creatorMinutes, tsMinutes] = await Promise.all([
+    getConfig<number>(ctx, "escalation.creator_sla_minutes", creatorId),
+    getConfig<number>(ctx, "escalation.ts_sla_minutes", creatorId),
+  ]);
+  return { creatorMinutes, tsMinutes };
 }

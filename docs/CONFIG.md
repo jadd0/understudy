@@ -94,6 +94,10 @@ A new model needs its four (Claude) or two (Jev) price rows, or turn cost throws
 | `delivery.bubble_gap_ms_min` | `1500` | shortest gap between her bubbles | `packages/engine/src/cfg.ts` |
 | `delivery.bubble_gap_ms_max` | `4000` | longest gap between her bubbles | `packages/engine/src/cfg.ts` |
 | `platform.support_email` | `"support@understudy.example"` | the address in support and dispute replies | `packages/engine/src/cfg.ts` |
+| `escalation.creator_sla_minutes` | `30` | a creator-queue handoff's due time after it opens; the creator's queue row shows it | `packages/engine/src/cfg.ts`, `lib/conversations/read.ts` |
+| `escalation.ts_sla_minutes` | `15` | a Trust & Safety handoff's due time; past it the sweep stamps the breach and alerts, and never resolves it | `packages/engine/src/cfg.ts` |
+| `escalation.auto_resolve_reasons` | `["unsure","verify_failed","custom_request","explicit_live_chat","high_value_alert"]` | creator-queue reasons the sweep may settle by policy once due and unclaimed; any other reason (such as `engine_error`) waits for a person | `packages/engine/src/escalation.ts`, `lib/conversations/read.ts` |
+| `escalation.hold_suppress_minutes` | `1440` | after the sweep settles a hold, the same chat's next hold is answered by the AI for this long | `packages/engine/src/escalation.ts` |
 
 ### Floors (Jev confidence) and pitching
 

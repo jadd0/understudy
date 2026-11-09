@@ -9,6 +9,8 @@ export const creatorChannel = (creatorId: string) => `private-creator-${creatorI
 /** What the engine and server actions call a channel, mapped to a name Pusher accepts (no colons, `private-` prefix). */
 export function toPusherChannel(logical: string): string {
   if (logical === "ts") return TS_CHANNEL;
+  // Operations alerts name conversations and reasons, so they ride a private channel nobody is authorised to join.
+  if (logical === "ops") return "private-ops";
   const m = /^(conversation|creator):(.+)$/.exec(logical);
   return m ? `private-${m[1]}-${m[2]}` : logical;
 }

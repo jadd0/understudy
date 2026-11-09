@@ -36,6 +36,7 @@ export async function loadFacts(
           and cardinality(t.inbound_ids) > 0
           and t.created_at > coalesce((select max(created_at) from offers where conversation_id = ${conversationId}),
                                       'epoch'::timestamptz)) as since_offer,
+      coalesce((select hold_suppressed_until > now() from conversations where id = ${conversationId}), false) as hold_suppressed,
       exists(select 1 from handoffs where conversation_id = ${conversationId} and status <> 'resolved') as unresolved,
       exists(select 1 from offers where conversation_id = ${conversationId} and status = 'open' and expires_at > now()) as open_offer,
       exists(select 1 from offers where conversation_id = ${conversationId} and status = 'accepted') as unlocked,
@@ -49,6 +50,7 @@ export async function loadFacts(
     no_pitch_active: boolean;
     declines: number;
     since_offer: number;
+    hold_suppressed: boolean;
     unresolved: boolean;
     open_offer: boolean;
     unlocked: boolean;
@@ -63,6 +65,7 @@ export async function loadFacts(
     unlocksInWindow: hostFacts.unlocksInWindow,
     roundsSinceOffer: r.since_offer,
     highValue: hostFacts.highValue,
+    holdSuppressed: r.hold_suppressed,
     hasUnresolvedHandoff: r.unresolved,
     hasOpenOffer: r.open_offer,
     hasUnlocked: r.unlocked,
