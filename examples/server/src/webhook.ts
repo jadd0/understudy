@@ -26,6 +26,8 @@ export interface Webhook {
   send(event: Record<string, unknown>): void;
   /** Resolves when every send in flight has finished. */
   idle(): Promise<void>;
+  /** Aborts what is in flight and stops retrying; used at shutdown so a hung endpoint cannot hold the process. */
+  close(): void;
 }
 
 export function createWebhook(opts: WebhookOptions): Webhook {
@@ -35,13 +37,14 @@ export function createWebhook(opts: WebhookOptions): Webhook {
   const doFetch = opts.fetch ?? globalThis.fetch;
   const log = opts.log ?? ((line) => console.warn(line));
   const inflight = new Set<Promise<boolean>>();
+  const closing = new AbortController();
 
   async function deliver(event: Record<string, unknown>): Promise<boolean> {
     const raw = JSON.stringify(event);
     const headers = { "content-type": "application/json", [SIGNATURE_HEADER]: sign(raw, opts.secret) };
-    for (let attempt = 0; attempt < attempts; attempt++) {
+    for (let attempt = 0; attempt < attempts && !closing.signal.aborted; attempt++) {
       try {
-        const res = await doFetch(opts.url, { method: "POST", headers, body: raw, signal: AbortSignal.timeout(timeoutMs) });
+        const res = await doFetch(opts.url, { method: "POST", headers, body: raw, signal: AbortSignal.any([AbortSignal.timeout(timeoutMs), closing.signal]) });
         if (res.ok) return true;
         log(`webhook: status ${res.status} (attempt ${attempt + 1} of ${attempts})`);
       } catch (e) {
@@ -61,6 +64,9 @@ export function createWebhook(opts: WebhookOptions): Webhook {
     },
     async idle() {
       await Promise.all([...inflight]);
+    },
+    close() {
+      closing.abort();
     },
   };
 }

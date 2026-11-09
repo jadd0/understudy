@@ -11,7 +11,7 @@ neonConfig.webSocketConstructor = ws;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ENGINE_TABLE = "__understudy_engine_migrations";
-const LOCK_KEY = 727001;
+export const LOCK_KEY = 727001;
 
 /** Runs both migration sets on `url` under one session advisory lock, so concurrent runs never interleave. */
 export async function migrateAll(url) {

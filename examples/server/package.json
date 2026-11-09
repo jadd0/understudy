@@ -6,10 +6,10 @@
   "type": "module",
   "license": "ISC",
   "scripts": {
-    "dev": "tsx --env-file-if-exists=.env.local src/main.ts",
-    "migrate": "tsx --env-file-if-exists=.env.local src/main.ts --migrate-only",
-    "seed": "tsx --env-file-if-exists=.env.local src/seed.ts",
-    "demo": "tsx --env-file-if-exists=.env.local src/demo.ts"
+    "dev": "tsx src/main.ts",
+    "migrate": "tsx src/main.ts --migrate-only",
+    "seed": "tsx src/seed.ts",
+    "demo": "tsx src/demo.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

@@ -83,6 +83,14 @@ One turn (`packages/engine/src/turn.ts`):
 | `Events` | `providers/pusher/events.ts` (`defaultEvents()`; `packages/providers/src/noop/events.ts` when the Pusher keys are absent) | a recorder |
 | `Clock` | `systemClock` (sleep and elapsed ms only) | a sleep hook |
 
+## Second host
+
+`examples/server` runs the same engine headless: `ServerHost` (no wallet: a fixed cap, nothing owned) behind `HostPort`,
+an in-process `Events` bus that waits each bubble's `deliverInMs` and then writes it to open server-sent streams and
+the signed webhook, and Fastify routes over `Chatter` (`handleMessage`, `takeOver`, `humanReply`, `handBack`). Takeover
+and the human reply live in the engine, so the app and the server share one permission rule: a creator actor holds only
+her own chats that are not on the Trust & Safety side; a T&S actor holds any. Diagram: `docs/diagrams/server.html`.
+
 Everything persisted or compared against stored rows uses the database clock (`now()`), the same clock the wallet
 uses for offer expiry. The clock port only sleeps and measures elapsed time.
 

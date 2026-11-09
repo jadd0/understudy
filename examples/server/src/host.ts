@@ -60,7 +60,9 @@ export class ServerHost implements HostPort {
     return new Map(this.items_.filter((i) => ids.includes(i.id)).map((i) => [i.id, { title: i.title, priceCents: i.priceCents, kind: i.kind }]));
   }
 
-  async owns(): Promise<Set<string>> {
+  async owns(_fanId: string, _itemIds: string[]): Promise<Set<string>> {
+    void _fanId;
+    void _itemIds;
     return new Set();
   }
 

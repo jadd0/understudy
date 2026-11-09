@@ -73,6 +73,7 @@ export async function startServer(opts: StartOptions): Promise<Running> {
     async close() {
       clearInterval(sweeper);
       bus.close();
+      webhook?.close();
       await app.close();
       await webhook?.idle();
       await end();
@@ -81,10 +82,11 @@ export async function startServer(opts: StartOptions): Promise<Running> {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const fake = process.argv.includes("--fake");
+  const migrateOnly = process.argv.includes("--migrate-only");
+  // Creating tables needs no model key.
+  const fake = process.argv.includes("--fake") || migrateOnly;
   try {
     const env = readEnv(process.env, { fake });
-    const migrateOnly = process.argv.includes("--migrate-only");
     startServer({ env, fake, listen: !migrateOnly, logger: true }).then(async (s) => {
       if (migrateOnly) {
         console.log("migrated");
