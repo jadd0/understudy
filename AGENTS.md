@@ -83,6 +83,7 @@ Every module lives in a domain folder; nothing sits loose in `lib/`. A folder's 
 | `lib/wallet/` | ledger, top-up, unlock, tip, cap, high-value score, money parsing |
 | `packages/engine/` | the engine as a workspace package (`@understudy/engine`): the message turn, its ports, retrieval over persona chunks, and the fakes behind `@understudy/engine/testing`. The app imports only the package entry |
 | `packages/providers/` | the adapters behind the engine's ports as a workspace package (`@understudy/providers`): Claude, Jev, failover, Postgres full-text and Voyage retrieval, a no-op event sink. It imports nothing from the app; retrievers take their database as a constructor argument |
+| `examples/server/` | the engine's second host (`@understudy/example-server`): a Fastify API with server-sent replies, takeover, hand-back and a signed webhook, no wallet and no UI. Same rules as any other consumer: it imports only the package entries |
 | `lib/host/` | the app's side of the engine's `HostPort` (`packages/engine/src/host.ts`): the database-backed `dbHost` over wallet, ledger, catalogue, unlocks and users |
 | `lib/conversations/` | conversation reads and human actions: takeover, hand-back, release |
 | `lib/ui/` | pure view logic shared by components (message grouping) |

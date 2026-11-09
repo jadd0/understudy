@@ -11,6 +11,7 @@ import type { EngineDb, EngineTx } from "./ports/db";
 import { processConversation } from "./process";
 import { conversations, messages } from "./schema";
 import { sweep, type SweepResult } from "./sweep";
+import { humanReply, takeOver, type HumanActor } from "./takeover";
 import { runTurn, type TurnResult } from "./turn";
 
 export const MAX_MESSAGE_CHARS = 2000;
@@ -67,6 +68,10 @@ export interface Chatter {
   sweep(): Promise<SweepResult>;
   /** Gives a conversation back to the AI; messages a human already handled stay unanswered. */
   handBack(conversationId: string, opts?: { allWaiting?: boolean }): Promise<void>;
+  /** A human takes the conversation over; refused with `TakeoverRefused` when the actor may not hold it. */
+  takeOver(conversationId: string, actor: HumanActor): Promise<void>;
+  /** Stores a human's message in a conversation the actor holds, and returns its id. */
+  humanReply(conversationId: string, actor: HumanActor, body: string, opts?: { clientMsgId?: string | null }): Promise<string>;
   /** Supersedes AI bubbles the fan has not seen yet, inside the caller's transaction. */
   supersedeUnseenBubbles(tx: EngineTx, conversationId: string): Promise<void>;
   /** Marks open offers past their expiry; returns how many. */
@@ -98,6 +103,8 @@ export function createChatter(opts: ChatterOptions): Chatter {
     runTurn: (id) => runTurn(ctx, id),
     sweep: () => sweep(ctx),
     handBack: (id, o) => handBack(ctx, id, o),
+    takeOver: (id, actor) => takeOver(ctx, id, actor),
+    humanReply: (id, actor, body, o) => humanReply(ctx, id, actor, body, o),
     supersedeUnseenBubbles,
     expireOffers: () => expireOffers(ctx),
     loadFacts: (conversationId, fanId, creatorId, cfg) => loadFacts(ctx, conversationId, fanId, creatorId, cfg),

@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
-import { isPreEngineDatabase, migrateAll } from "./migrate.mjs";
+import { isPreEngineDatabase, LOCK_KEY, migrateAll } from "./migrate.mjs";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -35,6 +35,30 @@ function branchSlug() {
 export function baseDatabase() {
   const url = new URL(baseUrl());
   return { url, name: url.pathname.replace(/^\//, "") };
+}
+
+/** A database this script may drop: a derived test database. Never the base database, never a name without `_test_`. */
+export function assertDisposable(name) {
+  if (!/^[a-z0-9_]+$/.test(name)) throw new Error("unsafe database name");
+  if (!name.includes("_test_")) throw new Error("refusing to drop a database whose name has no _test_");
+  if (name === baseDatabase().name) throw new Error("refusing to drop the base database");
+}
+
+/**
+ * Drops `name` and creates it again, on one admin connection that holds the migrations' advisory lock key, so no
+ * other runner is between "found it" and "migrated it" while it is replaced. `admin` is a pg Pool.
+ */
+export async function recreateDisposable(admin, name) {
+  assertDisposable(name);
+  const client = await admin.connect();
+  try {
+    await client.query("select pg_advisory_lock($1)", [LOCK_KEY]);
+    await client.query(`drop database if exists "${name}" with (force)`);
+    await client.query(`create database "${name}"`);
+  } finally {
+    await client.query("select pg_advisory_unlock($1)", [LOCK_KEY]).catch(() => undefined);
+    client.release();
+  }
 }
 
 /**
@@ -68,8 +92,7 @@ export async function ensureDb(name, { recreate = false } = {}) {
     console.error(`test-db: migrations failed on ${name} (${e?.cause?.code ?? e?.code ?? "error"}); dropping and recreating it`);
     const again = new Pool({ connectionString: url.toString() });
     try {
-      await again.query(`drop database if exists "${name}" with (force)`);
-      await again.query(`create database "${name}"`);
+      await recreateDisposable(again, name);
     } finally {
       await again.end();
     }
@@ -86,12 +109,11 @@ export async function ensureDb(name, { recreate = false } = {}) {
 async function applyMigrations(url) {
   if (await isPreEngineDatabase(url)) {
     const name = decodeURIComponent(url.pathname.replace(/^\//, ""));
-    if (!/^[a-z0-9_]+$/.test(name) || name === baseDatabase().name) throw new Error("refusing to rebuild this database");
+    assertDisposable(name);
     console.error(`test-db: ${name} predates the engine migrations; dropping and recreating it`);
     const admin = new Pool({ connectionString: baseDatabase().url.toString() });
     try {
-      await admin.query(`drop database if exists "${name}" with (force)`);
-      await admin.query(`create database "${name}"`);
+      await recreateDisposable(admin, name);
     } finally {
       await admin.end();
     }
