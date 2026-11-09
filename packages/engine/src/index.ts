@@ -2,6 +2,8 @@
 
 export { createChatter, MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS, MessageRefused } from "./chatter";
 export type { Chatter, ChatterOptions, HandledMessage, IncomingMessage, MessageRefusedCode } from "./chatter";
+export { loadEngineConfig } from "./cfg";
+export type { EngineCfg } from "./cfg";
 export { costMicros } from "./cost";
 export type { Deps, EngineCtx } from "./ctx";
 export { handBack, supersedeUnseenBubbles } from "./lease";

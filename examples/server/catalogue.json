@@ -1,0 +1,9 @@
+{
+  "items": [
+    { "id": "a1c0f3d2-5b71-4e0a-8d11-3f6a7b9c0e01", "creatorId": "7f3c1a52-0d4e-4b8a-9c61-2e5d8a1b4f70", "kind": "ppv", "title": "Golden hour", "teaser": "A little something from the rooftop", "priceCents": 999 },
+    { "id": "a1c0f3d2-5b71-4e0a-8d11-3f6a7b9c0e02", "creatorId": "7f3c1a52-0d4e-4b8a-9c61-2e5d8a1b4f70", "kind": "ppv", "title": "Lazy Sunday", "teaser": "Coffee, sunlight, no plans", "priceCents": 1499 },
+    { "id": "a1c0f3d2-5b71-4e0a-8d11-3f6a7b9c0e03", "creatorId": "7f3c1a52-0d4e-4b8a-9c61-2e5d8a1b4f70", "kind": "ppv", "title": "Night out", "teaser": "Before the night got interesting", "priceCents": 1999 },
+    { "id": "a1c0f3d2-5b71-4e0a-8d11-3f6a7b9c0e04", "creatorId": "7f3c1a52-0d4e-4b8a-9c61-2e5d8a1b4f70", "kind": "bundle", "title": "The full set", "teaser": "Her bonus shoot, shots that are not anywhere else", "priceCents": 3499 },
+    { "id": "a1c0f3d2-5b71-4e0a-8d11-3f6a7b9c0e05", "creatorId": "7f3c1a52-0d4e-4b8a-9c61-2e5d8a1b4f70", "kind": "personal", "title": "Personal chat with Juno", "teaser": "Juno herself, just for you", "priceCents": 4999 }
+  ]
+}
