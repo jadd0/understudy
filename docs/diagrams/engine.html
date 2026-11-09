@@ -154,7 +154,7 @@ dl.gloss dd { margin: 0; }
     <li><strong>Context.</strong> Only drafting routes get here. The fan's memory profile loads; retrieval returns <code>retrieval.k</code> (5) persona chunks (a retrieval error becomes an empty list). On the <code>offer</code> route, code builds the shortlist (the creator's active items of the allowed kinds that he has not unlocked and that are not already in an open offer, ordered by price, title, id) and Jev picks one by key from titles and teasers only. One item needs no Jev call. An empty list or a bad pick falls back to the route's fallback: <code>reply</code>, or <code>deflect</code> for an explicit request.
       <span class="where">packages/engine/src/memory.ts · loadProfile; packages/engine/src/offer.ts · buildShortlist, pickOffer</span></li>
     <li><strong>Claude draft.</strong> <code>model.generate</code> (<code>claude-haiku-5-5</code>) writes the reply with <code>engine.max_tokens</code> (300) and thinking switched off, because thinking tokens count against the limit and once left an empty draft. The prompt is a cached prefix (card, rules, never-list) plus a per-turn block (diagram 5). Before any check, emoji she used in her last 8 bubbles are removed from the draft (<code>RECENT_BUBBLES</code>); a draft that would be left empty is kept whole.
-      <span class="where">packages/engine/src/prompt.ts · buildPrompt; providers/anthropic/generator.ts; packages/engine/src/emoji.ts · dropRepeatedEmoji</span></li>
+      <span class="where">packages/engine/src/prompt.ts · buildPrompt; packages/providers/src/anthropic/generator.ts; packages/engine/src/emoji.ts · dropRepeatedEmoji</span></li>
     <li><strong>Verify.</strong> Code checks, then Jev checks the draft. A failure redrafts, up to <code>engine.gen_attempts</code> (2) drafts. Diagram 3 walks it.
       <span class="where">packages/engine/src/verify.ts · verifyDraft</span></li>
     <li><strong>Fold-in check.</strong> If he wrote again while she was drafting, fewer than <code>engine.fold_in_max</code> (1) fold-ins have happened and the turn is younger than <code>engine.turn_budget_ms</code> (12000), the draft is thrown away and the whole turn reads the larger batch from step 3. A crisis message that arrived mid-draft is therefore classified before anything is sent: if the second read is a hard stop or a hold, that wins. If the second read finds no safe draft, the earlier safe draft is committed for the earlier batch and the late messages wait for the next turn.
@@ -301,7 +301,7 @@ dl.gloss dd { margin: 0; }
   <span class="where">packages/engine/src/prompt.ts · RULES, INSTRUCTIONS, buildPrompt; packages/engine/src/thread.ts · threadBlock, claudeHistory; packages/engine/src/memory.ts · renderProfile</span>
   <h3>Retrieval</h3>
   <p><code>retrieval.strategy</code> picks <code>fts</code>, <code>vector</code> or <code>hybrid</code>. <code>docs/CONFIG.md</code> gives the seeded default as <code>fts</code>; <code>vector</code>, the retrieval eval's winner, was set on the neondb database afterwards. Vector and hybrid embed the batch with Voyage (<code>retrieval.voyage_model</code>, <code>voyage-4</code>) and fall back to full-text search if that fails. Which strategy a given database runs is whatever its row says.</p>
-  <span class="where">providers/voyage/persona-retriever.ts; lib/host/deps.ts · defaultDeps</span>
+  <span class="where">packages/providers/src/voyage/persona-retriever.ts; lib/host/deps.ts · defaultDeps</span>
 </section>
 
 <!-- 6 ------------------------------------------------------------------ -->
@@ -351,11 +351,11 @@ dl.gloss dd { margin: 0; }
   <div class="table-scroll"><table>
     <thead><tr><th>Failure</th><th>Result</th><th>Where</th></tr></thead>
     <tbody>
-      <tr><td>Jev unavailable (timeout 20 s, HTTP error, malformed or off-option answer) on the inbound call or on verify</td><td>Turn <code>error</code>, no reply, <code>failed_turns</code> + 1, lease released, mode stays <code>ai</code>. A 429 or 529 is retried once after 500 ms first. This also discards an earlier safe draft from a previous attempt or pass: only a <em>safety failure</em> keeps the earlier draft, a thrown error does not.</td><td>providers/typesafe/decider.ts; packages/engine/src/turn.ts · runTurn</td></tr>
+      <tr><td>Jev unavailable (timeout 20 s, HTTP error, malformed or off-option answer) on the inbound call or on verify</td><td>Turn <code>error</code>, no reply, <code>failed_turns</code> + 1, lease released, mode stays <code>ai</code>. A 429 or 529 is retried once after 500 ms first. This also discards an earlier safe draft from a previous attempt or pass: only a <em>safety failure</em> keeps the earlier draft, a thrown error does not.</td><td>packages/providers/src/typesafe/decider.ts; packages/engine/src/turn.ts · runTurn</td></tr>
       <tr><td>Jev fails on the offer pick</td><td>Only <code>DeciderUnavailable</code> is caught: the route falls back to <code>reply</code> (or <code>deflect</code> for an explicit request). Any other error ends the turn as <code>error</code>.</td><td>packages/engine/src/turn.ts · runPass</td></tr>
-      <tr><td>Claude error (timeout 30 s, one SDK retry)</td><td>Turn <code>error</code>, as above. Error logs carry class and code only, never fan text.</td><td>providers/anthropic/generator.ts</td></tr>
+      <tr><td>Claude error (timeout 30 s, one SDK retry)</td><td>Turn <code>error</code>, as above. Error logs carry class and code only, never fan text.</td><td>packages/providers/src/anthropic/generator.ts</td></tr>
       <tr><td>Claude returns an empty draft</td><td>Code check <code>empty</code>, redraft; two empties make a suggestion for Juno. Thinking is off so a short budget cannot be spent on it.</td><td>packages/engine/src/verify.ts</td></tr>
-      <tr><td>Voyage fails (vector or hybrid strategy)</td><td>The retriever falls back to full-text search; if retrieval still throws, the turn drafts with no chunks.</td><td>providers/voyage/persona-retriever.ts; packages/engine/src/turn.ts</td></tr>
+      <tr><td>Voyage fails (vector or hybrid strategy)</td><td>The retriever falls back to full-text search; if retrieval still throws, the turn drafts with no chunks.</td><td>packages/providers/src/voyage/persona-retriever.ts; packages/engine/src/turn.ts</td></tr>
       <tr><td>Pusher emit fails</td><td>Logged only. Bubbles still appear through <code>deliver_at</code> and the client's polling.</td><td>packages/engine/src/turn.ts · emitDelivery</td></tr>
       <tr><td>Memory extraction fails</td><td>Logged; the reply already went out.</td><td>packages/engine/src/turn.ts · finish</td></tr>
       <tr><td>Lease expires mid-turn (past <code>engine.lease_ms</code>, 30000)</td><td>The compare-and-set checks the lease token, not the expiry time. If the sweep cleared the lease or another trigger re-took it, the late commit matches no row and is recorded <code>superseded</code>, and the cost of its calls is lost. If nobody touched it, the late commit still lands.</td><td>packages/engine/src/lease.ts · commitTurn; packages/engine/src/sweep.ts</td></tr>
@@ -374,7 +374,7 @@ dl.gloss dd { margin: 0; }
   <h2>Where the docs disagree with the code</h2>
   <p>Found while drawing these diagrams. <code>docs/ARCHITECTURE.md</code> says otherwise in these places; the code is what runs.</p>
   <ul>
-    <li>The Ports table lists the production retriever as <code>providers/pg/fts-retriever.ts</code> and events as <code>providers/noop/events.ts</code>. <code>lib/host/deps.ts</code> wires <code>PersonaRetriever</code> (strategy from config) and Pusher's <code>defaultEvents()</code>.</li>
+    <li>The Ports table lists the production retriever as <code>packages/providers/src/pg/fts-retriever.ts</code> and events as <code>packages/providers/src/noop/events.ts</code>. <code>lib/host/deps.ts</code> wires <code>PersonaRetriever</code> (strategy from config) and Pusher's <code>defaultEvents()</code>.</li>
     <li>The failure table says "Push transport: none yet". Pusher is wired.</li>
     <li>The latency budget says "Debounce 2 s". The default is 250 ms (it replaced the fixed 2 s).</li>
     <li>Known gaps says retrieval is "keyword-only until the Voyage adapter replaces it". The adapter exists; full-text is only the seeded default strategy.</li>

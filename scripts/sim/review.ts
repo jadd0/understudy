@@ -13,7 +13,7 @@ import { db } from "@/db/client";
 import { messages, simRuns, turns } from "@/db/schema";
 import { getConfig } from "@/lib/config";
 import { flagsOf, REVIEW_QUESTIONS, replyUnits, type ChatLine } from "@/lib/sim/review";
-import { TypeSafeDecider } from "@/providers/typesafe/decider";
+import { TypeSafeDecider } from "@understudy/providers";
 
 function args() {
   const a = process.argv.slice(2);

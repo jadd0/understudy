@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DeciderUnavailable, TypeSafeNotConfigured, type Question } from "@understudy/engine";
-import { TypeSafeDecider } from "@/providers/typesafe/decider";
+import { TypeSafeDecider } from "./decider";
 
 const Q: Question[] = [
   { key: "a", prompt: "p", options: [{ key: "yes", label: "y" }, { key: "no", label: "n" }] },

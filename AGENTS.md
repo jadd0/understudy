@@ -21,8 +21,9 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
   conversation first.
 - **No literals for model ids, prices or floors.** They live in `config` rows read through
   `getConfig(key, creatorId?)`, which throws `ConfigMissing` rather than fall back to a code default. Every row and every code timing constant is listed in `docs/CONFIG.md`; `db/config-doc.test.ts` fails the gate when one is missing or its default differs.
-- **Providers** (Jev, Claude, Voyage, Stripe, Pusher) are reached through one adapter each under
-  `providers/`, injected into the code that uses them, and faked in tests.
+- **Providers** (Jev, Claude, Voyage, Stripe, Pusher) are reached through one adapter each, injected into the code
+  that uses them, and faked in tests. The engine's adapters live in `packages/providers` (`@understudy/providers`);
+  Stripe and Pusher, which serve the app's wallet and realtime, stay in `providers/`.
 - **Auth is Auth.js only.** Never hand-roll sessions, tokens or password handling.
 - Comments say what the code does and why. They never cite a decision, finding or PR number.
 
@@ -81,6 +82,7 @@ Every module lives in a domain folder; nothing sits loose in `lib/`. A folder's 
 | `lib/env/` | validated environment |
 | `lib/wallet/` | ledger, top-up, unlock, tip, cap, high-value score, money parsing |
 | `packages/engine/` | the engine as a workspace package (`@understudy/engine`): the message turn, its ports, retrieval over persona chunks, and the fakes behind `@understudy/engine/testing`. The app imports only the package entry |
+| `packages/providers/` | the adapters behind the engine's ports as a workspace package (`@understudy/providers`): Claude, Jev, failover, Postgres full-text and Voyage retrieval, a no-op event sink. It imports nothing from the app; retrievers take their database as a constructor argument |
 | `lib/host/` | the app's side of the engine's `HostPort` (`packages/engine/src/host.ts`): the database-backed `dbHost` over wallet, ledger, catalogue, unlocks and users |
 | `lib/conversations/` | conversation reads and human actions: takeover, hand-back, release |
 | `lib/ui/` | pure view logic shared by components (message grouping) |

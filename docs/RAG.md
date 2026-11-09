@@ -78,7 +78,7 @@ description, or a comment and her reply), so nothing is split mid-thought and no
 
 1. Reads `chunks.jsonl`, refuses held-out ids and duplicate chunk ids, and writes nothing on either.
 2. Embeds every chunk with **Voyage `voyage-4`** (`retrieval.voyage_model` config row), `input_type: "document"`,
-   `output_dimension: 1024`, through `providers/voyage/embed.ts`.
+   `output_dimension: 1024`, through `packages/providers/src/voyage/embed.ts`.
    - Batches are 100 texts, 21 s apart, with 5 retries 30 s apart on 429/5xx. These are the limits of a Voyage
      account with no payment method (3 requests and 10K tokens a minute).
    - The full load takes several minutes at those limits.
@@ -121,7 +121,7 @@ The three strategies (`packages/engine/src/retrieve.ts`):
 | `fts` | the query's alphanumeric terms, minus a short stopword list, OR-ed into `to_tsquery('simple', …)`; ranked by `ts_rank_cd`, top k | one indexed query |
 | `hybrid` | the top 20 of both, fused by reciprocal rank fusion (k = 60, score = Σ 1/(60 + rank)), top k | both of the above |
 
-The adapter is `providers/voyage/persona-retriever.ts` (`PersonaRetriever`), behind the engine's retriever port
+The adapter is `packages/providers/src/voyage/persona-retriever.ts` (`PersonaRetriever`), behind the engine's retriever port
 (`packages/engine/src/ports/retriever.ts`), so tests swap in a fake and no engine code knows which strategy runs.
 
 **Failure behaviour.**

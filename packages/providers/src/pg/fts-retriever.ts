@@ -1,9 +1,8 @@
-import type { Db } from "@/db/client";
-import { retrieveFts, type Chunk, type Retriever } from "@understudy/engine";
+import { retrieveFts, type Chunk, type EngineDb, type Retriever } from "@understudy/engine";
 
 /** The engine's default retriever: the Postgres full-text strategy of `retrieve` in the engine package, behind the retriever port. */
 export class FtsRetriever implements Retriever {
-  constructor(private readonly db: Db) {}
+  constructor(private readonly db: EngineDb) {}
 
   async retrieve(creatorId: string, query: string, k: number): Promise<readonly Chunk[]> {
     const hits = await retrieveFts(creatorId, query, k, {

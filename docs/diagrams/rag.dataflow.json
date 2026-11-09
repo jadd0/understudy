@@ -40,7 +40,7 @@
       "dot": "cyan",
       "title": "What Voyage is",
       "items": [
-        "An AI company that makes embedding models. We call its voyage-4 model over HTTP (providers/voyage/embed.ts).",
+        "An AI company that makes embedding models. We call its voyage-4 model over HTTP (packages/providers/src/voyage/embed.ts).",
         "An embedding model reads a piece of text and returns a fixed list of 1,024 numbers: a point on a map of meaning.",
         "It never writes or decides anything. It only turns text into numbers so meaning can be compared with maths."
       ]

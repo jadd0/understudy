@@ -8,7 +8,7 @@
 // `{ state, model, questions: { <id>: { type: "choice", instructions, criteria: { <option>: label } } } }`.
 // Response: `{ model, answers: { <id>: { type: "choice", choice, probabilities, confidence } },
 // usage: { input_tokens, output_tokens } }`. A port of the semantics of umbo's
-// providers/typesafe/decider.ts: 429 and 529 retry once after backoffMs, every other non-2xx
+// packages/providers/src/typesafe/decider.ts: 429 and 529 retry once after backoffMs, every other non-2xx
 // throws, and a choice outside the question's criteria or a missing answer is "malformed",
 // never defaulted. The model id is always passed in and must be a pinned version, not an alias.
 const ENDPOINT = "https://api.typesafe.ai/v1/systemone";

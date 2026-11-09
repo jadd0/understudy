@@ -49,7 +49,7 @@ describe("the engine package boundary", () => {
   });
 
   test("nothing outside the package imports a deep path inside it", () => {
-    const files = ["app", "lib", "scripts", "providers", "components", "db"].flatMap((d) => walk(d));
+    const files = ["app", "lib", "scripts", "providers", "components", "db", "packages/providers/src"].flatMap((d) => walk(d));
     expect(files.length).toBeGreaterThan(100);
     const offenders: string[] = [];
     let viaEntry = 0;
