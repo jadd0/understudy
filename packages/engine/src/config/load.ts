@@ -1,6 +1,6 @@
 import type { EngineCtx } from "../ctx";
 import { ConfigMissing, type ConfigRow } from "../ports/config";
-import { SAFETY_KEYS, type RouteCfg } from "../types";
+import { SAFETY_KEYS, TOGGLEABLE_CHECKS, type RouteCfg, type ToggleableCheck } from "../types";
 import type { Prices } from "../turn/cost";
 import type { HandoffSla } from "../conversation/handoff";
 
@@ -65,6 +65,7 @@ const KEYS = [
   "floor.intent",
   "floor.buy_intent_runner_up",
   ...SAFETY_KEYS.map((k) => `floor.safety.${k}`),
+  ...TOGGLEABLE_CHECKS.map((k) => `safety.${k}.enabled`),
   "pitch.min_gap_rounds",
   "pitch.fit_floor",
   "pitch.decline_window_minutes",
@@ -81,10 +82,26 @@ const OPTIONAL_KEYS = ["model.generate_fallback", "model.decide_fallback"];
 
 /** A creator can tune voice and pacing but never loosen safety: these keys are read from platform rows only. */
 export function isPlatformOnly(key: string): boolean {
-  return key.startsWith("floor.") || key.startsWith("platform.");
+  return key.startsWith("floor.") || key.startsWith("platform.") || key.startsWith("safety.");
 }
 
 const PRICE_PREFIX = "price.";
+
+const warned = new Set<string>();
+
+/** One warning per process for each distinct set of switched-off checks, naming every one. */
+function warnDisabled(disabled: readonly ToggleableCheck[]): void {
+  if (disabled.length === 0) return;
+  const names = [...disabled].sort().join(", ");
+  if (warned.has(names)) return;
+  warned.add(names);
+  console.warn(`understudy: safety checks switched off by the platform: ${names}. Disabling a check is the operator's responsibility.`);
+}
+
+/** Test hook: forget which sets have been warned about. */
+export function resetDisabledWarnings(): void {
+  warned.clear();
+}
 
 /**
  * The creator's row wins over the platform's, except for the platform-only keys, which are read from platform rows
@@ -141,6 +158,15 @@ export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId
   const floors = { intent: get<number>("floor.intent"), buyIntentRunnerUp: get<number>("floor.buy_intent_runner_up") } as RouteCfg["floors"];
   for (const k of SAFETY_KEYS) floors[k] = get<number>(`floor.safety.${k}`);
 
+  const enabled = {} as RouteCfg["enabled"];
+  for (const k of TOGGLEABLE_CHECKS) {
+    const v = get<unknown>(`safety.${k}.enabled`);
+    // A row that is not a plain boolean is a broken setting, never a quiet "off".
+    if (typeof v !== "boolean") throw new ConfigMissing(`safety.${k}.enabled`);
+    enabled[k] = v;
+  }
+  warnDisabled(TOGGLEABLE_CHECKS.filter((k) => !enabled[k]));
+
   return {
     jevModel,
     generateModel,
@@ -170,6 +196,7 @@ export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId
     supportEmail: get("platform.support_email"),
     sla: { creatorMinutes: get("escalation.creator_sla_minutes"), tsMinutes: get("escalation.ts_sla_minutes") },
     route: {
+      enabled,
       floors,
       minGapRounds: get("pitch.min_gap_rounds"),
       fitFloor: get("pitch.fit_floor"),

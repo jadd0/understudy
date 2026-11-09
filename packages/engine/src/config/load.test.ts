@@ -1,6 +1,6 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { ENGINE_CONFIG, RETRIEVAL_CONFIG, WALLET_CONFIG } from "@/db/seed";
-import { getConfig, loadEngineConfig } from "./load";
+import { getConfig, loadEngineConfig, resetDisabledWarnings } from "./load";
 import { ConfigMissing, type ConfigPort, type ConfigRow } from "../ports/config";
 
 const CREATOR = "00000000-0000-4000-8000-000000000001";
@@ -68,5 +68,62 @@ describe("engine config through the port", () => {
     // The fallback generator's model is priced too, so a turn it serves is costed at its own rows.
     expect(Object.keys(cfg.prices).sort()).toEqual([cfg.jevModel, cfg.generateModel, cfg.memoryModel, ENGINE_CONFIG["model.generate_fallback"] as string].filter((m, i, a) => a.indexOf(m) === i).sort());
     expect(cfg.prices[cfg.generateModel].input).toBe(ENGINE_CONFIG[`price.${cfg.generateModel}.input_per_mtok`]);
+  });
+});
+
+describe("safety toggles", () => {
+  const rows = (over: Record<string, unknown> = {}, extra: ConfigRow[] = []) => [
+    ...platformRows().filter((r) => !(r.key in over)),
+    ...Object.entries(over).map(([k, v]) => platform(k, v)),
+    ...extra,
+  ];
+  const warn = () => vi.spyOn(console, "warn").mockImplementation(() => {});
+
+  test("every check is on by default and warns nothing", async () => {
+    resetDisabledWarnings();
+    const spy = warn();
+    const cfg = await loadEngineConfig({ config: portOver(rows()) }, CREATOR);
+    expect(Object.values(cfg.route.enabled)).toEqual([true, true, true, true, true]);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  test("a creator row for safety.minor.enabled is ignored: the platform value wins", async () => {
+    const creatorOff: ConfigRow = { key: "safety.minor.enabled", value: false, creatorId: CREATOR };
+    const cfg = await loadEngineConfig({ config: portOver(rows({}, [creatorOff])) }, CREATOR);
+    expect(cfg.route.enabled.minor).toBe(true);
+    expect(await getConfig({ config: portOver(rows({}, [creatorOff])) }, "safety.minor.enabled", CREATOR)).toBe(true);
+    // the platform can switch it off, and a creator row cannot switch it back on or off differently
+    const spy = warn();
+    const off = await loadEngineConfig({ config: portOver(rows({ "safety.minor.enabled": false }, [{ ...creatorOff, value: true }])) }, CREATOR);
+    expect(off.route.enabled.minor).toBe(false);
+    spy.mockRestore();
+  });
+
+  test("a non-boolean row is a configuration error, never a quiet off", async () => {
+    for (const bad of ["false", 0, null]) {
+      await expect(loadEngineConfig({ config: portOver(rows({ "safety.threat.enabled": bad })) }, CREATOR), String(bad)).rejects.toBeInstanceOf(ConfigMissing);
+    }
+  });
+
+  test("a missing row throws ConfigMissing: there is no code default", async () => {
+    const without = platformRows().filter((r) => r.key !== "safety.self_harm.enabled");
+    await expect(loadEngineConfig({ config: portOver(without) }, CREATOR)).rejects.toBeInstanceOf(ConfigMissing);
+  });
+
+  test("the warning names every disabled check once per process for the same set", async () => {
+    resetDisabledWarnings();
+    const spy = warn();
+    const all = Object.fromEntries(["minor", "self_harm", "threat", "location_offplatform", "payment_dispute"].map((k) => [`safety.${k}.enabled`, false]));
+    const config = portOver(rows(all));
+    const cfg = await loadEngineConfig({ config }, CREATOR);
+    await loadEngineConfig({ config }, CREATOR);
+    expect(Object.values(cfg.route.enabled)).toEqual([false, false, false, false, false]);
+    expect(spy).toHaveBeenCalledTimes(1);
+    for (const k of ["minor", "self_harm", "threat", "location_offplatform", "payment_dispute"]) expect(String(spy.mock.calls[0][0])).toContain(k);
+    // a different set warns again
+    await loadEngineConfig({ config: portOver(rows({ "safety.minor.enabled": false })) }, CREATOR);
+    expect(spy).toHaveBeenCalledTimes(2);
+    spy.mockRestore();
   });
 });

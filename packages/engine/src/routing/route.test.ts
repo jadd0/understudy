@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vitest";
 import type { DeciderResult } from "../ports/decider";
-import { parseInbound, promoteBuyRunnerUp, route } from "./route";
+import { hardStopOf, parseInbound, promoteBuyRunnerUp, route } from "./route";
 import { INTENTS } from "../types";
 import { THREADS } from "../types";
-import { CFG, facts, jev, PITCHABLE } from "../testing/fixtures";
+import { CALM, CFG, facts, jev, PITCHABLE } from "../testing/fixtures";
 
 const r = (j = jev(), f = facts()) => route(j, f, CFG);
 
@@ -302,5 +302,44 @@ describe("a held chat that was just settled by policy", () => {
   test("suppression never softens a hard stop", () => {
     const stop = route(jev({ intent: "custom_request", p: { minor: 0.9 } }), facts({ holdSuppressed: true }), CFG);
     expect(stop).toMatchObject({ name: "hard_stop", reason: "minor" });
+  });
+});
+
+describe("route: switched-off safety checks", () => {
+  const off = (...keys: (keyof typeof CFG.enabled)[]) => ({ ...CFG, enabled: { ...CFG.enabled, ...Object.fromEntries(keys.map((k) => [k, false])) } });
+
+  test("a minor signal is a hard stop while the check is on and routes normally when it is off", () => {
+    const j = jev({ intent: "smalltalk", p: { minor: 0.9 } });
+    expect(route(j, facts(), CFG)).toMatchObject({ name: "hard_stop", reason: "minor" });
+    expect(route(j, facts(), off("minor"))).toMatchObject({ name: "reply" });
+  });
+
+  test("each toggle ignores only its own check", () => {
+    const signals = { minor: "minor", self_harm: "self_harm", threat: "threat", payment_dispute: "payment_dispute" } as const;
+    for (const [key, reason] of Object.entries(signals)) {
+      const j = jev({ p: { [key]: 0.99 } });
+      expect(route(j, facts(), CFG), key).toMatchObject({ name: "hard_stop", reason });
+      expect(route(j, facts(), off(key as keyof typeof CFG.enabled)).name, key).toBe("reply");
+      // the others stay on
+      const other = key === "minor" ? "threat" : "minor";
+      expect(route(jev({ p: { [other]: 0.99 } }), facts(), off(key as keyof typeof CFG.enabled)).name, key).toBe("hard_stop");
+    }
+  });
+
+  test("a disabled off-platform check gives no boundary line and no strike", () => {
+    const j = jev({ p: { location_offplatform: 0.99 } });
+    expect(route(j, facts(), CFG).name).toBe("boundary");
+    expect(route(j, facts(), off("location_offplatform")).name).toBe("reply");
+  });
+
+  test("with all five off the engine still routes, and hardship still shapes the pitch", () => {
+    const all = off("minor", "self_harm", "threat", "location_offplatform", "payment_dispute");
+    const j = jev({ p: { minor: 1, self_harm: 1, threat: 1, location_offplatform: 1, payment_dispute: 1, hardship: 0.9 } });
+    expect(route(j, facts(), all)).toMatchObject({ name: "reply", hardship: true });
+  });
+
+  test("hardStopOf with no enabled map treats every check as on", () => {
+    expect(hardStopOf({ ...CALM, minor: 0.9 }, CFG.floors)).toMatchObject({ reason: "minor" });
+    expect(hardStopOf({ ...CALM, minor: 0.9 }, CFG.floors, { minor: false })).toBeNull();
   });
 });

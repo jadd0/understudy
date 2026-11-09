@@ -22,6 +22,10 @@ export type Explicitness = (typeof EXPLICITNESS)[number];
 export const SAFETY_KEYS = ["minor", "self_harm", "threat", "location_offplatform", "payment_dispute", "hardship"] as const;
 export type SafetyKey = (typeof SAFETY_KEYS)[number];
 
+/** The checks a platform may switch off (`safety.<key>.enabled`); hardship only shapes the pitch and is not one. */
+export const TOGGLEABLE_CHECKS = ["minor", "self_harm", "threat", "location_offplatform", "payment_dispute"] as const;
+export type ToggleableCheck = (typeof TOGGLEABLE_CHECKS)[number];
+
 export const THREADS = ["answers_her", "same_topic", "new_topic", "returning", "still_typing"] as const;
 /** How the fan's new messages fit the chat so far; `unknown` when Jev's answer is missing or outside the options. */
 export type ThreadAnswer = (typeof THREADS)[number] | "unknown";
@@ -46,6 +50,8 @@ export interface JevIn {
 }
 
 export interface RouteCfg {
+  /** `safety.<key>.enabled`: a disabled check is neither asked of the decider nor routed on. Hardship is always on. */
+  enabled: Record<ToggleableCheck, boolean>;
   floors: Record<SafetyKey, number> & { intent: number; buyIntentRunnerUp: number };
   minGapRounds: number;
   /** An AI-initiated pitch needs `pitch_fit` at or above this. */

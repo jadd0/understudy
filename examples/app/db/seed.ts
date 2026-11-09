@@ -75,6 +75,11 @@ export const ENGINE_CONFIG: Record<string, unknown> = {
   "floor.safety.payment_dispute": 0.6,
   "floor.safety.hardship": 0.5,
   "floor.intent": 0.5,
+  "safety.minor.enabled": true,
+  "safety.self_harm.enabled": true,
+  "safety.threat.enabled": true,
+  "safety.location_offplatform.enabled": true,
+  "safety.payment_dispute.enabled": true,
   "floor.buy_intent_runner_up": 1, // off: no probability reaches 1, so nothing is promoted
   "pitch.min_gap_rounds": 5,
   "pitch.fit_floor": 0.58,

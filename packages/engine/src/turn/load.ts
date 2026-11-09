@@ -75,7 +75,7 @@ export async function readBatch(s: TurnState): Promise<Read> {
     const classified = await classifyInbound(s, batch, askFit);
 
     // A hard stop is never delayed; hardship alone does not hand the chat over, so it may wait.
-    const hardStop = hardStopOf(classified.jevIn.p, cfg.route.floors) !== null;
+    const hardStop = hardStopOf(classified.jevIn.p, cfg.route.floors, cfg.route.enabled) !== null;
     if (classified.jevIn.thread === "still_typing" && !hardStop && s.stillTypingReasks < cfg.foldInMax) {
       const more = await waitForMore(waitDeps, { ...waitOpts, canStart: s.budgetOk }, s.stats, state);
       if (more) {

@@ -41,6 +41,9 @@ and a hand-back. `--fake` swaps the model providers for scripted ones, so no mod
 - **Built to survive its vendors.** Each external service sits behind one adapter with a tested fallback: a second
   model when the drafting model is down, Claude when the classifier is down, full-text search when embeddings are
   down, polling when realtime is down ([continuity](docs/operations/CONTINUITY.md)).
+- **Switchable safety checks.** The five hard-stop checks (minor, self-harm, threat, meetup or off-platform, payment dispute)
+  are on by default. A platform can switch one off with `safety.<check>.enabled`; a creator never can, and the engine
+  logs a warning naming each one that is off. Doing so is the operator's responsibility ([safety](docs/safety/SAFETY.md)).
 - **Many creators, isolated.** Every row carries its creator; isolation tests prove no chunk, card, config row,
   catalogue item or memory crosses between two creators ([scaling](docs/operations/SCALING.md)).
 
@@ -142,7 +145,6 @@ The engine, both hosts and everything above are built and tested. In progress:
 - **Minimal mode:** Postgres and one model key, every other service optional.
 - **One-command onboarding:** `npx understudy init` from your own Instagram data export.
 - **Any creator in the app:** no demo creator in the code, plus a catalogue editor.
-- **Toggleable safety checks** per platform, on by default.
 - **A gateway adapter** for a self-hosted, OpenAI-compatible LLM gateway with per-creator budgets.
 - **npm packages** for the engine, providers and persona pipeline.
 

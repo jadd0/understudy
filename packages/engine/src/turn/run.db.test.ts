@@ -8,6 +8,7 @@ import { runTurn } from "./run";
 import { loadFacts } from "./facts";
 import { addMessage, getConversation, seedChat, setEngineConfig } from "../testing/db";
 import { ConfigMissing } from "@/lib/config";
+import type { ConfigPort } from "../ports/config";
 import { deferred, isMemoryCall, rig, setCreatorAi, world, YES } from "../testing/harness";
 
 const turnsOf = (conversationId: string) =>
@@ -316,6 +317,33 @@ describe("routing outcomes", () => {
     expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "minor" }]);
     expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_ts" });
     expect(r.emitted.map((e) => e.event)).toContain("message.created");
+  });
+
+  test("a platform that switches the minor check off asks no minor question and replies normally", async () => {
+    const w = await world({}, "im 15 lol");
+    const r = rig({ script: { minor: YES } });
+    // The platform row is overridden in this engine's config port, so no other test file sees the switch.
+    const config: ConfigPort = {
+      rows: async (q) => [...(await r.ctx.config.rows(q)).filter((row) => row.key !== "safety.minor.enabled"), { key: "safety.minor.enabled", value: false, creatorId: null }],
+    };
+    const out = await runTurn({ ...r.ctx, config }, w.conv.id);
+    expect(out).not.toMatchObject({ route: "hard_stop" });
+    expect(r.decider.calls.length).toBeGreaterThan(0);
+    for (const c of r.decider.calls) expect(c.keys).not.toContain("minor");
+    expect(r.decider.calls[0].keys).toContain("threat");
+    const [fan] = await db.select().from(users).where(eq(users.id, w.fan.id));
+    expect(fan.flaggedAt).toBeNull();
+    expect(await handoffsOf(w.conv.id)).toHaveLength(0);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai" && m.status === "sent").length).toBeGreaterThan(0);
+  });
+
+  test("a creator row cannot switch the minor check off: the hard stop still fires", async () => {
+    const w = await world({}, "im 15 lol");
+    await db.insert(config).values({ key: "safety.minor.enabled", value: false, creatorId: w.creator.id });
+    const r = rig({ script: { minor: YES } });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hard_stop", outcome: "hard_stop" });
+    expect(r.decider.calls[0].keys).toContain("minor");
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "minor" }]);
   });
 
   test("a threat: one line in her voice, then the flag and Trust & Safety", async () => {

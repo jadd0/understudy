@@ -1,5 +1,5 @@
 import type { Question } from "../ports/decider";
-import { EXPLICITNESS, INTENTS, SAFETY_KEYS, THREADS, type SafetyKey } from "../types";
+import { EXPLICITNESS, INTENTS, SAFETY_KEYS, THREADS, TOGGLEABLE_CHECKS, type SafetyKey, type ToggleableCheck } from "../types";
 
 const yesNo = (key: string, prompt: string): Question => ({
   key,
@@ -58,8 +58,13 @@ const INTENT_LABELS: Record<(typeof INTENTS)[number], string> = {
   custom_request: "The fan asks for custom content made just for him",
 };
 
+/** The checks a config switched off, in the engine's fixed order. */
+export function disabledChecks(enabled: Record<ToggleableCheck, boolean>): ToggleableCheck[] {
+  return TOGGLEABLE_CHECKS.filter((k) => !enabled[k]);
+}
+
 /** The first call: one state, every question the router needs. */
-export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boolean; paid?: boolean }): Question[] {
+export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boolean; paid?: boolean; disabled?: readonly ToggleableCheck[] }): Question[] {
   const qs: Question[] = [
     {
       key: "intent",
@@ -80,7 +85,7 @@ export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boole
         }[k],
       })),
     },
-    ...SAFETY_KEYS.map((k) => yesNo(k, k === "location_offplatform" && opts.paid ? LOCATION_OFFPLATFORM_PAID : SAFETY_PROMPTS[k])),
+    ...SAFETY_KEYS.filter((k) => !(opts.disabled as readonly string[] | undefined)?.includes(k)).map((k) => yesNo(k, k === "location_offplatform" && opts.paid ? LOCATION_OFFPLATFORM_PAID : SAFETY_PROMPTS[k])),
     THREAD_QUESTION,
   ];
   if (opts.pitchFit) qs.push(yesNo("pitch_fit", PITCH_FIT_PROMPT));

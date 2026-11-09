@@ -1,6 +1,7 @@
 import type { Facts, JevIn, RouteCfg } from "../types";
 
 export const CFG: RouteCfg = {
+  enabled: { minor: true, self_harm: true, threat: true, location_offplatform: true, payment_dispute: true },
   floors: {
     minor: 0.3,
     self_harm: 0.3,

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { inboundQuestions, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "./questions";
+import { disabledChecks, inboundQuestions, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "./questions";
 
 const prompt = (qs: { key: string; prompt: string }[], key: string) => qs.find((q) => q.key === key)?.prompt ?? "";
 
@@ -21,4 +21,14 @@ describe("engine questions", () => {
     expect(inbound).toContain("An invite to play an online game or do something online together is not");
   });
 
+
+  test("every safety question is asked by default and a disabled check's question is left out", () => {
+    const all = inboundQuestions({ offerResponse: false, pitchFit: false }).map((q) => q.key);
+    for (const k of ["minor", "self_harm", "threat", "location_offplatform", "payment_dispute", "hardship"]) expect(all).toContain(k);
+    const some = inboundQuestions({ offerResponse: false, pitchFit: false, disabled: ["minor", "threat"] }).map((q) => q.key);
+    expect(some).not.toContain("minor");
+    expect(some).not.toContain("threat");
+    expect(some).toEqual(all.filter((k) => k !== "minor" && k !== "threat"));
+    expect(disabledChecks({ minor: false, self_harm: true, threat: true, location_offplatform: false, payment_dispute: true })).toEqual(["minor", "location_offplatform"]);
+  });
 });
