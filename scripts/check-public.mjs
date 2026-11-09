@@ -24,7 +24,7 @@ export const ALLOW = [
   /^lib\/sim\/docs\.ts$/,
   /^lib\/engine\/questions\.ts$/,
   /^data\/sim\/personas\//,
-  /^scripts\/persona\/eval-persona\.mjs$/,
+  /^packages\/persona\/src\/eval-persona\.mjs$/,
   /^scripts\/(gate\.sh|kit-config\.mjs|verify-pr\.mjs)$/,
 ];
 
