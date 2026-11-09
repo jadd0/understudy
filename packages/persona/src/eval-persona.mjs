@@ -401,14 +401,14 @@ export function renderVersion(entry) {
     "|---|---|---|---|---|",
     ...rows,
     "",
-    `**Blind test** (${agg.blind.scored} judgements, ${agg.blind.errors} pairs with an error): the judge picked her real reply ${agg.blind.correct} of ${agg.blind.scored} times, accuracy **${pct(agg.blind.accuracy)}**, 95% Wilson interval ${interval(agg.blind.wilson95)}. Mean confidence ${agg.blind.mean_confidence ?? "n/a"}. The judge answered "A" ${pct(agg.blind.judge_answered_a_rate)} of the time; the bot was in position A ${pct(agg.blind.generated_in_a_rate)} of the time.${agg.blind.by_position ? ` Accuracy with the bot in A: ${pct(agg.blind.by_position.generated_in_a.accuracy)}; with the bot in B: ${pct(agg.blind.by_position.generated_in_b.accuracy)}.` : ""}`,
+    `**Blind test** (${agg.blind.scored} ${agg.blind.by_position ? "judgements" : "scored"}, ${agg.blind.errors} ${agg.blind.by_position ? "pairs with an error" : "errors"}): the judge picked her real reply ${agg.blind.correct} of ${agg.blind.scored} times, accuracy **${pct(agg.blind.accuracy)}**, 95% Wilson interval ${interval(agg.blind.wilson95)}. Mean confidence ${agg.blind.mean_confidence ?? "n/a"}. The judge answered "A" ${pct(agg.blind.judge_answered_a_rate)} of the time; the bot was in position A ${pct(agg.blind.generated_in_a_rate)} of the time.${agg.blind.by_position ? ` Accuracy with the bot in A: ${pct(agg.blind.by_position.generated_in_a.accuracy)}; with the bot in B: ${pct(agg.blind.by_position.generated_in_b.accuracy)}.` : ""}`,
     "",
     "| her reply length | scored | correct | accuracy | 95% interval |",
     "|---|---|---|---|---|",
     ...buckets,
     "",
     `Reading: ${readingOf(agg.blind)}`,
-    ...markerRows(agg.markers),
+    ...(agg.markers ? markerRows(agg.markers) : ["", "_This run predates the style draw and the both-order judging: the bot was written from the card alone and each pair was judged once. The next run replaces it._"]),
   ].join("\n");
 }
 

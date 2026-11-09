@@ -1,11 +1,18 @@
 import { describe, expect, test } from "vitest";
+import { readFileSync } from "node:fs";
 import { seededRandom } from "../testing/rng";
 import { drawLines, drawStyle, namesPet, parseRates, type StyleRates } from "./style-draw";
 
 const RATES: StyleRates = { signoff_x: 0.13, mate: 0.07, babe: 0.05, pet_name: 0.035, emoji: 0.2, pet: "biscuit" };
 
 describe("drawStyle", () => {
-  test("over 500 seeded draws each marker sits within 5 points of its rate", () => {
+  test("over 500 seeded draws each marker sits within 5 points of her measured rate", () => {
+    // her committed measured rates, read through the same parser the engine uses on the stored card
+    const style = JSON.parse(readFileSync(new URL("../../../../data/persona/bank/style.json", import.meta.url), "utf8")) as { markers: unknown };
+    const measured = parseRates(style.markers);
+    expect(measured).not.toBeNull();
+    const RATES = measured!;
+    expect(RATES.signoff_x).toBeGreaterThan(0.1);
     const rng = seededRandom(7);
     const draws = Array.from({ length: 500 }, () => drawStyle(RATES, "hey", rng));
     const share = (f: (d: (typeof draws)[number]) => boolean) => draws.filter(f).length / draws.length;
@@ -23,7 +30,7 @@ describe("drawStyle", () => {
   test("mate and babe are drawn at their own rates, one at a time", () => {
     const rates: StyleRates = { ...RATES, mate: 0.3, babe: 0.3 };
     const rng = seededRandom(13);
-    const draws = Array.from({ length: 500 }, () => drawStyle(rates, "hey", rng));
+    const draws = Array.from({ length: 2000 }, () => drawStyle(rates, "hey", rng));
     const share = (a: string | null) => draws.filter((d) => d.address === a).length / draws.length;
     expect(Math.abs(share("mate") - 0.3)).toBeLessThanOrEqual(0.05);
     expect(Math.abs(share("babe") - 0.3)).toBeLessThanOrEqual(0.05);

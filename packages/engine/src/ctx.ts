@@ -14,7 +14,7 @@ export interface Deps {
   retriever: Retriever;
   events: Events;
   clock: Clock;
-  /** Uniform in [0, 1); only the bubble gap uses it. Defaults to Math.random. */
+  /** Uniform in [0, 1); the bubble gap and the per-reply style draw use it. Defaults to Math.random. */
   random?: () => number;
 }
 
