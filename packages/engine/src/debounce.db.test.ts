@@ -22,7 +22,7 @@ describe("the fan-side debounce", () => {
       const body = bodies.shift();
       if (body) ids.push((await addMessage(w.conv.id, "fan", body)).id);
     };
-    expect(await processConversation(w.conv.id, r.deps)).toBe(1);
+    expect(await processConversation(r.ctx, w.conv.id)).toBe(1);
     const ts = await turnsOf(w.conv.id);
     expect(ts).toHaveLength(1);
     expect([...ts[0].inboundIds].sort()).toEqual([...ids].sort());
@@ -40,7 +40,7 @@ describe("the fan-side debounce", () => {
     r.onSleep.current = async () => {
       if (++n === 3) await setTyping(w.conv.id, false);
     };
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed" });
     expect(r.sleeps).toEqual([250, 250, 250]);
   });
 
@@ -48,7 +48,7 @@ describe("the fan-side debounce", () => {
     const w = await world({ "engine.debounce_max_ms": 1000 });
     await setTyping(w.conv.id, true);
     const r = rig();
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed" });
     expect(r.sleeps.reduce((a, b) => a + b, 0)).toBe(1000);
   });
 
@@ -62,7 +62,7 @@ describe("the fan-side debounce", () => {
     r.onSleep.current = async () => {
       if (inserted === null && r.decider.calls.length === 1) inserted = (await addMessage(w.conv.id, "fan", "just fired me lol")).id;
     };
-    expect(await processConversation(w.conv.id, r.deps)).toBe(1);
+    expect(await processConversation(r.ctx, w.conv.id)).toBe(1);
     expect(jevInboundCalls(r)).toHaveLength(2);
     const ts = await turnsOf(w.conv.id);
     expect(ts).toHaveLength(1);
@@ -73,7 +73,7 @@ describe("the fan-side debounce", () => {
   test("still_typing_no_growth_keeps_classification", async () => {
     const w = await world({ "engine.debounce_max_ms": 1000 }, "so basically my boss");
     const r = rig({ script: { thread: "still_typing" } });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed", route: "reply" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed", route: "reply" });
     expect(jevInboundCalls(r)).toHaveLength(1);
     expect(r.sleeps.reduce((a, b) => a + b, 0)).toBe(1000);
     const [t] = await turnsOf(w.conv.id);
@@ -83,7 +83,7 @@ describe("the fan-side debounce", () => {
   test("safety_fired_never_waits_for_still_typing", async () => {
     const w = await world({ "engine.debounce_max_ms": 1000 }, "ill find u and hurt u");
     const r = rig({ script: { thread: "still_typing", threat: YES } });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ route: "hard_stop" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hard_stop" });
     expect(r.sleeps).toEqual([250]);
   });
 
@@ -91,14 +91,14 @@ describe("the fan-side debounce", () => {
     const w = await world({ "engine.debounce_ms": 0 }, "so basically my boss");
     await setTyping(w.conv.id, true);
     const r = rig({ script: { thread: "still_typing" } });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed" });
     expect(r.sleeps).toEqual([]);
   });
 
   test("no_wait_or_fold_in_past_turn_budget", async () => {
     const w = await world({ "engine.turn_budget_ms": 0, "engine.debounce_max_ms": 1000 }, "so basically my boss");
     const r = rig({ script: { thread: "still_typing" } });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed" });
     // only the quiet loop slept: the still_typing wait never started
     expect(r.sleeps).toEqual([250]);
   });
@@ -108,7 +108,7 @@ describe("still_typing and hardship", () => {
   test("hardship alone does not skip the still_typing wait", async () => {
     const w = await world({ "engine.debounce_max_ms": 1000 }, "so basically my landlord");
     const r = rig({ script: { thread: "still_typing", hardship: YES } });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed" });
     expect(r.sleeps.reduce((a, b) => a + b, 0)).toBe(1000);
   });
 });
@@ -127,7 +127,7 @@ describe("fold-in", () => {
     const w = await world({}, "guess what happened today");
     const late = { id: null as string | null };
     const r = rig({ decider: lateMessageDuringVerify(w.conv.id, late), replies: ["tell me", "ooh what happened"] });
-    expect(await processConversation(w.conv.id, r.deps)).toBe(1);
+    expect(await processConversation(r.ctx, w.conv.id)).toBe(1);
     const ts = await turnsOf(w.conv.id);
     expect(ts).toHaveLength(1);
     expect(ts[0].inboundIds).toEqual([w.first.id, late.id]);
@@ -142,7 +142,7 @@ describe("fold-in", () => {
     const w = await world({ "engine.fold_in_max": 0 }, "guess what happened today");
     const late = { id: null as string | null };
     const r = rig({ decider: lateMessageDuringVerify(w.conv.id, late), replies: ["tell me", "ooh what happened"] });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed" });
     const ts = await turnsOf(w.conv.id);
     expect(ts[0].inboundIds).toEqual([w.first.id]);
     const [lateRow] = await db.select().from(messages).where(eq(messages.id, late.id!));

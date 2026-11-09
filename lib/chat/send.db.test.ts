@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, messages, turns, users } from "@/db/schema";
-import { processConversation } from "@understudy/engine";
 import { makeCreator, makeFan, setEngineConfig, makePersona, rig } from "@understudy/engine/testing";
 import { sendFanMessage, SendRefused } from "./send";
 
@@ -23,7 +22,7 @@ describe("sendFanMessage", () => {
     expect(tasks).toHaveLength(1);
 
     // the scheduled task builds production deps; run the same pipeline on fakes instead
-    expect(await processConversation(out.conversationId, r.deps)).toBe(1);
+    expect(await r.chatter.processConversation(out.conversationId)).toBe(1);
     const rows = await db.select().from(messages).where(eq(messages.conversationId, out.conversationId));
     expect(rows.filter((m) => m.sender === "fan").map((m) => m.body)).toEqual(["hi juno"]);
     expect(rows.filter((m) => m.sender === "ai" && m.status === "sent")).toHaveLength(1);
@@ -93,7 +92,7 @@ describe("sendFanMessage", () => {
     const first = await sendFanMessage(fan.id, creator.id, "hi", "c-h1", () => {});
     await db.update(conversations).set({ mode: "human_creator" }).where(eq(conversations.id, first.conversationId));
     const second = await sendFanMessage(fan.id, creator.id, "still there?", "c-h2", () => {});
-    expect(await processConversation(second.conversationId, r.deps)).toBe(0);
+    expect(await r.chatter.processConversation(second.conversationId)).toBe(0);
     expect(await db.select().from(turns).where(eq(turns.conversationId, first.conversationId))).toHaveLength(0);
   });
 });

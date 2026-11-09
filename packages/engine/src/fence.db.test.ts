@@ -40,9 +40,9 @@ describe("the Jev input fence", () => {
     const r = rig();
     r.deps.decider = new TypeSafeDecider({ apiKey: "k", model: "jev-1.14.0", timeoutMs: 5000, backoffMs: 1, fetch: wire.impl });
 
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ route: "offer", outcome: "replied" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "replied" });
     await addMessage(w.conv.id, "fan", "what else do you have?");
-    await runTurn(w.conv.id, r.deps);
+    await runTurn(r.ctx, w.conv.id);
 
     // inbound classification, offer pick and draft verification all went through the real adapter
     expect(wire.bodies.length).toBeGreaterThanOrEqual(3);

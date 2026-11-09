@@ -1,4 +1,3 @@
-import { dbHost } from "@/lib/host/engine-host";
 import { randomUUID } from "node:crypto";
 import { asc, eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
@@ -63,7 +62,7 @@ describe("a tip with nothing new from him", () => {
     const w = await answeredWorld();
     const tip = await tipRow(w.conv.id, w.fan.id);
     const r = rig({ replies: ["omg thank u babe, that made my day"] });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed", route: "reply", outcome: "replied" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed", route: "reply", outcome: "replied" });
 
     const [, t] = await turnsOf(w.conv.id);
     // no fan message, so no latency sample for the analytics p50/p95
@@ -85,14 +84,14 @@ describe("a tip with nothing new from him", () => {
     expect(r.generator.calls.some(isMemoryCall)).toBe(false);
 
     // a second trigger finds nothing left to react to
-    expect(await runTurn(w.conv.id, rig().deps)).toEqual({ status: "idle" });
+    expect(await runTurn(rig().ctx, w.conv.id)).toEqual({ status: "idle" });
   });
 
   test("is skipped when a human owns the chat", async () => {
     const human = await answeredWorld();
     await tipRow(human.conv.id, human.fan.id);
     await db.update(conversations).set({ mode: "handoff_creator" }).where(eq(conversations.id, human.conv.id));
-    expect(await runTurn(human.conv.id, rig().deps)).toEqual({ status: "busy" });
+    expect(await runTurn(rig().ctx, human.conv.id)).toEqual({ status: "busy" });
   });
 
   test("is skipped during a hardship cooldown: no draft, the lease given back", async () => {
@@ -100,7 +99,7 @@ describe("a tip with nothing new from him", () => {
     await tipRow(cooling.conv.id, cooling.fan.id);
     await db.update(conversations).set({ noPitchUntil: sql`now() + interval '1 hour'` }).where(eq(conversations.id, cooling.conv.id));
     const r = rig();
-    expect(await runTurn(cooling.conv.id, r.deps)).toEqual({ status: "idle" });
+    expect(await runTurn(r.ctx, cooling.conv.id)).toEqual({ status: "idle" });
     expect(r.generator.calls).toHaveLength(0);
     expect((await getConversation(cooling.conv.id)).leaseToken).toBeNull();
   });
@@ -108,12 +107,12 @@ describe("a tip with nothing new from him", () => {
   test("is not pending once older than the window or once a human has written since", async () => {
     const stale = await answeredWorld();
     await tipRow(stale.conv.id, stale.fan.id, 2 * 3600);
-    expect(await loadEvents(stale.conv.id, 60, dbHost)).toEqual([]);
+    expect(await loadEvents(rig().ctx, stale.conv.id, 60)).toEqual([]);
 
     const answered = await answeredWorld();
     await tipRow(answered.conv.id, answered.fan.id, 3);
     await addMessage(answered.conv.id, "creator", "thank u so much!!", { ageSeconds: 1 });
-    expect(await loadEvents(answered.conv.id, 60, dbHost)).toEqual([]);
+    expect(await loadEvents(rig().ctx, answered.conv.id, 60)).toEqual([]);
   });
 });
 
@@ -122,7 +121,7 @@ describe("an unlock", () => {
     const w = await answeredWorld({ "pitch.min_gap_rounds": 0 });
     const o = await unlocked(w, w.itemA.id);
     const r = rig({ replies: ["sooo did u like the golden hour set?"] });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed", route: "reply" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed", route: "reply" });
     const [gen] = genCalls(r);
     expect(gen.system.turn).toContain(unlockLine("Golden hour"));
     expect(gen.messages.at(-1)).toEqual({ role: "user", content: "— he unlocked Golden hour —" });
@@ -131,8 +130,8 @@ describe("an unlock", () => {
     expect(t.jevIn).toMatchObject({ events: { tips: [], unlocks: [o.id] } });
     expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(1);
 
-    expect(await loadEvents(w.conv.id, 60, dbHost)).toEqual([]);
-    expect(await runTurn(w.conv.id, rig().deps)).toEqual({ status: "idle" });
+    expect(await loadEvents(rig().ctx, w.conv.id, 60)).toEqual([]);
+    expect(await runTurn(rig().ctx, w.conv.id)).toEqual({ status: "idle" });
   });
 });
 
@@ -142,7 +141,7 @@ describe("an event and a fan message together", () => {
     const tip = await tipRow(w.conv.id, w.fan.id, 3);
     const fan = await addMessage(w.conv.id, "fan", "got anything new for me?", { ageSeconds: 2 });
     const r = rig({ script: BUY, replies: ["aww thank u!! and maybe ;)"] });
-    expect(await processConversation(w.conv.id, r.deps)).toBe(1);
+    expect(await processConversation(r.ctx, w.conv.id)).toBe(1);
 
     const [, t] = await turnsOf(w.conv.id);
     expect(t).toMatchObject({ route: "reply", inboundIds: [fan.id], offerId: null });
@@ -170,7 +169,7 @@ describe("an event and a fan message together", () => {
       }
       return generate(input);
     };
-    expect(await processConversation(w.conv.id, r.deps)).toBe(1);
+    expect(await processConversation(r.ctx, w.conv.id)).toBe(1);
     const [t] = await turnsOf(w.conv.id);
     expect(t.jevOut).toEqual(expect.arrayContaining([{ folded: true }]));
     expect((t.jevIn as { events: { tips: string[] } }).events.tips).toHaveLength(1);
@@ -190,16 +189,16 @@ describe("offer outcomes in the prompt", () => {
     await ins(w.itemB.id, "declined");
     await ins(itemC.id, "open", "-1 minute");
     await ins(itemD.id, "open");
-    expect(await loadOfferOutcomes(w.conv.id, w.fan.id, 10, dbHost)).toEqual([
+    expect(await loadOfferOutcomes(rig().ctx, w.conv.id, w.fan.id, 10)).toEqual([
       { title: "Beach day", outcome: "open" },
       { title: "Night out", outcome: "expired" },
       { title: "Lazy Sunday", outcome: "declined" },
       { title: "Golden hour", outcome: "owned" },
     ]);
-    expect(await loadOfferOutcomes(w.conv.id, w.fan.id, 2, dbHost)).toHaveLength(2);
+    expect(await loadOfferOutcomes(rig().ctx, w.conv.id, w.fan.id, 2)).toHaveLength(2);
 
     const r = rig();
-    await runTurn(w.conv.id, r.deps);
+    await runTurn(r.ctx, w.conv.id);
     const turn = genCalls(r)[0].system.turn;
     expect(turn).toContain("- Golden hour: he unlocked it, he owns it");
     expect(turn).toContain("- Lazy Sunday: he passed on it");
@@ -216,7 +215,7 @@ describe("a buy intent when he owns everything", () => {
     // the personal chat is never AI-offered and does not count
     await makeItem(w.creator.id, { title: "Personal chat with Juno", kind: "personal", priceCents: 9999 });
     const r = rig({ script: { ...BUY, offer_pick: "o1" }, replies: ["u have all my sets babe, but golden hour is still my fave"] });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ route: "offer", outcome: "replied" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "replied" });
     const [offer] = await db.select().from(offers).where(eq(offers.conversationId, w.conv.id));
     expect(offer).toMatchObject({ itemId: w.itemA.id, status: "open" });
     const turn = genCalls(r)[0].system.turn;
@@ -234,7 +233,7 @@ describe("a buy intent when he owns everything", () => {
     const w = await world({ "pitch.min_gap_rounds": 0 }, "what else u got for me?");
     await own(w.fan.id, w.creator.id, w.itemA.id);
     const r = rig({ script: { ...BUY, offer_pick: "o1" }, replies: ["ooh lazy sunday is calling ur name"] });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ route: "offer" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer" });
     const [offer] = await db.select().from(offers).where(eq(offers.conversationId, w.conv.id));
     expect(offer.itemId).toBe(w.itemB.id);
     const turn = genCalls(r)[0].system.turn;
@@ -249,7 +248,7 @@ describe("a buy intent when he owns everything", () => {
     await own(w.fan.id, w.creator.id, w.itemB.id);
     await db.insert(offers).values({ conversationId: w.conv.id, itemId: w.itemA.id, priceCents: 999, status: "accepted", expiresAt: sql`now() + interval '1 hour'` });
     const r = rig({ script: { hardship: { value: "yes", probabilities: { yes: 0.95, no: 0.05 } } } });
-    await runTurn(w.conv.id, r.deps);
+    await runTurn(r.ctx, w.conv.id);
     const turn = genCalls(r)[0].system.turn;
     expect(turn).not.toContain("## What he has from you");
     expect(turn).not.toContain(OWNS_ALL_LINE);
@@ -257,7 +256,7 @@ describe("a buy intent when he owns everything", () => {
     // the next message is calm, but the cooldown is on
     await addMessage(w.conv.id, "fan", "anyway how was ur day");
     const r2 = rig();
-    await runTurn(w.conv.id, r2.deps);
+    await runTurn(r2.ctx, w.conv.id);
     const calm = genCalls(r2)[0].system.turn;
     expect(calm).toContain("- Golden hour: he unlocked it, he owns it");
     expect(calm).not.toContain(OWNS_ALL_LINE);
@@ -269,7 +268,7 @@ describe("a buy intent when he owns everything", () => {
     await own(w.fan.id, w.creator.id, w.itemB.id);
     // pacing blocks any pitch (no declines allowed), so the route is a plain reply
     const r = rig({ script: BUY });
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ route: "reply" });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "reply" });
     expect(genCalls(r)[0].system.turn).toContain(OWNS_ALL_LINE);
   });
 });
