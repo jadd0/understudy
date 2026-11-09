@@ -45,24 +45,14 @@ function fakeClaude({ blind = () => JSON.stringify({ author: "A", confidence: 0.
   };
 }
 
+/** A drafter that is only the card and the comment: the node tests cannot load the TypeScript engine (the engine path is tested in eval-persona.engine.test.ts). */
+const plainDrafter = async ({ pair, card }) => ({ system: card, prompt: `A fan commented: "${pair.replying_to}"`, draw: null, finish: (t) => t });
+
 const run = (bank, claude, extra = {}) =>
-  evalPersona({ bankDir: bank.bankDir, cardDir: bank.cardDir, version: 2, claude, genModel: "gen-x", judgeModel: "judge-x", seed: "s1", budget: new TokenBudget(), ...extra });
+  evalPersona({ bankDir: bank.bankDir, cardDir: bank.cardDir, version: 2, claude, genModel: "gen-x", judgeModel: "judge-x", seed: "s1", budget: new TokenBudget(), drafter: plainDrafter, ...extra });
 
-test("blind_sides_are_seeded_and_balanced", async () => {
-  const bank = makeBank({ test: 60 });
-  const one = await run(bank, fakeClaude());
-  const two = await run(bank, fakeClaude());
-  const sides = one.items.map((i) => i.generated_side);
-  assert.deepEqual(sides, two.items.map((i) => i.generated_side));
-  assert.equal(sides.length, 60);
-  const aCount = sides.filter((s) => s === "a").length;
-  assert.ok(aCount >= 20 && aCount <= 40, `a count ${aCount}`);
-  const other = await run(bank, fakeClaude(), { seed: "s2" });
-  assert.notDeepEqual(sides, other.items.map((i) => i.generated_side));
-});
-
-test("judge_never_receives_side_label", async () => {
-  const bank = makeBank();
+test("every pair is judged twice, once with the bot in each position", async () => {
+  const bank = makeBank({ test: 6 });
   const claude = fakeClaude();
   const result = await run(bank, claude);
   const blindCalls = claude.calls.filter((c) => c.system.startsWith("You are shown an Instagram comment"));
@@ -74,22 +64,26 @@ test("judge_never_receives_side_label", async () => {
     assert.equal(call.system, blindSystem("Juno"));
     assert.doesNotMatch(call.prompt, /@fan/);
   }
-  // The recorded side agrees with where the texts were actually placed.
+  assert.equal(result.items.length, 6);
   for (const item of result.items) {
-    const call = blindCalls.find((c) => c.prompt.includes(`COMMENT-test-${item.id.slice(4).replace(/^0+(?=\d)/, "")}\n`));
-    const [, a, b] = call.prompt.match(/REPLY A\n(.*)\n\nREPLY B\n(.*)$/s);
-    assert.equal(item.generated_side === "a" ? a : b, item.generated);
-    assert.equal(item.generated_side === "a" ? b : a, item.real);
+    assert.deepEqual(item.blind.map((b) => b.generated_side), ["a", "b"]);
+    // The recorded position agrees with where the texts were actually placed.
+    for (const j of item.blind) {
+      const call = blindCalls.find((c) => c.prompt.includes(`COMMENT-test-${item.id.slice(4).replace(/^0+(?=\d)/, "")}\n`) && c.prompt.match(/REPLY A\n(.*)\n/)[1] === (j.generated_side === "a" ? item.generated : item.real));
+      assert.ok(call, `${item.id} ${j.generated_side}`);
+    }
   }
+  assert.equal(result.aggregate.blind.scored, 12);
+  assert.equal(result.aggregate.blind.generated_in_a_rate, 0.5);
 });
 
-test("judge that always answers A lands near 50% and the A-rate shows it", async () => {
-  const bank = makeBank({ test: 60 });
-  const result = await run(bank, fakeClaude());
-  const { blind } = result.aggregate;
-  assert.equal(blind.scored, 60);
+test("a judge that always answers A is exactly at 50% and the position split shows it", async () => {
+  const bank = makeBank({ test: 20 });
+  const { blind } = (await run(bank, fakeClaude())).aggregate;
+  assert.equal(blind.scored, 40);
   assert.equal(blind.judge_answered_a_rate, 1);
-  assert.ok(blind.accuracy > 0.33 && blind.accuracy < 0.67, `accuracy ${blind.accuracy}`);
+  assert.equal(blind.accuracy, 0.5);
+  assert.deepEqual([blind.by_position.generated_in_a.accuracy, blind.by_position.generated_in_b.accuracy], [0, 1]);
   assert.ok(blind.wilson95.lower < 0.5 && blind.wilson95.upper > 0.5);
 });
 
@@ -122,6 +116,7 @@ test("malformed_judge_json_is_error_not_score", async () => {
     assert.equal(result.aggregate.blind.errors, 4);
     assert.equal(result.aggregate.blind.accuracy, null);
     assert.ok(result.items.every((i) => i.blind === null && i.blind_error === code), code);
+    assert.equal(result.aggregate.markers.n, 4);
     assert.equal(result.aggregate.rubric.scored, 4);
   }
   const badRubric = JSON.parse(goodRubric);
@@ -135,30 +130,65 @@ test("malformed_judge_json_is_error_not_score", async () => {
 
 test("aggregate_accuracy_and_rubric_means", () => {
   const rub = (v, f, p) => ({ voice: { score: v, reason: "r" }, fact_consistency: { score: f, reason: "r" }, natural_pitch: { score: p, reason: "r" } });
-  const item = (bucket, correct, choice, rubric) => ({ length_bucket: bucket, generated_side: "a", blind: correct === null ? null : { choice, confidence: 0.8, correct }, rubric });
+  const j = (side, correct, choice) => ({ generated_side: side, choice, confidence: 0.8, correct });
+  const item = (bucket, blind, rubric) => ({ length_bucket: bucket, blind, rubric, real: "r", generated: null });
   const agg = aggregate([
-    item("<=10", true, "B", rub(5, 4, "na")),
-    item("<=10", false, "A", rub(3, 4, 2)),
-    item("11-30", true, "B", rub(4, 4, 4)),
-    item(">30", true, "B", null),
-    item(">30", null, null, null),
+    item("<=10", [j("a", true, "B"), j("b", true, "A")], rub(5, 4, "na")),
+    item("<=10", [j("a", false, "A"), j("b", false, "B")], rub(3, 4, 2)),
+    item("11-30", [j("a", true, "B"), j("b", true, "A")], rub(4, 4, 4)),
+    item(">30", [j("a", true, "B"), j("b", false, "B")], null),
+    item(">30", null, null),
   ]);
-  assert.equal(agg.blind.scored, 4);
+  assert.equal(agg.blind.scored, 8);
   assert.equal(agg.blind.errors, 1);
-  assert.equal(agg.blind.correct, 3);
-  assert.equal(agg.blind.accuracy, 0.75);
-  assert.equal(agg.blind.judge_answered_a_rate, 0.25);
-  assert.deepEqual([agg.blind.by_length["<=10"].n, agg.blind.by_length["<=10"].accuracy, agg.blind.by_length[">30"].accuracy], [2, 0.5, 1]);
+  assert.equal(agg.blind.correct, 5);
+  assert.equal(agg.blind.accuracy, 0.625);
+  assert.equal(agg.blind.judge_answered_a_rate, 0.375);
+  assert.deepEqual([agg.blind.by_position.generated_in_a.accuracy, agg.blind.by_position.generated_in_b.accuracy], [0.75, 0.5]);
+  assert.deepEqual([agg.blind.by_length["<=10"].n, agg.blind.by_length["<=10"].accuracy, agg.blind.by_length[">30"].accuracy], [4, 0.5, 0.5]);
   assert.equal(agg.rubric.scored, 3);
   assert.deepEqual(agg.rubric.criteria.voice, { n: 3, na: 0, mean: 4, distribution: { 1: 0, 2: 0, 3: 1, 4: 1, 5: 1 } });
   assert.deepEqual([agg.rubric.criteria.natural_pitch.n, agg.rubric.criteria.natural_pitch.na, agg.rubric.criteria.natural_pitch.mean], [2, 1, 3]);
+  assert.equal(agg.markers, null);
+});
+
+test("per-marker rates are computed for her real replies and the bot's, beside her train rates", () => {
+  const item = (real, generated) => ({ length_bucket: "<=10", blind: null, rubric: null, real, generated });
+  const train = { signoff_x: 0.13, mate: 0.07 };
+  const { markers } = aggregate(
+    [item("night x", "night mate x"), item("ok", "hi mate x"), item("lol 😂", "hey mate"), item("fine", "Visit Brighton Pier"), item("skipped", null)],
+    { pet: "biscuit", train },
+  );
+  assert.equal(markers.n, 4);
+  assert.deepEqual(markers.rates.signoff_x, { train: 0.13, real: 0.25, bot: 0.5 });
+  assert.deepEqual(markers.rates.mate, { train: 0.07, real: 0, bot: 0.75 });
+  assert.deepEqual(markers.rates.emoji, { train: null, real: 0.25, bot: 0 });
+  assert.equal(markers.rates.concrete_fact.bot, 0.25);
+});
+
+test("an item that errors is tried once more, and only once", async () => {
+  const bank = makeBank({ test: 3 });
+  let blindCalls = 0;
+  const flaky = fakeClaude({
+    blind: () => {
+      blindCalls++;
+      return blindCalls <= 2 ? "not json" : JSON.stringify({ author: "A", confidence: 0.7, reason: "x" });
+    },
+  });
+  const result = await run(bank, flaky);
+  // the first item failed on its first pass (both orders), then both orders passed on the retry
+  assert.ok(result.items.every((i) => i.blind_error === null && i.blind.length === 2));
+  const always = fakeClaude({ blind: () => "not json" });
+  const failed = await run(bank, always);
+  assert.ok(failed.items.every((i) => i.blind === null && i.blind_error === "not_json"));
+  assert.equal(always.calls.filter((c) => c.system.startsWith("You are shown")).length, 3 * 2 * 2);
 });
 
 test("an emoji-only real reply lands in the shortest bucket and is reported there", async () => {
   const bank = makeBank({ test: 3, realFor: () => "😂" });
   const result = await run(bank, fakeClaude());
   assert.ok(result.items.every((i) => i.length_bucket === "<=10"));
-  assert.equal(result.aggregate.blind.by_length["<=10"].n, 3);
+  assert.equal(result.aggregate.blind.by_length["<=10"].n, 6);
   assert.equal(result.aggregate.blind.by_length[">30"].n, 0);
   assert.equal(result.aggregate.blind.by_length[">30"].accuracy, null);
 });
@@ -179,7 +209,7 @@ test("an interrupted run resumes from the cache without paying again", async () 
   const bank = makeBank();
   const cacheDir = join(bank.dir, "cache");
   const first = await run(bank, fakeClaude(), { cacheDir });
-  assert.equal(first.tokens_this_run.calls, 36);
+  assert.equal(first.tokens_this_run.calls, 48);
   const never = { complete: async () => assert.fail("a cached call was paid for again") };
   const budget = new TokenBudget();
   const second = await run(bank, never, { cacheDir, budget });
@@ -188,7 +218,7 @@ test("an interrupted run resumes from the cache without paying again", async () 
   // A different judge model is a different key: nothing is reused.
   const claude = fakeClaude();
   await run(bank, claude, { cacheDir, judgeModel: "judge-y" });
-  assert.equal(claude.calls.length, 24);
+  assert.equal(claude.calls.length, 36);
 });
 
 test("writes_evals_section_between_markers_only", async () => {
@@ -216,7 +246,7 @@ test("writes_evals_section_between_markers_only", async () => {
   assert.equal(persona.summary_card_version, 2);
   assert.deepEqual(persona.rubric, { voice: 4, fact_consistency: 5 });
   assert.deepEqual(Object.keys(persona.blindTest).sort(), ["accuracy", "high", "low", "n"]);
-  assert.equal(persona.blindTest.n, 6);
+  assert.equal(persona.blindTest.n, 12);
   assert.equal(persona.versions["1"].gen_model, "gen-y");
   assert.equal(persona.versions["2"].gen_model, "gen-x");
   text = readFileSync(evalsPath, "utf8");

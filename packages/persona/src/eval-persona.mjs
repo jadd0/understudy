@@ -1,8 +1,10 @@
 // Persona evals on the TEST split, which nothing else reads: for each of her held-out reply pairs,
-// Claude (--gen-model) writes a reply with the card as its system prompt, then Claude (--judge-model)
+// Claude (--gen-model) writes a reply through the engine's own prompt path (card, retrieved train
+// lines, this reply's style draw, then the draw's edge clean-up), then Claude (--judge-model)
 //   1. scores that reply 1-5 on voice, fact consistency and natural pitch (rubric judge), and
-//   2. is shown her real reply and the generated one, unlabelled in seeded random order, and says
-//      which one is hers (blind test).
+//   2. is shown her real reply and the generated one, unlabelled, once in each order, and says
+//      which one is hers (blind test). Accuracy is over all judgements; position bias is reported.
+// Per-marker rates (sign-off x, mate, ...) are reported for her real replies and the bot's.
 // Results go to docs/evals/persona.json and between the persona markers of docs/EVALS.md.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -10,7 +12,8 @@ import { BudgetExceeded, isMain, loadEnvFile, parseArgs, readJson, readJsonl, se
 import { createClaude } from "./lib/claude.mjs";
 import { histogram, lengthBucket, LENGTH_BUCKETS, mean, wilson } from "./lib/stats.mjs";
 import { capitalise } from "./draft-card.mjs";
-import { cardSummary, cleanReply, generateReply } from "./rapid-eval.mjs";
+import { measureMarkers, petFromProfile } from "./style.mjs";
+import { cardSummary, cleanReply } from "./rapid-eval.mjs";
 
 export const RUBRIC_CRITERIA = ["voice", "fact_consistency", "natural_pitch"];
 export const MARKERS = { start: "<!-- persona:start -->", end: "<!-- persona:end -->" };
@@ -118,7 +121,68 @@ function makeCache(dir) {
 
 const errorCode = (error) => error?.code ?? error?.name ?? "unknown";
 
-export async function evaluateItem({ pair, generatedSide, card, summary, claude, genModel, judgeModel, budget, personaName, cached }) {
+const STOP = new Set("a an and are as at be but by for from get got had has have he her him his how i i'm if in is it it's its me my no not of on or our she so that the their them they this to up was we were what when where who why with you your you're".split(" "));
+const words = (text) => (text.toLowerCase().match(/[\p{L}\p{N}']+/gu) ?? []).filter((w) => w.length > 1 && !STOP.has(w));
+
+/** Chunks the engine may retrieve for her: nothing from the validation or test splits. */
+export function trainChunks(bankDir) {
+  return readJsonl(join(bankDir, "chunks.jsonl")).filter((c) => c.split !== "test" && c.split !== "validation");
+}
+
+/**
+ * The k chunks sharing the most (inverse-frequency weighted) words with the query, ties by id. A lexical stand-in for
+ * the engine's retriever so the eval needs neither a database nor embeddings.
+ */
+export function retrieveChunks(chunks, query, k = 5) {
+  const docs = chunks.map((c) => ({ c, set: new Set(words(c.text)) }));
+  const df = new Map();
+  for (const d of docs) for (const w of d.set) df.set(w, (df.get(w) ?? 0) + 1);
+  const q = [...new Set(words(query))];
+  return docs
+    .map((d) => ({ c: d.c, score: q.reduce((sum, w) => sum + (d.set.has(w) ? Math.log(1 + docs.length / df.get(w)) : 0), 0) }))
+    .filter((x) => x.score > 0)
+    .sort((x, y) => y.score - x.score || (x.c.id < y.c.id ? -1 : 1))
+    .slice(0, k)
+    .map((x) => ({ id: x.c.id, text: x.c.text }));
+}
+
+/**
+ * The drafter that goes through the engine: its prompt builder with the card, retrieved lines and this comment's
+ * style draw, and its edge clean-up on the reply. Loaded on first use because the engine is TypeScript source: run it
+ * under tsx (the npm script does).
+ */
+export async function engineDrafter({ card, rates, chunks, seed }) {
+  const engine = await import("@understudy/engine");
+  const parsed = engine.parseRates(rates);
+  return async ({ pair }) => {
+    const draw = parsed ? engine.drawStyle(parsed, pair.replying_to, seededRng(`${seed}:draw:${pair.id}`)) : null;
+    const built = engine.buildPrompt({
+      cardBody: card,
+      neverList: [],
+      chunks: retrieveChunks(chunks, pair.replying_to),
+      profile: { interests: [], dislikes: [] },
+      route: { name: "reply", hardship: false, alert: false },
+      offer: null,
+      history: [{ id: pair.id, sender: "fan", body: pair.replying_to, createdAt: new Date(0) }],
+      thread: "unknown",
+      sessionGapMs: null,
+      historyRounds: 10,
+      gapMarkerMinutes: 30,
+      styleDraw: draw && parsed ? { draw, pet: parsed.pet } : undefined,
+    });
+    return {
+      system: `${built.system.cached}\n\n${built.system.turn}`,
+      prompt: built.messages.map((m) => m.content).join("\n\n"),
+      draw,
+      finish: (text) => (draw ? engine.enforceDraw(text, draw) : text),
+    };
+  };
+}
+
+/** The retry-once wrapper: an item with any error is run again; the cache replays what already succeeded. */
+const hasError = (item) => Boolean(item.rubric_error || item.blind_error);
+
+export async function evaluateItem({ pair, card, summary, claude, genModel, judgeModel, budget, personaName, cached, drafter }) {
   const real = cleanReply(pair.text);
   const base = {
     id: pair.id,
@@ -127,21 +191,26 @@ export async function evaluateItem({ pair, generatedSide, card, summary, claude,
     real,
     length_bucket: lengthBucket(real),
     generated: null,
-    generated_side: generatedSide,
+    draw: null,
     rubric: null,
     rubric_error: null,
     blind: null,
     blind_error: null,
   };
   let generated;
+  let draw = null;
   try {
-    generated = await cached({ stage: "gen", model: genModel, card: sha16(card), comment: pair.replying_to }, () =>
-      generateReply({ claude, model: genModel, card, comment: pair.replying_to, budget }),
-    );
+    const prepared = await drafter({ pair, card });
+    draw = prepared.draw ?? null;
+    generated = await cached({ stage: "gen", model: genModel, request: sha16(`${prepared.system}\n${prepared.prompt}`), draw }, async () => {
+      const gen = await claude.complete({ model: genModel, system: prepared.system, prompt: prepared.prompt, maxTokens: 300 });
+      budget.addClaude(gen.usage);
+      return prepared.finish(cleanReply(gen.text));
+    });
     if (real === "" || generated === "") throw new JudgeOutputError("empty_reply");
   } catch (error) {
     if (error instanceof BudgetExceeded) throw error;
-    return { ...base, generated: generated ?? null, rubric_error: errorCode(error), blind_error: errorCode(error) };
+    return { ...base, generated: generated ?? null, draw, rubric_error: errorCode(error), blind_error: errorCode(error) };
   }
 
   const judge = async (stage, system, prompt, parse) => {
@@ -153,53 +222,85 @@ export async function evaluateItem({ pair, generatedSide, card, summary, claude,
     return verdict;
   };
 
-  const [a, b] = generatedSide === "a" ? [generated, real] : [real, generated];
-  const [rubric, blind] = await Promise.allSettled([
+  // Both orders for every pair: the bot is A once and B once, so a judge that favours a position cancels out.
+  const orders = ["a", "b"];
+  const [rubric, ...blinds] = await Promise.allSettled([
     judge("rubric", rubricSystem(personaName), rubricPrompt({ summary, comment: pair.replying_to, reply: generated }), parseRubric),
-    judge("blind", blindSystem(personaName), blindPrompt({ comment: pair.replying_to, a, b }), parseBlind),
+    ...orders.map((generatedSide) => {
+      const [a, b] = generatedSide === "a" ? [generated, real] : [real, generated];
+      return judge("blind", blindSystem(personaName), blindPrompt({ comment: pair.replying_to, a, b }), parseBlind);
+    }),
   ]);
-  for (const outcome of [rubric, blind]) if (outcome.status === "rejected" && outcome.reason instanceof BudgetExceeded) throw outcome.reason;
+  for (const outcome of [rubric, ...blinds]) if (outcome.status === "rejected" && outcome.reason instanceof BudgetExceeded) throw outcome.reason;
 
-  const item = { ...base, generated };
+  const item = { ...base, generated, draw };
   if (rubric.status === "fulfilled") item.rubric = rubric.value;
   else item.rubric_error = errorCode(rubric.reason);
-  if (blind.status === "fulfilled") {
-    const realSide = generatedSide === "a" ? "B" : "A";
-    item.blind = { choice: blind.value.author, confidence: blind.value.confidence, reason: blind.value.reason, correct: blind.value.author === realSide };
-  } else item.blind_error = errorCode(blind.reason);
+  const failed = blinds.find((o) => o.status === "rejected");
+  if (failed) item.blind_error = errorCode(failed.reason);
+  else {
+    item.blind = blinds.map((o, i) => {
+      const generatedSide = orders[i];
+      const realSide = generatedSide === "a" ? "B" : "A";
+      return { generated_side: generatedSide, choice: o.value.author, confidence: o.value.confidence, reason: o.value.reason, correct: o.value.author === realSide };
+    });
+  }
   return item;
 }
 
-const accuracyOf = (items) => {
-  const correct = items.filter((i) => i.blind.correct).length;
-  return { n: items.length, correct, accuracy: items.length ? Math.round((correct / items.length) * 10000) / 10000 : null, wilson95: wilson(correct, items.length) };
+const rate4 = (n, d) => (d ? Math.round((n / d) * 10000) / 10000 : null);
+
+const accuracyOf = (judgements) => {
+  const correct = judgements.filter((j) => j.correct).length;
+  return { n: judgements.length, correct, accuracy: rate4(correct, judgements.length), wilson95: wilson(correct, judgements.length) };
 };
 
-export function aggregate(items) {
-  const blindItems = items.filter((i) => i.blind);
+const MARKER_KEYS = ["signoff_x", "mate", "babe", "pet_name", "emoji", "concrete_fact"];
+
+/** Marker rates for her real replies and the bot's on the same items, and her train rates if given. */
+function markerTable(items, { pet = null, train = null } = {}) {
+  const both = items.filter((i) => i.generated);
+  if (both.length === 0) return null;
+  const real = measureMarkers(both.map((i) => i.real), pet);
+  const bot = measureMarkers(both.map((i) => i.generated), pet);
+  return {
+    n: both.length,
+    rates: Object.fromEntries(MARKER_KEYS.map((k) => [k, { train: train?.[k] ?? null, real: real[k], bot: bot[k] }])),
+  };
+}
+
+export function aggregate(items, markerOptions = {}) {
+  // One judgement per order per pair; `blind` is null on an item whose judge call failed.
+  const judgements = items.flatMap((i) => (i.blind ?? []).map((b) => ({ ...b, length_bucket: i.length_bucket })));
   const rubricItems = items.filter((i) => i.rubric);
   const rubric = {};
   for (const key of RUBRIC_CRITERIA) {
     const scores = rubricItems.map((i) => i.rubric[key].score).filter((s) => s !== "na");
     rubric[key] = { n: scores.length, na: rubricItems.length - scores.length, mean: mean(scores), distribution: histogram(scores) };
   }
-  const bucketOf = (name) => accuracyOf(blindItems.filter((i) => i.length_bucket === name));
+  const bucketOf = (name) => accuracyOf(judgements.filter((j) => j.length_bucket === name));
+  const answeredA = judgements.filter((j) => j.choice === "A").length;
+  const inA = judgements.filter((j) => j.generated_side === "a");
+  const inB = judgements.filter((j) => j.generated_side === "b");
   return {
     n_items: items.length,
     rubric: { scored: rubricItems.length, errors: items.length - rubricItems.length, criteria: rubric },
     blind: {
-      scored: blindItems.length,
-      errors: items.length - blindItems.length,
-      ...accuracyOf(blindItems),
-      judge_answered_a_rate: blindItems.length ? Math.round((blindItems.filter((i) => i.blind.choice === "A").length / blindItems.length) * 10000) / 10000 : null,
-      generated_in_a_rate: items.length ? Math.round((items.filter((i) => i.generated_side === "a").length / items.length) * 10000) / 10000 : null,
-      mean_confidence: mean(blindItems.map((i) => i.blind.confidence)),
+      scored: judgements.length,
+      errors: items.filter((i) => !i.blind).length,
+      ...accuracyOf(judgements),
+      judge_answered_a_rate: rate4(answeredA, judgements.length),
+      generated_in_a_rate: rate4(inA.length, judgements.length),
+      // Accuracy with the bot in A against with the bot in B: a gap is a position bias in the judge.
+      by_position: { generated_in_a: accuracyOf(inA), generated_in_b: accuracyOf(inB) },
+      mean_confidence: mean(judgements.map((j) => j.confidence)),
       by_length: Object.fromEntries(LENGTH_BUCKETS.map((name) => [name, bucketOf(name)])),
     },
+    markers: markerTable(items, markerOptions),
   };
 }
 
-export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude, genModel, judgeModel, seed, budget, personaName, concurrency = 4, limit = null }) {
+export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude, genModel, judgeModel, seed, budget, personaName, concurrency = 4, limit = null, drafter = null }) {
   const card = readFileSync(join(cardDir, `v${version}.md`), "utf8");
   const splits = readJson(join(bankDir, "splits.json"));
   const profile = readJson(join(bankDir, "profile.json"));
@@ -208,9 +309,11 @@ export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude,
   let pairs = stableSort(readJsonl(join(bankDir, "replies.jsonl")).filter((r) => testIds.has(r.id)), (r) => r.id);
   if (pairs.length === 0) throw new Error("no test pairs");
 
-  // Sides are drawn up front, in id order, so they do not depend on call timing.
-  const rng = seededRng(`${seed}:blind`);
-  const sides = pairs.map(() => (rng() < 0.5 ? "a" : "b"));
+  const styleFile = join(bankDir, "style.json");
+  const markers = existsSync(styleFile) ? readJson(styleFile).markers ?? null : null;
+  const pet = markers?.pet ?? petFromProfile(profile);
+  // The engine path is the default; a test or a caller may inject another drafter.
+  const draftWith = drafter ?? (await engineDrafter({ card, rates: markers, chunks: trainChunks(bankDir), seed }));
   if (limit) {
     pairs = pairs.slice(0, limit);
   }
@@ -222,7 +325,10 @@ export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude,
   async function worker() {
     while (next < pairs.length) {
       const i = next++;
-      items[i] = await evaluateItem({ pair: pairs[i], generatedSide: sides[i], card, summary, claude, genModel, judgeModel, budget, personaName: name, cached });
+      const args = { pair: pairs[i], card, summary, claude, genModel, judgeModel, budget, personaName: name, cached, drafter: draftWith };
+      items[i] = await evaluateItem(args);
+      // An errored item is tried once more; the cache replays what already succeeded, so only the failure is paid for.
+      if (hasError(items[i])) items[i] = await evaluateItem(args);
     }
   }
   await Promise.all(Array.from({ length: concurrency }, worker));
@@ -234,8 +340,9 @@ export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude,
     seed,
     card_sha: sha16(card),
     split: "test",
+    path: markers ? "engine prompt, retrieval over train chunks, style draw" : "engine prompt, retrieval over train chunks, no style draw (no markers in style.json)",
     tokens_this_run: { total: budget.used, claude_input: budget.claudeInput, claude_output: budget.claudeOutput, calls: budget.calls },
-    aggregate: aggregate(items),
+    aggregate: aggregate(items, { pet, train: markers }),
     items,
   };
 }
@@ -255,6 +362,21 @@ export function readingOf(blind) {
   const thin = LENGTH_BUCKETS.filter((name) => blind.by_length[name].n > 0 && blind.by_length[name].n < 20);
   if (thin.length) lines.push(`Buckets with fewer than 20 items (${thin.join(", ")}) have wide intervals and should not be read on their own.`);
   return lines.join(" ");
+}
+
+const MARKER_LABELS = { signoff_x: 'sign-off "x"', mate: '"mate"', babe: '"babe"', pet_name: "pet's name", emoji: "emoji", concrete_fact: "concrete fact (price or place)" };
+
+/** The per-marker table: her train rate, her real test replies, the bot's. Empty when the run recorded none. */
+function markerRows(markers) {
+  if (!markers) return [];
+  return [
+    "",
+    `**Voice markers** (share of replies using each, over the ${markers.n} pairs with a generated reply):`,
+    "",
+    "| marker | her train replies | her test replies | the bot |",
+    "|---|---|---|---|",
+    ...Object.entries(markers.rates).map(([key, r]) => `| ${MARKER_LABELS[key] ?? key} | ${pct(r.train)} | ${pct(r.real)} | ${pct(r.bot)} |`),
+  ];
 }
 
 export function renderVersion(entry) {
@@ -279,13 +401,14 @@ export function renderVersion(entry) {
     "|---|---|---|---|---|",
     ...rows,
     "",
-    `**Blind test** (${agg.blind.scored} scored, ${agg.blind.errors} errors): the judge picked her real reply ${agg.blind.correct} of ${agg.blind.scored} times, accuracy **${pct(agg.blind.accuracy)}**, 95% Wilson interval ${interval(agg.blind.wilson95)}. Mean confidence ${agg.blind.mean_confidence ?? "n/a"}. The judge answered "A" ${pct(agg.blind.judge_answered_a_rate)} of the time; the bot was in position A ${pct(agg.blind.generated_in_a_rate)} of the time.`,
+    `**Blind test** (${agg.blind.scored} judgements, ${agg.blind.errors} pairs with an error): the judge picked her real reply ${agg.blind.correct} of ${agg.blind.scored} times, accuracy **${pct(agg.blind.accuracy)}**, 95% Wilson interval ${interval(agg.blind.wilson95)}. Mean confidence ${agg.blind.mean_confidence ?? "n/a"}. The judge answered "A" ${pct(agg.blind.judge_answered_a_rate)} of the time; the bot was in position A ${pct(agg.blind.generated_in_a_rate)} of the time.${agg.blind.by_position ? ` Accuracy with the bot in A: ${pct(agg.blind.by_position.generated_in_a.accuracy)}; with the bot in B: ${pct(agg.blind.by_position.generated_in_b.accuracy)}.` : ""}`,
     "",
     "| her reply length | scored | correct | accuracy | 95% interval |",
     "|---|---|---|---|---|",
     ...buckets,
     "",
     `Reading: ${readingOf(agg.blind)}`,
+    ...markerRows(agg.markers),
   ].join("\n");
 }
 
@@ -294,7 +417,7 @@ export function renderSection(persona) {
   return [
     "## Persona (rubric judge and blind test)",
     "",
-    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply with the card as its system prompt. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, in seeded random order, and says which is hers. Accuracy is the share of items where it picked hers; 50% means the two are indistinguishable. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.",
+    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.",
     "",
     "Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `.env.local`; interrupted runs resume from `data/persona/eval/cache/`).",
     "",

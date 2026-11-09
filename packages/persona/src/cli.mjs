@@ -74,7 +74,9 @@ export function main(argv, { out = console.log, err = console.error } = {}) {
     out(buildHelp());
     return 0;
   }
-  const run = spawnSync(process.execPath, [fileURLToPath(new URL(file, import.meta.url)), ...rest], { stdio: "inherit" });
+  // The persona eval drafts through the engine, which is TypeScript source: tsx loads it.
+  const loader = sub === "eval" ? ["--import", "tsx"] : [];
+  const run = spawnSync(process.execPath, [...loader, fileURLToPath(new URL(file, import.meta.url)), ...rest], { stdio: "inherit" });
   if (run.error) {
     err(`understudy-persona: could not start ${sub}`);
     return 1;
