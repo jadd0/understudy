@@ -77,6 +77,22 @@ describe("humanReply", () => {
     expect((await db.select().from(messages).where(eq(messages.conversationId, conv.id))).filter((x) => x.sender === "creator")).toHaveLength(1);
   });
 
+  test("a client id reused in another conversation is refused, not answered with the first one's message", async () => {
+    const r = rig();
+    const creator = await makeCreator();
+    const a = await makeConversation(creator.id, (await makeFan()).id);
+    const b = await makeConversation(creator.id, (await makeFan()).id);
+    const actor = creatorActor(creator.id);
+    await r.chatter.takeOver(a.id, actor);
+    await r.chatter.takeOver(b.id, actor);
+    const first = await r.chatter.humanReply(a.id, actor, "in a", { clientMsgId: "shared-id" });
+    r.emitted.length = 0;
+    await expect(r.chatter.humanReply(b.id, actor, "in b", { clientMsgId: "shared-id" })).rejects.toMatchObject({ code: "not_allowed" });
+    expect(r.emitted).toEqual([]);
+    expect(await db.select().from(messages).where(eq(messages.conversationId, b.id))).toHaveLength(0);
+    expect(first).toEqual(expect.any(String));
+  });
+
   test("refused when the actor does not hold the chat", async () => {
     const r = rig();
     const creator = await makeCreator();

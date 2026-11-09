@@ -84,7 +84,7 @@ export async function humanReply(
     const [held] = await tx
       .select({ id: messages.id })
       .from(messages)
-      .where(and(eq(messages.clientMsgId, clientMsgId!), eq(messages.senderUserId, actor.id)));
+      .where(and(eq(messages.conversationId, conversationId), eq(messages.clientMsgId, clientMsgId!), eq(messages.senderUserId, actor.id)));
     if (!held) throw new TakeoverRefused("not_allowed");
     return held.id;
   });

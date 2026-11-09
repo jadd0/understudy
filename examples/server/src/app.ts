@@ -11,7 +11,7 @@ export interface ServerOptions {
   bus: Bus;
   store: ServerStore;
   /** Fastify's logger; off by default. Errors are logged by class, never by message. */
-  logger?: boolean;
+  logger?: boolean | { level: string; stream: { write(line: string): void } };
 }
 
 declare module "fastify" {
@@ -50,6 +50,17 @@ export function buildServer(opts: ServerOptions): FastifyInstance {
     if (req.url === "/health") return;
     const m = /^Bearer (.+)$/.exec(req.headers.authorization ?? "");
     if (!m || !keyMatches(m[1], opts.apiKey)) return reply.code(401).send({ code: "unauthorized" });
+  });
+
+  // A server error's message can carry the query text and its parameters, which hold the fan's words: respond and log
+  // the class and code only. Client errors (validation, bad JSON) keep their own short messages.
+  app.setErrorHandler((error: Error & { statusCode?: number; code?: string }, req, reply) => {
+    const status = error.statusCode && error.statusCode >= 400 ? error.statusCode : 500;
+    if (status >= 500) {
+      req.log.error({ errorClass: error.name, code: error.code }, "request failed");
+      return reply.code(500).send({ code: "internal" });
+    }
+    return reply.code(status).send({ statusCode: status, error: error.name, code: error.code, message: error.message });
   });
 
   app.addHook("onClose", async () => {

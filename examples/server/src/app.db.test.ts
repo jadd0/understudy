@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { db } from "@/db/client";
 import { conversations, messages } from "@understudy/engine/schema";
 import { makeConversation } from "@understudy/engine/testing";
+import { buildServer } from "./app";
 import { FAKE_REPLIES } from "./providers";
 import { API_KEY, auth, testServer, type TestServer } from "./test-helpers";
 
@@ -64,6 +65,31 @@ describe("auth", () => {
     expect((await post("/v1/messages", body, { authorization: `Bearer ${wrong}` })).statusCode).toBe(401);
     expect((await post("/v1/messages", body)).statusCode).toBe(202);
     await s.app.idle();
+  });
+});
+
+describe("server errors", () => {
+  test("a failing engine call answers {code: internal} and neither the response nor the log carries the fan's words", async () => {
+    const secret = "SECRETBODY-" + crypto.randomUUID();
+    const lines: string[] = [];
+    const chatter = { ...s.chatter, handleMessage: async () => { throw new Error(`Failed query: insert into messages params: ${secret}`); } };
+    const app = buildServer({
+      chatter: chatter as typeof s.chatter,
+      apiKey: API_KEY,
+      bus: s.bus,
+      store: { isFlagged: async () => false, modeOf: async () => null },
+      logger: { level: "info", stream: { write: (l: string) => void lines.push(l) } },
+    });
+    const res = await app.inject({ method: "POST", url: "/v1/messages", headers: auth, payload: { creatorId: s.creatorId, fanId: crypto.randomUUID(), body: secret, clientMsgId: "c-1" } });
+    expect(res.statusCode).toBe(500);
+    expect(res.json()).toEqual({ code: "internal" });
+    expect(res.body).not.toContain(secret);
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.some((l) => l.includes("request failed"))).toBe(true);
+    expect(lines.join("")).not.toContain(secret);
+    // Client errors keep their own responses.
+    expect((await app.inject({ method: "POST", url: "/v1/messages", headers: auth, payload: { creatorId: "x" } })).statusCode).toBe(400);
+    await app.close();
   });
 });
 
