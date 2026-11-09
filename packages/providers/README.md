@@ -22,7 +22,7 @@ Retrievers take their database as a constructor argument; no adapter reads a mod
 ## Configuration
 
 The adapters read no settings of their own. The host reads the rows and passes the values in. The app's
-`lib/host/deps.ts` builds the failover pair from `jev.model`, the decide and draft fallback models, and the breaker
+`examples/app/lib/host/deps.ts` builds the failover pair from `jev.model`, the decide and draft fallback models, and the breaker
 rows `breaker.failures`, `breaker.window_ms` and `breaker.cooldown_ms`, and builds `PersonaRetriever` from
 `retrieval.strategy` and `retrieval.voyage_model`. Each row is described in the app's `docs/CONFIG.md`.
 

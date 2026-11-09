@@ -60,7 +60,7 @@ describe("the providers package boundary", () => {
   });
 
   test("nothing outside the package imports a deep path inside it", () => {
-    const files = ["app", "lib", "scripts", "providers", "components", "db", "examples", "packages/engine/src", "packages/persona/src"].flatMap((d) => walk(d));
+    const files = ["scripts", "examples", "packages/engine/src", "packages/persona/src"].flatMap((d) => walk(d));
     expect(files.length).toBeGreaterThan(100);
     const offenders: string[] = [];
     let viaEntry = 0;
@@ -84,7 +84,7 @@ describe("the providers package boundary", () => {
         return false;
       }
     };
-    expect(["anthropic", "typesafe", "failover", "pg", "voyage", "noop"].map((d) => `providers/${d}`).filter(exists)).toEqual([]);
-    expect(readdirSync(join(ROOT, "providers")).sort()).toEqual(["pusher", "stripe.ts"]);
+    expect(["anthropic", "typesafe", "failover", "pg", "voyage", "noop"].map((d) => `examples/app/providers/${d}`).filter(exists)).toEqual([]);
+    expect(readdirSync(join(ROOT, "examples/app/providers")).sort()).toEqual(["pusher", "stripe.ts"]);
   });
 });

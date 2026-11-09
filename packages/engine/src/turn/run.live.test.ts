@@ -11,7 +11,7 @@ import { dbHost } from "@/lib/host/engine-host";
 import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "../testing/db";
 import { runTurn } from "./run";
 
-loadEnv({ path: ".env.local", quiet: true });
+loadEnv({ path: "examples/app/.env.local", quiet: true });
 
 const MESSAGES = [
   "hey, i just found your page. you're so cute",

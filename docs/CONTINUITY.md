@@ -2,7 +2,7 @@
 
 Understudy runs on third parties. This is the one place that says what each one does here, how it can fail, what
 the product does when it does, and what is not covered. Every provider is reached through one adapter under
-`providers/` behind a port, so a fallback is another implementation of the same port and the engine does not change.
+`examples/app/providers/` behind a port, so a fallback is another implementation of the same port and the engine does not change.
 
 ![Failover behind the ports](diagrams/continuity.html)
 
@@ -14,11 +14,11 @@ the product does when it does, and what is not covered. Every provider is reache
 | Anthropic | writing replies and the per-fan memory; the decider fallback | replies stop unless a second model answers | `FailoverGenerator` over the primary and a fallback model; breaker per model | `packages/providers/src/failover/generator.test.ts`, `packages/providers/src/anthropic/generator.test.ts` |
 | TypeSafe (Jev) | reading each message and verifying each draft (choice questions) | every turn fails at the first question unless another decider answers | `FailoverDecider` falls through to `ClaudeDecider` | `packages/providers/src/failover/decider.test.ts`, `packages/providers/src/anthropic/decider.test.ts`, `packages/providers/src/failover/engine.db.test.ts` |
 | Voyage | embedding the fan's message for vector retrieval | none visible: retrieval falls back to full-text | full-text search over the same chunks | `packages/providers/src/voyage/persona-retriever.db.test.ts` |
-| Stripe | the only way money enters: wallet top-up | fans cannot top up; spending an existing balance is unaffected | none for top-up; the ledger is internal | `lib/wallet/topup.db.test.ts`, `lib/wallet/unlock.db.test.ts` |
-| Pusher | pushing "something changed" to open chats and consoles | live updates stop; the database is still the truth | clients poll and refetch | `providers/pusher/events.test.ts` |
-| Neon | the only database | everything stops | none in code: restore from a Neon backup branch | `db/config-doc.test.ts` (config and seed are reproducible from the repo) |
-| Resend | sign-in links by email | new sign-ins stop; signed-in sessions continue | demo seats sign in without email | `lib/auth/demo-seats.test.ts` |
-| Cloudflare Turnstile | bot check on the sign-in form | sign-in is refused (fail closed) | none, by design | `lib/auth/turnstile.test.ts` |
+| Stripe | the only way money enters: wallet top-up | fans cannot top up; spending an existing balance is unaffected | none for top-up; the ledger is internal | `examples/app/lib/wallet/topup.db.test.ts`, `examples/app/lib/wallet/unlock.db.test.ts` |
+| Pusher | pushing "something changed" to open chats and consoles | live updates stop; the database is still the truth | clients poll and refetch | `examples/app/providers/pusher/events.test.ts` |
+| Neon | the only database | everything stops | none in code: restore from a Neon backup branch | `examples/app/db/config-doc.test.ts` (config and seed are reproducible from the repo) |
+| Resend | sign-in links by email | new sign-ins stop; signed-in sessions continue | demo seats sign in without email | `examples/app/lib/auth/demo-seats.test.ts` |
+| Cloudflare Turnstile | bot check on the sign-in form | sign-in is refused (fail closed) | none, by design | `examples/app/lib/auth/turnstile.test.ts` |
 
 Failure modes common to all of them: an outage, a rate limit, an account or policy termination, a price change.
 A termination looks like an outage that does not end, so the fallback must be able to carry the load indefinitely;
@@ -41,7 +41,7 @@ a price change shows up in the per-turn cost the analytics already record.
 The failover wrappers are built once per server instance and reused across requests, so a breaker's failure count
 survives from one turn to the next; a cold instance starts with every breaker closed.
 
-The wiring is in `defaultDeps` (`lib/host/deps.ts`). Models and breaker thresholds are config rows:
+The wiring is in `defaultDeps` (`examples/app/lib/host/deps.ts`). Models and breaker thresholds are config rows:
 `model.decide_fallback`, `model.generate_fallback`, `breaker.failures`, `breaker.window_ms`, `breaker.cooldown_ms`
 (see [CONFIG.md](CONFIG.md)).
 
@@ -65,7 +65,7 @@ The wiring is in `defaultDeps` (`lib/host/deps.ts`). Models and breaker threshol
 - **How it fails.** Outage or overload (HTTP 5xx, 529), rate limit (429), account or policy termination (401/403
   that does not clear), or a price change.
 - **What happens today.** `FailoverGenerator([primary model, fallback model])` in `defaultDeps`
-  (`lib/host/deps.ts:defaultDeps`). The fallback is a second model on the same vendor
+  (`examples/app/lib/host/deps.ts:defaultDeps`). The fallback is a second model on the same vendor
   (`model.generate_fallback`), reached by the same adapter with the model replaced. When both fail the turn fails and
   is recorded as an error turn; the conversation stays in AI mode and the failure count hands over to a human at the
   limit (`packages/engine/src/turn/run.ts`).
@@ -120,15 +120,15 @@ The wiring is in `defaultDeps` (`lib/host/deps.ts`). Models and breaker threshol
 ## Stripe
 
 - **What it does here.** The only path money enters. A top-up creates a Checkout session or payment intent; the signed
-  webhook credits the wallet (`lib/wallet/topup.ts`, `app/api/webhooks/stripe/route.ts`).
+  webhook credits the wallet (`examples/app/lib/wallet/topup.ts`, `examples/app/app/api/webhooks/stripe/route.ts`).
 - **How it fails.** Outage, webhook delivery delay, account termination or a processor policy change. Adult-adjacent
   content is a category payment processors review closely, so termination is a real risk, not a remote one.
 - **What happens today.** Balances and unlocks are an internal prepaid ledger. After a top-up credits, spending
   (unlocks, tips) reads and writes the ledger only and never calls Stripe. If Stripe is down, fans cannot add funds
   and nothing else changes. Webhooks are idempotent, so a delayed redelivery credits once.
-- **Tests.** `lib/wallet/topup.db.test.ts` (the same event applied twice credits once);
-  `lib/wallet/unlock.db.test.ts` (unlocks charge the ledger).
-- **Seam for a second processor.** `StripeProvider` in `providers/stripe.ts` is the type the top-up path depends on;
+- **Tests.** `examples/app/lib/wallet/topup.db.test.ts` (the same event applied twice credits once);
+  `examples/app/lib/wallet/unlock.db.test.ts` (unlocks charge the ledger).
+- **Seam for a second processor.** `StripeProvider` in `examples/app/providers/stripe.ts` is the type the top-up path depends on;
   a second processor implements it and a webhook route that calls the same credit function.
 - **Not covered.** A second processor is not built (new vendor account). Money already in balances cannot be paid out
   or refunded through Stripe once the account is gone; that needs a manual process agreed with the processor on
@@ -140,9 +140,9 @@ The wiring is in `defaultDeps` (`lib/host/deps.ts`). Models and breaker threshol
   database is the truth and the client refetches.
 - **How it fails.** Outage or key revocation.
 - **What happens today.** Without Pusher keys, or when an event is overdue, `useRealtime`
-  (`components/chat/use-realtime.ts`) polls the same refetch on an interval. A failed emit is logged and
+  (`examples/app/components/chat/use-realtime.ts`) polls the same refetch on an interval. A failed emit is logged and
   never thrown (`packages/engine/src/turn/deliver.ts:emitDelivery`), so a Pusher outage does not fail a turn.
-- **Test.** `providers/pusher/events.test.ts` (keys come from the environment only when all four exist; the adapter
+- **Test.** `examples/app/providers/pusher/events.test.ts` (keys come from the environment only when all four exist; the adapter
   sends ids only, so a client that never hears an event loses nothing).
 - **Not covered.** Typing indicators are push-only and simply stop.
 
@@ -151,10 +151,10 @@ The wiring is in `defaultDeps` (`lib/host/deps.ts`). Models and breaker threshol
 - **What it does here.** The single Postgres database: ledger, conversations, config, persona chunks.
 - **How it fails.** Regional outage, account loss, accidental data loss.
 - **What happens today.** Everything stops; there is no second database. The one coupling is the connection string
-  (`DATABASE_URL`, read in `db/client.ts`), so recovery is a restore to a new Neon branch or project and a changed
+  (`DATABASE_URL`, read in `examples/app/db/client.ts`), so recovery is a restore to a new Neon branch or project and a changed
   string.
-- **Test.** `db/config-doc.test.ts` proves configuration is reproducible from the repo (seed and documented defaults
-  agree); the schema is reproducible from `drizzle/`.
+- **Test.** `examples/app/db/config-doc.test.ts` proves configuration is reproducible from the repo (seed and documented defaults
+  agree); the schema is reproducible from `examples/app/drizzle/`.
 - **Not covered.** No tested restore drill and no hot standby. The step is a scheduled restore into a scratch branch.
 
 ## Resend
@@ -162,17 +162,17 @@ The wiring is in `defaultDeps` (`lib/host/deps.ts`). Models and breaker threshol
 - **What it does here.** Sends the one-tap sign-in link.
 - **How it fails.** Outage, domain reputation problems, account termination.
 - **What happens today.** New sign-ins by email stop; existing database sessions keep working. Demo seats sign in
-  with a password check and no email (`lib/auth/demo-seats.ts`).
-- **Test.** `lib/auth/demo-seats.test.ts`.
+  with a password check and no email (`examples/app/lib/auth/demo-seats.ts`).
+- **Test.** `examples/app/lib/auth/demo-seats.test.ts`.
 - **Not covered.** Another email transport behind Auth.js's provider interface is the step; it needs a new account.
 
 ## Cloudflare Turnstile
 
 - **What it does here.** The bot check on the sign-in form, verified on the server before any email is sent
-  (`lib/auth/turnstile.ts`).
+  (`examples/app/lib/auth/turnstile.ts`).
 - **How it fails.** Outage or key revocation.
 - **What happens today.** It fails closed: a network error or non-2xx verifies as failed and sends nothing. Sign-in
   stops until it recovers; chat for signed-in fans is unaffected.
-- **Test.** `lib/auth/turnstile.test.ts`, "network error fails closed".
+- **Test.** `examples/app/lib/auth/turnstile.test.ts`, "network error fails closed".
 - **Not covered.** By design there is no fallback, because opening the form when the check is down would let bots
   mail-bomb through the sign-in route.

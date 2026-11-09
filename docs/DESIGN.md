@@ -5,7 +5,7 @@ Source: the founder's chat design, claude.ai/code/artifact/0e4e6819-e8dd-40a3-99
 reuses its tokens and components. A screen never introduces a colour, radius or font of
 its own: add a token here first.
 
-## Tokens (`app/globals.css` `@theme`)
+## Tokens (`examples/app/app/globals.css` `@theme`)
 
 | Token | Value | Use |
 |---|---|---|
@@ -28,7 +28,7 @@ its own: add a token here first.
 
 Avatar colour pairs (bg/fg) are the design's six, picked by a stable hash of the name.
 
-## Components (`components/ui/`)
+## Components (`examples/app/components/ui/`)
 
 | Component | From the design |
 |---|---|
@@ -39,15 +39,15 @@ Avatar colour pairs (bg/fg) are the design's six, picked by a stable hash of the
 | `chat/ThreadList` (320px sidebar, resizable 260-480, 72px header with a bottom rule, 20px title, 40px search, 48px avatars, tabs, rows with time, "typing…" preview, unread count and a status badge, the account block at the bottom) | yes; badge and tabs added for the console |
 | `chat/ResizableSidebar`, `chat/AccountMenu` | yes: a drag handle on the sidebar's right edge (`role="separator"`, arrow keys step 16, double-click or Home resets to 320, width kept per browser in `localStorage`); the account block opens a menu with the Dark mode switch and Sign out (Auth.js `signOut`), backdrop click or Escape closes it |
 | `chat/ChatHeader`, `chat/ChatIntro` | yes |
-| `chat/MessageList` + `TypingRow` | yes: hover time (desktop), "Seen"/"Sent" line, entrance animation, the yellow tip card; grouping in `lib/ui/group-messages.ts`, tip rows read by `lib/ui/tip-message.ts` (both tested) |
+| `chat/MessageList` + `TypingRow` | yes: hover time (desktop), "Seen"/"Sent" line, entrance animation, the yellow tip card; grouping in `examples/app/lib/ui/group-messages.ts`, tip rows read by `examples/app/lib/ui/tip-message.ts` (both tested) |
 | `chat/Composer` (pill, yellow Tip button while empty, filled Send with a draft) | yes |
-| `components/chat/TipSheet` (desktop popover, phone bottom sheet with scrim) | yes: preset chips from config; the note field's slot holds a custom amount, because the tip action carries no note |
+| `examples/app/components/chat/TipSheet` (desktop popover, phone bottom sheet with scrim) | yes: preset chips from config; the note field's slot holds a custom amount, because the tip action carries no note |
 | `chat/LockedCard` (paid message) | derived from the tokens: bubble radius, surface, ink button |
 | `Badge` (neutral, accent, ink; `badgeTone` picks one per inbox label) | derived: the thread-row chip, tokens only |
 | `Switch` (a submit button with `role="switch"`, no client script) | derived: the design's accent for on, `line-focus` for off |
 | `chat/ThreadList` `fullOnMobile` | the inbox index fills a phone; thread pages keep it desktop-only |
-| `components/chat/LiveThread` (client) | the fan chat reproduces the design; the same component hosts the console and admin thread with a takeover bar and suggested-reply card in the kit's surface and pill styles |
-| `components/console/Inbox` (server) | ThreadList with filter tabs All, Needs you, AI |
+| `examples/app/components/chat/LiveThread` (client) | the fan chat reproduces the design; the same component hosts the console and admin thread with a takeover bar and suggested-reply card in the kit's surface and pill styles |
+| `examples/app/components/console/Inbox` (server) | ThreadList with filter tabs All, Needs you, AI |
 | `skeleton.tsx` (`Skeleton`, `SkeletonLine`, `SkeletonAvatar`, `SkeletonRow(s)`, `SkeletonBubble`, `SkeletonField`, `SkeletonGroup`) | derived: surface-filled blocks in the kit's radii, see Loading states |
 | `icons.tsx` | the design's stroke icons, plus lock and wallet in the same style |
 
@@ -69,8 +69,8 @@ reuse the ThreadList tab pills, so no separate `Tabs` component was added.
 
 ## Dark mode, resize and motion
 
-- Dark mode: the account menu's switch toggles `dark` on `<html>`; the design's `.app.dark` values override the same token names in `app/globals.css`. The choice is in `localStorage` (`theme`) and a script in the root layout's `<head>` applies it before first paint, so there is no flash. Default light.
-- Sidebar width: 320 by default, 260 to 480, clamped by `lib/ui/sidebar-width.ts`. The width is the CSS variable `--sidebar-w` on `<html>`, set before paint from `localStorage` (`sidebar-width`), so the first paint is already at the stored width. Storage that throws leaves 320 and light.
+- Dark mode: the account menu's switch toggles `dark` on `<html>`; the design's `.app.dark` values override the same token names in `examples/app/app/globals.css`. The choice is in `localStorage` (`theme`) and a script in the root layout's `<head>` applies it before first paint, so there is no flash. Default light.
+- Sidebar width: 320 by default, 260 to 480, clamped by `examples/app/lib/ui/sidebar-width.ts`. The width is the CSS variable `--sidebar-w` on `<html>`, set before paint from `localStorage` (`sidebar-width`), so the first paint is already at the stored width. Storage that throws leaves 320 and light.
 - Tip panel and sheet: pop-in (about 500ms with a small overshoot) and pop-out (200ms popover, 220ms sheet); the panel stays mounted with `data-closing` until the out animation ends, content fades up, the Tip button bumps while the panel is open, the scrim fades out. Sending a tip closes the panel, and the tip card arrives with the thread refresh. The account menu pops in the same way (240ms in, 160ms out). Under `prefers-reduced-motion` the animations stop and the closing panel only fades.
 
 ## Loading states
@@ -79,7 +79,7 @@ Every signed-in page is streamed server rendering: the top bar, headings, frames
 once, and each section that reads the database sits in its own `<Suspense>` with a skeleton, streaming in when its
 query finishes. All data is still read on the server; there is no client fetching layer.
 
-- **Kit** (`components/ui/skeleton.tsx`): `bg-surface` blocks (`strong` = `line-2` on a surface card) in the kit's
+- **Kit** (`examples/app/components/ui/skeleton.tsx`): `bg-surface` blocks (`strong` = `line-2` on a surface card) in the kit's
   radii (`rounded-bubble`, `rounded-field`, `rounded-row`, `rounded-full`). They pulse (`animate-pulse`) and stand still
   under `prefers-reduced-motion`. Blocks are `aria-hidden`; each loading section is one `SkeletonGroup`
   (`aria-busy`, one sr-only "Loading …" status).

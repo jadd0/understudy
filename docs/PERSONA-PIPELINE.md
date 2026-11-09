@@ -91,7 +91,7 @@ Every stage is a script in `packages/persona/src/` with a CLI entry (`understudy
 
 | | |
 |---|---|
-| Script | `normalise.mjs`, `lib/anonymise.mjs` |
+| Script | `normalise.mjs`, `examples/app/lib/anonymise.mjs` |
 | In | `data/persona/raw/<handle>/` for every handle directory |
 | Out | `bank/captions.jsonl`, `bank/replies.jsonl`, `bank/profile.json`, `bank/normalise.meta.json` |
 
@@ -380,7 +380,7 @@ npx understudy-persona build --creator junovale \
   --card-model claude-opus-5-5 --gen-model claude-haiku-5-5 --jev-model jev-1.14.0
 ```
 
-Keys `CLAUDE_SECRET_KEY` and `TYPESAFE_SECRET_KEY` come from `.env.local`. Flags:
+Keys `CLAUDE_SECRET_KEY` and `TYPESAFE_SECRET_KEY` come from `examples/app/.env.local` (the `npm run persona:*` scripts load it; run on its own, the CLI reads `.env.local` in the working directory). Flags:
 
 | flag | default | meaning |
 |---|---|---|

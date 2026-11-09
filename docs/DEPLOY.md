@@ -17,7 +17,9 @@ a file in git.
 vercel link        # pick the scope, create or select the project, accept the detected Next.js preset
 ```
 
-`vercel.json` is already in the repo: the cron and the Stripe webhook's function limit (section 8).
+In the project's settings set **Root Directory** to `examples/app` and leave "Include source files outside of the Root Directory in the Build Step" on (the default): the app builds from the workspace packages under `packages/`. `examples/app/vercel.json` is already in the repo: the cron and the Stripe webhook's function limit (section 8), and its function paths are relative to that root directory.
+
+The app reads `data/sim/personas/` and `docs/evals/` relative to its working directory. Both sit outside the root directory, so check `/admin/sim` and `/analytics` on the first deploy: the sim page lists its personas and the dashboard reads its evals only if those files are traced into the deployment.
 
 ## 2. Create the production database
 
@@ -56,7 +58,7 @@ openssl rand -base64 32   # CRON_SECRET
 | `DEMO_SEAT_PASSWORD` | yes | pick one; shared by the creator and admin seats | optional, but without it the seats cannot sign in |
 
 `NEXT_PUBLIC_*` values are compiled into the client bundle at build time, so set them **before** the
-first deploy and redeploy after changing them. `.env.example` lists the same names with comments.
+first deploy and redeploy after changing them. `examples/app/.env.example` lists the same names with comments.
 
 Set each one for the Production environment (the command prompts for the value, so it never lands in
 shell history):
@@ -83,7 +85,7 @@ refuses an `sk_live_` Stripe key while the app is in test mode. Delete the scrat
 Stripe, test mode, Developers, Webhooks, **Add endpoint**:
 
 - URL: `https://<domain>/api/webhooks/stripe`
-- Events (exactly these three, the ones `lib/wallet/topup.ts` handles):
+- Events (exactly these three, the ones `examples/app/lib/wallet/topup.ts` handles):
   - `checkout.session.completed`
   - `checkout.session.async_payment_succeeded`
   - `checkout.session.async_payment_failed`
@@ -119,7 +121,7 @@ needs adding on the Pusher side. A separate app per environment is cleaner but n
 
 ## 8. Cron and function limits
 
-`vercel.json` schedules two crons:
+`examples/app/vercel.json` schedules two crons:
 
 | path | schedule | does |
 |---|---|---|
@@ -129,7 +131,7 @@ needs adding on the Pusher side. A separate app per environment is cleaner but n
 Vercel calls each with `Authorization: Bearer $CRON_SECRET`; both routes answer 401 without a matching
 `CRON_SECRET`, so the variable must be set. Leave `sim.enabled` false in production unless you mean to run sim fans there.
 
-**Hobby plan limit.** Hobby allows a cron to run at most once a day, and a `vercel.json` with a faster
+**Hobby plan limit.** Hobby allows a cron to run at most once a day, and an `examples/app/vercel.json` with a faster
 schedule makes the deploy fail. Either use Pro, or change the schedule to a daily one such as
 `"0 6 * * *"` for the demo. With a daily sweep, a turn that is interrupted is not retried for up to a
 day, so on Hobby treat the sweep as a safety net only and expect the occasional stuck reply. Trigger
@@ -143,14 +145,14 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://<domain>/api/cron/sweep
 
 - `/api/cron/sweep` exports `maxDuration = 60` in its route file.
 - `/chat` exports `maxDuration = 60` (fan sends run the turn after the response through `after()`).
-- `/api/webhooks/stripe` is set to 30 seconds in `vercel.json` (`functions`), covering the wallet
+- `/api/webhooks/stripe` is set to 30 seconds in `examples/app/vercel.json` (`functions`), covering the wallet
   transaction and a slow database wake-up.
 - `/admin` and `/console` actions also use `after()` for the turn; they declare no duration and take
   the platform default. Check Settings, Functions on the project if a human-sent reply ever gets cut off.
 
 ## 9. Database: migrate, seed, persona
 
-Run these from your machine against the production branch. The shell variable wins over `.env.local`,
+Run these from your machine against the production branch. The shell variable wins over `examples/app/.env.local`,
 so set it for this shell only and confirm the host before writing anything:
 
 ```bash
@@ -159,7 +161,7 @@ node -e 'console.log(new URL(process.env.DATABASE_URL).host)'   # must be the pr
 export SEED_CREATOR_EMAIL='<juno seat address>'
 export SEED_ADMIN_EMAILS='<admin1>,<admin2>'
 
-npm run db:migrate      # applies packages/engine/drizzle/, then drizzle/ ; then confirm: psql "$DATABASE_URL" -c '\dt'
+npm run db:migrate      # applies packages/engine/drizzle/, then examples/app/drizzle/ ; then confirm: psql "$DATABASE_URL" -c '\dt'
 npm run db:seed         # creator (handle junovale), admins, config rows, catalogue; safe to re-run
 ```
 
@@ -214,5 +216,5 @@ point at it, so set it to the URL that actually serves the app.
   Migrations here only add; they are not reversed by hand.
 - **Webhook misfire:** disable the endpoint in Stripe. Missed events can be resent from the event page;
   the unique event id prevents double credit.
-- **Cron flooding or wrong:** remove the `crons` entry from `vercel.json` and redeploy; the engine still
+- **Cron flooding or wrong:** remove the `crons` entry from `examples/app/vercel.json` and redeploy; the engine still
   runs each turn on send.

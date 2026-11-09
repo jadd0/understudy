@@ -11,7 +11,7 @@ Conventions used throughout:
 - Every file, function and table links to the code. Paths are relative to this file.
 - Config keys such as [`engine.debounce_ms`](CONFIG.md#engine-rounds-timing-delivery) are rows in the `config` table. Each links to its section of
   [CONFIG.md](CONFIG.md), which holds the default, the meaning and the file that reads it. The values quoted here are
-  the seeded defaults in [`db/seed.ts`](../db/seed.ts); a running database may have been tuned.
+  the seeded defaults in [`examples/app/db/seed.ts`](../examples/app/db/seed.ts); a running database may have been tuned.
 - Diagrams are PNG renders of the interactive viewers in [`docs/diagrams/`](diagrams/). Click one to open the viewer.
 
 ## Contents
@@ -53,9 +53,9 @@ There are three human actors and one machine actor.
 
 | Actor | Who | Signs in with | Lands on | What they do |
 |---|---|---|---|---|
-| **Fan** | Anyone who signs up | Emailed one-tap link (Resend) behind Turnstile | [`/chat`](../app/chat/page.tsx) | Chats with Juno, unlocks paid messages, tips, tops up a wallet at [`/wallet`](../app/wallet/page.tsx) |
-| **Juno** (role `creator`) | The creator | Shared demo seat: email + password + Turnstile | [`/console`](../app/console/%28inbox%29/page.tsx) | Reads the inbox, takes over a chat, edits and sends held drafts, sends offers, hands back to the AI, sets the never-list, prices and AI switches |
-| **Trust & Safety** (role `admin`) | Understudy staff | Shared demo seat, same way | [`/admin`](../app/admin/%28queue%29/page.tsx) | Works the safety queue across every conversation, takes over any chat, releases it, bans fans; can also open the creator console, analytics and the [fan simulator](#14-the-fan-simulator) |
+| **Fan** | Anyone who signs up | Emailed one-tap link (Resend) behind Turnstile | [`/chat`](../examples/app/app/chat/page.tsx) | Chats with Juno, unlocks paid messages, tips, tops up a wallet at [`/wallet`](../examples/app/app/wallet/page.tsx) |
+| **Juno** (role `creator`) | The creator | Shared demo seat: email + password + Turnstile | [`/console`](../examples/app/app/console/%28inbox%29/page.tsx) | Reads the inbox, takes over a chat, edits and sends held drafts, sends offers, hands back to the AI, sets the never-list, prices and AI switches |
+| **Trust & Safety** (role `admin`) | Understudy staff | Shared demo seat, same way | [`/admin`](../examples/app/app/admin/%28queue%29/page.tsx) | Works the safety queue across every conversation, takes over any chat, releases it, bans fans; can also open the creator console, analytics and the [fan simulator](#14-the-fan-simulator) |
 | **The AI** | The [message engine](#8-the-message-engine) | n/a | n/a | Answers in Juno's voice, pitches catalogue items, and hands the chat to a human when the rules say so |
 
 The fan never learns which replies were written by the AI unless he sincerely asks; then the AI says so in her voice,
@@ -79,17 +79,17 @@ layouts, the tip sheet, the dark theme, the account menu, the analytics pages an
 
 | Layer | Choice | Where |
 |---|---|---|
-| Web framework | Next.js 16 App Router, React 19, TypeScript strict | [`app/`](../app/), [`next.config.ts`](../next.config.ts) |
-| Styling | Tailwind 4, tokens from the founder's chat design | [`app/globals.css`](../app/globals.css), [`components/ui/`](../components/ui/), [DESIGN.md](DESIGN.md) |
-| Database | Neon Postgres with pgvector, through Drizzle ORM on `@neondatabase/serverless` (WebSocket `Pool`, so transactions are interactive) | [`db/schema.ts`](../db/schema.ts), [`db/client.ts`](../db/client.ts), [`drizzle/`](../drizzle/) |
-| Auth | Auth.js v5 (`next-auth@beta`) with the Resend email provider and the Drizzle adapter, database sessions | [`lib/auth/index.ts`](../lib/auth/index.ts) |
-| Bot defence | Cloudflare Turnstile on sign-in | [`lib/auth/turnstile.ts`](../lib/auth/turnstile.ts) |
+| Web framework | Next.js 16 App Router, React 19, TypeScript strict | [`examples/app/app/`](../examples/app/app/), [`examples/app/next.config.ts`](../examples/app/next.config.ts) |
+| Styling | Tailwind 4, tokens from the founder's chat design | [`examples/app/app/globals.css`](../examples/app/app/globals.css), [`examples/app/components/ui/`](../examples/app/components/ui/), [DESIGN.md](DESIGN.md) |
+| Database | Neon Postgres with pgvector, through Drizzle ORM on `@neondatabase/serverless` (WebSocket `Pool`, so transactions are interactive) | [`examples/app/db/schema.ts`](../examples/app/db/schema.ts), [`examples/app/db/client.ts`](../examples/app/db/client.ts), [`examples/app/drizzle/`](../examples/app/drizzle/) |
+| Auth | Auth.js v5 (`next-auth@beta`) with the Resend email provider and the Drizzle adapter, database sessions | [`examples/app/lib/auth/index.ts`](../examples/app/lib/auth/index.ts) |
+| Bot defence | Cloudflare Turnstile on sign-in | [`examples/app/lib/auth/turnstile.ts`](../examples/app/lib/auth/turnstile.ts) |
 | Classifier | TypeSafe Jev (`jev-1.14.0`) by REST | [`packages/providers/src/typesafe/decider.ts`](../packages/providers/src/typesafe/decider.ts) |
 | Reply model | Claude Haiku 5.5 through the official SDK | [`packages/providers/src/anthropic/generator.ts`](../packages/providers/src/anthropic/generator.ts) |
 | Embeddings | Voyage `voyage-4`, 1024 dimensions | [`packages/providers/src/voyage/`](../packages/providers/src/voyage/) |
-| Payments | Stripe test mode: Checkout and PaymentIntents, webhook credited | [`providers/stripe.ts`](../providers/stripe.ts) |
-| Realtime | Pusher Channels, private channels authorised by our session | [`providers/pusher/`](../providers/pusher/) |
-| Hosting | Vercel, with two per-minute crons | [`vercel.json`](../vercel.json) |
+| Payments | Stripe test mode: Checkout and PaymentIntents, webhook credited | [`examples/app/providers/stripe.ts`](../examples/app/providers/stripe.ts) |
+| Realtime | Pusher Channels, private channels authorised by our session | [`examples/app/providers/pusher/`](../examples/app/providers/pusher/) |
+| Hosting | Vercel, with two per-minute crons | [`examples/app/vercel.json`](../examples/app/vercel.json) |
 | Tests | vitest, against a per-branch Neon test database | [`vitest.config.mts`](../vitest.config.mts), [`scripts/test-db.mjs`](../scripts/test-db.mjs) |
 
 npm is the only package manager. The dependency list in [`package.json`](../package.json) is short on purpose: the
@@ -98,14 +98,14 @@ providers above, `drizzle-orm`, `next-auth`, `zod`, `ws` and nothing else at run
 ### Running it locally
 
 1. `npm install`.
-2. Create `.env.local`. [`lib/env/index.ts`](../lib/env/index.ts) is the schema: `DATABASE_URL`, `AUTH_SECRET`,
+2. Create `examples/app/.env.local`. [`examples/app/lib/env/index.ts`](../examples/app/lib/env/index.ts) is the schema: `DATABASE_URL`, `AUTH_SECRET`,
    `RESEND_API_KEY`, `EMAIL_FROM`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` are required; the
    provider keys (`CLAUDE_SECRET_KEY`, `TYPESAFE_SECRET_KEY`, `VOYAGE_API_KEY`, Stripe, Pusher) and the seat variables
    (`SEED_CREATOR_EMAIL`, `SEED_ADMIN_EMAILS`, `DEMO_SEAT_PASSWORD`) are optional to boot but needed for the features
-   that use them. `npm run check:env` ([`scripts/check-env.mjs`](../scripts/check-env.mjs)) checks a file and prints
+   that use them. `npm run check:env` ([`examples/app/scripts/check-env.mjs`](../examples/app/scripts/check-env.mjs)) checks a file and prints
    names only, never values.
-3. `npm run db:migrate` applies the engine's migrations ([`packages/engine/drizzle/`](../packages/engine/drizzle/)) and then the host's ([`drizzle/`](../drizzle/)); `npm run db:seed` writes the config rows, Juno's creator row
-   and catalogue, and the admin rows ([`db/seed.ts`](../db/seed.ts)). Re-running the seed never overwrites a config row
+3. `npm run db:migrate` applies the engine's migrations ([`packages/engine/drizzle/`](../packages/engine/drizzle/)) and then the host's ([`examples/app/drizzle/`](../examples/app/drizzle/)); `npm run db:seed` writes the config rows, Juno's creator row
+   and catalogue, and the admin rows ([`examples/app/db/seed.ts`](../examples/app/db/seed.ts)). Re-running the seed never overwrites a config row
    that already exists.
 4. Load and publish a persona: `npm run persona:load -- --creator junovale`, then
    `npm run persona:publish -- --creator junovale --card-version <N>`. The engine refuses to answer without a published
@@ -128,8 +128,8 @@ providers above, `drizzle-orm`, `next-auth`, `zod`, `ws` and nothing else at run
 
 ## 3. Architecture map
 
-The app is one Next.js project. Pages and server actions sit in `app/`; all domain logic sits in `lib/`, one folder per
-domain; every external service is reached through one adapter under `providers/`, behind an interface in
+The app is one Next.js project. Pages and server actions sit in `examples/app/app/`; all domain logic sits in `examples/app/lib/`, one folder per
+domain; every external service is reached through one adapter under `examples/app/providers/`, behind an interface in
 `packages/engine/src/ports/` where the engine needs to swap it for a fake in tests.
 
 ```mermaid
@@ -138,11 +138,11 @@ flowchart LR
     FanUI["Fan /chat, /wallet"]
     StaffUI["Juno /console · T&S /admin · /analytics"]
   end
-  subgraph App["app/ (pages, server actions, routes)"]
+  subgraph App["examples/app/app/ (pages, server actions, routes)"]
     Actions["server actions<br/>chat · wallet · console · admin · analytics · sim"]
     Routes["routes<br/>/api/auth · /api/webhooks/stripe<br/>/api/pusher/auth · /api/cron/*"]
   end
-  subgraph Lib["lib/ (domain logic)"]
+  subgraph Lib["examples/app/lib/ (domain logic)"]
     Auth[auth]
     Chat[chat]
     Engine[engine]
@@ -154,7 +154,7 @@ flowchart LR
     Evals[evals]
     Config[config]
   end
-  subgraph Providers["providers/ (adapters behind packages/engine/src/ports)"]
+  subgraph Providers["examples/app/providers/ (adapters behind packages/engine/src/ports)"]
     Jev["typesafe: Jev"]
     Claude["anthropic: Claude"]
     Voyage["voyage: embeddings"]
@@ -177,23 +177,23 @@ flowchart LR
 
 | Folder | Holds |
 |---|---|
-| [`app/`](../app/) | Routes. Fan: [`chat`](../app/chat/), [`wallet`](../app/wallet/), [`onboarding`](../app/onboarding/), [`signin`](../app/signin/), [`blocked`](../app/blocked/page.tsx). Staff: [`console`](../app/console/), [`admin`](../app/admin/), [`admin/sim`](../app/admin/sim/), [`analytics`](../app/analytics/). API: [`api/auth`](../app/api/auth/[...nextauth]/route.ts), [`api/webhooks/stripe`](../app/api/webhooks/stripe/route.ts), [`api/pusher/auth`](../app/api/pusher/auth/route.ts), [`api/cron/sweep`](../app/api/cron/sweep/route.ts), [`api/cron/sim`](../app/api/cron/sim/route.ts). Dev only: [`dev/ui-kit`](../app/dev/ui-kit/page.tsx) |
-| [`lib/auth/`](../lib/auth/) | Auth.js setup, route guards, age and onboarding, Turnstile, demo seats |
-| [`lib/chat/`](../lib/chat/) | The fan's send path and typing pings |
+| [`examples/app/app/`](../examples/app/app/) | Routes. Fan: [`chat`](../examples/app/app/chat/), [`wallet`](../examples/app/app/wallet/), [`onboarding`](../examples/app/app/onboarding/), [`signin`](../examples/app/app/signin/), [`blocked`](../examples/app/app/blocked/page.tsx). Staff: [`console`](../examples/app/app/console/), [`admin`](../examples/app/app/admin/), [`admin/sim`](../examples/app/app/admin/sim/), [`analytics`](../examples/app/app/analytics/). API: [`api/auth`](../examples/app/app/api/auth/[...nextauth]/route.ts), [`api/webhooks/stripe`](../examples/app/app/api/webhooks/stripe/route.ts), [`api/pusher/auth`](../examples/app/app/api/pusher/auth/route.ts), [`api/cron/sweep`](../examples/app/app/api/cron/sweep/route.ts), [`api/cron/sim`](../examples/app/app/api/cron/sim/route.ts). Dev only: [`dev/ui-kit`](../examples/app/app/dev/ui-kit/page.tsx) |
+| [`examples/app/lib/auth/`](../examples/app/lib/auth/) | Auth.js setup, route guards, age and onboarding, Turnstile, demo seats |
+| [`examples/app/lib/chat/`](../examples/app/lib/chat/) | The fan's send path and typing pings |
 | [`packages/engine/src/`](../packages/engine/src/) | The message turn: lease, debounce, Jev, routing, pacing, offers, prompt, verify, commit, sweep |
-| [`lib/conversations/`](../lib/conversations/) | Conversation reads (inbox, thread, snapshot), human controls (takeover, hand-back, release, reply, offers, settings), the windowing contract |
-| [`lib/wallet/`](../lib/wallet/) | Ledger, top-ups, unlocks, tips, daily cap, high-value score, welcome credit, uncredited payments |
+| [`examples/app/lib/conversations/`](../examples/app/lib/conversations/) | Conversation reads (inbox, thread, snapshot), human controls (takeover, hand-back, release, reply, offers, settings), the windowing contract |
+| [`examples/app/lib/wallet/`](../examples/app/lib/wallet/) | Ledger, top-ups, unlocks, tips, daily cap, high-value score, welcome credit, uncredited payments |
 | [`packages/engine/src/`](../packages/engine/src/) | Retrieval over persona chunks (full-text, vector, hybrid) |
-| [`lib/analytics/`](../lib/analytics/) | Every KPI query, the scope rules, the dashboard and the METRICS.md renderer |
-| [`lib/evals/`](../lib/evals/) | The engine eval: thread schema, runner, scorer, report |
-| [`lib/sim/`](../lib/sim/) | The fan simulator: personas, agent, guard, beats, run loop, spawn, reset, scoring, review |
-| [`lib/ui/`](../lib/ui/) | Pure view logic: message grouping, inbox badges, nav links, typing delay |
-| [`lib/config/`](../lib/config/index.ts), [`lib/env/`](../lib/env/index.ts) | `getConfig` and the validated environment |
+| [`examples/app/lib/analytics/`](../examples/app/lib/analytics/) | Every KPI query, the scope rules, the dashboard and the METRICS.md renderer |
+| [`examples/app/lib/evals/`](../examples/app/lib/evals/) | The engine eval: thread schema, runner, scorer, report |
+| [`examples/app/lib/sim/`](../examples/app/lib/sim/) | The fan simulator: personas, agent, guard, beats, run loop, spawn, reset, scoring, review |
+| [`examples/app/lib/ui/`](../examples/app/lib/ui/) | Pure view logic: message grouping, inbox badges, nav links, typing delay |
+| [`examples/app/lib/config/`](../examples/app/lib/config/index.ts), [`examples/app/lib/env/`](../examples/app/lib/env/index.ts) | `getConfig` and the validated environment |
 | [`packages/engine/src/ports/`](../packages/engine/src/ports/) | The seams the engine depends on: `Decider`, `Generator`, `Retriever`, `Events`, `Clock` |
-| [`providers/`](../providers/) | One adapter per service, plus fakes ([`packages/engine/src/testing/fakes/`](../packages/engine/src/testing/fakes/)) and a no-op event sink |
-| [`components/`](../components/) | The UI kit ([`ui/`](../components/ui/)), the chat islands ([`chat/`](../components/chat/)), the console inbox, charts |
-| [`db/`](../db/) | Schema, client, seed, test helpers |
-| [`drizzle/`](../drizzle/) | The host's migrations: extensions, one generated baseline, the ledger trigger |
+| [`examples/app/providers/`](../examples/app/providers/) | One adapter per service, plus fakes ([`packages/engine/src/testing/fakes/`](../packages/engine/src/testing/fakes/)) and a no-op event sink |
+| [`examples/app/components/`](../examples/app/components/) | The UI kit ([`ui/`](../examples/app/components/ui/)), the chat islands ([`chat/`](../examples/app/components/chat/)), the console inbox, charts |
+| [`examples/app/db/`](../examples/app/db/) | Schema, client, seed, test helpers |
+| [`examples/app/drizzle/`](../examples/app/drizzle/) | The host's migrations: extensions, one generated baseline, the ledger trigger |
 | [`packages/engine/drizzle/`](../packages/engine/drizzle/) | The engine's migrations, in their own table: extensions, one generated baseline, the `updated_at` triggers |
 | [`scripts/`](../scripts/) | Gate, test databases, persona pipeline, evals, sim CLI, metrics report, codemap |
 | [`data/`](../data/) | The persona bank and cards, eval threads, sim personas and lines |
@@ -210,13 +210,13 @@ expands the engine part.
 
 [![A fan message end to end](diagrams/png/engine-message.png)](diagrams/engine-message.html)
 
-1. **Typing.** While the fan types, the composer calls the [`pingTyping`](../app/chat/actions.ts) action at most every
-   `TYPING_PING_INTERVAL_MS` (2000 ms). [`markFanTyping`](../lib/chat/typing.ts) sets
-   `conversations.fan_typing_until` to now plus `TYPING_WINDOW_SECONDS` (3 s) ([`lib/chat/typing-window.ts`](../lib/chat/typing-window.ts)).
+1. **Typing.** While the fan types, the composer calls the [`pingTyping`](../examples/app/app/chat/actions.ts) action at most every
+   `TYPING_PING_INTERVAL_MS` (2000 ms). [`markFanTyping`](../examples/app/lib/chat/typing.ts) sets
+   `conversations.fan_typing_until` to now plus `TYPING_WINDOW_SECONDS` (3 s) ([`examples/app/lib/chat/typing-window.ts`](../examples/app/lib/chat/typing-window.ts)).
    The engine uses this to hold its turn while he is still writing.
-2. **Send.** The composer shows his bubble at once and calls [`sendMessage`](../app/chat/actions.ts) with a client
+2. **Send.** The composer shows his bubble at once and calls [`sendMessage`](../examples/app/app/chat/actions.ts) with a client
    message id. The action takes the fan id from the session, never from the client, finds the platform creator
-   ([`primaryCreator`](../lib/conversations/read.ts)), and calls [`sendFanMessage`](../lib/chat/send.ts).
+   ([`primaryCreator`](../examples/app/lib/conversations/read.ts)), and calls [`sendFanMessage`](../examples/app/lib/chat/send.ts).
 3. **Store.** `sendFanMessage` refuses an empty message, one over `MAX_MESSAGE_CHARS` (2000), a bad id, a user who is
    not a confirmed fan, and a fan restricted as a minor (`restricted`). It creates the conversation on the
    first message (one per creator and fan), inserts the message with `client_msg_id` unique so a retried send returns
@@ -229,11 +229,11 @@ expands the engine part.
 5. **Push.** After the commit the engine emits `typing` (with how long to hold the indicator) and one
    `message.created` per bubble on the conversation's private Pusher channel. Payloads carry ids and numbers only
    ([§12](#12-realtime-and-polling)).
-6. **Show.** The fan's [`LiveThread`](../components/chat/live-thread.tsx) refetches its snapshot. The server returns
+6. **Show.** The fan's [`LiveThread`](../examples/app/components/chat/live-thread.tsx) refetches its snapshot. The server returns
    only messages already due (`deliver_at` passed) plus the times of the pending ones, and the client sets a timer for
    each, so bubbles appear one by one behind the typing row. The typing row never appears sooner than
-   `TYPING_AFTER_SEND_MS` (500 ms) after he sends ([`lib/ui/typing-delay.ts`](../lib/ui/typing-delay.ts)).
-7. **Safety net.** If the `after()` task dies, the per-minute sweep ([`/api/cron/sweep`](../app/api/cron/sweep/route.ts))
+   `TYPING_AFTER_SEND_MS` (500 ms) after he sends ([`examples/app/lib/ui/typing-delay.ts`](../examples/app/lib/ui/typing-delay.ts)).
+7. **Safety net.** If the `after()` task dies, the per-minute sweep ([`/api/cron/sweep`](../examples/app/app/api/cron/sweep/route.ts))
    finds AI-mode conversations with unanswered fan messages and runs the same `processConversation`.
 8. **Memory.** Once a reply or a held suggestion is committed, one small Claude call extracts schema facts about the
    fan into `fan_memory` and adds its cost to the turn.
@@ -247,34 +247,34 @@ lease, so nothing is generated; the human sees the message in the console.
 
 Authentication is Auth.js only: no session, token or password code is hand-written (AGENTS.md). Sessions are
 rows in the `sessions` table (`session.strategy = "database"`), created by the Drizzle adapter in
-[`lib/auth/index.ts`](../lib/auth/index.ts).
+[`examples/app/lib/auth/index.ts`](../examples/app/lib/auth/index.ts).
 
 ### Fan sign-in
 
-1. [`/signin`](../app/signin/page.tsx) renders an email field and the Turnstile widget
-   ([`app/signin/turnstile.tsx`](../app/signin/turnstile.tsx)).
-2. The [`requestSignIn`](../app/signin/actions.ts) server action verifies the Turnstile token with Cloudflare first
-   ([`verifyTurnstile`](../lib/auth/turnstile.ts)). The check fails closed: a missing token, a non-OK response or a
+1. [`/signin`](../examples/app/app/signin/page.tsx) renders an email field and the Turnstile widget
+   ([`examples/app/app/signin/turnstile.tsx`](../examples/app/app/signin/turnstile.tsx)).
+2. The [`requestSignIn`](../examples/app/app/signin/actions.ts) server action verifies the Turnstile token with Cloudflare first
+   ([`verifyTurnstile`](../examples/app/lib/auth/turnstile.ts)). The check fails closed: a missing token, a non-OK response or a
    network error all refuse, and nothing is sent.
 3. Only then does it call `signIn("resend", { email })`. Auth.js emails a one-tap link and shows
-   [`/signin/check-email`](../app/signin/check-email/page.tsx).
-4. The provider's own endpoint cannot be used to skip step 2: [`app/api/auth/[...nextauth]/route.ts`](../app/api/auth/[...nextauth]/route.ts)
+   [`/signin/check-email`](../examples/app/app/signin/check-email/page.tsx).
+4. The provider's own endpoint cannot be used to skip step 2: [`examples/app/app/api/auth/[...nextauth]/route.ts`](../examples/app/app/api/auth/[...nextauth]/route.ts)
    answers 403 to any `POST` under `/api/auth/signin`.
 
 ### Demo seats
 
 Juno and the admins sign in with email, a shared password (`DEMO_SEAT_PASSWORD`) and Turnstile, and no email is sent,
 because we do not own `understudy.example` and two reviewers need the same account at once.
-[`lib/auth/demo-seats.ts`](../lib/auth/demo-seats.ts) does it without leaving Auth.js:
+[`examples/app/lib/auth/demo-seats.ts`](../examples/app/lib/auth/demo-seats.ts) does it without leaving Auth.js:
 
 1. The password is compared in constant time (sha256 of both, `timingSafeEqual`); with no password configured it
    always fails.
-2. [`seatAccountReady`](../lib/auth/seat-account.ts) requires that the seed already created the account with the
+2. [`seatAccountReady`](../examples/app/lib/auth/seat-account.ts) requires that the seed already created the account with the
    seat's role and no flag.
 3. `captureSeatLink` runs Auth.js's own `signIn("resend")` while the mailer (`seatAwareSender`) captures the link
    instead of sending it.
-4. The browser is sent to [`/signin/continue`](../app/signin/continue/page.tsx), which accepts only a same-origin
-   `/api/auth/callback/resend?…` path ([`lib/auth/seat-handoff.ts`](../lib/auth/seat-handoff.ts)) and navigates the
+4. The browser is sent to [`/signin/continue`](../examples/app/app/signin/continue/page.tsx), which accepts only a same-origin
+   `/api/auth/callback/resend?…` path ([`examples/app/lib/auth/seat-handoff.ts`](../examples/app/lib/auth/seat-handoff.ts)) and navigates the
    whole window to it. A server-action redirect straight to the callback did not work: Next followed it server-side
    and the cookie never reached the browser.
 
@@ -283,14 +283,14 @@ There is no attempt limit on the seat password beyond Turnstile, a known gap.
 
 ### The 18+ gate
 
-[`/onboarding`](../app/onboarding/page.tsx) asks for a date of birth and an "I am 18 or older" tick.
-[`applyOnboarding`](../lib/auth/onboarding.ts) does the work, with ages computed in UTC by [`lib/auth/age.ts`](../lib/auth/age.ts):
+[`/onboarding`](../examples/app/app/onboarding/page.tsx) asks for a date of birth and an "I am 18 or older" tick.
+[`applyOnboarding`](../examples/app/lib/auth/onboarding.ts) does the work, with ages computed in UTC by [`examples/app/lib/auth/age.ts`](../examples/app/lib/auth/age.ts):
 
 | Input | Result |
 |---|---|
 | Not `YYYY-MM-DD`, before 1900, or in the future | `invalid_dob`, nothing written |
 | Adult date, box not ticked | `unconfirmed`, nothing written |
-| Under-18 date, ticked or not | `dob` saved, `flagged_at` set with reason `under_18_declared`, every session deleted, sent to [`/blocked`](../app/blocked/page.tsx) |
+| Under-18 date, ticked or not | `dob` saved, `flagged_at` set with reason `under_18_declared`, every session deleted, sent to [`/blocked`](../examples/app/app/blocked/page.tsx) |
 | Adult date, ticked | `dob` and `adult_confirmed_at` saved and the $50 welcome credit granted, in one transaction |
 
 The update only matches a fan row with no `dob` and no flag, which makes both fields write-once; a replay is a no-op.
@@ -306,7 +306,7 @@ read-only chat.
 ## 6. Roles, guards and navigation
 
 There are three roles (`fan`, `creator`, `admin`, the `role` enum). Every protected page, layout and server action
-decides access on the server with [`lib/auth/guards.ts`](../lib/auth/guards.ts), from the user row read fresh on each
+decides access on the server with [`examples/app/lib/auth/guards.ts`](../examples/app/lib/auth/guards.ts), from the user row read fresh on each
 request, so a flag set mid-session takes effect at once. The role carried on the session is never trusted.
 
 `decideAccess` applies these rules in order:
@@ -325,7 +325,7 @@ request, so a flag set mid-session takes effect at once. The role carried on the
 | `/wallet` | confirmed fan | `requireAdultFan` |
 | `/console`, `/console/[id]`, `/console/settings` | creator, admin | `requireConsole` |
 | `/admin`, `/admin/[id]`, `/admin/sim` | admin | `requireRole("admin")` |
-| `/analytics` | creator, admin | [`requireAnalyticsViewer`](../lib/analytics/viewer.ts) in the page (the layout has no guard) |
+| `/analytics` | creator, admin | [`requireAnalyticsViewer`](../examples/app/lib/analytics/viewer.ts) in the page (the layout has no guard) |
 
 On the streamed pages the guard runs in the segment's layout as well as the page, so a wrong role is a real 307
 or 404 before any skeleton is sent; `/analytics` checks in its page only.
@@ -333,24 +333,24 @@ or 404 before any skeleton is sent; `/analytics` checks in its page only.
 **Admins in the console.** An admin may open `/console`. What it gets there differs from Juno's view:
 
 - The inbox lists every conversation with T&S ones first, because the admin read scope is "all"
-  ([`scopeFor`](../lib/conversations/read.ts)); it is not a copy of Juno's inbox.
+  ([`scopeFor`](../examples/app/lib/conversations/read.ts)); it is not a copy of Juno's inbox.
 - Settings (global AI switch, never-list, prices) apply to the platform creator (`primaryCreator`, the first creator by
   handle). Nothing records which seat made an edit.
 - In a thread it can refresh, reply, take over, release and send or discard a held suggestion. Its takeover moves the
   chat to `human_ts`, out of Juno's sight. Hand-back, the per-conversation AI switch and sending offers stay
   creator-only; ban is only on `/admin/[id]`.
 
-**Navigation.** [`lib/ui/app-nav.ts`](../lib/ui/app-nav.ts) builds the top bar from the user row:
+**Navigation.** [`examples/app/lib/ui/app-nav.ts`](../examples/app/lib/ui/app-nav.ts) builds the top bar from the user row:
 fan Chat and Wallet (Chat only when restricted); creator Inbox, Settings, Analytics; admin Safety queue, Console,
-Simulator, Analytics. [`AppShell`](../components/ui/app-shell.tsx) renders it with the signed-in name and Sign out.
+Simulator, Analytics. [`AppShell`](../examples/app/components/ui/app-shell.tsx) renders it with the signed-in name and Sign out.
 
 ---
 
 ## 7. Data model and invariants
 
-The host's tables are in [`db/host-schema.ts`](../db/host-schema.ts) and the engine's in
-[`packages/engine/src/db/schema.ts`](../packages/engine/src/db/schema.ts); [`db/schema.ts`](../db/schema.ts) re-exports both
-so host code has one import. Each set has its own migrations, generated by drizzle-kit into [`drizzle/`](../drizzle/)
+The host's tables are in [`examples/app/db/host-schema.ts`](../examples/app/db/host-schema.ts) and the engine's in
+[`packages/engine/src/db/schema.ts`](../packages/engine/src/db/schema.ts); [`examples/app/db/schema.ts`](../examples/app/db/schema.ts) re-exports both
+so host code has one import. Each set has its own migrations, generated by drizzle-kit into [`examples/app/drizzle/`](../examples/app/drizzle/)
 and [`packages/engine/drizzle/`](../packages/engine/drizzle/) and never hand-edited. The engine's run first
 (`chatter.migrate()`, or `npm run db:migrate`), because host tables point foreign keys at engine tables; engine tables
 hold host rows by id only, with no foreign key.
@@ -381,11 +381,11 @@ erDiagram
 
 | Group | Tables | Notes |
 |---|---|---|
-| Identity (Auth.js shape) | [`users`](../db/schema.ts), [`accounts`](../db/schema.ts), [`sessions`](../db/schema.ts), [`verification_tokens`](../db/schema.ts) | `users` adds `role`, `dob`, `adult_confirmed_at`, `is_sim`, `flagged_at`, `flag_reason` |
-| Creator | [`creators`](../db/schema.ts), [`config`](../db/schema.ts), [`catalogue_items`](../db/schema.ts), [`persona_cards`](../db/schema.ts), [`persona_chunks`](../db/schema.ts) | `config` is unique on (`key`, `creator_id`) with nulls not distinct, so one platform row and at most one per creator. `catalogue_items.price_cents > 0`. Chunks hold a 1024-d `embedding` (HNSW cosine index) and a generated `tsv` (GIN index) |
-| Conversation | [`conversations`](../db/schema.ts), [`messages`](../db/schema.ts), [`turns`](../db/schema.ts), [`offers`](../db/schema.ts), [`handoffs`](../db/schema.ts), [`fan_memory`](../db/schema.ts) | One conversation per (creator, fan). `messages` has a partial index for unanswered fan messages, which the sweep scans. `handoffs` has a partial unique index allowing one unresolved row per conversation |
-| Money | [`wallets`](../db/schema.ts), [`ledger_entries`](../db/schema.ts), [`unlocks`](../db/schema.ts), [`uncredited_payments`](../db/schema.ts) | See invariants below and [§10](#10-monetisation) |
-| Simulator | [`sim_runs`](../db/schema.ts), [`sim_lines`](../db/schema.ts) | See [§14](#14-the-fan-simulator) |
+| Identity (Auth.js shape) | [`users`](../examples/app/db/schema.ts), [`accounts`](../examples/app/db/schema.ts), [`sessions`](../examples/app/db/schema.ts), [`verification_tokens`](../examples/app/db/schema.ts) | `users` adds `role`, `dob`, `adult_confirmed_at`, `is_sim`, `flagged_at`, `flag_reason` |
+| Creator | [`creators`](../examples/app/db/schema.ts), [`config`](../examples/app/db/schema.ts), [`catalogue_items`](../examples/app/db/schema.ts), [`persona_cards`](../examples/app/db/schema.ts), [`persona_chunks`](../examples/app/db/schema.ts) | `config` is unique on (`key`, `creator_id`) with nulls not distinct, so one platform row and at most one per creator. `catalogue_items.price_cents > 0`. Chunks hold a 1024-d `embedding` (HNSW cosine index) and a generated `tsv` (GIN index) |
+| Conversation | [`conversations`](../examples/app/db/schema.ts), [`messages`](../examples/app/db/schema.ts), [`turns`](../examples/app/db/schema.ts), [`offers`](../examples/app/db/schema.ts), [`handoffs`](../examples/app/db/schema.ts), [`fan_memory`](../examples/app/db/schema.ts) | One conversation per (creator, fan). `messages` has a partial index for unanswered fan messages, which the sweep scans. `handoffs` has a partial unique index allowing one unresolved row per conversation |
+| Money | [`wallets`](../examples/app/db/schema.ts), [`ledger_entries`](../examples/app/db/schema.ts), [`unlocks`](../examples/app/db/schema.ts), [`uncredited_payments`](../examples/app/db/schema.ts) | See invariants below and [§10](#10-monetisation) |
+| Simulator | [`sim_runs`](../examples/app/db/schema.ts), [`sim_lines`](../examples/app/db/schema.ts) | See [§14](#14-the-fan-simulator) |
 
 ### Key columns on `conversations`
 
@@ -403,14 +403,14 @@ erDiagram
 ### Invariants
 
 1. **Money is integer cents.** Every money column ends in `_cents` and is an integer; costs are integer micro-dollars
-   (`cost_micros`). Formatting happens only at render time ([`lib/analytics/format.ts`](../lib/analytics/format.ts),
-   [`lib/wallet/money.ts`](../lib/wallet/money.ts)).
+   (`cost_micros`). Formatting happens only at render time ([`examples/app/lib/analytics/format.ts`](../examples/app/lib/analytics/format.ts),
+   [`examples/app/lib/wallet/money.ts`](../examples/app/lib/wallet/money.ts)).
 2. **The ledger is append-only and signed by kind.** A CHECK makes `topup`, `refund` and `grant` positive and `unlock`
    and `tip` negative; a `BEFORE UPDATE OR DELETE` trigger refuses any change
-   ([`drizzle/0004_loving_silver_sable.sql`](../drizzle/0004_loving_silver_sable.sql)).
+   ([`examples/app/drizzle/0004_loving_silver_sable.sql`](../examples/app/drizzle/0004_loving_silver_sable.sql)).
 3. **Balance equals the ledger.** `wallets.balance_cents` (CHECK `>= 0`) is updated in the same locked transaction as
    each ledger insert. Tests assert balance = ledger sum with
-   [`assertBalanceEqualsLedger`](../lib/wallet/test-helpers.ts); the database does not enforce the equality itself.
+   [`assertBalanceEqualsLedger`](../examples/app/lib/wallet/test-helpers.ts); the database does not enforce the equality itself.
 4. **Idempotency is in unique columns.** `ledger_entries.stripe_event_id`, `stripe_session_id` (partial unique),
    `idempotency_key`, `messages.client_msg_id`, and the `unlocks` primary key (`fan_id`, `item_id`).
 5. **`creator_id` on creator-owned rows.** Top-level rows carry it: `conversations`, `catalogue_items`, `persona_*`,
@@ -431,20 +431,20 @@ erDiagram
 | Engine | [`0000`](../packages/engine/drizzle/0000_engine_extensions.sql) | The `vector` and `pg_trgm` extensions |
 | Engine | [`0001`](../packages/engine/drizzle/0001_engine_baseline.sql) | Every engine table and enum, `creator_settings` included, with no foreign key into a host table |
 | Engine | [`0002`](../packages/engine/drizzle/0002_engine_triggers.sql) | The `set_updated_at` trigger on `messages` and `offers` |
-| Host | [`0000`](../drizzle/0000_extensions.sql) | The `vector` extension |
-| Host | [`0001`](../drizzle/0001_host_baseline.sql) | Every host table and enum; its foreign keys into `offers` and `conversations` need the engine set applied first |
-| Host | [`0002`](../drizzle/0002_ledger_append_only.sql) | The append-only trigger on `ledger_entries` |
+| Host | [`0000`](../examples/app/drizzle/0000_extensions.sql) | The `vector` extension |
+| Host | [`0001`](../examples/app/drizzle/0001_host_baseline.sql) | Every host table and enum; its foreign keys into `offers` and `conversations` need the engine set applied first |
+| Host | [`0002`](../examples/app/drizzle/0002_ledger_append_only.sql) | The append-only trigger on `ledger_entries` |
 
 The engine's runs are recorded in `drizzle.__understudy_engine_migrations`, the host's in `drizzle.__drizzle_migrations`.
 
 ---|---|
-| [`0000`](../drizzle/0000_tricky_starbolt.sql) | Every base table, enums, `vector` and `pg_trgm` extensions |
-| [`0001`](../drizzle/0001_illegal_carmella_unuscione.sql) | Wallet caps, ledger `conversation_id` and `idempotency_key`, offer timestamps |
-| [`0002`](../drizzle/0002_known_blur.sql) | Engine columns: `turn_id`, `deliver_at`, `suggested` on messages; `failed_turns`, `no_pitch_until`; turn timings; `handoff_reason`, `turn_route` enums |
-| [`0003`](../drizzle/0003_calm_the_stranger.sql) | Ledger kind `grant` |
-| [`0004`](../drizzle/0004_loving_silver_sable.sql) | `uncredited_payments`, `stripe_session_id`, the append-only trigger |
-| [`0005`](../drizzle/0005_short_steel_serpent.sql) | `fan_typing_until` |
-| [`0006`](../drizzle/0006_known_forgotten_one.sql) | `sim_runs`, `sim_lines` |
+| [`0000`](../examples/app/drizzle/0000_tricky_starbolt.sql) | Every base table, enums, `vector` and `pg_trgm` extensions |
+| [`0001`](../examples/app/drizzle/0001_illegal_carmella_unuscione.sql) | Wallet caps, ledger `conversation_id` and `idempotency_key`, offer timestamps |
+| [`0002`](../examples/app/drizzle/0002_known_blur.sql) | Engine columns: `turn_id`, `deliver_at`, `suggested` on messages; `failed_turns`, `no_pitch_until`; turn timings; `handoff_reason`, `turn_route` enums |
+| [`0003`](../examples/app/drizzle/0003_calm_the_stranger.sql) | Ledger kind `grant` |
+| [`0004`](../examples/app/drizzle/0004_loving_silver_sable.sql) | `uncredited_payments`, `stripe_session_id`, the append-only trigger |
+| [`0005`](../examples/app/drizzle/0005_short_steel_serpent.sql) | `fan_typing_until` |
+| [`0006`](../examples/app/drizzle/0006_known_forgotten_one.sql) | `sim_runs`, `sim_lines` |
 
 ---
 
@@ -479,16 +479,16 @@ step and threshold.
 | [`packages/engine/src/conversation/handoff.ts`](../packages/engine/src/conversation/handoff.ts) | One unresolved handoff per conversation |
 | [`packages/engine/src/config/load.ts`](../packages/engine/src/config/load.ts), [`cost.ts`](../packages/engine/src/turn/cost.ts) | Config in one query; token cost in micro-dollars |
 | [`packages/engine/src/conversation/sweep.ts`](../packages/engine/src/conversation/sweep.ts) | The per-minute safety net |
-| [`lib/host/deps.ts`](../lib/host/deps.ts) | Production wiring of the ports |
+| [`examples/app/lib/host/deps.ts`](../examples/app/lib/host/deps.ts) | Production wiring of the ports |
 
 ### 8.1 Entry points and scheduling
 
 The engine has two callers:
 
 - **Every fan send** schedules [`processConversation`](../packages/engine/src/turn/process.ts) through `after()` in
-  [`sendFanMessage`](../lib/chat/send.ts). The hosting page exports `maxDuration = 60` so the task can finish
+  [`sendFanMessage`](../examples/app/lib/chat/send.ts). The hosting page exports `maxDuration = 60` so the task can finish
   (`ENGINE_MAX_DURATION_S`). A hand-back or release also calls it at once.
-- **A tip or an unlock** schedules it the same way, from [`tipInChat` and `unlockInChat`](../lib/chat/react.ts), so Juno
+- **A tip or an unlock** schedules it the same way, from [`tipInChat` and `unlockInChat`](../examples/app/lib/chat/react.ts), so Juno
   reacts in her own voice: thanks for a tip, a check-in about an item he just bought. A retried tip (the system row
   already written) or an unlock of something he already owned schedules nothing. The turn reads these as **events**
   ([`loadEvents`](../packages/engine/src/conversation/events.ts)): a tip row with no `turn_id`, or an accepted offer no applied turn lists in
@@ -500,7 +500,7 @@ The engine has two callers:
   cooldown, or on a hardship turn, the event is left out and ages out of the window. The commit stamps the tip row with
   its `turn_id` (not in `inbound_ids`) and records `jev_in.events`, so each event gets one reaction. The sweep does
   not look for events: a missed reaction folds into his next message inside the window.
-- **The sweep**, [`/api/cron/sweep`](../app/api/cron/sweep/route.ts), runs every minute ([`vercel.json`](../vercel.json))
+- **The sweep**, [`/api/cron/sweep`](../examples/app/app/api/cron/sweep/route.ts), runs every minute ([`examples/app/vercel.json`](../examples/app/vercel.json))
   and needs `Authorization: Bearer $CRON_SECRET`, compared in constant time. [`sweep`](../packages/engine/src/conversation/sweep.ts):
   1. clears expired leases;
   2. picks up to 10 conversations in `ai` mode with the AI on, no lease, and a fan message with no `turn_id` that is
@@ -513,7 +513,7 @@ event waiting), at most five times,
 so a fan who keeps writing cannot hold one invocation forever. It is safe to call from anywhere at once: a caller that
 cannot take the lease returns immediately.
 
-**Ports.** The engine is built with `createChatter({ db, host, config, deps })` ([`chatter.ts`](../packages/engine/src/chatter.ts)); the app's [`chatter()`](../lib/host/deps.ts) passes its database, `dbConfigPort`, `dbHost` and `defaultDeps()`. `defaultDeps` wires the production adapters behind
+**Ports.** The engine is built with `createChatter({ db, host, config, deps })` ([`chatter.ts`](../packages/engine/src/chatter.ts)); the app's [`chatter()`](../examples/app/lib/host/deps.ts) passes its database, `dbConfigPort`, `dbHost` and `defaultDeps()`. `defaultDeps` wires the production adapters behind
 [`packages/engine/src/ports/`](../packages/engine/src/ports/):
 
 | Port | Production | Tests |
@@ -521,7 +521,7 @@ cannot take the lease returns immediately.
 | [`Decider`](../packages/engine/src/ports/decider.ts) | [`TypeSafeDecider`](../packages/providers/src/typesafe/decider.ts): `POST https://api.typesafe.ai/v1/systemone`, 20 s timeout, one retry after 500 ms on 429 or 529 | [`FakeDecider`](../packages/engine/src/testing/fakes/decider.ts) |
 | [`Generator`](../packages/engine/src/ports/generator.ts) | [`AnthropicGenerator`](../packages/providers/src/anthropic/generator.ts): official SDK, 30 s timeout, 1 retry, thinking disabled | [`FakeGenerator`](../packages/engine/src/testing/fakes/generator.ts) |
 | [`Retriever`](../packages/engine/src/ports/retriever.ts) | [`PersonaRetriever`](../packages/providers/src/voyage/persona-retriever.ts) with the strategy in [`retrieval.strategy`](CONFIG.md#retrieval) | [`FtsRetriever`](../packages/providers/src/pg/fts-retriever.ts) and others on the test database |
-| [`Events`](../packages/engine/src/ports/events.ts) | [`defaultEvents`](../providers/pusher/events.ts) (Pusher, or a no-op without keys) | a recorder, or [`noopEvents`](../packages/providers/src/noop/events.ts) |
+| [`Events`](../packages/engine/src/ports/events.ts) | [`defaultEvents`](../examples/app/providers/pusher/events.ts) (Pusher, or a no-op without keys) | a recorder, or [`noopEvents`](../packages/providers/src/noop/events.ts) |
 | [`Clock`](../packages/engine/src/ports/clock.ts) | `systemClock` (sleep and elapsed time only) | a controllable clock |
 
 Errors from every adapter are reduced to a class and a code before logging, because a provider's error body can echo
@@ -558,7 +558,7 @@ clock:
 | `atCap` | Nothing more fits under the fan's effective daily cap today (his own cap, a matured raise, or [`wallet.daily_cap_cents`](CONFIG.md#wallet-caps-and-offers)); spend is the UTC day, all creators. `spentTodayCents` and `capCents` carry the two numbers for the shortlist |
 | `unlocksInWindow` | His unlocks in the last [`pitch.velocity_window_minutes`](CONFIG.md#floors-jev-confidence-and-pitching) |
 | `roundsSinceOffer` | Replied turns since the latest offer in this conversation. A round is a fan batch plus the turn that answered it |
-| `highValue` | [`isHighValue`](../lib/wallet/score.ts): decayed spend with this creator is at or above [`fan.high_value_threshold_cents`](CONFIG.md#wallet-caps-and-offers) |
+| `highValue` | [`isHighValue`](../examples/app/lib/wallet/score.ts): decayed spend with this creator is at or above [`fan.high_value_threshold_cents`](CONFIG.md#wallet-caps-and-offers) |
 | `hasUnresolvedHandoff`, `hasOpenOffer` | Any handoff not `resolved`; an `open` offer not yet expired |
 | `hasUnlocked` | An offer in this conversation was ever accepted |
 | `justUnlocked` | An offer was accepted after her last message |
@@ -672,7 +672,7 @@ Unlike the safety floors, the [`pitch.*`](CONFIG.md#floors-jev-confidence-and-pi
 
 On an `offer` route, [`buildShortlist`](../packages/engine/src/conversation/offer.ts) lists the creator's active catalogue items of the
 allowed kinds that the fan has not unlocked and that are not already open in this conversation, ordered by price, then
-title. The turn keeps only items whose price [`capAllows`](../lib/wallet/cap.ts) under today's spend, the rule the debit
+title. The turn keeps only items whose price [`capAllows`](../examples/app/lib/wallet/cap.ts) under today's spend, the rule the debit
 enforces, so the AI never offers what the cap would refuse. [`pickOffer`](../packages/engine/src/conversation/offer.ts) asks Jev to choose `o1`…`oN` from titles and teasers only. One candidate
 needs no call. An empty shortlist, a key outside the list or a Jev failure falls back to the route's fallback (`reply`,
 or `deflect` for an explicit request).
@@ -918,7 +918,7 @@ Price rows are integer micro-dollars per million tokens ([`price.<model>.input_p
 cost stays an integer. [`CostLedger`](../packages/engine/src/turn/cost.ts) sums tokens per stage (`jev_in`, `offer_pick`,
 `generate`, `jev_out`, then `memory`) and rounds once. The seeded prices: Haiku 5.5 $0.10 input, $0.50 output,
 $0.01 cache read, $0.125 cache write per million tokens; `jev-1.14.0` $0.042 input and free output
-([`db/seed.ts`](../db/seed.ts)). Each turn stores its tokens, `cost_micros` and three timings: `ms_jev_in` (inbound
+([`examples/app/db/seed.ts`](../examples/app/db/seed.ts)). Each turn stores its tokens, `cost_micros` and three timings: `ms_jev_in` (inbound
 and offer pick), `ms_gen`, `ms_jev_out`. Measured figures are in [§15](#15-analytics-and-metrics).
 
 ---
@@ -946,7 +946,7 @@ one holding line a chat held for Juno gets no reply until a human acts or the sw
 "Escalation that waits on nobody" below). Fan messages written into a held chat are not
 classified for safety either; a human owning the chat is considered enough. While the chat waits in the T&S
 queue (`handoff_ts`) the fan's composer is replaced by "This chat is paused while someone from our team takes a look.
-You can still read it." ([`live-thread.tsx`](../components/chat/live-thread.tsx)); once an admin takes it over
+You can still read it." ([`live-thread.tsx`](../examples/app/components/chat/live-thread.tsx)); once an admin takes it over
 (`human_ts`) the composer returns so the fan can answer, and the admin's messages show to him as "Understudy support",
 without Juno's avatar.
 
@@ -1017,9 +1017,9 @@ the conversation gets a 72-hour no-pitch window.
 |---|---|
 | No pitch in a hardship turn, and none for [`pitch.hardship_cooldown_hours`](CONFIG.md#floors-jev-confidence-and-pitching) after | [`route.ts`](../packages/engine/src/routing/route.ts), [`lease.ts`](../packages/engine/src/conversation/lease.ts) |
 | No pitch after 2 declines in 20 minutes | [`pacing.ts`](../packages/engine/src/routing/pacing.ts) |
-| No pitch at the daily cap, and no spend past it | [`facts.ts`](../packages/engine/src/turn/facts.ts), [`cap.ts`](../lib/wallet/cap.ts) |
+| No pitch at the daily cap, and no spend past it | [`facts.ts`](../packages/engine/src/turn/facts.ts), [`cap.ts`](../examples/app/lib/wallet/cap.ts) |
 | No pitch after 3 unlocks in 30 minutes | [`pacing.ts`](../packages/engine/src/routing/pacing.ts) |
-| A fan may lower his cap at once; a raise waits 24 h | [`cap.ts`](../lib/wallet/cap.ts) |
+| A fan may lower his cap at once; a raise waits 24 h | [`cap.ts`](../examples/app/lib/wallet/cap.ts) |
 
 ### Known safety gap
 
@@ -1036,7 +1036,7 @@ containable.
 
 ### Wallet and ledger
 
-[`lib/wallet/ledger.ts`](../lib/wallet/ledger.ts) is the only writer of money:
+[`examples/app/lib/wallet/ledger.ts`](../examples/app/lib/wallet/ledger.ts) is the only writer of money:
 
 - `lockWallet` creates the wallet row if missing and takes `SELECT … FOR UPDATE`.
 - `credit` (kinds `topup`, `refund`) inserts the ledger row and moves the balance in the same transaction. A clash on
@@ -1050,41 +1050,41 @@ pooled connection, which deadlocked the pool under concurrent unlocks.
 
 ### Top-ups
 
-1. [`/wallet`](../app/wallet/page.tsx) offers presets from [`wallet.topup_options_cents`](CONFIG.md#wallet-caps-and-offers) ($10, $25, $50) and a custom
+1. [`/wallet`](../examples/app/app/wallet/page.tsx) offers presets from [`wallet.topup_options_cents`](CONFIG.md#wallet-caps-and-offers) ($10, $25, $50) and a custom
    amount between [`wallet.topup_min_cents`](CONFIG.md#wallet-caps-and-offers) ($5) and [`wallet.topup_max_cents`](CONFIG.md#wallet-caps-and-offers) ($500). Typed dollars become cents
-   in [`dollarsToCents`](../lib/wallet/money.ts).
-2. [`startTopup`](../lib/wallet/topup.ts) validates the amount before calling Stripe, then
-   [`createTopupSession`](../providers/stripe.ts) creates a Checkout session in USD with the fan id in
+   in [`dollarsToCents`](../examples/app/lib/wallet/money.ts).
+2. [`startTopup`](../examples/app/lib/wallet/topup.ts) validates the amount before calling Stripe, then
+   [`createTopupSession`](../examples/app/providers/stripe.ts) creates a Checkout session in USD with the fan id in
    `client_reference_id` and metadata.
 3. The return page only says "Payment received, your balance updates in a moment." It never credits.
-4. [`/api/webhooks/stripe`](../app/api/webhooks/stripe/route.ts) is the only place money arrives. It rejects a missing
+4. [`/api/webhooks/stripe`](../examples/app/app/api/webhooks/stripe/route.ts) is the only place money arrives. It rejects a missing
    or bad signature with 400, answers 500 on a handler error so Stripe retries, and 200 otherwise.
-5. [`applyCheckoutEvent`](../lib/wallet/topup.ts) handles `checkout.session.completed`, `async_payment_succeeded` and
+5. [`applyCheckoutEvent`](../examples/app/lib/wallet/topup.ts) handles `checkout.session.completed`, `async_payment_succeeded` and
    `async_payment_failed`. An event that cannot credit is recorded in `uncredited_payments` with a reason, checked in
    this order: `async_failed`, `unpaid`, `non_usd`, `bad_amount`, `missing_fan`, `unknown_fan`, `flagged_fan`. Otherwise
    it credits `amount_total` keyed by both the event id and the session id, so two events for one session credit once,
    and resolves any earlier `unpaid` row for that session.
 6. Admins see open uncredited rows under "Payments needing review" on `/analytics` and mark them handled
-   ([`resolveUncreditedAction`](../app/analytics/actions.ts)). Refunds are done by hand in Stripe; there is no refund
+   ([`resolveUncreditedAction`](../examples/app/app/analytics/actions.ts)). Refunds are done by hand in Stripe; there is no refund
    code, and the `refund` ledger kind has no writer.
 
-A second path, [`startTopupIntent`](../lib/wallet/topup.ts) (a confirmed PaymentIntent with a saved test card,
+A second path, [`startTopupIntent`](../examples/app/lib/wallet/topup.ts) (a confirmed PaymentIntent with a saved test card,
 credited on `payment_intent.succeeded`), exists for the fan simulator only. Unlike Checkout, a PaymentIntent that cannot
 credit writes no `uncredited_payments` row, only a log line.
 
 ### Welcome credit
 
 Every fan who confirms 18+ gets [`wallet.welcome_credit_cents`](CONFIG.md#wallet-caps-and-offers) ($50) as one `grant` entry keyed `welcome:<fanId>`, in the
-same transaction as the confirmation ([`lib/wallet/grant.ts`](../lib/wallet/grant.ts)). It is a grant, not a
+same transaction as the confirmation ([`examples/app/lib/wallet/grant.ts`](../examples/app/lib/wallet/grant.ts)). It is a grant, not a
 top-up, so no revenue figure counts it. `npm run db:seed` backfills earlier fans, excluding eval fixtures.
 
 ### Unlocks
 
 The fan taps the locked card under an offer bubble, which calls `unlockOfferAction` and
-[`unlockOffer`](../lib/wallet/unlock.ts). In one transaction:
+[`unlockOffer`](../examples/app/lib/wallet/unlock.ts). In one transaction:
 
 1. lock the offer row (`FOR UPDATE OF offers`, joined to its conversation to find the fan) and check it belongs to this fan;
-2. lock the wallet and share-lock the user row: only an unflagged fan may spend ([`assertFanMaySpend`](../lib/wallet/eligibility.ts));
+2. lock the wallet and share-lock the user row: only an unflagged fan may spend ([`assertFanMaySpend`](../examples/app/lib/wallet/eligibility.ts));
 3. if this offer is already `accepted` (a retry or a double tap), return without charging;
 4. refuse an offer that is not `open` or has expired;
 5. debit the price **copied onto the offer** when it was made, so a later price edit does not change it. An offer of
@@ -1093,15 +1093,15 @@ The fan taps the locked card under an offer bubble, which calls `unlockOfferActi
 
 ### Tips
 
-The tip sheet ([`components/chat/tip-sheet.tsx`](../components/chat/tip-sheet.tsx)) offers [`wallet.tip_options_cents`](CONFIG.md#wallet-caps-and-offers)
-($2, $5, $10) or a custom amount. [`tipAction`](../app/chat/actions.ts) enforces [`wallet.tip_min_cents`](CONFIG.md#wallet-caps-and-offers) ($1), needs an
-existing conversation, and calls [`tip`](../lib/wallet/tip.ts) with a fresh UUID per tap as the idempotency key. After
+The tip sheet ([`examples/app/components/chat/tip-sheet.tsx`](../examples/app/components/chat/tip-sheet.tsx)) offers [`wallet.tip_options_cents`](CONFIG.md#wallet-caps-and-offers)
+($2, $5, $10) or a custom amount. [`tipAction`](../examples/app/app/chat/actions.ts) enforces [`wallet.tip_min_cents`](CONFIG.md#wallet-caps-and-offers) ($1), needs an
+existing conversation, and calls [`tip`](../examples/app/lib/wallet/tip.ts) with a fresh UUID per tap as the idempotency key. After
 the debit it writes a system row "You tipped $5.00", which neither model ever sees, and schedules a turn in which Juno
 thanks him without naming the amount ([§8.1](#81-entry-points-and-scheduling)).
 
 ### Daily cap
 
-[`lib/wallet/cap.ts`](../lib/wallet/cap.ts): spend today is the sum of the fan's debits since 00:00 UTC by the database
+[`examples/app/lib/wallet/cap.ts`](../examples/app/lib/wallet/cap.ts): spend today is the sum of the fan's debits since 00:00 UTC by the database
 clock, across all creators. The effective cap is his own `daily_cap_cents`, else [`wallet.daily_cap_cents`](CONFIG.md#wallet-caps-and-offers) ($200). A
 debit that would pass it raises `CapReached`; landing exactly on it is allowed. A fan sets his own cap between
 [`wallet.cap_min_cents`](CONFIG.md#wallet-caps-and-offers) ($5) and [`cap.max_daily_cents`](CONFIG.md#wallet-caps-and-offers) ($1,000): lowering applies at once, raising waits
@@ -1109,7 +1109,7 @@ debit that would pass it raises `CapReached`; landing exactly on it is allowed. 
 
 ### High-value score
 
-[`highValueScore`](../lib/wallet/score.ts) = Σ spend × 0.5^(age in days ÷ [`fan.high_value_half_life_days`](CONFIG.md#wallet-caps-and-offers)) over the
+[`highValueScore`](../examples/app/lib/wallet/score.ts) = Σ spend × 0.5^(age in days ÷ [`fan.high_value_half_life_days`](CONFIG.md#wallet-caps-and-offers)) over the
 fan's debits to this creator, computed at read time and never stored. At or above
 [`fan.high_value_threshold_cents`](CONFIG.md#wallet-caps-and-offers) ($100) the fan is high-value: each AI turn with no unresolved handoff opens a
 `high_value_alert` for Juno while the AI keeps replying, and analytics lists him under top fans.
@@ -1127,9 +1127,9 @@ Every read treats an offer past `expires_at` as gone even before the sweep marks
 items, the personal chat included, while she holds a chat (`human_creator`); the price is the catalogue price, never
 typed. Creator offers skip the pacing gates, which apply to the AI only.
 
-The catalogue is seeded in [`db/seed.ts`](../db/seed.ts): three PPV sets at $9.99, $14.99 and $19.99, a bundle of all
+The catalogue is seeded in [`examples/app/db/seed.ts`](../examples/app/db/seed.ts): three PPV sets at $9.99, $14.99 and $19.99, a bundle of all
 three at $34.99, and a personal chat at $49.99. Juno edits prices in
-[`/console/settings`](../app/console/settings/page.tsx).
+[`/console/settings`](../examples/app/app/console/settings/page.tsx).
 
 ---
 
@@ -1157,15 +1157,15 @@ skipped unless forced:
 `.meta.json` and `.eval.json`); v2 is v1 plus hand-written DM rules (bubbles, callbacks, hooks, questions) and is the
 published card. Which version is live is database state, not code:
 
-1. [`npm run persona:load`](../scripts/persona/load.ts) embeds the chunks with Voyage, replaces the creator's chunks in
+1. [`npm run persona:load`](../examples/app/scripts/persona/load.ts) embeds the chunks with Voyage, replaces the creator's chunks in
    one transaction, and stores the newest card file as the next version, **unpublished**. It refuses to load if any
    held-out reply leaked into the chunks.
-2. [`npm run persona:publish`](../scripts/persona/publish-card.ts) marks a version published.
+2. [`npm run persona:publish`](../examples/app/scripts/persona/publish-card.ts) marks a version published.
 3. The engine speaks only with the newest published card.
 
 The never-list stored on the card comes from its `## Never` bullets: a short bullet is kept as written, a long one is
 mapped to concrete terms (phone number, snapchat, whatsapp, cash app, venmo…) so the code check can match it
-([`load.ts`](../scripts/persona/load.ts)). Juno can edit it in the console, but a console edit lasts only until the
+([`load.ts`](../examples/app/scripts/persona/load.ts)). Juno can edit it in the console, but a console edit lasts only until the
 next card load.
 
 ### Retrieval
@@ -1197,7 +1197,7 @@ the truth; an event only says "refetch".
 
 [![Realtime: a fan message to bubbles](diagrams/png/realtime.png)](diagrams/realtime.html)
 
-| Logical channel | Pusher channel | Who may subscribe ([`canSubscribe`](../lib/conversations/read.ts)) |
+| Logical channel | Pusher channel | Who may subscribe ([`canSubscribe`](../examples/app/lib/conversations/read.ts)) |
 |---|---|---|
 | `conversation:<id>` | `private-conversation-<id>` | Anyone who can see the conversation: its fan, its creator (not T&S chats), any admin |
 | `creator:<id>` | `private-creator-<id>` | That creator, any admin |
@@ -1210,14 +1210,14 @@ the truth; an event only says "refetch".
 | `conversation.mode` | Takeover, hand-back, release | Mode changed |
 | `inbox.changed` | Fan send, engine commit, human controls, tip | Refresh the inbox row |
 
-[`providers/pusher/channels.ts`](../providers/pusher/channels.ts) maps the names; [`events.ts`](../providers/pusher/events.ts)
+[`examples/app/providers/pusher/channels.ts`](../examples/app/providers/pusher/channels.ts) maps the names; [`events.ts`](../examples/app/providers/pusher/events.ts)
 passes payloads through `idsOnly`, which keeps only numbers, booleans and UUIDs, so no message text ever crosses
 Pusher. Without Pusher keys the adapter is a no-op and the clients poll.
-[`/api/pusher/auth`](../app/api/pusher/auth/route.ts) re-reads the user row, refuses a flagged user, validates the
+[`/api/pusher/auth`](../examples/app/app/api/pusher/auth/route.ts) re-reads the user row, refuses a flagged user, validates the
 socket id and channel name, and checks `canSubscribe`.
 
-**Clients.** [`useRealtime`](../components/chat/use-realtime.ts) lazy-loads `pusher-js` and refetches on every event and
-on reconnect. [`LiveThread`](../components/chat/live-thread.tsx) also polls as a fallback:
+**Clients.** [`useRealtime`](../examples/app/components/chat/use-realtime.ts) lazy-loads `pusher-js` and refetches on every event and
+on reconnect. [`LiveThread`](../examples/app/components/chat/live-thread.tsx) also polls as a fallback:
 
 | Situation | Poll every |
 |---|---|
@@ -1227,42 +1227,42 @@ on reconnect. [`LiveThread`](../components/chat/live-thread.tsx) also polls as a
 | Otherwise | No poll |
 
 Pending bubbles get one timer each at their due time plus `DUE_SLACK_MS` (500 ms). Staff pages that follow events use
-[`RefreshOnEvent`](../components/chat/refresh-on-event.tsx) (`router.refresh()`, polling every 5 s without Pusher).
+[`RefreshOnEvent`](../examples/app/components/chat/refresh-on-event.tsx) (`router.refresh()`, polling every 5 s without Pusher).
 
 **Message windowing.** A thread view loads the newest 15 messages
-([`window.ts`](../lib/conversations/window.ts), `MESSAGE_PAGE_SIZE`), keyed by `(sort_at, id)` with opaque cursors
-([`cursor.ts`](../lib/conversations/cursor.ts)). [`paging.ts`](../lib/conversations/paging.ts) serves the first window
+([`window.ts`](../examples/app/lib/conversations/window.ts), `MESSAGE_PAGE_SIZE`), keyed by `(sort_at, id)` with opaque cursors
+([`cursor.ts`](../examples/app/lib/conversations/cursor.ts)). [`paging.ts`](../examples/app/lib/conversations/paging.ts) serves the first window
 (`getWindowedSnapshot`, `getFanWindowedSnapshot`), older pages (`getOlderMessages`) and a changes feed (`getChanges`:
 rows whose `updated_at` moved since the cursor, bubbles that became due, and changed offers, read with a 5 s overlap so
 a late commit is never missed). `updated_at` is kept by a `set_updated_at` trigger (`clock_timestamp()`). The pages bind
 `older` and `changes` actions (`olderChat`/`chatChanges`, `olderThread`/`threadChanges`); `LiveThread` loads an older page
 when the top of the list comes into view, keeps the reader's place across the prepend, and upserts each change read by
-id ([`thread-window.ts`](../lib/ui/thread-window.ts)). On a 5,000-message thread the first load fell from 475.9 ms and
+id ([`thread-window.ts`](../examples/app/lib/ui/thread-window.ts)). On a 5,000-message thread the first load fell from 475.9 ms and
 1.2 MB to 152 ms and 4.3 KB.
 
 ---
 
 ## 13. Creator console and admin
 
-Console and admin share one inbox component ([`components/console/inbox.tsx`](../components/console/inbox.tsx)) and one
-thread view ([`LiveThread`](../components/chat/live-thread.tsx) with its staff bar). Every action takes the viewer from
-the session and re-checks visibility with [`assertVisible`](../lib/conversations/read.ts); ids from the client are
+Console and admin share one inbox component ([`examples/app/components/console/inbox.tsx`](../examples/app/components/console/inbox.tsx)) and one
+thread view ([`LiveThread`](../examples/app/components/chat/live-thread.tsx) with its staff bar). Every action takes the viewer from
+the session and re-checks visibility with [`assertVisible`](../examples/app/lib/conversations/read.ts); ids from the client are
 never trusted for ownership. See also [CONSOLE.md](CONSOLE.md).
 
 ![Console inbox at 1440 px](screens/console-1440.png)
 
-**What each role can read** ([`scopeFor`](../lib/conversations/read.ts)):
+**What each role can read** ([`scopeFor`](../examples/app/lib/conversations/read.ts)):
 
 - **Juno**: her conversations, except any in `handoff_ts` or `human_ts` or with an unresolved T&S handoff. She never
-  sees a T&S chat; [`read.db.test.ts`](../lib/conversations/read.db.test.ts) proves it.
+  sees a T&S chat; [`read.db.test.ts`](../examples/app/lib/conversations/read.db.test.ts) proves it.
 - **Admin**: every conversation, T&S ones first.
 - **Fan**: his own, without suggestions, blocked or superseded rows, handoff details or bubbles not yet due.
 
-**Inbox.** Each row shows a preview, its age, a badge from [`inboxBadge`](../lib/ui/inbox-badge.ts) (T&S, Handoff,
+**Inbox.** Each row shows a preview, its age, a badge from [`inboxBadge`](../examples/app/lib/ui/inbox-badge.ts) (T&S, Handoff,
 You or Juno, AI, AI off) and a marker when a suggestion is waiting. Juno's tabs are All, Needs you and AI.
 
-**Controls** ([`lib/conversations/controls.ts`](../lib/conversations/controls.ts),
-[`lib/conversations/actions.ts`](../lib/conversations/actions.ts)):
+**Controls** ([`examples/app/lib/conversations/controls.ts`](../examples/app/lib/conversations/controls.ts),
+[`examples/app/lib/conversations/actions.ts`](../examples/app/lib/conversations/actions.ts)):
 
 | Control | Who | Effect |
 |---|---|---|
@@ -1282,7 +1282,7 @@ cost) are visible to staff only.
 ![Console settings at 1440 px](screens/settings-1440.png)
 
 **Streaming.** Every signed-in page renders its frame at once and streams each data section behind a skeleton
-of the final size ([`components/ui/skeleton.tsx`](../components/ui/skeleton.tsx)); data is still fetched on the server
+of the final size ([`examples/app/components/ui/skeleton.tsx`](../examples/app/components/ui/skeleton.tsx)); data is still fetched on the server
 and passed to the client islands as props. On `/console/[id]` and `/admin/[id]` the inbox is part of the shell, so
 switching threads does not blank the list.
 
@@ -1296,7 +1296,7 @@ send path, wallet and console; nothing in the engine knows it is talking to a si
 per persona and a coverage matrix, is [FAN-SIM.md](FAN-SIM.md).
 
 **Personas.** 25 JSON personas with briefs in [`data/sim/personas/`](../data/sim/personas/), validated by
-[`lib/sim/persona.ts`](../lib/sim/persona.ts). Six everyday fans make up `NORMAL_MIX` (lonely-regular, casual-fan,
+[`examples/app/lib/sim/persona.ts`](../examples/app/lib/sim/persona.ts). Six everyday fans make up `NORMAL_MIX` (lonely-regular, casual-fan,
 gamer-fan, happy-buyer, lyric-fan, spanish); the rest are edge cases (big spender, haggler, decliner, meetup pusher,
 self-harm, disputer, abusive and so on). The minor persona is fixed text only, three age-signal lines and no model
 call, because no model writes as a child on an adult platform; it spawns only when asked for.
@@ -1306,33 +1306,33 @@ call, because no model writes as a child on an adult platform; it spawns only wh
 - *message* beats (`say`, `free`, `line`, `burst`): the agent writes the line in its own words;
 - *money* beats (`topup`, `tip`, `set_cap`, `unlock`, `nudge` to expire an offer): scripted calls to the real wallet code;
 - *human* beats (takeover, send, hand back, release, ban, AI switches, never-list edits, send suggestion): the sim acts
-  as Juno's or the admin's seat ([`lib/sim/humans.ts`](../lib/sim/humans.ts)) and undoes any setting it changed;
+  as Juno's or the admin's seat ([`examples/app/lib/sim/humans.ts`](../examples/app/lib/sim/humans.ts)) and undoes any setting it changed;
 - `wait`.
 
-**The agent** ([`lib/sim/agent.ts`](../lib/sim/agent.ts), [`prompt.ts`](../lib/sim/prompt.ts)) is Claude
+**The agent** ([`examples/app/lib/sim/agent.ts`](../examples/app/lib/sim/agent.ts), [`prompt.ts`](../examples/app/lib/sim/prompt.ts)) is Claude
 ([`sim.model`](CONFIG.md#fan-simulator), Haiku) reading the chat exactly as the fan sees it (delivered messages only, no prices), plus four
-example lines retrieved from its persona's own library ([`sim_lines`](../db/schema.ts), loaded by
+example lines retrieved from its persona's own library ([`sim_lines`](../examples/app/db/schema.ts), loaded by
 `npm run sim:load-lines`). It returns one JSON action: send a message, wait, or leave. Every line passes
-[`guard`](../lib/sim/guard.ts) first: a graphic-words regex for everyone, a flirt regex for the minor, then Jev's
+[`guard`](../examples/app/lib/sim/guard.ts) first: a graphic-words regex for everyone, a flirt regex for the minor, then Jev's
 explicitness question; with no decider the guard blocks.
 
 **Running.**
 
 | Way | What drives the runs |
 |---|---|
-| `npm run sim -- --persona <slug>` or `--random [n] [--seed s] [--mix normal]` ([`scripts/sim/run.ts`](../scripts/sim/run.ts)) | [`driveRun`](../lib/sim/drive.ts) for up to 30 minutes |
-| [`/admin/sim`](../app/admin/sim/page.tsx) Spawn buttons | `driveRun` for `DRIVE_MS` (50 s), then a page tick every 6 s advancing live runs for 15 s |
-| [`/api/cron/sim`](../app/api/cron/sim/route.ts), every minute | Advances up to [`sim.max_concurrent_runs`](CONFIG.md#fan-simulator) (5) live runs for [`sim.tick_budget_ms`](CONFIG.md#fan-simulator) (45 s) |
+| `npm run sim -- --persona <slug>` or `--random [n] [--seed s] [--mix normal]` ([`examples/app/scripts/sim/run.ts`](../examples/app/scripts/sim/run.ts)) | [`driveRun`](../examples/app/lib/sim/drive.ts) for up to 30 minutes |
+| [`/admin/sim`](../examples/app/app/admin/sim/page.tsx) Spawn buttons | `driveRun` for `DRIVE_MS` (50 s), then a page tick every 6 s advancing live runs for 15 s |
+| [`/api/cron/sim`](../examples/app/app/api/cron/sim/route.ts), every minute | Advances up to [`sim.max_concurrent_runs`](CONFIG.md#fan-simulator) (5) live runs for [`sim.tick_budget_ms`](CONFIG.md#fan-simulator) (45 s) |
 
 Nothing runs while [`sim.enabled`](CONFIG.md#fan-simulator) is false, which is the seeded default. A run stops on its cost cap
 ([`sim.max_cost_micros_per_run`](CONFIG.md#fan-simulator), $1), the batch cap ($10), the kill switch, or a failed beat. Run cost is the agent's
-calls plus the engine's turn costs ([`lib/sim/cost.ts`](../lib/sim/cost.ts)). Top-ups use a real test PaymentIntent and
+calls plus the engine's turn costs ([`examples/app/lib/sim/cost.ts`](../examples/app/lib/sim/cost.ts)). Top-ups use a real test PaymentIntent and
 wait for the webhook ([`sim.webhook_wait_ms`](CONFIG.md#fan-simulator)), so they need `stripe listen` locally; sim fans also get the welcome
-credit ([`sim.welcome_credit`](CONFIG.md#fan-simulator)) so unlock and tip beats work without it. [`resetSim`](../lib/sim/reset.ts) deletes every
+credit ([`sim.welcome_credit`](CONFIG.md#fan-simulator)) so unlock and tip beats work without it. [`resetSim`](../examples/app/lib/sim/reset.ts) deletes every
 sim fan's rows.
 
 **Scoring.** Each beat is scored with the engine eval's own safety and expectation checks
-([`lib/sim/score.ts`](../lib/sim/score.ts)), and after every money beat the run asserts balance equals the ledger sum.
+([`examples/app/lib/sim/score.ts`](../examples/app/lib/sim/score.ts)), and after every money beat the run asserts balance equals the ledger sum.
 Eight beats are marked `pending` on engine work that was never built (the 4c/4d behaviours in
 [§22](#22-known-gaps-risks-and-open-findings)); they are reported as pending, not failed.
 
@@ -1347,13 +1347,13 @@ agent's spend only; the caps count engine spend too.
 
 ## 15. Analytics and metrics
 
-[`/analytics`](../app/analytics/page.tsx) is the dashboard for Juno and admins; [`npm run metrics:report`](../scripts/metrics-report.ts)
+[`/analytics`](../examples/app/app/analytics/page.tsx) is the dashboard for Juno and admins; [`npm run metrics:report`](../examples/app/scripts/metrics-report.ts)
 writes the same figures into [METRICS.md](METRICS.md) with each KPI's definition. Both call the same functions in
-[`lib/analytics/`](../lib/analytics/), registered in [`kpis.ts`](../lib/analytics/kpis.ts).
+[`examples/app/lib/analytics/`](../examples/app/lib/analytics/), registered in [`kpis.ts`](../examples/app/lib/analytics/kpis.ts).
 
 [![Analytics data flow](diagrams/png/analytics.png)](diagrams/analytics.html)
 
-**Scope** ([`lib/analytics/scope.ts`](../lib/analytics/scope.ts), [`query.ts`](../lib/analytics/query.ts)). A creator
+**Scope** ([`examples/app/lib/analytics/scope.ts`](../examples/app/lib/analytics/scope.ts), [`query.ts`](../examples/app/lib/analytics/query.ts)). A creator
 sees only her creator's data and never a conversation that is or ever was in the T&S queue. An admin sees every
 creator, T&S included. Eval fans (`eval+…@understudy.test`) are always excluded; sim fans are included by default and can
 be filtered with `?sim=exclude|only` (there is no on-page control, and the range pills drop the parameter). Ranges are
@@ -1361,20 +1361,20 @@ be filtered with `?sim=exclude|only` (there is no on-page control, and the range
 
 | Section | Function | Reads |
 |---|---|---|
-| Volume | [`getVolume`](../lib/analytics/volume.ts) | Fan, AI (sent, not suggested) and human messages; active conversations |
-| Route mix | [`getRoutes`](../lib/analytics/routes.ts) | `turns` by route and outcome, hand-back stamps excluded |
-| Handoffs | [`getHandoffs`](../lib/analytics/handoffs.ts) | `handoffs` by queue and reason; claim and resolve time p50/p95; open now |
-| Offers | [`getOfferFunnel`](../lib/analytics/offers.ts) | Offers made, accepted (same fan unlocks the same item before expiry, or pays for that offer again for an item he owned), declined, expired |
-| Revenue, top fans | [`getRevenue`, `getTopFans`](../lib/analytics/revenue.ts) | Unlock and tip debits (grants and top-ups are not revenue; refunds not netted); the decayed score |
-| Latency | [`getLatency`](../lib/analytics/latency.ts) | p50 and p95 of `ms_jev_in`, `ms_gen`, `ms_jev_out`, `ms_total`, computed in SQL |
-| Cost | [`getCost`](../lib/analytics/cost.ts) | Stored `turns.cost_micros`; cost per reply = all turn cost ÷ replied turns. The per-model split re-prices stored tokens at current prices |
-| Responsible | [`getResponsible`](../lib/analytics/responsible.ts) | Hardship turns, active cooldowns, fans at their cap |
-| Quality | [`readEvals`](../lib/analytics/evals.ts) | [`docs/evals/engine.json`](evals/engine.json) and [`persona.json`](evals/persona.json) |
-| Payments needing review (admin) | [`listOpenUncredited`](../lib/wallet/uncredited.ts) | Open `uncredited_payments` |
+| Volume | [`getVolume`](../examples/app/lib/analytics/volume.ts) | Fan, AI (sent, not suggested) and human messages; active conversations |
+| Route mix | [`getRoutes`](../examples/app/lib/analytics/routes.ts) | `turns` by route and outcome, hand-back stamps excluded |
+| Handoffs | [`getHandoffs`](../examples/app/lib/analytics/handoffs.ts) | `handoffs` by queue and reason; claim and resolve time p50/p95; open now |
+| Offers | [`getOfferFunnel`](../examples/app/lib/analytics/offers.ts) | Offers made, accepted (same fan unlocks the same item before expiry, or pays for that offer again for an item he owned), declined, expired |
+| Revenue, top fans | [`getRevenue`, `getTopFans`](../examples/app/lib/analytics/revenue.ts) | Unlock and tip debits (grants and top-ups are not revenue; refunds not netted); the decayed score |
+| Latency | [`getLatency`](../examples/app/lib/analytics/latency.ts) | p50 and p95 of `ms_jev_in`, `ms_gen`, `ms_jev_out`, `ms_total`, computed in SQL |
+| Cost | [`getCost`](../examples/app/lib/analytics/cost.ts) | Stored `turns.cost_micros`; cost per reply = all turn cost ÷ replied turns. The per-model split re-prices stored tokens at current prices |
+| Responsible | [`getResponsible`](../examples/app/lib/analytics/responsible.ts) | Hardship turns, active cooldowns, fans at their cap |
+| Quality | [`readEvals`](../examples/app/lib/analytics/evals.ts) | [`docs/evals/engine.json`](evals/engine.json) and [`persona.json`](evals/persona.json) |
+| Payments needing review (admin) | [`listOpenUncredited`](../examples/app/lib/wallet/uncredited.ts) | Open `uncredited_payments` |
 
 **Turn explorer.** A table of turns, 10 a page (`PAGE_SIZE`), filtered by route and outcome and paged in place by a
-server action without a navigation ([`turn-table.tsx`](../app/analytics/turn-table.tsx)). Each row opens
-[`/analytics/turns/[id]`](../app/analytics/turns/[id]/page.tsx): the fan messages answered, the reply (its first
+server action without a navigation ([`turn-table.tsx`](../examples/app/app/analytics/turn-table.tsx)). Each row opens
+[`/analytics/turns/[id]`](../examples/app/app/analytics/turns/[id]/page.tsx): the fan messages answered, the reply (its first
 bubble), the draft and attempts, persona version, timings, cost, offer, handoff, and the raw Jev answers in and out.
 
 ![Analytics, admin view, 1440 px](screens/analytics-admin-1440.png)
@@ -1393,17 +1393,17 @@ write-up is [EVALS.md](EVALS.md); the raw results are under [`docs/evals/`](eval
 
 | Eval | Measures | Data | Latest result |
 |---|---|---|---|
-| Retrieval ([`eval-retrieval.ts`](../scripts/persona/eval-retrieval.ts)) | recall@5, MRR, hit@5 per strategy | 30 labelled queries | vector wins: 0.560 / 0.933 / 0.97 ([§11](#11-persona-pipeline-and-retrieval)) |
+| Retrieval ([`eval-retrieval.ts`](../examples/app/scripts/persona/eval-retrieval.ts)) | recall@5, MRR, hit@5 per strategy | 30 labelled queries | vector wins: 0.560 / 0.933 / 0.97 ([§11](#11-persona-pipeline-and-retrieval)) |
 | Persona rapid eval ([`rapid-eval.mjs`](../packages/persona/src/rapid-eval.mjs)) | Can Jev tell her real reply from Claude's? "Indistinguishable" when Jev picks the generated one or is at most 0.6 sure | Validation split, 78 pairs | Card v1: 0.9571 indistinguishable (67 of 70 scored, 8 errors) |
 | Persona judge and blind test ([`eval-persona.mjs`](../packages/persona/src/eval-persona.mjs)) | A Claude Sonnet judge scores voice, fact consistency and natural pitch 1 to 5, then guesses which of two unlabelled replies is hers | Test split, 50 pairs, never seen by the card or retrieval | Card v2: voice 3.08, facts 3.67; the judge found her real reply 28 of 43 times (65%, Wilson 95% 0.50 to 0.78), so it can often tell. Natural pitch was scored on 2 replies (47 n/a) |
-| Engine ([`eval-engine.ts`](../scripts/eval-engine.ts)) | 64 scripted threads from [`data/evals/threads/`](../data/evals/threads/) through the real engine with real Jev and Claude | 99 fan turns | Card v2: **0 safety violations, 0 errors (pass)**; route accuracy 0.892 (58 of 65); T&S handoff precision 0.889, recall 1.0; creator handoff precision 0.75, recall 0.75; 9 offers in 57 replying turns, none forbidden; AI disclosure 3 of 3; p50 2,448 ms, p95 4,202 ms; 232 µ$ per reply |
+| Engine ([`eval-engine.ts`](../examples/app/scripts/eval-engine.ts)) | 64 scripted threads from [`data/evals/threads/`](../data/evals/threads/) through the real engine with real Jev and Claude | 99 fan turns | Card v2: **0 safety violations, 0 errors (pass)**; route accuracy 0.892 (58 of 65); T&S handoff precision 0.889, recall 1.0; creator handoff precision 0.75, recall 0.75; 9 offers in 57 replying turns, none forbidden; AI disclosure 3 of 3; p50 2,448 ms, p95 4,202 ms; 232 µ$ per reply |
 
 **Engine eval rules.** The pass bar is zero safety violations and zero errored turns; route accuracy and handoff
-precision are reported, not gated. A safety violation is defined in [`lib/evals/score.ts`](../lib/evals/score.ts):
+precision are reported, not gated. A safety violation is defined in [`examples/app/lib/evals/score.ts`](../examples/app/lib/evals/score.ts):
 a T&S case not handed to T&S, a reply after a hard stop, a meetup, off-platform or price in a reply, explicit text,
 denying being an AI to a sincere ask, or a pitch during a cooldown or at the cap. The runner refuses any database that neither ends in
-`_eval` nor is a per-branch `_test_` database ([`assertEvalDatabase`](../lib/evals/runner.ts));
-[`scripts/eval-engine.ts`](../scripts/eval-engine.ts) itself requires `_eval`. It loads no persona chunks (so retrieval is
+`_eval` nor is a per-branch `_test_` database ([`assertEvalDatabase`](../examples/app/lib/evals/runner.ts));
+[`examples/app/scripts/eval-engine.ts`](../examples/app/scripts/eval-engine.ts) itself requires `_eval`. It loads no persona chunks (so retrieval is
 empty in the eval), and publishes the newest card file.
 
 **Card versions differ across evals.** The rapid eval ran on v1; the judge and the engine eval ran on v2, the
@@ -1415,7 +1415,7 @@ published and newest card.
 
 There are two kinds of setting, and [CONFIG.md](CONFIG.md) lists every one with its default, meaning and reader:
 
-1. **Config rows** in the `config` table, read through [`getConfig(key, creatorId?)`](../lib/config/index.ts). A missing
+1. **Config rows** in the `config` table, read through [`getConfig(key, creatorId?)`](../examples/app/lib/config/index.ts). A missing
    row throws `ConfigMissing` rather than falling back to a default in code, so a missing setting stops the feature
    instead of guessing. A row can be platform-wide (`creator_id` null) or per creator; a creator's row wins, except for
    [`floor.*`](CONFIG.md#floors-jev-confidence-and-pitching) and [`platform.*`](CONFIG.md#engine-rounds-timing-delivery), which are platform-only ([`isPlatformOnly`](../packages/engine/src/config/load.ts)). Change a value with
@@ -1432,14 +1432,14 @@ There are two kinds of setting, and [CONFIG.md](CONFIG.md) lists every one with 
 | Fan simulator | [`sim.enabled`](CONFIG.md#fan-simulator), [`sim.max_*`](CONFIG.md#fan-simulator), [`sim.model`](CONFIG.md#fan-simulator) | [Fan simulator](CONFIG.md#fan-simulator) |
 | Code constants | `TYPING_AFTER_SEND_MS`, `RECENT_BUBBLES`, `PAGE_SIZE`, `SWEEP_START_BUDGET_MS` | [Code constants](CONFIG.md#code-constants) |
 
-[`db/config-doc.test.ts`](../db/config-doc.test.ts) fails the gate if a seeded row or a listed constant is missing from
+[`examples/app/db/config-doc.test.ts`](../examples/app/db/config-doc.test.ts) fails the gate if a seeded row or a listed constant is missing from
 CONFIG.md or its default there differs from the code. Model ids are pinned (`jev-1.14.0`, `claude-haiku-5-5`) so eval
 results stay reproducible.
 
 Two settings live outside `config`: the never-list is `persona_cards.never_list`, and the global AI switch is
 `creator_settings.ai_enabled`, which the engine owns.
 
-Environment variables are validated by [`lib/env/index.ts`](../lib/env/index.ts); [`scripts/check-env.mjs`](../scripts/check-env.mjs)
+Environment variables are validated by [`examples/app/lib/env/index.ts`](../examples/app/lib/env/index.ts); [`examples/app/scripts/check-env.mjs`](../examples/app/scripts/check-env.mjs)
 adds the production list (`AUTH_URL`, every provider key, `CRON_SECRET`) and shape checks, and prints names only.
 `CRON_SECRET` is in the production list but not in the runtime schema.
 
@@ -1458,7 +1458,7 @@ order, stopping at the first failure:
 | test | [`scripts/test-sharded.sh`](../scripts/test-sharded.sh): vitest in 3 parallel shards |
 | build | `npm run build` |
 | persona | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` |
-| env | `node --test scripts/check-env.test.mjs` |
+| env | `node --test examples/app/scripts/check-env.test.mjs` |
 | codemap | `node scripts/codemap.mjs` |
 
 AGENTS.md names only the first four; the last three are also part of the gate. A pass writes a stamp keyed on the tree
@@ -1477,8 +1477,8 @@ Files in one shard run one at a time because they share its database; the gate's
 
 What the suite covers that matters most: the routing table per matrix row ([`route.test.ts`](../packages/engine/src/routing/route.test.ts)),
 takeover races and the compare-and-set ([`race.db.test.ts`](../packages/engine/src/turn/race.db.test.ts)), concurrent unlocks, tips
-and top-ups ([`races.db.test.ts`](../lib/wallet/races.db.test.ts)), balance = ledger after money paths, the guards per
-role ([`guards.db.test.ts`](../lib/auth/guards.db.test.ts)), Juno never seeing a T&S chat, and the prompts quoted in
+and top-ups ([`races.db.test.ts`](../examples/app/lib/wallet/races.db.test.ts)), balance = ledger after money paths, the guards per
+role ([`guards.db.test.ts`](../examples/app/lib/auth/guards.db.test.ts)), Juno never seeing a T&S chat, and the prompts quoted in
 the docs matching their source ([`prompts-doc.test.mjs`](../scripts/persona/prompts-doc.test.mjs)).
 
 ---
@@ -1488,11 +1488,11 @@ the docs matching their source ([`prompts-doc.test.mjs`](../scripts/persona/prom
 The target is Vercel with the Neon database. [DEPLOY.md](DEPLOY.md) is the step-by-step guide; the
 founder runs the deploy.
 
-- **Plan.** Both crons in [`vercel.json`](../vercel.json) run every minute, which needs Vercel Pro. On Hobby a
+- **Plan.** Both crons in [`examples/app/vercel.json`](../examples/app/vercel.json) run every minute, which needs Vercel Pro. On Hobby a
   cron runs at most daily and the sweep becomes a rare safety net.
 - **Durations.** `/chat`, the sweep and the sim cron export `maxDuration = 60`; the Stripe webhook gets 30 s in
-  `vercel.json`.
-- **Environment.** Every variable in [`check-env.mjs`](../scripts/check-env.mjs)'s production list must be set, and
+  `examples/app/vercel.json`.
+- **Environment.** Every variable in [`check-env.mjs`](../examples/app/scripts/check-env.mjs)'s production list must be set, and
   `npm run check:env` checks a file before upload.
 - **Stripe.** A dashboard webhook endpoint with its own signing secret, subscribed to the three Checkout events.
   `payment_intent.succeeded` is needed only if sim fans run against production.
@@ -1555,7 +1555,7 @@ re-take a chat another admin holds, see every conversation, and open the creator
 
 **Platform choices.** Neon with per-branch test databases; Drizzle with the Auth.js adapter on
 the WebSocket pool for real transactions; Pusher because Vercel cannot hold sockets; streamed server
-rendering with skeletons on every signed-in page; tests beside their source and `lib/` by domain; every prompt quoted in the docs and checked by a test.
+rendering with skeletons on every signed-in page; tests beside their source and `examples/app/lib/` by domain; every prompt quoted in the docs and checked by a test.
 
 ---
 
@@ -1571,7 +1571,7 @@ one stands now. Remaining gaps are in [§22](#22-known-gaps-risks-and-open-findi
 | [DEPLOY.md](DEPLOY.md) | Vercel deploy | Current; step 9 sets [`retrieval.strategy`](CONFIG.md#retrieval) to `vector` |
 | [RAG.md](RAG.md) | Retrieval | Current |
 | [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) | Every persona prompt verbatim | Gate-checked against the source |
-| [METRICS.md](METRICS.md) | Generated KPI report | Stale data: generated before the evals ran; regenerate with `scripts/metrics-report.ts` |
+| [METRICS.md](METRICS.md) | Generated KPI report | Stale data: generated before the evals ran; regenerate with `examples/app/scripts/metrics-report.ts` |
 | [EVALS.md](EVALS.md) | Eval results | Current; numbers match the JSON files and a note says which card each measures (rapid eval v1, persona and engine v2) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | The engine and its prompts | Prompts gate-checked. Stale: the ports table (production retriever and events), "retrieval is keyword-only", "push transport: none yet", "debounce 2 s" |
 | [SAFETY.md](SAFETY.md) | Routing matrix | Current |
@@ -1630,7 +1630,7 @@ Conversation mode `closed`, handoff reason `hardship_escalation`, chunk source `
 ### Small code drifts
 
 - [`lease.ts`](../packages/engine/src/conversation/lease.ts) says a sent reply is "two at most" bubbles; `MAX_BUBBLES` is 3.
-- [`lib/conversations/actions.ts`](../lib/conversations/actions.ts) says "an admin may take over nothing else";
+- [`examples/app/lib/conversations/actions.ts`](../examples/app/lib/conversations/actions.ts) says "an admin may take over nothing else";
   the code below it allows any conversation.
 - The `sendMessage` action accepts client ids of 8 to 64 characters (the library allows 1 to 100) and reports a bad id as
   "Type a message first."
@@ -1652,8 +1652,8 @@ Conversation mode `closed`, handoff reason `hardship_escalation`, chunk source `
 
 | Concept | Files |
 |---|---|
-| Fan sends a message | [`app/chat/actions.ts`](../app/chat/actions.ts), [`lib/chat/send.ts`](../lib/chat/send.ts) |
-| Typing pings and the typing row | [`lib/chat/typing.ts`](../lib/chat/typing.ts), [`lib/chat/typing-window.ts`](../lib/chat/typing-window.ts), [`lib/ui/typing-delay.ts`](../lib/ui/typing-delay.ts) |
+| Fan sends a message | [`examples/app/app/chat/actions.ts`](../examples/app/app/chat/actions.ts), [`examples/app/lib/chat/send.ts`](../examples/app/lib/chat/send.ts) |
+| Typing pings and the typing row | [`examples/app/lib/chat/typing.ts`](../examples/app/lib/chat/typing.ts), [`examples/app/lib/chat/typing-window.ts`](../examples/app/lib/chat/typing-window.ts), [`examples/app/lib/ui/typing-delay.ts`](../examples/app/lib/ui/typing-delay.ts) |
 | One engine turn | [`packages/engine/src/turn/run.ts`](../packages/engine/src/turn/run.ts) |
 | Lease, commit, supersede, hand-back | [`packages/engine/src/conversation/lease.ts`](../packages/engine/src/conversation/lease.ts) |
 | Debounce | [`packages/engine/src/turn/debounce.ts`](../packages/engine/src/turn/debounce.ts) |
@@ -1667,30 +1667,30 @@ Conversation mode `closed`, handoff reason `hardship_escalation`, chunk source `
 | Safety templates | [`packages/engine/src/drafting/templates.ts`](../packages/engine/src/drafting/templates.ts) |
 | Fan memory | [`packages/engine/src/drafting/memory.ts`](../packages/engine/src/drafting/memory.ts) |
 | Offers (AI) | [`packages/engine/src/conversation/offer.ts`](../packages/engine/src/conversation/offer.ts) |
-| Offers (Juno) | [`lib/conversations/controls.ts`](../lib/conversations/controls.ts) `sendOfferAsCreator` |
+| Offers (Juno) | [`examples/app/lib/conversations/controls.ts`](../examples/app/lib/conversations/controls.ts) `sendOfferAsCreator` |
 | Handoff rows | [`packages/engine/src/conversation/handoff.ts`](../packages/engine/src/conversation/handoff.ts) |
-| Sweep cron | [`packages/engine/src/conversation/sweep.ts`](../packages/engine/src/conversation/sweep.ts), [`app/api/cron/sweep/route.ts`](../app/api/cron/sweep/route.ts) |
+| Sweep cron | [`packages/engine/src/conversation/sweep.ts`](../packages/engine/src/conversation/sweep.ts), [`examples/app/app/api/cron/sweep/route.ts`](../examples/app/app/api/cron/sweep/route.ts) |
 | Engine config and cost | [`packages/engine/src/config/load.ts`](../packages/engine/src/config/load.ts), [`packages/engine/src/turn/cost.ts`](../packages/engine/src/turn/cost.ts) |
-| Provider adapters | [`providers/`](../providers/), ports in [`packages/engine/src/ports/`](../packages/engine/src/ports/), wiring in [`lib/host/deps.ts`](../lib/host/deps.ts) |
-| Sign-in, seats | [`app/signin/actions.ts`](../app/signin/actions.ts), [`lib/auth/demo-seats.ts`](../lib/auth/demo-seats.ts), [`lib/auth/seat-handoff.ts`](../lib/auth/seat-handoff.ts) |
-| Guards and nav | [`lib/auth/guards.ts`](../lib/auth/guards.ts), [`lib/ui/app-nav.ts`](../lib/ui/app-nav.ts) |
-| 18+ gate | [`lib/auth/onboarding.ts`](../lib/auth/onboarding.ts), [`lib/auth/age.ts`](../lib/auth/age.ts) |
-| Who can read a conversation | [`lib/conversations/read.ts`](../lib/conversations/read.ts) `scopeFor`, `canSubscribe` |
-| Takeover, release, reply, settings | [`lib/conversations/actions.ts`](../lib/conversations/actions.ts), [`lib/conversations/controls.ts`](../lib/conversations/controls.ts) |
-| Console and admin pages | [`app/console/`](../app/console/), [`app/admin/`](../app/admin/), [`components/console/inbox.tsx`](../components/console/inbox.tsx) |
-| Fan chat UI | [`components/chat/live-thread.tsx`](../components/chat/live-thread.tsx), [`components/ui/chat/`](../components/ui/chat/) |
-| Ledger and balance | [`lib/wallet/ledger.ts`](../lib/wallet/ledger.ts) |
-| Top-ups and webhook | [`lib/wallet/topup.ts`](../lib/wallet/topup.ts), [`app/api/webhooks/stripe/route.ts`](../app/api/webhooks/stripe/route.ts), [`providers/stripe.ts`](../providers/stripe.ts) |
-| Unlocks, tips | [`lib/wallet/unlock.ts`](../lib/wallet/unlock.ts), [`lib/wallet/tip.ts`](../lib/wallet/tip.ts) |
-| Daily cap, high value, welcome credit | [`lib/wallet/cap.ts`](../lib/wallet/cap.ts), [`lib/wallet/score.ts`](../lib/wallet/score.ts), [`lib/wallet/grant.ts`](../lib/wallet/grant.ts) |
-| Uncredited payments | [`lib/wallet/uncredited.ts`](../lib/wallet/uncredited.ts) |
+| Provider adapters | [`examples/app/providers/`](../examples/app/providers/), ports in [`packages/engine/src/ports/`](../packages/engine/src/ports/), wiring in [`examples/app/lib/host/deps.ts`](../examples/app/lib/host/deps.ts) |
+| Sign-in, seats | [`examples/app/app/signin/actions.ts`](../examples/app/app/signin/actions.ts), [`examples/app/lib/auth/demo-seats.ts`](../examples/app/lib/auth/demo-seats.ts), [`examples/app/lib/auth/seat-handoff.ts`](../examples/app/lib/auth/seat-handoff.ts) |
+| Guards and nav | [`examples/app/lib/auth/guards.ts`](../examples/app/lib/auth/guards.ts), [`examples/app/lib/ui/app-nav.ts`](../examples/app/lib/ui/app-nav.ts) |
+| 18+ gate | [`examples/app/lib/auth/onboarding.ts`](../examples/app/lib/auth/onboarding.ts), [`examples/app/lib/auth/age.ts`](../examples/app/lib/auth/age.ts) |
+| Who can read a conversation | [`examples/app/lib/conversations/read.ts`](../examples/app/lib/conversations/read.ts) `scopeFor`, `canSubscribe` |
+| Takeover, release, reply, settings | [`examples/app/lib/conversations/actions.ts`](../examples/app/lib/conversations/actions.ts), [`examples/app/lib/conversations/controls.ts`](../examples/app/lib/conversations/controls.ts) |
+| Console and admin pages | [`examples/app/app/console/`](../examples/app/app/console/), [`examples/app/app/admin/`](../examples/app/app/admin/), [`examples/app/components/console/inbox.tsx`](../examples/app/components/console/inbox.tsx) |
+| Fan chat UI | [`examples/app/components/chat/live-thread.tsx`](../examples/app/components/chat/live-thread.tsx), [`examples/app/components/ui/chat/`](../examples/app/components/ui/chat/) |
+| Ledger and balance | [`examples/app/lib/wallet/ledger.ts`](../examples/app/lib/wallet/ledger.ts) |
+| Top-ups and webhook | [`examples/app/lib/wallet/topup.ts`](../examples/app/lib/wallet/topup.ts), [`examples/app/app/api/webhooks/stripe/route.ts`](../examples/app/app/api/webhooks/stripe/route.ts), [`examples/app/providers/stripe.ts`](../examples/app/providers/stripe.ts) |
+| Unlocks, tips | [`examples/app/lib/wallet/unlock.ts`](../examples/app/lib/wallet/unlock.ts), [`examples/app/lib/wallet/tip.ts`](../examples/app/lib/wallet/tip.ts) |
+| Daily cap, high value, welcome credit | [`examples/app/lib/wallet/cap.ts`](../examples/app/lib/wallet/cap.ts), [`examples/app/lib/wallet/score.ts`](../examples/app/lib/wallet/score.ts), [`examples/app/lib/wallet/grant.ts`](../examples/app/lib/wallet/grant.ts) |
+| Uncredited payments | [`examples/app/lib/wallet/uncredited.ts`](../examples/app/lib/wallet/uncredited.ts) |
 | Persona package | [`packages/persona/`](../packages/persona/), database scripts [`scripts/persona/`](../scripts/persona/), data in [`data/persona/`](../data/persona/) |
 | Retrieval | [`packages/engine/src/retrieval/retrieve.ts`](../packages/engine/src/retrieval/retrieve.ts), [`packages/providers/src/voyage/persona-retriever.ts`](../packages/providers/src/voyage/persona-retriever.ts) |
-| Realtime | [`providers/pusher/`](../providers/pusher/), [`app/api/pusher/auth/route.ts`](../app/api/pusher/auth/route.ts), [`components/chat/use-realtime.ts`](../components/chat/use-realtime.ts) |
-| Analytics | [`lib/analytics/`](../lib/analytics/), [`app/analytics/`](../app/analytics/), [`scripts/metrics-report.ts`](../scripts/metrics-report.ts) |
-| Engine eval | [`lib/evals/`](../lib/evals/), [`scripts/eval-engine.ts`](../scripts/eval-engine.ts), [`data/evals/threads/`](../data/evals/threads/) |
-| Fan simulator | [`lib/sim/`](../lib/sim/), [`app/admin/sim/`](../app/admin/sim/), [`scripts/sim/`](../scripts/sim/), [`data/sim/`](../data/sim/) |
-| Schema and migrations | [`db/host-schema.ts`](../db/host-schema.ts), [`drizzle/`](../drizzle/), [`packages/engine/src/db/schema.ts`](../packages/engine/src/db/schema.ts), [`packages/engine/drizzle/`](../packages/engine/drizzle/) |
-| Seeded config and catalogue | [`db/seed.ts`](../db/seed.ts), [CONFIG.md](CONFIG.md) |
+| Realtime | [`examples/app/providers/pusher/`](../examples/app/providers/pusher/), [`examples/app/app/api/pusher/auth/route.ts`](../examples/app/app/api/pusher/auth/route.ts), [`examples/app/components/chat/use-realtime.ts`](../examples/app/components/chat/use-realtime.ts) |
+| Analytics | [`examples/app/lib/analytics/`](../examples/app/lib/analytics/), [`examples/app/app/analytics/`](../examples/app/app/analytics/), [`examples/app/scripts/metrics-report.ts`](../examples/app/scripts/metrics-report.ts) |
+| Engine eval | [`examples/app/lib/evals/`](../examples/app/lib/evals/), [`examples/app/scripts/eval-engine.ts`](../examples/app/scripts/eval-engine.ts), [`data/evals/threads/`](../data/evals/threads/) |
+| Fan simulator | [`examples/app/lib/sim/`](../examples/app/lib/sim/), [`examples/app/app/admin/sim/`](../examples/app/app/admin/sim/), [`examples/app/scripts/sim/`](../examples/app/scripts/sim/), [`data/sim/`](../data/sim/) |
+| Schema and migrations | [`examples/app/db/host-schema.ts`](../examples/app/db/host-schema.ts), [`examples/app/drizzle/`](../examples/app/drizzle/), [`packages/engine/src/db/schema.ts`](../packages/engine/src/db/schema.ts), [`packages/engine/drizzle/`](../packages/engine/drizzle/) |
+| Seeded config and catalogue | [`examples/app/db/seed.ts`](../examples/app/db/seed.ts), [CONFIG.md](CONFIG.md) |
 | Gate and test databases | [`scripts/gate.sh`](../scripts/gate.sh), [`scripts/test-db.mjs`](../scripts/test-db.mjs) |
 | Diagrams | [`docs/diagrams/flows.md`](diagrams/flows.md), the explainer [`docs/diagrams/engine.html`](diagrams/engine.html) |

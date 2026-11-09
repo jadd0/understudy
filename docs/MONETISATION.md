@@ -1,7 +1,7 @@
 # Monetisation
 
 How a fan's money moves: the prepaid wallet, the ledger, unlocks and tips, the spending limits, and the
-"high-value fan" figure. Code lives in `lib/wallet/`; Stripe is reached only through `providers/stripe.ts`.
+"high-value fan" figure. Code lives in `examples/app/lib/wallet/`; Stripe is reached only through `examples/app/providers/stripe.ts`.
 
 ## Model
 
@@ -10,11 +10,11 @@ How a fan's money moves: the prepaid wallet, the ledger, unlocks and tips, the s
   small purchases, so a fan never re-enters card details at the moment of desire, and Stripe fees apply once
   per top-up rather than once per $9.99 unlock.
 - **Money is integer cents** everywhere (`*_cents`), USD only. The `/wallet` form takes dollars and converts
-  once, strictly, in `lib/wallet/money.ts`; input that is not `12`, `12.5` or `12.50` is refused.
+  once, strictly, in `examples/app/lib/wallet/money.ts`; input that is not `12`, `12.5` or `12.50` is refused.
 - **The ledger is append-only.** `ledger_entries` signs are: `topup`/`refund`/`grant` positive, `unlock`/`tip`
   negative. `wallets.balance_cents` is a stored copy updated in the same locked transaction as each entry, with
   `CHECK (balance_cents >= 0)` as the last line of defence. Wallet tests assert balance = ledger sum with
-  `assertBalanceEqualsLedger` (`lib/wallet/test-helpers.ts`), called explicitly after the money paths; the database
+  `assertBalanceEqualsLedger` (`examples/app/lib/wallet/test-helpers.ts`), called explicitly after the money paths; the database
   does not enforce the equality.
 - **Every adult fan starts with $50.** The founder asked for the account to start with $50 in credits, as on the
   real platform. Completing onboarding (18+ confirmed) writes one `grant` ledger entry of
@@ -46,9 +46,9 @@ How a fan's money moves: the prepaid wallet, the ledger, unlocks and tips, the s
    tap), require `status = open` and `expires_at > now()`, debit the **offer's copied price** (not the catalogue's
    current one), insert the unlock (kept as it is when he already owns the item), mark the offer `accepted`. One
    transaction. A purchase then schedules an engine turn in which she checks in about the item (`unlockInChat`,
-   `lib/chat/react.ts`); the `alreadyUnlocked` path charges nothing and schedules nothing.
+   `examples/app/lib/chat/react.ts`); the `alreadyUnlocked` path charges nothing and schedules nothing.
 4. **Tip.** `tip(fanId, creatorId, amountCents, idempotencyKey)`: one debit; a retry with the same key
-   returns the first result and charges nothing. `tipInChat` (`lib/chat/react.ts`) adds the "You tipped $X" system
+   returns the first result and charges nothing. `tipInChat` (`examples/app/lib/chat/react.ts`) adds the "You tipped $X" system
    row (unique per key) and, only when it wrote that row, schedules a turn in which she thanks him; the model is told
    "he sent you a tip", never the amount.
 
@@ -109,7 +109,7 @@ finite number throws `ConfigInvalid` rather than dividing by it.
 `wallet.cap_min_cents`, `cap.max_daily_cents`, `wallet.cap_raise_delay_hours`, `fan.high_value_threshold_cents`,
 `fan.high_value_half_life_days`, `offer.ttl_minutes`, `wallet.welcome_credit_cents`, `wallet.tip_options_cents`,
 `wallet.tip_min_cents`. Seeded values are demo placeholders. The tip minimum is enforced in `tipAction`
-(`app/chat/actions.ts`), not in `tip()`, so the fan simulator's tips skip it.
+(`examples/app/app/chat/actions.ts`), not in `tip()`, so the fan simulator's tips skip it.
 
 ## Pitch pacing
 
@@ -118,7 +118,7 @@ order: no active hardship cooldown (`pitch.hardship_cooldown_hours`); fewer than
 `pitch.decline_window_minutes`; not at the daily cap; fewer than `pitch.velocity_max_unlocks` unlocks in
 `pitch.velocity_window_minutes`; and at least `pitch.min_gap_rounds` rounds since the last offer (skipped for a buy
 intent or an explicit request). The facts are read in `packages/engine/src/turn/facts.ts`. The cap is one rule, `capAllows` in
-`lib/wallet/cap.ts` (spend today plus the amount within the cap): the debit refuses what it refuses, and the engine's
+`examples/app/lib/wallet/cap.ts` (spend today plus the amount within the cap): the debit refuses what it refuses, and the engine's
 shortlist drops every item whose price it refuses, so the AI never pitches an item the cap would then refuse. The `pitch.*` keys can be overridden per creator; only `floor.*` and `platform.*` rows are platform-only.
 Juno's own offers from the console skip pacing. Full routing: `docs/APP.md` §8.6.
 

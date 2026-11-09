@@ -12,7 +12,7 @@ export const PATTERNS = [/\bD-\d{3}\b/, /\bF-\d{3}\b/, /\.product\//, /\bPR \d+[
 const SKIP = [
   /^\.product\//,
   /^package-lock\.json$/,
-  /^drizzle\/meta\//,
+  /^examples\/app\/drizzle\/meta\//,
   /\.(png|jpe?g|gif|webp|ico|pdf|woff2?|ttf|otf|mp4|zip)$/i,
 ];
 

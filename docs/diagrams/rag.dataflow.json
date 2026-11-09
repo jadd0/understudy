@@ -58,7 +58,7 @@
       "dot": "emerald",
       "title": "R: Retrieve (top row once, bottom row every reply)",
       "items": [
-        "Once: each of her 1,025 chunks is embedded and saved next to its text (scripts/persona/load.ts).",
+        "Once: each of her 1,025 chunks is embedded and saved next to its text (examples/app/scripts/persona/load.ts).",
         "Every reply: only the fan's message is embedded. One SQL query ranks every stored chunk by distance to it.",
         "The 5 closest come back as plain text. The other 1,020 never leave the database."
       ]

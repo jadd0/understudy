@@ -74,7 +74,7 @@ description, or a comment and her reply), so nothing is split mid-thought and no
 
 ## 2. Embedding and storage
 
-`npm run persona:load -- --creator junovale` (`scripts/persona/load.ts`):
+`npm run persona:load -- --creator junovale` (`examples/app/scripts/persona/load.ts`):
 
 1. Reads `chunks.jsonl`, refuses held-out ids and duplicate chunk ids, and writes nothing on either.
 2. Embeds every chunk with **Voyage `voyage-4`** (`retrieval.voyage_model` config row), `input_type: "document"`,
@@ -87,7 +87,7 @@ description, or a comment and her reply), so nothing is split mid-thought and no
 4. Stores the newest card file as the next card version, **unpublished**. Publishing is a separate step
    (`npm run persona:publish`); the engine reads only the newest published card.
 
-Table `persona_chunks` (`db/schema.ts`):
+Table `persona_chunks` (`examples/app/db/schema.ts`):
 
 | column | type | purpose |
 |---|---|---|
@@ -110,7 +110,7 @@ Called from `packages/engine/src/turn/run.ts` only for routes that write a reply
   query).
 - **k:** `retrieval.k` config row, **5**.
 - **Strategy:** `retrieval.strategy` config row, read when the engine's dependencies are built
-  (`lib/host/deps.ts`). It is **`vector`** on the dev database since the retrieval eval. The seed default is
+  (`examples/app/lib/host/deps.ts`). It is **`vector`** on the dev database since the retrieval eval. The seed default is
   `fts`, so a fresh database works with no Voyage key until the eval has been run.
 
 The three strategies (`packages/engine/src/retrieval/retrieve.ts`):

@@ -2,14 +2,14 @@
 
 Auth.js v5 (`next-auth@beta`) with the Resend provider and the Drizzle adapter; sessions live in the
 database (`session.strategy = "database"`). Nothing is hand-rolled (AGENTS.md). Files:
-`lib/auth/index.ts`, `lib/auth/turnstile.ts`, `lib/auth/guards.ts`, `lib/auth/onboarding.ts`, `lib/auth/demo-seats.ts`,
-`app/signin/**`, `app/onboarding/**`, `app/api/auth/[...nextauth]/route.ts`.
+`examples/app/lib/auth/index.ts`, `examples/app/lib/auth/turnstile.ts`, `examples/app/lib/auth/guards.ts`, `examples/app/lib/auth/onboarding.ts`, `examples/app/lib/auth/demo-seats.ts`,
+`examples/app/app/signin/**`, `examples/app/app/onboarding/**`, `examples/app/app/api/auth/[...nextauth]/route.ts`.
 
 ## Fan sign-in
 
 1. `/signin` renders an email field, a password field (for team accounts) and the Turnstile widget.
 2. The `requestSignIn` server action runs, in this order:
-   1. Verify the Turnstile token with Cloudflare (`lib/auth/turnstile.ts`). Nothing is sent or stored for a
+   1. Verify the Turnstile token with Cloudflare (`examples/app/lib/auth/turnstile.ts`). Nothing is sent or stored for a
       visitor who has not passed. A missing token, a non-OK response, `success` not `true`, or a network
       error is a failure (fail closed) and redirects to `/signin?error=turnstile`.
    2. Validate the email (zod, trimmed, lower-cased); else `?error=email`.
@@ -24,7 +24,7 @@ to Auth.js. The only way to start an email sign-in is the checked server action.
 ## 18+ gate and flagging
 
 A fan with no `adult_confirmed_at` is sent to `/onboarding`, which takes a date of birth and an "I am 18
-or older" tick. `applyOnboarding` (`lib/auth/onboarding.ts`):
+or older" tick. `applyOnboarding` (`examples/app/lib/auth/onboarding.ts`):
 
 - Parses the date strictly (`YYYY-MM-DD`, a real day, not in the future, not before 1900), computes the
   age in UTC, with `now` injected.
@@ -42,7 +42,7 @@ production, not built.
 
 ## Roles and route guards
 
-Roles: `fan`, `creator`, `admin` (`users.role`, default `fan`). `lib/auth/guards.ts` decides every protected
+Roles: `fan`, `creator`, `admin` (`users.role`, default `fan`). `examples/app/lib/auth/guards.ts` decides every protected
 route on the server from the user row read fresh, so a flag set after a session was issued still blocks.
 
 | situation | result |
@@ -59,18 +59,18 @@ route on the server from the user row read fresh, so a flag set after a session 
 `/` sends a user to their home: `/chat`, `/console` or `/admin`. Server components and actions call
 `requireRole`, `requireConsole` (creator or admin, role read from the row), `requireAdultFan`, `requireChatReader` (a fan,
 including one restricted to reading), `requireOnboarding` or `redirectHome`. `/analytics` uses `requireAnalyticsViewer`
-(`lib/analytics/viewer.ts`).
+(`examples/app/lib/analytics/viewer.ts`).
 
 ## Demo seats
 
 We do not own `understudy.example`, so email cannot reach `juno@understudy.example` or `admin@understudy.example`, and
 admin must not be open to anyone with the URL. Seats are the addresses in `SEED_CREATOR_EMAIL` and
-`SEED_ADMIN_EMAILS` (`lib/auth/demo-seats.ts`).
+`SEED_ADMIN_EMAILS` (`examples/app/lib/auth/demo-seats.ts`).
 
 - **Password.** For a seat, the action checks `DEMO_SEAT_PASSWORD` after Turnstile. The comparison is
   constant time over sha256 digests, so neither length nor content leaks; with no password configured it
   is always false. Wrong password: `/signin?error=seat`. Fans leave the password field blank.
-- **The seat's account must already exist (`lib/auth/seat-account.ts`).** After the password, the action
+- **The seat's account must already exist (`examples/app/lib/auth/seat-account.ts`).** After the password, the action
   checks that the seed has created the seat's user row with the seat's role (`creator` for
   `SEED_CREATOR_EMAIL`, `admin` for `SEED_ADMIN_EMAILS`) and that it isn't flagged. Otherwise:
   `/signin?error=seat`, and Auth.js is never called. Without this, a seat signing in before the seed ran
@@ -82,7 +82,7 @@ admin must not be open to anyone with the URL. Seats are the addresses in `SEED_
 - **Link capture.** The action calls `signIn("resend", { redirect: false })` inside `captureSeatLink`, an
   `AsyncLocalStorage` scope. The provider's `sendVerificationRequest` is wrapped by `seatAwareSender`:
   for a seat address inside a capture it keeps the link and sends nothing; anyone else gets the normal
-  email. The browser is then sent to `/signin/continue?to=<callback path>` (`lib/auth/seat-handoff.ts`), which accepts only
+  email. The browser is then sent to `/signin/continue?to=<callback path>` (`examples/app/lib/auth/seat-handoff.ts`), which accepts only
   a same-origin `/api/auth/callback/resend?` path and navigates the whole window to it. A server-action redirect straight
   to the link did not work: Next followed it on the server and the session cookie never reached the browser.
 - **A seat link outside a capture throws.** If any other path asks Auth.js for a seat link, the sender
@@ -92,12 +92,12 @@ admin must not be open to anyone with the URL. Seats are the addresses in `SEED_
   to the rule that auth is never hand-rolled.
 - **Simultaneous sign-in.** Each sign-in makes its own verification token and its own `sessions` row,
   and Auth.js never revokes a user's other sessions, so two reviewers can be in the same seat at
-  once. `db/seed.ts` creates the creator (handle `junovale`, display name `Juno`) and the admins
+  once. `examples/app/db/seed.ts` creates the creator (handle `junovale`, display name `Juno`) and the admins
   idempotently.
 
 ## Environment keys
 
-Validated by `lib/env/index.ts` (zod) on first use. Names only; values are in `.env.local`.
+Validated by `examples/app/lib/env/index.ts` (zod) on first use. Names only; values are in `examples/app/.env.local`.
 
 | key | needed now | purpose |
 |---|---|---|
@@ -109,13 +109,13 @@ Validated by `lib/env/index.ts` (zod) on first use. Names only; values are in `.
 | `SEED_CREATOR_EMAIL`, `SEED_ADMIN_EMAILS` | optional | demo seats and seed (admins comma-separated) |
 | `DEMO_SEAT_PASSWORD` | optional | shared seat password; without it seats cannot sign in |
 | `CLAUDE_SECRET_KEY`, `TYPESAFE_SECRET_KEY` | optional to boot | the engine and persona scripts (Claude, Jev) |
-| `VOYAGE_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PUSHER_*`, `NEXT_PUBLIC_PUSHER_*` | optional to boot | retrieval embeddings, wallet top-ups, realtime; all live. `scripts/check-env.mjs` requires them (and `CRON_SECRET`) in production |
+| `VOYAGE_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PUSHER_*`, `NEXT_PUBLIC_PUSHER_*` | optional to boot | retrieval embeddings, wallet top-ups, realtime; all live. `examples/app/scripts/check-env.mjs` requires them (and `CRON_SECRET`) in production |
 
 ## Sim fan links (fan simulator)
 
 Sim fans (`users.is_sim`, `sim+<slug>-<run8>@sim.understudy.test`) have no mailbox. An admin on `/admin/sim` can press **Open as fan**:
 `openAsFanAction` checks the run's user is a sim fan (a `@sim.understudy.test` address, `is_sim`, role fan), then calls
-`signIn("resend", { redirect: false })` inside `captureSignInLink(email, fn)` (`lib/auth/demo-seats.ts`), which keeps the
+`signIn("resend", { redirect: false })` inside `captureSignInLink(email, fn)` (`examples/app/lib/auth/demo-seats.ts`), which keeps the
 link Auth.js produced for that one address instead of emailing it. Auth.js still verifies the one-time token and creates the
 session, so a second use of the link is rejected. `seatAwareSender` throws for a sim address outside a capture for that same
 address, so a sim fan cannot be emailed or signed in by any other path (for example by hand through `/signin`).

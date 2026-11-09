@@ -5,21 +5,21 @@ The build contract is `AGENTS.md`.
 
 ## Setup
 
-1. `npm install`
-2. Copy the keys listed in `.env.example` into `.env.local` (names only here; see
+1. `npm install` (an npm workspace: `packages/*` is the library, `examples/server` and `examples/app` are two hosts on it)
+2. Copy the keys listed in `examples/app/.env.example` into `examples/app/.env.local` (names only here; see
    [AUTH.md](AUTH.md#environment-keys) for what each is for). `.env*.local` is gitignored.
-3. `npm run check:env` checks the file. `npm run db:migrate` applies the engine's migrations and then `drizzle/` to `DATABASE_URL` (Neon `neondb`).
+3. `npm run check:env` checks the file. `npm run db:migrate` applies the engine's migrations and then `examples/app/drizzle/` to `DATABASE_URL` (Neon `neondb`).
 4. `npm run db:seed` creates the creator (from `SEED_CREATOR_EMAIL`) and admins (`SEED_ADMIN_EMAILS`),
    idempotently; each is skipped with a message if its variable is unset.
-5. `npm run dev`.
+5. `npm run dev`. Run the Next scripts from the repository root: the app reads `data/` and `docs/evals/` relative to the working directory, and the root scripts start Next with the repository root as that directory.
 
 ## Commands
 
 | command | does |
 |---|---|
-| `npm run dev`, `build`, `start` | Next.js |
+| `npm run dev`, `build`, `start` | Next.js, the app in `examples/app/` |
 | `npm run typecheck`, `lint`, `test` | `tsc --noEmit`, ESLint, vitest (against the per-branch test database, [DATA-MODEL.md](DATA-MODEL.md#test-database)) |
-| `npm run db:generate` | drizzle-kit writes a migration to `packages/engine/drizzle/` from the engine schema, then one to `drizzle/` from `db/host-schema.ts` |
+| `npm run db:generate` | drizzle-kit writes a migration to `packages/engine/drizzle/` from the engine schema, then one to `examples/app/drizzle/` from `examples/app/db/host-schema.ts` |
 | `npm run db:migrate`, `db:seed` | apply migrations; seed creator and admins |
 | `bash scripts/gate.sh` | the gate |
 | `npx understudy-persona build --creator junovale --card-model <id> --gen-model <id> --jev-model <id>` | persona build; see [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md#running-it) |
@@ -31,7 +31,7 @@ The build contract is `AGENTS.md`.
 the gate's step list, `gate-steps` (name, tab, command), runs the steps in order, skips the rest after the first
 failure, and writes each step's output to `gate-logs/<step>.log`. A gate with no steps fails. One gate
 runs at a time across all worktrees (a lock). A pass writes a stamp (`scripts/gate-stamp.mjs`) that fingerprints the tree and
-the files in `gate_inputs` (`.env.local`, `node_modules/.package-lock.json`).
+the files in `gate_inputs` (`examples/app/.env.local`, `node_modules/.package-lock.json`).
 
 | step | command |
 |---|---|
@@ -47,7 +47,7 @@ Add a check as a new line in the gate-steps file, never by editing `gate.sh`.
 
 Each PR is built on its own branch in a worktree under `.claude/worktrees/<branch>` (gitignored):
 `bash scripts/worktree-setup.sh <branch> [<path>] [<base>]`. It links `node_modules` (hard-linked; run
-`npm install` in at most one tree), copies `.env.local`, and writes a code map. The merge policy is
+`npm install` in at most one tree), copies `examples/app/.env.local`, and writes a code map. The merge policy is
 `merge-when-green` to local main and never push. The loop is light: the
 founder and Claude build directly, with no unattended coordinator. Tests use a database per
 branch.
