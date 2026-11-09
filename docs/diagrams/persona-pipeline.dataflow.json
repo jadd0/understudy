@@ -33,8 +33,7 @@
       "label": "Raw scrape",
       "sublabel": "2 handles, gitignored",
       "stage": 0,
-      "row": 1,
-      "tag": ""
+      "row": 1
     },
     {
       "id": "normalise",
@@ -51,8 +50,7 @@
       "label": "Split",
       "sublabel": "60/20/20 by post",
       "stage": 2,
-      "row": 1,
-      "tag": ""
+      "row": 1
     },
     {
       "id": "style",
@@ -96,8 +94,7 @@
       "label": "Query set",
       "sublabel": "30 labelled",
       "stage": 4,
-      "row": 2,
-      "tag": ""
+      "row": 2
     },
     {
       "id": "persona-eval",
