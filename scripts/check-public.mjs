@@ -22,6 +22,7 @@ const SKIP = [
 export const ALLOW = [
   /^docs\//,
   /^lib\/sim\/docs\.ts$/,
+  /^lib\/engine\/questions\.ts$/,
   /^data\/sim\/personas\//,
   /^scripts\/persona\/eval-persona\.mjs$/,
   /^scripts\/(gate\.sh|kit-config\.mjs|verify-pr\.mjs)$/,
