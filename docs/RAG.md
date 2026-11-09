@@ -6,7 +6,7 @@ said), and the **fan's memory profile** (what she knows about this fan). This pa
 end: what is in the corpus, how it is embedded and stored, how a fan message finds chunks, how they reach the
 prompt, how the strategy was chosen, and what happens when it fails.
 
-Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built from the scrape),
+Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built from the raw export),
 [EVALS.md](EVALS.md) (the retrieval eval), [ARCHITECTURE.md](ARCHITECTURE.md) (the whole turn),
 [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (the prompts used to build and judge the persona). Decision ids refer to
 `.product/DECISIONS.md`.
@@ -26,7 +26,7 @@ Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built fro
 ```
  BUILD (offline, once per creator)                       QUERY (every AI reply)
  ─────────────────────────────────                       ──────────────────────
- scrape → normalise/anonymise → split 60/20/20           fan message(s) in this turn
+ raw export → normalise/anonymise → split 60/20/20     fan message(s) in this turn
             │                                                    │
             ▼                                                    ▼
  chunks.mjs: bank/chunks.jsonl (785 chunks)              route() says reply / offer / deflect / ai_disclosure
@@ -67,7 +67,7 @@ What never enters:
   refuses to write anything if one appears, and `hygiene.test.mjs` checks the committed chunks for held-out ids
   and texts.
 - **Other people's handles and emails**. Every `@handle` except hers is replaced with `@user` at
-  normalisation. The raw scrape (`data/persona/raw/`) is gitignored.
+  normalisation. A real scrape under `data/persona/raw/` is gitignored; Juno's synthetic records are committed.
 - **Non-text replies** (emoji-only image stickers, empty replies).
 
 One post = one chunk, and one reply pair = one chunk. Chunks are short (a caption plus a one-line image
