@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "like_count": 300,
+      "comment_count": 3,
+      "usertags": {
+        "in": []
+      },
+      "coauthor_producers": [],
+      "location": null,
+      "pk": "1002",
+      "code": "FIX2",
+      "media_type": 2,
+      "product_type": "clips",
+      "taken_at": 1772532000,
+      "caption": {
+        "text": "reel day"
+      },
+      "play_count": 4500
+    }
+  ],
+  "status": "ok"
+}

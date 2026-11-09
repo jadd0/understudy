@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "user": {
+        "username": "otherhandle",
+        "pk": "9002"
+      },
+      "like_count": 50,
+      "comment_count": 1,
+      "usertags": {
+        "in": []
+      },
+      "coauthor_producers": [
+        {
+          "username": "fixturecreator",
+          "pk": "9001"
+        }
+      ],
+      "location": null,
+      "pk": "1003",
+      "code": "FIX3",
+      "media_type": 8,
+      "taken_at": 1772445600,
+      "caption": {
+        "text": "their trip, our collab"
+      }
+    }
+  ],
+  "status": "ok"
+}

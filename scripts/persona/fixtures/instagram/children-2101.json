@@ -1,0 +1,34 @@
+{
+  "child_comments": [
+    {
+      "pk": "3101",
+      "text": "",
+      "created_at": 1772539200,
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0,
+      "giphy_media_info": {
+        "id": "g2"
+      }
+    },
+    {
+      "pk": "3102",
+      "text": "",
+      "created_at": 1772539200,
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0,
+      "giphy_media_info": {
+        "id": "g3"
+      }
+    }
+  ],
+  "has_more_tail_child_comments": false,
+  "status": "ok"
+}
