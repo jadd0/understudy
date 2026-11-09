@@ -8,6 +8,7 @@ export type LoadedFacts = Omit<Facts, "sessionStart">;
 export interface FactsCfg {
   declineWindowMinutes: number;
   velocityWindowMinutes: number;
+  strikeWindowDays: number;
 }
 
 /**
@@ -27,6 +28,9 @@ export async function loadFacts(
   const hostFacts = await ctx.host.fanFacts({ fanId, creatorId, velocityWindowMinutes: cfg.velocityWindowMinutes });
   const { rows } = await ctx.db.execute(sql`
     select
+      (select count(*)::int from strikes
+        where creator_id = ${creatorId} and fan_id = ${fanId}
+          and created_at > now() - make_interval(days => ${cfg.strikeWindowDays}::int)) as strikes,
       coalesce((select no_pitch_until > now() from conversations where id = ${conversationId}), false) as no_pitch_active,
       (select count(*)::int from offers
         where conversation_id = ${conversationId} and status = 'declined'
@@ -47,6 +51,7 @@ export async function loadFacts(
             '-infinity'::timestamptz)
       ) as just_unlocked`);
   const r = rows[0] as {
+    strikes: number;
     no_pitch_active: boolean;
     declines: number;
     since_offer: number;
@@ -70,5 +75,6 @@ export async function loadFacts(
     hasOpenOffer: r.open_offer,
     hasUnlocked: r.unlocked,
     justUnlocked: r.just_unlocked,
+    strikesSoFar: r.strikes,
   };
 }

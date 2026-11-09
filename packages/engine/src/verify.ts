@@ -76,7 +76,7 @@ export function codeChecks(draft: string, neverList: readonly string[]): VerifyF
 }
 
 /** Reads Jev's verdict on a draft. `admits_ai` must be yes on ai_disclosure and no on every other route. */
-export function jevChecks(result: DeciderResult, route: RouteName): VerifyFailure[] {
+export function jevChecks(result: DeciderResult, route: RouteName, boundary = false): VerifyFailure[] {
   const v = (key: string) => answerOf(result, key).value;
   const failures: VerifyFailure[] = [];
   // An honest "i'm an ai" is out of character by definition, so Jev's persona check failed most disclosure drafts
@@ -84,7 +84,8 @@ export function jevChecks(result: DeciderResult, route: RouteName): VerifyFailur
   if (route !== "ai_disclosure" && v("on_persona") !== "yes") failures.push("off_persona");
   if (v("explicitness") === "explicit") failures.push("explicit");
   if (v("offplatform_or_meetup") !== "no") failures.push("offplatform_or_meetup");
-  if (v("is_refusal") !== "no") failures.push("refusal");
+  // A boundary line is a refusal by design ("i can't meet up"); every other check still applies, and it must not invite.
+  if (!boundary && v("is_refusal") !== "no") failures.push("refusal");
   const admits = v("admits_ai") === "yes";
   if (route === "ai_disclosure" && !admits) failures.push("admits_ai_missing");
   if (route !== "ai_disclosure" && admits) failures.push("admits_ai_unexpected");
@@ -123,6 +124,8 @@ export async function verifyDraft(
     neverList: readonly string[];
     stopReason: string | null;
     paid?: boolean;
+    /** The draft is a boundary line: a refusal is expected and is not failed as one. */
+    boundary?: boolean;
     /** The item the card will show, on an offer route: Jev checks the draft leads into it. */
     offer?: { title: string; teaser: string | null } | null;
   },
@@ -139,7 +142,7 @@ export async function verifyDraft(
   const state = { draft: input.draft, fan_message: input.fanMessage, earlier_messages: input.earlier };
   const offerItem = withOffer ? `${withOffer.title}${withOffer.teaser ? `: ${withOffer.teaser}` : ""}` : null;
   const result = await decider.ask(questions, { state: offerItem ? { ...state, offer_item: offerItem } : state });
-  const failures = jevChecks(result, input.route);
+  const failures = jevChecks(result, input.route, input.boundary === true);
   return {
     ok: failures.length === 0,
     failures,

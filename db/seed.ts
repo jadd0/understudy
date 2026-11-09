@@ -83,6 +83,8 @@ export const ENGINE_CONFIG: Record<string, unknown> = {
   "pitch.hardship_cooldown_hours": 72,
   "pitch.velocity_max_unlocks": 3,
   "pitch.velocity_window_minutes": 30,
+  "ts.max_strikes": 3,
+  "ts.strike_window_days": 90,
   "price.claude-haiku-5-5.input_per_mtok": 100000,
   "price.claude-haiku-5-5.output_per_mtok": 500000,
   "price.claude-haiku-5-5.cache_read_per_mtok": 10000,

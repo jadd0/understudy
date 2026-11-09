@@ -59,6 +59,7 @@ export const SHOWN_IN: Record<(typeof FEATURES)[number], string> = {
   restricted_readonly: "fan chat (history readable, composer off)",
   retrieval_grounding: "turn explorer, chunks used",
   route_ai_disclosure: "analytics route mix",
+  route_boundary: "analytics route mix, T&S queue",
   route_deflect: "analytics route mix",
   route_hard_stop: "analytics route mix, T&S queue",
   route_hold_creator: "analytics route mix, console",

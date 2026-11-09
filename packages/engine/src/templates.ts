@@ -46,6 +46,16 @@ export function templateSender(key: TemplateKey): "ai" | "system" {
   return PLATFORM_VOICE.has(key) ? "system" : "ai";
 }
 
+/**
+ * The platform notice that goes with a boundary strike, from the platform and not in her voice. Strike `n` of `max`;
+ * the last one says the chat is paused. The wording is the founder's.
+ */
+export function strikeNotice(n: number, max: number): string {
+  return n >= max
+    ? `Warning ${max} of ${max}: this chat is paused for a safety review. You can still read it.`
+    : `Warning ${n} of ${max}: keep it on the app. Meetups, other apps and outside payments aren't allowed. ${max} warnings pauses this chat.`;
+}
+
 /** `supportEmail` is the `platform.support_email` config row, read by the caller before any transaction. */
 export function template(key: TemplateKey, supportEmail: string): string {
   return TEMPLATES[key].replaceAll("{support_email}", supportEmail);

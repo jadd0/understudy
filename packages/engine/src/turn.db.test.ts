@@ -883,7 +883,7 @@ describe("reading the chat as a conversation", () => {
     const w = await world({ "pitch.min_gap_rounds": 0 });
     const r = rig({ replies: ["ooh i have something locked for you\nyou should see it\nthree bubbles of tease"] });
     expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer" });
-    const cfgFacts = { declineWindowMinutes: 1440, velocityWindowMinutes: 30 };
+    const cfgFacts = { declineWindowMinutes: 1440, velocityWindowMinutes: 30, strikeWindowDays: 90 };
     expect((await loadFacts(r.ctx, w.conv.id, w.fan.id, w.creator.id, cfgFacts)).roundsSinceOffer).toBe(0);
     // each later answered round counts once, however many bubbles she sent
     await addMessage(w.conv.id, "fan", "show me more");

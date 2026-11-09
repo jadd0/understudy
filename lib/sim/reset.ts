@@ -30,6 +30,7 @@ export async function resetSim(opts: { seats?: Seats; events?: Events } = {}): P
     await tx.execute(sql`update offers set turn_id = null where conversation_id in ${convs}`);
     await tx.execute(sql`delete from sim_runs where fan_id in ${sims}`);
     await tx.execute(sql`delete from messages where conversation_id in ${convs}`);
+    await tx.execute(sql`delete from strikes where fan_id in ${sims}`);
     await tx.execute(sql`delete from turns where conversation_id in ${convs}`);
     await tx.execute(sql`delete from handoffs where conversation_id in ${convs}`);
     await tx.execute(sql`delete from unlocks where fan_id in ${sims}`);

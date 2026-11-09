@@ -122,6 +122,7 @@ export async function runThread(thread: Thread, ctx: RunnerContext): Promise<Obs
   const factsCfg = {
     declineWindowMinutes: await getConfig<number>("pitch.decline_window_minutes"),
     velocityWindowMinutes: await getConfig<number>("pitch.velocity_window_minutes"),
+    strikeWindowDays: await getConfig<number>("ts.strike_window_days"),
   };
 
   const out: Observation[] = [];

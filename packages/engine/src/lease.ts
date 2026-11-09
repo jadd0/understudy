@@ -6,7 +6,8 @@ import type { EngineTx } from "./ports/db";
 import { conversations, handoffs, messages, offers, turns } from "./schema";
 import { deliverOffsets, splitBubbles } from "./bubbles";
 import { openHandoff, type HandoffSla } from "./handoff";
-import { unrepeatedTemplate } from "./templates";
+import { recordStrike } from "./strikes";
+import { strikeNotice, unrepeatedTemplate } from "./templates";
 import type { HandoffQueue, HandoffReason, RouteName } from "./types";
 
 export interface Lease {
@@ -63,7 +64,7 @@ export interface CommitPlan {
   outcome: string;
   turn: TurnRecord;
   /** What to say. A `draft` is held for the creator (never shown to the fan); anything else is sent. */
-  reply: { body: string; kind: "sent" | "draft"; sender?: "ai" | "system" } | null;
+  reply: { body: string; kind: "sent" | "draft"; sender?: "ai" | "system"; fixed?: boolean } | null;
   offer: { itemId: string; priceCents: number; ttlMinutes: number } | null;
   /** An offer the fan just declined. */
   declineOfferId: string | null;
@@ -72,6 +73,13 @@ export interface CommitPlan {
   setMode: "handoff_creator" | "handoff_ts" | null;
   /** hard_stop: this is the safety outcome, applied whatever happened to the conversation during the turn. */
   hardStop: { reason: HandoffReason; flagUser: boolean } | null;
+  /**
+   * A boundary strike (a meetup or off-platform ask). The commit counts it under the conversation lock, writes the
+   * strike row, adds the platform notice after any reply, and opens a Trust & Safety alert that leaves the mode
+   * alone; when the strike reaches `maxStrikes` it moves the conversation to `handoff_ts` instead. It is part of the
+   * compare-and-set: a takeover that won leaves no strike, notice or hand-off behind.
+   */
+  strike?: { reason: HandoffReason; maxStrikes: number; windowDays: number } | null;
   /** Open a high_value_alert for the creator; the AI keeps replying. */
   alert: boolean;
   hardshipCooldownHours: number | null;
@@ -209,6 +217,26 @@ export async function commitTurn(ctx: EngineCtx, lease: Lease, plan: CommitPlan)
 
     let handoffId: string | null = null;
     if (plan.handoff) handoffId = await openHandoff(tx, lease.conversationId, plan.handoff.queue, plan.handoff.reason, plan.sla);
+    let notice: string | null = null;
+    let paused = false;
+    if (plan.strike) {
+      const n = await recordStrike(tx, {
+        creatorId: lease.creatorId,
+        fanId: lease.fanId,
+        windowDays: plan.strike.windowDays,
+        conversationId: lease.conversationId,
+        turnId: turn.id,
+        reason: plan.strike.reason,
+      });
+      paused = n >= plan.strike.maxStrikes;
+      notice = strikeNotice(n, plan.strike.maxStrikes);
+      // Every strike tells Trust & Safety; the last one also takes the chat out of the AI's hands (no account flag).
+      handoffId = await openHandoff(tx, lease.conversationId, "ts", plan.strike.reason, plan.sla);
+      if (paused) {
+        await tx.update(conversations).set({ mode: "handoff_ts" }).where(eq(conversations.id, lease.conversationId));
+        await supersedeUnseenBubbles(tx, lease.conversationId);
+      }
+    }
     if (plan.alert) {
       const alertId = await openHandoff(tx, lease.conversationId, "creator", "high_value_alert", plan.sla);
       handoffId ??= alertId;
@@ -245,11 +273,11 @@ export async function commitTurn(ctx: EngineCtx, lease: Lease, plan: CommitPlan)
     if (plan.reply) {
       const isDraft = plan.reply.kind === "draft";
       // A hard stop that comes round again straight after the same template says it in other words.
-      if (plan.hardStop && !isDraft) {
+      if ((plan.hardStop || plan.reply.fixed) && !isDraft) {
         plan.reply = { ...plan.reply, body: unrepeatedTemplate(plan.reply.body, await lastHerBody(tx, lease.conversationId)) };
       }
       // A held draft stays one row; a sent reply is one bubble per line (at most MAX_BUBBLES), the offer on the last.
-      const bubbles = isDraft || plan.hardStop ? [plan.reply.body] : splitBubbles(plan.reply.body);
+      const bubbles = isDraft || plan.hardStop || plan.reply.fixed ? [plan.reply.body] : splitBubbles(plan.reply.body);
       const offsets = deliverOffsets(bubbles, {
         elapsedMs,
         cps: plan.typing.cps,
@@ -276,6 +304,24 @@ export async function commitTurn(ctx: EngineCtx, lease: Lease, plan: CommitPlan)
         messageIds.push(m.id);
       }
       deliverInMs = isDraft ? [] : offsets;
+    }
+    if (notice !== null) {
+      // The platform notice follows her line by one bubble gap, and goes at once when there is no line.
+      const after = deliverInMs.length > 0 ? Math.max(...deliverInMs) + plan.typing.gapMs : 0;
+      const [m] = await tx
+        .insert(messages)
+        .values({
+          conversationId: lease.conversationId,
+          sender: "system",
+          body: notice,
+          turnId: turn.id,
+          status: "sent",
+          createdAt: sql`now() + make_interval(secs => ${messageIds.length / 1000})` as unknown as Date,
+          deliverAt: after === 0 ? null : (sql`now() + make_interval(secs => ${after / 1000})` as unknown as Date),
+        })
+        .returning({ id: messages.id });
+      messageIds.push(m.id);
+      deliverInMs = [...deliverInMs, after];
     }
 
     await tx.update(turns).set({ offerId, handoffId }).where(eq(turns.id, turn.id));

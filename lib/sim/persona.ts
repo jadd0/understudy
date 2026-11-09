@@ -51,6 +51,7 @@ export const FEATURES = [
   "restricted_readonly",
   "retrieval_grounding",
   "route_ai_disclosure",
+  "route_boundary",
   "route_deflect",
   "route_hard_stop",
   "route_hold_creator",
