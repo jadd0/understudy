@@ -108,7 +108,7 @@ bank. `v<N>.meta.json` stores the prompt's sha256, so any change to the prompt i
 
 For each of the 78 **validation** pairs (rapid eval) and each of the 50 **test** pairs (sections 6
 and 7). The rapid eval calls `generateReply` in `rapid-eval.mjs` with the whole card
-(`card/v<N>.md`) as the system prompt. The persona eval (sections 6 and 7) instead builds the prompt with
+(`card/v<N>.md`) as the system prompt. The persona eval (sections 6 and 7, run by `npm run eval:persona`) instead builds the prompt with
 the engine's own prompt builder: the card and rules, the lines retrieved from her train replies and
 captions, and a `Voice for this reply` block listing which voice markers this reply may use. The markers
 are drawn per pair from a seeded generator at her measured train rates (`markers` in `bank/style.json`),

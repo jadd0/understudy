@@ -1,6 +1,7 @@
 // Persona evals on the TEST split, which nothing else reads: for each of her held-out reply pairs,
-// Claude (--gen-model) writes a reply through the engine's own prompt path (card, retrieved train
-// lines, this reply's style draw, then the draw's edge clean-up), then Claude (--judge-model)
+// Claude (--gen-model) writes a reply through a drafter: the app's eval script passes the engine's own
+// prompt path (card, retrieved train lines, this reply's style draw, then the draw's edge clean-up); on
+// its own this file drafts from the card alone. Then Claude (--judge-model)
 //   1. scores that reply 1-5 on voice, fact consistency and natural pitch (rubric judge), and
 //   2. is shown her real reply and the generated one, unlabelled, once in each order, and says
 //      which one is hers (blind test). Accuracy is over all judgements; position bias is reported.
@@ -8,7 +9,7 @@
 // Results go to docs/evals/persona.json and between the persona markers of docs/EVALS.md.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { BudgetExceeded, isMain, loadEnvFile, parseArgs, readJson, readJsonl, seededRng, sha16, stableSort, TokenBudget, writeJson } from "./lib/io.mjs";
+import { BudgetExceeded, isMain, loadEnvFile, parseArgs, readJson, readJsonl, sha16, stableSort, TokenBudget, writeJson } from "./lib/io.mjs";
 import { createClaude } from "./lib/claude.mjs";
 import { histogram, lengthBucket, LENGTH_BUCKETS, mean, wilson } from "./lib/stats.mjs";
 import { capitalise } from "./draft-card.mjs";
@@ -147,37 +148,19 @@ export function retrieveChunks(chunks, query, k = 5) {
 }
 
 /**
- * The drafter that goes through the engine: its prompt builder with the card, retrieved lines and this comment's
- * style draw, and its edge clean-up on the reply. Loaded on first use because the engine is TypeScript source: run it
- * under tsx (the npm script does).
+ * The drafter used when the caller brings no other: the card alone as the system prompt, no retrieval and no style
+ * draw. The engine path (prompt builder, retrieval, draw, edge clean-up) is built by the app's eval script, which
+ * passes its own drafter; this package takes no dependency on the engine.
  */
-export async function engineDrafter({ card, rates, chunks, seed }) {
-  const engine = await import("@understudy/engine");
-  const parsed = engine.parseRates(rates);
-  return async ({ pair }) => {
-    const draw = parsed ? engine.drawStyle(parsed, pair.replying_to, seededRng(`${seed}:draw:${pair.id}`)) : null;
-    const built = engine.buildPrompt({
-      cardBody: card,
-      neverList: [],
-      chunks: retrieveChunks(chunks, pair.replying_to),
-      profile: { interests: [], dislikes: [] },
-      route: { name: "reply", hardship: false, alert: false },
-      offer: null,
-      history: [{ id: pair.id, sender: "fan", body: pair.replying_to, createdAt: new Date(0) }],
-      thread: "unknown",
-      sessionGapMs: null,
-      historyRounds: 10,
-      gapMarkerMinutes: 30,
-      styleDraw: draw && parsed ? { draw, pet: parsed.pet } : undefined,
-    });
-    return {
-      system: `${built.system.cached}\n\n${built.system.turn}`,
-      prompt: built.messages.map((m) => m.content).join("\n\n"),
-      draw,
-      finish: (text) => (draw ? engine.enforceDraw(text, draw) : text),
-    };
-  };
-}
+export const cardDrafter = Object.assign(
+  async ({ pair, card }) => ({
+    system: card,
+    prompt: `A fan commented on your Instagram post:\n\n"${pair.replying_to}"\n\nWrite your reply. Output only the reply text, nothing else.`,
+    draw: null,
+    finish: (text) => text,
+  }),
+  { label: "card alone as the system prompt, no retrieval, no style draw" },
+);
 
 /** The retry-once wrapper: an item with any error is run again; the cache replays what already succeeded. */
 const hasError = (item) => Boolean(item.rubric_error || item.blind_error);
@@ -300,7 +283,7 @@ export function aggregate(items, markerOptions = {}) {
   };
 }
 
-export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude, genModel, judgeModel, seed, budget, personaName, concurrency = 4, limit = null, drafter = null }) {
+export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude, genModel, judgeModel, seed, budget, personaName, concurrency = 4, limit = null, drafter = cardDrafter }) {
   const card = readFileSync(join(cardDir, `v${version}.md`), "utf8");
   const splits = readJson(join(bankDir, "splits.json"));
   const profile = readJson(join(bankDir, "profile.json"));
@@ -312,8 +295,6 @@ export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude,
   const styleFile = join(bankDir, "style.json");
   const markers = existsSync(styleFile) ? readJson(styleFile).markers ?? null : null;
   const pet = markers?.pet ?? petFromProfile(profile);
-  // The engine path is the default; a test or a caller may inject another drafter.
-  const draftWith = drafter ?? (await engineDrafter({ card, rates: markers, chunks: trainChunks(bankDir), seed }));
   if (limit) {
     pairs = pairs.slice(0, limit);
   }
@@ -325,7 +306,7 @@ export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude,
   async function worker() {
     while (next < pairs.length) {
       const i = next++;
-      const args = { pair: pairs[i], card, summary, claude, genModel, judgeModel, budget, personaName: name, cached, drafter: draftWith };
+      const args = { pair: pairs[i], card, summary, claude, genModel, judgeModel, budget, personaName: name, cached, drafter };
       items[i] = await evaluateItem(args);
       // An errored item is tried once more; the cache replays what already succeeded, so only the failure is paid for.
       if (hasError(items[i])) items[i] = await evaluateItem(args);
@@ -340,7 +321,7 @@ export async function evalPersona({ bankDir, cardDir, cacheDir, version, claude,
     seed,
     card_sha: sha16(card),
     split: "test",
-    path: markers ? "engine prompt, retrieval over train chunks, style draw" : "engine prompt, retrieval over train chunks, no style draw (no markers in style.json)",
+    drafter: drafter.label ?? "custom",
     tokens_this_run: { total: budget.used, claude_input: budget.claudeInput, claude_output: budget.claudeOutput, calls: budget.calls },
     aggregate: aggregate(items, { pet, train: markers }),
     items,
@@ -393,7 +374,7 @@ export function renderVersion(entry) {
   return [
     `### Card v${entry.card_version}`,
     "",
-    `Generator \`${entry.gen_model}\`, judge \`${entry.judge_model}\`, seed \`${entry.seed}\`, card sha \`${entry.card_sha ?? "unrecorded"}\`, ${agg.n_items} test pairs. Tokens spent by the run that wrote this: ${entry.tokens_this_run.total} (cached calls cost nothing).`,
+    `Generator \`${entry.gen_model}\`, judge \`${entry.judge_model}\`, seed \`${entry.seed}\`, drafter ${entry.drafter ?? "card alone"}, card sha \`${entry.card_sha ?? "unrecorded"}\`, ${agg.n_items} test pairs. Tokens spent by the run that wrote this: ${entry.tokens_this_run.total} (cached calls cost nothing).`,
     "",
     `**Rubric judge** (${agg.rubric.scored} scored, ${agg.rubric.errors} errors):`,
     "",
@@ -417,7 +398,7 @@ export function renderSection(persona) {
   return [
     "## Persona (rubric judge and blind test)",
     "",
-    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.",
+    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.",
     "",
     "Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `.env.local`; interrupted runs resume from `data/persona/eval/cache/`).",
     "",

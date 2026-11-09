@@ -2,10 +2,11 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
+import { engineDrafter } from "./eval-persona";
 // @ts-expect-error the persona package is plain .mjs without declarations for its internals
-import { evalPersona, retrieveChunks } from "./eval-persona.mjs";
+import { evalPersona, retrieveChunks, trainChunks } from "../../../../packages/persona/src/eval-persona.mjs";
 // @ts-expect-error plain .mjs
-import { TokenBudget } from "./lib/io.mjs";
+import { TokenBudget } from "../../../../packages/persona/src/lib/io.mjs";
 
 const CARD = "## Identity\n- Juno, streamer. Biscuit is her greyhound.\n## Voice rules\n- short, lowercase\n";
 const rows = Array.from({ length: 4 }, (_, i) => ({ id: `test${i}`, post_shortcode: `P${i}`, text: `@fan hers ${i}`, replying_to: `do you like the Brighton pier ${i}` }));
@@ -31,7 +32,7 @@ function bank(markers: Record<string, unknown> | null) {
   );
   if (markers) writeFileSync(join(bankDir, "style.json"), JSON.stringify({ markers }));
   writeFileSync(join(cardDir, "v2.md"), CARD);
-  return { bankDir, cardDir };
+  return { bankDir, cardDir, markers };
 }
 
 const blind = JSON.stringify({ author: "A", confidence: 0.7, reason: "feels hers" });
@@ -55,7 +56,8 @@ describe("the persona eval drafts through the engine", () => {
   test("the generator sees the engine's prompt with the card, the draw block and train-only retrieved lines, and the reply is cleaned", async () => {
     const b = bank(RATES);
     const claude = fakeClaude();
-    const result = await evalPersona({ ...b, version: 2, claude, genModel: "g", judgeModel: "j", seed: "s", budget: new TokenBudget() });
+    const dirs = { bankDir: b.bankDir, cardDir: b.cardDir };
+    const result = await evalPersona({ ...dirs, version: 2, claude, genModel: "g", judgeModel: "j", seed: "s", budget: new TokenBudget(), drafter: engineDrafter({ rates: b.markers, chunks: trainChunks(b.bankDir), seed: "s" }) });
     const gen = claude.calls.filter((c) => !c.system.startsWith("You are a strict") && !c.system.startsWith("You are shown"));
     expect(gen).toHaveLength(4);
     for (const call of gen) {
@@ -78,7 +80,8 @@ describe("the persona eval drafts through the engine", () => {
   test("a bank without markers drafts without a draw block and leaves the reply as written", async () => {
     const b = bank(null);
     const claude = fakeClaude();
-    const result = await evalPersona({ ...b, version: 2, claude, genModel: "g", judgeModel: "j", seed: "s", budget: new TokenBudget() });
+    const dirs = { bankDir: b.bankDir, cardDir: b.cardDir };
+    const result = await evalPersona({ ...dirs, version: 2, claude, genModel: "g", judgeModel: "j", seed: "s", budget: new TokenBudget(), drafter: engineDrafter({ rates: b.markers, chunks: trainChunks(b.bankDir), seed: "s" }) });
     const gen = claude.calls.filter((c) => !c.system.startsWith("You are a strict") && !c.system.startsWith("You are shown"));
     expect(gen.every((c) => !c.system.includes("Voice for this reply"))).toBe(true);
     expect(result.items[0].generated).toBe("ha proper tired mate x");
