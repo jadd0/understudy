@@ -15,3 +15,4 @@ One line per flow: name, diagram, the code that implements it.
 - What each model sees: Jev's fenced state vs Claude's prompt → `docs/diagrams/engine-context.html` → `{lib/engine/prompt.ts,lib/engine/thread.ts,lib/engine/memory.ts,providers/voyage/persona-retriever.ts}`
 - Conversation modes: ai, handoffs, takeover, hand-back, release → `docs/diagrams/engine-states.html` → `{lib/engine/lease.ts,lib/engine/handoff.ts,lib/conversations/actions.ts,lib/conversations/controls.ts}`
 - RAG: Juno's chunks embedded once by Voyage, each fan message embedded, nearest 5 by pgvector into Claude's prompt, keyword fallback → `docs/diagrams/rag.html` → `{providers/voyage/**,lib/persona/retrieve.ts,scripts/persona/load.ts,lib/engine/prompt.ts}`
+- Instagram scraper: web API, GET-only transport, pairing and mapping, raw layout, normalise → `docs/diagrams/scraper.html` → `{scripts/persona/scrape/**,scripts/persona/fixtures/instagram/**}`

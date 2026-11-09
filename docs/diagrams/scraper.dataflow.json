@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Instagram Scraper Data Flow",
+    "quality_profile": "standard",
+    "viewBox": [
+      1100,
+      420
+    ]
+  },
+  "stages": [
+    {
+      "label": "Source"
+    },
+    {
+      "label": "Transport"
+    },
+    {
+      "label": "Collect"
+    },
+    {
+      "label": "Raw layout"
+    },
+    {
+      "label": "Existing pipeline"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "instagram",
+      "type": "external",
+      "label": "Instagram web API",
+      "sublabel": "your own account",
+      "stage": 0,
+      "row": 1,
+      "tag": "GET only"
+    },
+    {
+      "id": "transport",
+      "type": "security",
+      "label": "Transport",
+      "sublabel": "GET-only, injected fetch",
+      "stage": 1,
+      "row": 1,
+      "tag": "IG_SESSIONID"
+    },
+    {
+      "id": "pairing",
+      "type": "backend",
+      "label": "Pairing",
+      "sublabel": "exact or thread root",
+      "stage": 2,
+      "row": 0,
+      "tag": "pairing.mjs"
+    },
+    {
+      "id": "record",
+      "type": "backend",
+      "label": "Record mapping",
+      "sublabel": "API JSON to raw shape",
+      "stage": 2,
+      "row": 1,
+      "tag": "record.mjs"
+    },
+    {
+      "id": "raw",
+      "type": "database",
+      "label": "Raw scrape",
+      "sublabel": "gitignored",
+      "stage": 3,
+      "row": 1,
+      "tag": "posts.jsonl"
+    },
+    {
+      "id": "normalise",
+      "type": "backend",
+      "label": "Normalise",
+      "sublabel": "anonymise handles",
+      "stage": 4,
+      "row": 1,
+      "tag": "unchanged"
+    }
+  ],
+  "flows": [
+    {
+      "id": "f-get",
+      "from": "instagram",
+      "to": "transport",
+      "label": "JSON",
+      "variant": "security"
+    },
+    {
+      "id": "f-record",
+      "from": "transport",
+      "to": "record",
+      "label": "posts, comments",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f-pair",
+      "from": "transport",
+      "to": "pairing",
+      "label": "reply threads",
+      "variant": "default"
+    },
+    {
+      "id": "f-pairraw",
+      "from": "pairing",
+      "to": "raw",
+      "label": "her_comments",
+      "variant": "default"
+    },
+    {
+      "id": "f-raw",
+      "from": "record",
+      "to": "raw",
+      "label": "one line per post",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f-norm",
+      "from": "raw",
+      "to": "normalise",
+      "label": "raw layout",
+      "variant": "emphasis"
+    }
+  ]
+}
