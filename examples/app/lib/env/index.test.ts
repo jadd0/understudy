@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { emailConfigured, providerStatus, stripeConfigured } from "@/lib/env";
 
@@ -50,5 +51,15 @@ describe("providerStatus", () => {
     expect(stripeConfigured({ STRIPE_SECRET_KEY: "a", STRIPE_WEBHOOK_SECRET: "b" })).toBe(true);
     expect(emailConfigured(MINIMAL)).toBe(false);
     expect(emailConfigured({ RESEND_API_KEY: "a", EMAIL_FROM: "b" })).toBe(true);
+  });
+});
+
+describe("docs", () => {
+  test("the README and DEVELOPMENT fallback tables carry the exact fallback text", () => {
+    const root = new URL("../../../../", import.meta.url);
+    for (const file of ["README.md", "docs/operations/DEVELOPMENT.md"]) {
+      const text = readFileSync(new URL(file, root), "utf8");
+      for (const s of providerStatus({})) expect(text, `${file}: ${s.name}`).toContain(s.fallback);
+    }
   });
 });

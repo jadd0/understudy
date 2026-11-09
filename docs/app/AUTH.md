@@ -14,6 +14,9 @@ database (`session.strategy = "database"`). Nothing is hand-rolled (AGENTS.md). 
       error is a failure (fail closed) and redirects to `/signin?error=turnstile`.
    2. Validate the email (zod, trimmed, lower-cased); else `?error=email`.
    3. Call `signIn("resend", { email })`; Auth.js emails a one-tap link.
+   Without `RESEND_API_KEY` and `EMAIL_FROM`, outside production, the same Auth.js link is printed to the server console
+   (`examples/app/lib/auth/dev-link.ts`) instead of mailed, and Turnstile is skipped when its secret is unset. In
+   production both are required: with either missing sign-in is refused and no link is ever logged.
 3. The link goes to Auth.js's callback, which verifies the one-time token and creates a `sessions` row.
 
 **Why `POST /api/auth/signin/*` is blocked.** Auth.js exposes its own provider endpoint. A direct POST to
@@ -104,11 +107,12 @@ Validated by `examples/app/lib/env/index.ts` (zod) on first use. Names only; val
 | `DATABASE_URL` | yes | Neon Postgres |
 | `AUTH_SECRET` | yes | Auth.js |
 | `AUTH_URL` | optional | Auth.js base URL |
-| `RESEND_API_KEY`, `EMAIL_FROM` | yes | sign-in emails |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | yes | Turnstile widget and verification |
+| `RESEND_API_KEY`, `EMAIL_FROM` | production | sign-in emails; without them the link is printed to the server console |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | production | Turnstile widget and verification; without them it is skipped outside production |
 | `SEED_CREATOR_EMAIL`, `SEED_ADMIN_EMAILS` | optional | demo seats and seed (admins comma-separated) |
 | `DEMO_SEAT_PASSWORD` | optional | shared seat password; without it seats cannot sign in |
-| `CLAUDE_SECRET_KEY`, `TYPESAFE_SECRET_KEY` | optional to boot | the engine and persona scripts (Claude, Jev) |
+| `CLAUDE_SECRET_KEY` | yes | the engine and persona scripts (Claude) |
+| `TYPESAFE_SECRET_KEY` | optional | Jev; without it Claude decides alone |
 | `VOYAGE_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PUSHER_*`, `NEXT_PUBLIC_PUSHER_*` | optional to boot | retrieval embeddings, wallet top-ups, realtime; all live. `examples/app/scripts/check-env.mjs` requires them (and `CRON_SECRET`) in production |
 
 ## Sim fan links (fan simulator)

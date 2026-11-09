@@ -29,6 +29,14 @@ write to whatever `DATABASE_URL` names.
 
 ## 3. Environment variables
 
+A deploy needs every row below: `check:env --production` fails when Resend, Turnstile or any provider key is missing,
+because outside production those degrade quietly and a deployed app must not. For a local or private install with
+fewer keys, see "Minimal setup" in [DEVELOPMENT.md](DEVELOPMENT.md#minimal-setup).
+
+The headless server ships as a container instead: `docker build -t understudy-server .` at the repository root, then
+`docker run -e DATABASE_URL=... -e UNDERSTUDY_API_KEY=... -e CLAUDE_SECRET_KEY=... -p 8787:8787 understudy-server`.
+It listens on `0.0.0.0:8787` inside the container and holds no secret in the image.
+
 Generate the two random secrets locally:
 
 ```bash
