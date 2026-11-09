@@ -1,18 +1,20 @@
 import { and, eq } from "drizzle-orm";
 import type { EngineCtx, Deps } from "./ctx";
-import { loadFacts, type FactsCfg, type LoadedFacts } from "./facts";
-import type { HostPort } from "./host";
-import { creatorAi, setCreatorAi } from "./creator-settings";
-import { handBack, supersedeUnseenBubbles } from "./lease";
-import { migrateEngine } from "./migrate";
-import { expireOffers } from "./offer";
+import { loadFacts, type FactsCfg, type LoadedFacts } from "./turn/facts";
+import type { HostPort } from "./ports/host";
+import { creatorAi, setCreatorAi } from "./conversation/creator-settings";
+import { handBack } from "./conversation/lease";
+import { supersedeUnseenBubbles } from "./turn/commit";
+import { migrateEngine } from "./db/migrate";
+import { expireOffers } from "./conversation/offer";
 import type { ConfigPort } from "./ports/config";
 import type { EngineDb, EngineTx } from "./ports/db";
-import { processConversation } from "./process";
-import { conversations, messages } from "./schema";
-import { sweep, type SweepResult } from "./sweep";
-import { humanReply, takeOver, type HumanActor } from "./takeover";
-import { runTurn, type TurnResult } from "./turn";
+import { processConversation } from "./turn/process";
+import { conversations, messages } from "./db/schema";
+import { sweep, type SweepResult } from "./conversation/sweep";
+import { humanReply, takeOver, type HumanActor } from "./conversation/takeover";
+import { runTurn } from "./turn/run";
+import type { TurnResult } from "./turn/result";
 
 export const MAX_MESSAGE_CHARS = 2000;
 

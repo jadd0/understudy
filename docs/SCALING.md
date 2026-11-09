@@ -126,7 +126,7 @@ No other index was added: no other hot path scans a table over 10,000 rows seque
 - **Every read is keyed by creator or by conversation.** Retrieval filters on `creator_id`; the card read filters on
   it; configuration is resolved per creator with platform-only keys read from platform rows alone; the shortlist is
   built for one creator; fan memory is keyed on (creator, fan); the inbox is scoped to the viewer's creators.
-- **What the tests prove** (`packages/engine/src/isolation.db.test.ts`), with two creators and one fan who talks to
+- **What the tests prove** (`packages/engine/src/db/isolation.db.test.ts`), with two creators and one fan who talks to
   both: a turn for one creator retrieves only that creator's chunks (full text and vector), including when the other
   creator's chunk carries the first one's id in its text; reads only that creator's published card; sees only that
   creator's configuration override, and a creator row under a platform-only key is ignored; offers only that

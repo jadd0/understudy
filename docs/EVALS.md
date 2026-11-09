@@ -12,7 +12,7 @@ Postgres full-text search. The query set is `data/persona/eval/retrieval-queries
 questions written to avoid her wording, each labelled against 40 candidate chunks); it is fixed and
 is never edited after a result is seen.
 
-Strategies (`packages/engine/src/retrieve.ts`): `fts` ranks with `ts_rank_cd` over an OR of the query terms
+Strategies (`packages/engine/src/retrieval/retrieve.ts`): `fts` ranks with `ts_rank_cd` over an OR of the query terms
 (stopwords dropped; the `simple` config has none); `vector` is cosine distance over Voyage
 `input_type: query` against `document` embeddings; `hybrid` fuses the top 20 of each with
 reciprocal rank fusion (k = 60). recall@5 is the share of a query's labelled chunks present in the

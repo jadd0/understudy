@@ -9,7 +9,7 @@ import { fund } from "@/lib/wallet/test-helpers";
 const session = { current: null as { user: { id: string } } | null };
 vi.mock("@/lib/auth", () => ({ auth: async () => session.current }));
 vi.mock("@/lib/conversations/events", () => ({ getEvents: () => ({ emit: async () => {} }) }));
-// The engine turn a tip schedules is captured, not run: its reaction is tested in packages/engine/src/events.db.test.ts.
+// The engine turn a tip schedules is captured, not run: its reaction is tested in packages/engine/src/conversation/events.db.test.ts.
 const scheduled: unknown[] = [];
 vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: (task: unknown) => void scheduled.push(task) }));
 

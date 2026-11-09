@@ -1,6 +1,6 @@
 # Data model
 
-Source: `db/host-schema.ts` and `packages/engine/src/schema.ts` (Drizzle, re-exported by `db/schema.ts`), migrations `packages/engine/drizzle/` (applied first) and `drizzle/`. One Neon Postgres, accessed
+Source: `db/host-schema.ts` and `packages/engine/src/db/schema.ts` (Drizzle, re-exported by `db/schema.ts`), migrations `packages/engine/drizzle/` (applied first) and `drizzle/`. One Neon Postgres, accessed
 through `@neondatabase/serverless` with a WebSocket `Pool` so transactions are interactive.
 Conventions (AGENTS.md): ids are `uuid default gen_random_uuid()`; timestamps are `timestamptz`; money is
 integer cents in `_cents` columns; every top-level creator-owned row carries `creator_id` (child rows of a

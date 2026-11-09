@@ -4,9 +4,9 @@ import { db } from "@/db/client";
 import { conversations, messages, turns } from "@/db/schema";
 import { createChatter, MessageRefused } from "./chatter";
 import type { ConfigPort } from "./ports/config";
-import { FakeHost } from "./fake-host";
-import { makeCreator, makeFan, makePersona, setEngineConfig } from "./test-db";
-import { rig } from "./test-harness";
+import { FakeHost } from "./testing/fake-host";
+import { makeCreator, makeFan, makePersona, setEngineConfig } from "./testing/db";
+import { rig } from "./testing/harness";
 
 async function setup() {
   await setEngineConfig();

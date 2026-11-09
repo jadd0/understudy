@@ -1,4 +1,4 @@
-import type { HostPort } from "./host";
+import type { HostPort } from "./ports/host";
 import type { Clock } from "./ports/clock";
 import type { ConfigPort } from "./ports/config";
 import type { EngineDb } from "./ports/db";

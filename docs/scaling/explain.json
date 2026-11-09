@@ -164,7 +164,7 @@
   "results": [
     {
       "name": "lease claim",
-      "source": "acquireLease (packages/engine/src/lease.ts), statement read from the source",
+      "source": "acquireLease (packages/engine/src/conversation/lease.ts), statement read from the source",
       "statement": "update conversations c set lease_token = $1::uuid, lease_until = now() + make_interval(secs => $2) where c.id = $3 and c.mode = 'ai' and c.ai_enabled and (c.lease_until is null or c.lease_until < now()) and coalesce((select s.ai_enabled from creator_settings s where s.creator_id = c.creator_id), true) returning c.version, c.creator_id as \"creatorId\", c.fan_id as \"fanId\"",
       "runs": 20,
       "p50Ms": 0.093,
@@ -212,7 +212,7 @@
     },
     {
       "name": "inbound load",
-      "source": "loadInbound (packages/engine/src/turn.ts), statement read from the source",
+      "source": "loadInbound (packages/engine/src/turn/inbound.ts), statement read from the source",
       "statement": "select m.id, m.body from messages m where m.conversation_id = $1 and m.sender = 'fan' and m.turn_id is null and m.created_at > coalesce((select max(o.created_at) from messages o where o.conversation_id = $2 and o.sender in ('creator', 'admin') and o.status = 'sent'), 'epoch'::timestamptz) order by m.created_at, m.id",
       "runs": 20,
       "p50Ms": 0.057,
@@ -280,7 +280,7 @@
     },
     {
       "name": "facts",
-      "source": "loadFacts (packages/engine/src/facts.ts)",
+      "source": "loadFacts (packages/engine/src/turn/facts.ts)",
       "statement": "select coalesce((select no_pitch_until > now() from conversations where id = $1), false) as no_pitch_active, (select count(*)::int from offers where conversation_id = $2 and status = 'declined' and resolved_at > now() - make_interval(mins => $3::int)) as declines, (select count(*)::int from turns t where t.conversation_id = $4 and t.outcome = 'replied' and t.offer_id is null and cardinality(t.inbound_ids) > 0 and t.created_at > coalesce((select max(created_at) from offers where conversation_id = $5), 'epoch'::timestamptz)) as since_offer, coalesce((select hold_suppressed_until > now() from conversations where id = $6), false) as hold_suppressed, exists(select 1 from handoffs where conversation_id = $7 and status <> 'resolved') as unresolved, exists(select 1 from offers where conversation_id = $8 and status = 'open' and expires_at > now()) as open_offer, exists(select 1 from offers where conversation_id = $9 and status = 'accepted') as unlocked, exists( select 1 from offers o where o.conversation_id = $10 and o.status = 'accepted' and o.resolved_at > coalesce( (select max(m.created_at) from messages m where m.conversation_id = $11 and m.sender in ('ai', 'creator', 'admin') and m.status = 'sent'), '-infinity'::timestamptz) ) as just_unlocked",
       "runs": 20,
       "p50Ms": 0.166,
@@ -523,7 +523,7 @@
     },
     {
       "name": "published card read",
-      "source": "the select in runTurn (packages/engine/src/turn.ts), built with the same drizzle calls",
+      "source": "the select in runTurn (packages/engine/src/turn/run.ts), built with the same drizzle calls",
       "statement": "select \"id\", \"creator_id\", \"version\", \"body\", \"never_list\", \"published_at\" from \"persona_cards\" where (\"persona_cards\".\"creator_id\" = $1 and \"persona_cards\".\"published_at\" is not null) order by \"persona_cards\".\"version\" desc limit $2",
       "runs": 20,
       "p50Ms": 0.037,
@@ -560,7 +560,7 @@
     },
     {
       "name": "chat history",
-      "source": "loadHistory (packages/engine/src/turn.ts), built with the same drizzle calls",
+      "source": "loadHistory (packages/engine/src/turn/inbound.ts), built with the same drizzle calls",
       "statement": "select \"id\" from \"messages\" where (\"messages\".\"conversation_id\" = $1 and \"messages\".\"status\" = $2 and \"messages\".\"sender\" <> $3) order by \"messages\".\"created_at\" desc, \"messages\".\"id\" desc limit $4",
       "runs": 20,
       "p50Ms": 0.119,
@@ -618,7 +618,7 @@
     },
     {
       "name": "retrieval, full text",
-      "source": "retrieveFts (packages/engine/src/retrieve.ts)",
+      "source": "retrieveFts (packages/engine/src/retrieval/retrieve.ts)",
       "statement": "select meta->>'chunk_id' as chunk_id, text, ts_rank_cd(tsv, to_tsquery('simple', $1)) as score from persona_chunks where creator_id = $2 and tsv @@ to_tsquery('simple', $3) order by score desc, id limit $4",
       "runs": 20,
       "p50Ms": 0.13,
@@ -676,7 +676,7 @@
     },
     {
       "name": "retrieval, vector",
-      "source": "retrieveVector (packages/engine/src/retrieve.ts)",
+      "source": "retrieveVector (packages/engine/src/retrieval/retrieve.ts)",
       "statement": "select meta->>'chunk_id' as chunk_id, text, 1 - (embedding <=> $1::vector) as score from persona_chunks where creator_id = $2 and embedding is not null order by embedding <=> $3::vector, id limit $4",
       "runs": 20,
       "p50Ms": 0.295,
@@ -734,7 +734,7 @@
     },
     {
       "name": "sweep scan",
-      "source": "sweep (packages/engine/src/sweep.ts), run with a clock past its start budget so it scans and processes nothing",
+      "source": "sweep (packages/engine/src/conversation/sweep.ts), run with a clock past its start budget so it scans and processes nothing",
       "statement": "select c.id, min(m.created_at) as oldest from conversations c join messages m on m.conversation_id = c.id where c.mode = 'ai' and c.ai_enabled and c.lease_until is null and m.sender = 'fan' and m.turn_id is null and m.created_at < now() - make_interval(secs => $1) and m.created_at > coalesce((select max(o.created_at) from messages o where o.conversation_id = c.id and o.sender in ('creator', 'admin') and o.status = 'sent'), 'epoch'::timestamptz) group by c.id order by min(m.created_at), c.id limit $2",
       "runs": 20,
       "p50Ms": 5.065,
