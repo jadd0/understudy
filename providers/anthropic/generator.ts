@@ -13,6 +13,14 @@ export interface AnthropicGeneratorOptions {
   readonly fetch?: typeof fetch;
 }
 
+/**
+ * The request field that turns thinking off. Sonnet 5.5 rejects `disabled` with a 400 and takes `between_tools`
+ * (at effort high or below, with no other field); every other model takes `disabled`.
+ */
+export function thinkingOff(model: string): { type: "disabled" } | { type: "between_tools" } {
+  return model.startsWith("claude-sonnet-5-5") ? { type: "between_tools" } : { type: "disabled" };
+}
+
 export class AnthropicGenerator implements Generator {
   private readonly client: Anthropic;
 
@@ -40,7 +48,7 @@ export class AnthropicGenerator implements Generator {
         messages: input.messages.map((m) => ({ role: m.role, content: m.content })),
         // Haiku 5.5 thinks by default and thinking tokens count against max_tokens: a short reply budget could be spent
         // entirely on thinking and return no text (an empty draft, twice, sent a chat to Juno). Chat replies need none.
-        thinking: { type: "disabled" },
+        thinking: thinkingOff(input.model),
       });
     } catch (e) {
       // Class and status only: an error body can echo the prompt, which holds fan text.
