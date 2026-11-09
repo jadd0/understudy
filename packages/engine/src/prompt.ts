@@ -124,15 +124,16 @@ export function buildPrompt(input: PromptInput): { system: { cached: string; tur
     .join("\n\n");
 
   // The filler for a held chat keeps its own instruction even in hardship: it holds the place and sells nothing.
-  const instruction = input.route.name === "hold_creator"
-    ? INSTRUCTIONS.hold_creator
-    : input.route.hardship
-    ? "The fan seems to be struggling financially or emotionally. Be warm and supportive. Do not sell, tease content or mention money."
-    : input.eventOnly
-      ? EVENT_ONLY_INSTRUCTION
-      : input.route.name === "offer" && input.offer?.owned
-        ? INSTRUCTIONS.offer_owned
-        : (INSTRUCTIONS[input.route.name] ?? INSTRUCTIONS.reply);
+  const instruction =
+    input.route.name === "hold_creator"
+      ? INSTRUCTIONS.hold_creator
+      : input.route.hardship
+        ? "The fan seems to be struggling financially or emotionally. Be warm and supportive. Do not sell, tease content or mention money."
+        : input.eventOnly
+          ? EVENT_ONLY_INSTRUCTION
+          : input.route.name === "offer" && input.offer?.owned
+            ? INSTRUCTIONS.offer_owned
+            : (INSTRUCTIONS[input.route.name] ?? INSTRUCTIONS.reply);
   const turnParts = [`## This turn\n${instruction}`];
   const chat = threadBlock(input.thread, input.sessionGapMs, input.paid ?? false, input.recentEmoji ?? []);
   if (chat) turnParts.push(chat);
