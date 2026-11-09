@@ -1,0 +1,31 @@
+# Local Postgres for the test suite and the gate, so no test run touches the hosted database.
+# Postgres 18 (the hosted project's major) with pgvector, and Neon's WebSocket proxy in front of it so the
+# @neondatabase/serverless driver the code uses works unchanged (scripts/neon-local.mjs points it here).
+#   docker compose up -d
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.1-pg18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: understudy
+    ports:
+      - "127.0.0.1:5437:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  neon-proxy:
+    image: ghcr.io/timowilhelm/local-neon-http-proxy@sha256:cd2ae14edf2feafbc3330492de5c80506f77274c3bd013154cdef697bdeb768a
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres:postgres@postgres:5432/postgres
+    ports:
+      - "127.0.0.1:4454:4444"
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  pgdata:

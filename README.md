@@ -123,8 +123,8 @@ npm run db:migrate && npm run db:seed && npm run persona:load -- --creator junov
 npm run dev                    # the app at http://localhost:3000
 ```
 
-`bash scripts/gate.sh` runs typecheck, lint, the test suite against a throwaway database, the build and the
-repository checks; it is the only proof a change works. [DEVELOPMENT.md](docs/operations/DEVELOPMENT.md) has the rest, and
+`docker compose up -d` starts the local Postgres the tests use, then `bash scripts/gate.sh` runs typecheck, lint, the
+test suite against a throwaway local database, the build and the repository checks; it is the only proof a change works. [DEVELOPMENT.md](docs/operations/DEVELOPMENT.md) has the rest, and
 [examples/server](examples/server/README.md) documents the headless API.
 
 ## The app in five minutes

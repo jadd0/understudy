@@ -45,8 +45,10 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 
 ## Database in tests
 
-`vitest.global-setup.ts` calls `scripts/test-db.mjs`, which creates `<db>_test_<branch-slug>` in the same
-Neon project if absent, applies the engine's migrations and then `examples/app/drizzle/`, and points `DATABASE_URL` at it. Tests never touch the dev database.
+Tests run on a local Postgres: `docker compose up -d` starts Postgres 18 with pgvector and Neon's WebSocket proxy
+(`docker-compose.yml`), so the serverless driver works unchanged. `vitest.global-setup.ts` calls
+`scripts/test-db.mjs`, which creates `<db>_test_<branch-slug>` there if absent (base: `TEST_DATABASE_BASE_URL`, default
+the compose database; a non-local base is refused), applies the engine's migrations and then `examples/app/drizzle/`, and points `DATABASE_URL` at it. Tests never touch the dev database.
 `TEST_DB_SCOPE=<x>` appends `_<x>` to that name: the gate runs 3 shards on `_s1`..`_s3` (`scripts/test-sharded.sh`),
 so set your own scope (e.g. `TEST_DB_SCOPE=adhoc`) for a hand run while a gate may be running on the branch.
 

@@ -1,26 +1,33 @@
-// Creates (if absent) the per-branch test database `<base>_test_<branch-slug>` in the same Neon
-// project as DATABASE_URL, applies the migrations, and prints its URL on stdout.
-// Usage: node scripts/test-db.mjs   (DATABASE_URL from the environment or examples/app/.env.local)
+// Creates (if absent) the per-branch test database `<base>_test_<branch-slug>` on the local Postgres
+// (docker-compose.yml), applies the migrations, and prints its URL on stdout.
+// Usage: node scripts/test-db.mjs   (docker compose up -d first)
+// The base is TEST_DATABASE_BASE_URL (environment, then examples/app/.env.local), else the compose database.
+// DATABASE_URL is never read: it names the hosted database, and tests run locally. A non-local base is refused
+// unless TEST_DB_ALLOW_HOSTED=1, which the gate never sets (the scale measurements use it on purpose).
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import ws from "ws";
+import { Pool } from "@neondatabase/serverless";
 import { isPreEngineDatabase, LOCK_KEY, migrateAll } from "../examples/app/scripts/migrate.mjs";
-
-neonConfig.webSocketConstructor = ws;
+import { DEFAULT_LOCAL_BASE, isLocalHost, pointAtLocalNeon } from "./neon-local.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-function baseUrl() {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+/** The base connection string test databases are derived from; local unless hosted use is asked for by name. */
+export function baseUrl(env = process.env) {
+  let url = env.TEST_DATABASE_BASE_URL;
   const file = path.join(root, "examples/app/.env.local");
-  if (existsSync(file)) {
-    const m = readFileSync(file, "utf8").match(/^DATABASE_URL=(.*)$/m);
-    if (m) return m[1].trim().replace(/^["']|["']$/g, "");
+  if (!url && existsSync(file)) {
+    const m = readFileSync(file, "utf8").match(/^TEST_DATABASE_BASE_URL=(.*)$/m);
+    if (m) url = m[1].trim().replace(/^["']|["']$/g, "");
   }
-  throw new Error("DATABASE_URL is not set");
+  url ||= DEFAULT_LOCAL_BASE;
+  if (!isLocalHost(new URL(url).hostname) && env.TEST_DB_ALLOW_HOSTED !== "1") {
+    throw new Error("test databases are local only: TEST_DATABASE_BASE_URL names a non-local host");
+  }
+  pointAtLocalNeon(url);
+  return url;
 }
 
 function branchSlug() {
@@ -62,7 +69,7 @@ export async function recreateDisposable(admin, name) {
 }
 
 /**
- * Creates `name` in the same Neon project if absent, applies the migrations, and returns its URL. Never touches
+ * Creates `name` next to the base database if absent, applies the migrations, and returns its URL. Never touches
  * the base database. With `recreate`, a database whose migrations fail is dropped and built again once: a test
  * database is disposable, and rows left by older tests can block a newer migration (an enum cast).
  */

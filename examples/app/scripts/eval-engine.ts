@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 // @ts-expect-error -- plain ESM script without types
-import { baseDatabase, ensureDb } from "./test-db.mjs";
+import { baseDatabase, ensureDb } from "../../../scripts/test-db.mjs";
 
 /** A mistake in how the script was run; its message is ours and safe to print. */
 class Usage extends Error {}

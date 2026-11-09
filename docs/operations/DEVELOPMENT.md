@@ -76,5 +76,5 @@ Decisions are kept in a log with an id, who made it, why, and where the code is.
 build tooling and is not published with the repo. A reversal adds a new entry and marks the old one
 superseded rather than rewriting it.
 
-The project's database setup is one Neon Postgres with a test database per branch
-([DATA-MODEL.md](../architecture/DATA-MODEL.md#test-database)).
+Dev and demo use the hosted Postgres in `DATABASE_URL`; tests and the gate use a local one, a database per branch
+(`docker compose up -d` first; [DATA-MODEL.md](../architecture/DATA-MODEL.md#test-database)).

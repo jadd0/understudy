@@ -31,3 +31,14 @@ describe("test database hardening", () => {
     ]);
   });
 });
+
+describe("test databases are local", () => {
+  test("the compose database is the default, and a hosted base is refused unless asked for by name", async () => {
+    // @ts-expect-error the script is plain JavaScript
+    const { baseUrl } = await import("./test-db.mjs");
+    expect(new URL(baseUrl({ TEST_DATABASE_BASE_URL: "postgres://p:p@localhost:5437/understudy" })).hostname).toBe("localhost");
+    const hosted = "postgres://u:p@ep-x.eu-west-2.aws.neon.tech/app";
+    expect(() => baseUrl({ TEST_DATABASE_BASE_URL: hosted })).toThrow(/local only/);
+    expect(baseUrl({ TEST_DATABASE_BASE_URL: hosted, TEST_DB_ALLOW_HOSTED: "1" })).toBe(hosted);
+  });
+});
