@@ -1,7 +1,7 @@
 # Authentication and access
 
 Auth.js v5 (`next-auth@beta`) with the Resend provider and the Drizzle adapter; sessions live in the
-database (`session.strategy = "database"`). Nothing is hand-rolled (, AGENTS.md). Files:
+database (`session.strategy = "database"`). Nothing is hand-rolled (AGENTS.md). Files:
 `lib/auth/index.ts`, `lib/auth/turnstile.ts`, `lib/auth/guards.ts`, `lib/auth/onboarding.ts`, `lib/auth/demo-seats.ts`,
 `app/signin/**`, `app/onboarding/**`, `app/api/auth/[...nextauth]/route.ts`.
 
@@ -51,7 +51,7 @@ route on the server from the user row read fresh, so a flag set after a session 
 | `flagged_at` set | redirect `/blocked`, except a fan flagged `minor_in_chat`, who may read `/chat` (route `chatRead`) and is sent there from `/` |
 | fan without `adult_confirmed_at` | redirect `/onboarding` |
 | `/chat` | fans only |
-| `/console` | creators and admins. An admin's inbox lists every conversation, T&S first (its read scope is all, ); settings apply to the platform creator; it acts as itself |
+| `/console` | creators and admins. An admin's inbox lists every conversation, T&S first (its read scope is all); settings apply to the platform creator; it acts as itself |
 | `/admin` | admins only |
 | any other role on a role route | 404, not a redirect, so the route's existence is not hinted |
 | `/onboarding` for a non-fan | 404; for a confirmed fan, redirect `/chat` |
@@ -77,7 +77,7 @@ admin must not be open to anyone with the URL. Seats are the addresses in `SEED_
   would make the Auth.js adapter create a default `fan` row that then owns the seat email.
 - **Guessing the password.** There is no attempt counter: every attempt costs a Turnstile solve, and the
   password is four word-and-number parts generated for this demo. A per-IP or per-email lockout needs a
-  table and is residual R4. The `?error=seat` message does reveal that an address is a seat, which is
+  table and is a known gap. The `?error=seat` message does reveal that an address is a seat, which is
   harmless because the seat addresses are handed to reviewers anyway.
 - **Link capture.** The action calls `signIn("resend", { redirect: false })` inside `captureSeatLink`, an
   `AsyncLocalStorage` scope. The provider's `sendVerificationRequest` is wrapped by `seatAwareSender`:

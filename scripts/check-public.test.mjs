@@ -42,9 +42,15 @@ test("the same text under the private tree passes", () => {
 });
 
 test("an allow-listed path passes", () => {
-  const r = run(repo({ "docs/notes.md": `${DECISION}\n`, "lib/ok.ts": "const x = 1;\n" }));
+  const r = run(repo({ "scripts/gate.sh": `# ${PRIVATE_DIR}gate-steps\n`, "lib/ok.ts": "const x = 1;\n" }));
   assert.equal(r.status, 0);
   assert.match(r.stdout, /public: 0 hits/);
+});
+
+test("a docs page is not allow-listed", () => {
+  const r = run(repo({ "docs/notes.md": `${DECISION}\n` }));
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /docs\/notes\.md:1/);
 });
 
 test("an untracked file is not scanned", () => {

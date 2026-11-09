@@ -6,7 +6,7 @@ Pusher Channels. The database is the truth; an event only says "refetch".
 
 | Channel | Who may subscribe | Used by |
 |---|---|---|
-| `private-conversation-<conversation id>` | the fan who owns it; the owning creator unless it is on the Trust & Safety side; any admin (the admin read scope is every conversation, ) | the open thread |
+| `private-conversation-<conversation id>` | the fan who owns it; the owning creator unless it is on the Trust & Safety side; any admin (the admin read scope is every conversation) | the open thread |
 | `private-creator-<creator id>` | that creator, and any admin | the creator's inbox; an admin's console inbox |
 | `private-ts` | admins | the T&S queue |
 

@@ -9,8 +9,6 @@ lists the disagreements.
 Conventions used throughout:
 
 - Every file, function and table links to the code. Paths are relative to this file.
-- `D-nnn` is a decision in [`.product/DECISIONS.md`](../.product/DECISIONS.md); `F-nnn` is a finding in
-  [`.product/FINDINGS.md`](../.product/FINDINGS.md); `R-n` is a residual in [`.product/RESIDUALS.md`](../.product/RESIDUALS.md).
 - Config keys such as [`engine.debounce_ms`](CONFIG.md#engine-rounds-timing-delivery) are rows in the `config` table. Each links to its section of
   [CONFIG.md](CONFIG.md), which holds the default, the meaning and the file that reads it. The values quoted here are
   the seeded defaults in [`db/seed.ts`](../db/seed.ts); a running database may have been tuned.
@@ -83,7 +81,7 @@ layouts, the tip sheet, the dark theme, the account menu, the analytics pages an
 |---|---|---|
 | Web framework | Next.js 16 App Router, React 19, TypeScript strict | [`app/`](../app/), [`next.config.ts`](../next.config.ts) |
 | Styling | Tailwind 4, tokens from the founder's chat design | [`app/globals.css`](../app/globals.css), [`components/ui/`](../components/ui/), [DESIGN.md](DESIGN.md) |
-| Database | Neon Postgres with pgvector, through Drizzle ORM on `@neondatabase/serverless` (WebSocket `Pool`, so transactions are interactive, ) | [`db/schema.ts`](../db/schema.ts), [`db/client.ts`](../db/client.ts), [`drizzle/`](../drizzle/) |
+| Database | Neon Postgres with pgvector, through Drizzle ORM on `@neondatabase/serverless` (WebSocket `Pool`, so transactions are interactive) | [`db/schema.ts`](../db/schema.ts), [`db/client.ts`](../db/client.ts), [`drizzle/`](../drizzle/) |
 | Auth | Auth.js v5 (`next-auth@beta`) with the Resend email provider and the Drizzle adapter, database sessions | [`lib/auth/index.ts`](../lib/auth/index.ts) |
 | Bot defence | Cloudflare Turnstile on sign-in | [`lib/auth/turnstile.ts`](../lib/auth/turnstile.ts) |
 | Classifier | TypeSafe Jev (`jev-1.14.0`) by REST | [`providers/typesafe/decider.ts`](../providers/typesafe/decider.ts) |
@@ -219,7 +217,7 @@ expands the engine part.
    message id. The action takes the fan id from the session, never from the client, finds the platform creator
    ([`primaryCreator`](../lib/conversations/read.ts)), and calls [`sendFanMessage`](../lib/chat/send.ts).
 3. **Store.** `sendFanMessage` refuses an empty message, one over `MAX_MESSAGE_CHARS` (2000), a bad id, a user who is
-   not a confirmed fan, and a fan restricted as a minor (`restricted`, ). It creates the conversation on the
+   not a confirmed fan, and a fan restricted as a minor (`restricted`). It creates the conversation on the
    first message (one per creator and fan), inserts the message with `client_msg_id` unique so a retried send returns
    the saved row instead of a duplicate, clears `fan_typing_until`, and schedules
    [`processConversation`](../lib/engine/process.ts) with Next's `after()`, so the engine runs after the response is
@@ -233,7 +231,7 @@ expands the engine part.
 6. **Show.** The fan's [`LiveThread`](../components/chat/live-thread.tsx) refetches its snapshot. The server returns
    only messages already due (`deliver_at` passed) plus the times of the pending ones, and the client sets a timer for
    each, so bubbles appear one by one behind the typing row. The typing row never appears sooner than
-   `TYPING_AFTER_SEND_MS` (500 ms) after he sends (, [`lib/ui/typing-delay.ts`](../lib/ui/typing-delay.ts)).
+   `TYPING_AFTER_SEND_MS` (500 ms) after he sends ([`lib/ui/typing-delay.ts`](../lib/ui/typing-delay.ts)).
 7. **Safety net.** If the `after()` task dies, the per-minute sweep ([`/api/cron/sweep`](../app/api/cron/sweep/route.ts))
    finds AI-mode conversations with unanswered fan messages and runs the same `processConversation`.
 8. **Memory.** Once a reply or a held suggestion is committed, one small Claude call extracts schema facts about the
@@ -246,7 +244,7 @@ lease, so nothing is generated; the human sees the message in the console.
 
 ## 5. Auth and the 18+ gate
 
-Authentication is Auth.js only: no session, token or password code is hand-written (, AGENTS.md). Sessions are
+Authentication is Auth.js only: no session, token or password code is hand-written (AGENTS.md). Sessions are
 rows in the `sessions` table (`session.strategy = "database"`), created by the Drizzle adapter in
 [`lib/auth/index.ts`](../lib/auth/index.ts).
 
@@ -280,7 +278,7 @@ because we do not own `understudy.example` and two reviewers need the same accou
    and the cookie never reached the browser.
 
 Each seat sign-in is its own one-time token and its own session row, so concurrent reviewers never revoke each other.
-There is no attempt limit on the seat password beyond Turnstile (R4).
+There is no attempt limit on the seat password beyond Turnstile, a known gap.
 
 ### The 18+ gate
 
@@ -404,7 +402,7 @@ erDiagram
    [`lib/wallet/money.ts`](../lib/wallet/money.ts)).
 2. **The ledger is append-only and signed by kind.** A CHECK makes `topup`, `refund` and `grant` positive and `unlock`
    and `tip` negative; a `BEFORE UPDATE OR DELETE` trigger refuses any change
-   ([`drizzle/0004_loving_silver_sable.sql`](../drizzle/0004_loving_silver_sable.sql), ).
+   ([`drizzle/0004_loving_silver_sable.sql`](../drizzle/0004_loving_silver_sable.sql)).
 3. **Balance equals the ledger.** `wallets.balance_cents` (CHECK `>= 0`) is updated in the same locked transaction as
    each ledger insert. Tests assert balance = ledger sum with
    [`assertBalanceEqualsLedger`](../lib/wallet/test-helpers.ts); the database does not enforce the equality itself.
@@ -524,7 +522,7 @@ calls take seconds, so no database transaction is held across them; the lease is
 **Persona.** The turn reads the newest **published** persona card for the creator. With none, it fails with
 `ConfigMissing("persona_card")`.
 
-**Debounce** ([`waitForQuiet`](../lib/engine/debounce.ts), ). The turn loads the inbound set and the typing flag,
+**Debounce** ([`waitForQuiet`](../lib/engine/debounce.ts)). The turn loads the inbound set and the typing flag,
 sleeps `engine.debounce_ms` (250 ms), and loads again. A new message, or `fan_typing_until` still in the future, starts
 another wait. It stops at the first quiet pass with no typing, or once the total sleep reaches [`engine.debounce_max_ms`](CONFIG.md#engine-rounds-timing-delivery)
 (8000 ms), so a fan who keeps typing cannot hold the turn.
@@ -611,7 +609,7 @@ out. The order is the policy: Trust & Safety first, then Juno's queue, then the 
    writes explicit text; the explicit moment becomes a paid unlock.
 6. `buy_intent` → a ppv or bundle offer if pacing allows, else a plain reply. A `smalltalk` or `flirt` read whose
    second-place `buy_intent` probability is at or above
-   [`floor.buy_intent_runner_up`](CONFIG.md#floors-jev-confidence-and-pitching) (1, so off: ) is read as `buy_intent` before routing
+   [`floor.buy_intent_runner_up`](CONFIG.md#floors-jev-confidence-and-pitching) (1, so off:) is read as `buy_intent` before routing
    and routed here (or by rule 2's buy branch when its top probability is unsure); the turn records it as
    `jev_in.parsed.promotedFrom`, and `intentP` stays Jev's top probability. Risk, explicit and human-queue intents are
    never promoted.
@@ -798,7 +796,7 @@ Then one Jev call with the state `{ draft, fan_message, earlier_messages }` and 
 
 **Paid and unpaid questions.** [`questions.ts`](../lib/engine/questions.ts) still keeps separate
 "paid" variants for the inbound `location_offplatform` question and the verify `offplatform_or_meetup` question, chosen
-when `hasUnlocked` is true. Since  loosened the off-platform rule for every fan, each paid variant has exactly the
+when `hasUnlocked` is true. Because the off-platform rule is loosened for every fan, each paid variant has exactly the
 same text as its unpaid twin, so the branch has no effect. The only live difference between a paying and a new fan is
 the paid line in "the chat right now".
 
@@ -815,8 +813,8 @@ A draft whose only failure is `reasks` still counts as safe; if no later attempt
 the newest draft that passed every safety check, and a Claude or Jev error on a later attempt sends that draft instead
 of failing the turn.
 
-**Emoji variety.** Left alone, the model reused the same two emoji from its own earlier bubbles (: 157 of
-195 emoji were 🙈 or 😏). [`recentEmoji`](../lib/engine/emoji.ts) collects the distinct emoji in her last
+**Emoji variety.** Left alone, the model reused the same two emoji from its own earlier bubbles (157 of
+195 emoji in one measured run were 🙈 or 😏). [`recentEmoji`](../lib/engine/emoji.ts) collects the distinct emoji in her last
 `RECENT_BUBBLES` (8) bubbles; the prompt names them, and `dropRepeatedEmoji` strips any the draft repeats before verify.
 A draft that would be left empty is kept whole.
 
@@ -861,7 +859,7 @@ exception: Trust & Safety outranks a creator takeover, so its flag, ts handoff a
 `MAX_BUBBLES` (3) bubbles; extra lines join the last. Each bubble gets a `deliver_at`:
 
 - the first: its length ÷ [`engine.typing_cps`](CONFIG.md#engine-rounds-timing-delivery) (12 characters per second), minus the time the fan has already waited
-  since his first message, capped at [`engine.typing_max_ms`](CONFIG.md#engine-rounds-timing-delivery) (10 s, );
+  since his first message, capped at [`engine.typing_max_ms`](CONFIG.md#engine-rounds-timing-delivery) (10 s);
 - each next one: the previous plus a gap drawn once per turn between [`delivery.bubble_gap_ms_min`](CONFIG.md#engine-rounds-timing-delivery) and `_max`
   (1.5 to 4 s);
 - a hard-stop template or a held suggestion: at once.
@@ -891,7 +889,7 @@ it handled.
 
 ### 8.16 Cost and latency
 
-Price rows are integer micro-dollars per million tokens ([`price.<model>.input_per_mtok`](CONFIG.md#models-and-prices) and so on, ), so every
+Price rows are integer micro-dollars per million tokens ([`price.<model>.input_per_mtok`](CONFIG.md#models-and-prices) and so on), so every
 cost stays an integer. [`CostLedger`](../lib/engine/cost.ts) sums tokens per stage (`jev_in`, `offer_pick`,
 `generate`, `jev_out`, then `memory`) and rounds once. The seeded prices: Haiku 5.5 $0.10 input, $0.50 output,
 $0.01 cache read, $0.125 cache write per million tokens; `jev-1.14.0` $0.042 input and free output
@@ -922,7 +920,7 @@ The engine works only in `ai`: [`acquireLease`](../lib/engine/lease.ts) refuses 
 Juno gets no reply, filler or holding line until a human acts. Fan messages written into a held chat are not
 classified for safety either; a human owning the chat is considered enough. While the chat waits in the T&S
 queue (`handoff_ts`) the fan's composer is replaced by "This chat is paused while someone from our team takes a look.
-You can still read it." ([`live-thread.tsx`](../components/chat/live-thread.tsx), ); once an admin takes it over
+You can still read it." ([`live-thread.tsx`](../components/chat/live-thread.tsx)); once an admin takes it over
 (`human_ts`) the composer returns so the fan can answer, and the admin's messages show to him as "Understudy support",
 without Juno's avatar.
 
@@ -976,8 +974,7 @@ the conversation gets a 72-hour no-pitch window.
 ### Known safety gap
 
 A crisis message that arrives while a reply is being generated is caught before the reply is sent only if a fold-in
-is still allowed ([`engine.fold_in_max`](CONFIG.md#engine-rounds-timing-delivery), the turn budget). Past that, the reply commits and the next turn hard-stops
-(R-4a, ).
+is still allowed ([`engine.fold_in_max`](CONFIG.md#engine-rounds-timing-delivery), the turn budget). Past that, the reply commits and the next turn hard-stops.
 
 ---
 
@@ -1028,7 +1025,7 @@ credit writes no `uncredited_payments` row, only a log line.
 ### Welcome credit
 
 Every fan who confirms 18+ gets [`wallet.welcome_credit_cents`](CONFIG.md#wallet-caps-and-offers) ($50) as one `grant` entry keyed `welcome:<fanId>`, in the
-same transaction as the confirmation ([`lib/wallet/grant.ts`](../lib/wallet/grant.ts), ). It is a grant, not a
+same transaction as the confirmation ([`lib/wallet/grant.ts`](../lib/wallet/grant.ts)). It is a grant, not a
 top-up, so no revenue figure counts it. `npm run db:seed` backfills earlier fans, excluding eval fixtures.
 
 ### Unlocks
@@ -1081,7 +1078,7 @@ items, the personal chat included, while she holds a chat (`human_creator`); the
 typed. Creator offers skip the pacing gates, which apply to the AI only.
 
 The catalogue is seeded in [`db/seed.ts`](../db/seed.ts): three PPV sets at $9.99, $14.99 and $19.99, a bundle of all
-three at $34.99, and a personal chat at $49.99 (; the price ladder is argued in ). Juno edits prices in
+three at $34.99, and a personal chat at $49.99. Juno edits prices in
 [`/console/settings`](../app/console/settings/page.tsx).
 
 ---
@@ -1099,7 +1096,7 @@ skipped unless forced:
 | Step | Script | Output |
 |---|---|---|
 | Normalise | [`normalise.mjs`](../packages/persona/src/normalise.mjs) | The anonymised bank: every foreign @handle becomes `@user`, emails removed. 244 posts in, 234 kept; 757 replies (330 exactly paired), counts from `bank/normalise.meta.json`. A real scrape is gitignored |
-| Split | [`split.mjs`](../packages/persona/src/split.mjs) | Exactly paired replies split by post 60/20/20 with seed `understudy-2026`: 172 train, 78 validation, 50 test; 457 style-only (`bank/splits.json`, ) |
+| Split | [`split.mjs`](../packages/persona/src/split.mjs) | Exactly paired replies split by post 60/20/20 with seed `understudy-2026`: 172 train, 78 validation, 50 test; 457 style-only (`bank/splits.json`) |
 | Style | [`style.mjs`](../packages/persona/src/style.mjs) | Measured figures (lengths, emoji rate, casing) from train and style-only replies only |
 | Chunks | [`chunks.mjs`](../packages/persona/src/chunks.mjs) | 785 retrieval chunks: 234 captions plus train and style-only reply pairs. Validation and test pairs never enter |
 | Draft card | [`draft-card.mjs`](../packages/persona/src/draft-card.mjs) | `card/v<N>.md`: Identity, Voice rules, Examples (train pairs rendered verbatim), Not known, Never, Selling voice, AI honesty |
@@ -1131,8 +1128,8 @@ next card load.
 | `vector` | Voyage `voyage-4` query embedding, pgvector cosine | **0.560** | **0.933** | **0.97** |
 | `hybrid` | Reciprocal rank fusion (k = 60) over the top 20 of each | 0.482 | 0.862 | 0.93 |
 
-Measured on 30 labelled queries over the 785 chunks (, ;
-[`data/persona/eval/retrieval-results.json`](../data/persona/eval/retrieval-results.json)). The engine's
+Measured on 30 labelled queries over the 785 chunks
+([`data/persona/eval/retrieval-results.json`](../data/persona/eval/retrieval-results.json)). The engine's
 [`PersonaRetriever`](../providers/voyage/persona-retriever.ts) follows [`retrieval.strategy`](CONFIG.md#retrieval); if Voyage fails it falls
 back to full-text for that turn, and it strips the `@user` from reply chunks so the model does not copy
 Instagram's reply prefix.
@@ -1219,7 +1216,7 @@ You or Juno, AI, AI off) and a marker when a suggestion is waiting. Juno's tabs 
 
 | Control | Who | Effect |
 |---|---|---|
-| Take over | Juno (own, not T&S); admin (any, ; may take over from another admin, ) | Locks the row, mode to `human_creator` or `human_ts`, version + 1, lease dropped, handoff claimed, unseen AI bubbles superseded and their offers expired |
+| Take over | Juno (own, not T&S); admin (any; may take over from another admin) | Locks the row, mode to `human_creator` or `human_ts`, version + 1, lease dropped, handoff claimed, unseen AI bubbles superseded and their offers expired |
 | Reply | Juno in `human_creator`; admin in `human_ts` | Message as `creator` or `admin`, up to 2000 characters; may contain never-list words |
 | Send or discard suggestion | Juno, admin | Sending takes over first; discarding keeps the row on record |
 | Hand back to AI | Juno | Mode `ai`, handoffs resolved, messages a human already handled stamped with a `handback` turn so the AI does not answer them, then the engine runs |
@@ -1243,8 +1240,8 @@ switching threads does not blank the list.
 
 ## 14. The fan simulator
 
-The simulator puts realistic traffic through the real product so every engine path can be watched live and measured
-. Each run is one fresh `is_sim` fan account working through one persona's beats against the real
+The simulator puts realistic traffic through the real product so every engine path can be watched live and measured.
+Each run is one fresh `is_sim` fan account working through one persona's beats against the real
 send path, wallet and console; nothing in the engine knows it is talking to a sim. The full manual, with a beat table
 per persona and a coverage matrix, is [FAN-SIM.md](FAN-SIM.md).
 
@@ -1333,7 +1330,7 @@ bubble), the draft and attempts, persona version, timings, cost, offer, handoff,
 ![Analytics, admin view, 1440 px](screens/analytics-admin-1440.png)
 
 **Measured figures.** The latest numbers with provenance are from the engine eval ([§16](#16-evals)):
-p50 2.4 s and p95 4.2 s (2,448 and 4,202 ms) from the fan's message to commit (`turns.ms_total`, with the debounce off in the eval database, ), and 232 micro-dollars of model cost per replying turn, on card v2 (`docs/evals/engine.json`).
+p50 2.4 s and p95 4.2 s (2,448 and 4,202 ms) from the fan's message to commit (`turns.ms_total`, with the debounce off in the eval database), and 232 micro-dollars of model cost per replying turn, on card v2 (`docs/evals/engine.json`).
 [METRICS.md](METRICS.md) was last generated on 2026-11-03 at 16:16 UTC from a nearly empty database and before the evals
 ran; it shows every eval as "not run". Run `npm run metrics:report` to refresh it.
 
@@ -1401,7 +1398,7 @@ adds the production list (`AUTH_URL`, every provider key, `CRON_SECRET`) and sha
 ## 18. Testing and the gate
 
 **The gate is the only proof** (AGENTS.md): a change works when `bash scripts/gate.sh` prints `gate: PASS`.
-[`scripts/gate.sh`](../scripts/gate.sh) runs the steps listed in [`.product/gate-steps`](../.product/gate-steps), in
+[`scripts/gate.sh`](../scripts/gate.sh) runs the steps listed in its `gate-steps` file, in
 order, stopping at the first failure:
 
 | Step | Command |
@@ -1416,8 +1413,7 @@ order, stopping at the first failure:
 
 AGENTS.md names only the first four; the last three are also part of the gate. A pass writes a stamp keyed on the tree
 ([`scripts/gate-stamp.mjs`](../scripts/gate-stamp.mjs)) so the same tree is never gated twice, and
-[`scripts/with-gate-lock.sh`](../scripts/with-gate-lock.sh) limits how many gates run at once across worktrees
-.
+[`scripts/with-gate-lock.sh`](../scripts/with-gate-lock.sh) limits how many gates run at once across worktrees.
 
 **Test files sit next to their source**: `x.ts` is tested by `x.test.ts` (pure), `x.db.test.ts` (needs a
 database) or `x.live.test.ts` (real providers, opt-in with `npm run test:live`, never in the gate). There is no
@@ -1425,7 +1421,7 @@ database) or `x.live.test.ts` (real providers, opt-in with `npm run test:live`, 
 
 **Test databases.** [`vitest.global-setup.ts`](../vitest.global-setup.ts) calls [`scripts/test-db.mjs`](../scripts/test-db.mjs),
 which creates `<db>_test_<branch-slug>` in the same Neon project if absent, applies the migrations (rebuilding a test
-database whose migrations fail, ) and points `DATABASE_URL` at it, so tests never touch the development database.
+database whose migrations fail) and points `DATABASE_URL` at it, so tests never touch the development database.
 Files in one shard run one at a time because they share its database; the gate's three shards use the suffixes
 `_s1`…`_s3`. Set your own `TEST_DB_SCOPE` for a hand run while a gate may be running.
 
@@ -1433,7 +1429,7 @@ What the suite covers that matters most: the routing table per matrix row ([`rou
 takeover races and the compare-and-set ([`race.db.test.ts`](../lib/engine/race.db.test.ts)), concurrent unlocks, tips
 and top-ups ([`races.db.test.ts`](../lib/wallet/races.db.test.ts)), balance = ledger after money paths, the guards per
 role ([`guards.db.test.ts`](../lib/auth/guards.db.test.ts)), Juno never seeing a T&S chat, and the prompts quoted in
-the docs matching their source ([`prompts-doc.test.mjs`](../scripts/persona/prompts-doc.test.mjs), ).
+the docs matching their source ([`prompts-doc.test.mjs`](../scripts/persona/prompts-doc.test.mjs)).
 
 ---
 
@@ -1474,8 +1470,7 @@ AI?" gets the truth in her voice.
 **Why a lease and a compare-and-set.** A turn takes 5 to 10 seconds of provider calls, too long to hold a Neon
 transaction, so the turn holds a lease and commits with a compare-and-set on mode, version and lease token; a takeover
 bumps the version and the stale turn is recorded `superseded`. A per-minute sweep catches anything an `after()`
-task dropped, and every bound (10 conversations per sweep, 5 turns per call) keeps one invocation finite
-.
+task dropped, and every bound (10 conversations per sweep, 5 turns per call) keeps one invocation finite.
 
 **Why the safety routing looks like this.** Two queues, strictest owner wins, safety never on the creator.
 Flag the account only for minors and threats; a person in crisis always gets resources. A minor in chat gets a
@@ -1486,8 +1481,8 @@ to allow online plans and saying where she streams, for every fan.
 **Why the chat feels the way it does.** The engine waits 250 ms after his last message and holds while he types, up to
 8 s. Jev reads whether he is answering her, changing topic, returning or mid-thought. Pacing and
 history count rounds, not messages. Up to three bubbles, ending in a hook, with a slower,
-human typing pace. A pitch needs pacing *and* a natural moment, never the personal chat
-. Her typing row waits 500 ms after he sends. Her emoji vary.
+human typing pace. A pitch needs pacing *and* a natural moment, never the personal chat.
+Her typing row waits 500 ms after he sends. Her emoji vary.
 
 **Why money works this way.** A Stripe-funded wallet with an append-only ledger, credited only by a signature-checked,
 deduplicated webhook, debited under a wallet lock. Demo prices and limits, and why the cap
@@ -1509,8 +1504,7 @@ re-take a chat another admin holds, see every conversation, and open the creator
 
 **Platform choices.** Neon with per-branch test databases; Drizzle with the Auth.js adapter on
 the WebSocket pool for real transactions; Pusher because Vercel cannot hold sockets; streamed server
-rendering with skeletons on every signed-in page; tests beside their source and `lib/` by domain (,
-); every prompt quoted in the docs and checked by a test.
+rendering with skeletons on every signed-in page; tests beside their source and `lib/` by domain; every prompt quoted in the docs and checked by a test.
 
 ---
 
@@ -1548,35 +1542,35 @@ one stands now. Remaining gaps are in [§22](#22-known-gaps-risks-and-open-findi
 
 ### Decided but not built
 
-| Decision | What it says | What the code does |
-|---|---|---|
-| ,  | A chat held for Juno sends a short filler in her voice | `hold_creator` sends nothing ([`turn.ts`](../lib/engine/turn.ts)) |
-| , , ,  | A meetup or off-platform request gets a boundary line, the AI keeps chatting, and a platform notice "Warning n of 3"; the third hands to T&S (`ts.max_strikes`) | The first request is an immediate hard stop to T&S with a fixed template ([`route.ts`](../lib/engine/route.ts)); no strike count or `ts.max_strikes` row exists |
-|  | A threat gets one boundary line in her voice before the flag | A threat is a silent hard stop plus a flag |
-|  | Sim agents use tools for money actions | The agent returns send, wait or leave; money steps are scripted beats (R8) |
+| What it says | What the code does |
+|---|---|
+| A chat held for Juno sends a short filler in her voice | `hold_creator` sends nothing ([`turn.ts`](../lib/engine/turn.ts)) |
+| A meetup or off-platform request gets a boundary line, the AI keeps chatting, and a platform notice "Warning n of 3"; the third hands to T&S (`ts.max_strikes`) | The first request is an immediate hard stop to T&S with a fixed template ([`route.ts`](../lib/engine/route.ts)); no strike count or `ts.max_strikes` row exists |
+| A threat gets one boundary line in her voice before the flag | A threat is a silent hard stop plus a flag |
+| Sim agents use tools for money actions | The agent returns send, wait or leave; money steps are scripted beats |
 
-, , , , ,  and  are marked `open (decided, not built)` in the decision log, each
-with a note naming the code that does otherwise;  carries an "as built" note. Eight sim beats wait on them as `pending`.
+The first three are decided but not built, and the decision log says so with a note naming the code that does
+otherwise; the fourth carries an "as built" note. Eight sim beats wait on them as `pending`.
 
 ### Risks in the code
 
-- **Crisis during generation** (R-4a, ): caught only if a fold-in is still allowed; otherwise the next turn.
+- **Crisis during generation**: caught only if a fold-in is still allowed; otherwise the next turn.
 - **Responsible-money limits are per-creator config**: [`pitch.hardship_cooldown_hours`](CONFIG.md#floors-jev-confidence-and-pitching) and the velocity limits can be
-  overridden by a creator row, although  frames them as fixed rules. Only [`floor.*`](CONFIG.md#floors-jev-confidence-and-pitching) and [`platform.*`](CONFIG.md#engine-rounds-timing-delivery) are locked.
+  overridden by a creator row, although the spending rules are framed as fixed. Only [`floor.*`](CONFIG.md#floors-jev-confidence-and-pitching) and [`platform.*`](CONFIG.md#engine-rounds-timing-delivery) are locked.
 - **Admin live updates**: an admin holding a `human_ts` chat is not pushed new fan messages (the fan's send emits only
   on the creator channel and the admin's thread does not poll while Pusher is up). Found by reading the code, not
   tested.
 - **PaymentIntent top-ups** that cannot credit leave only a log line, not an `uncredited_payments` row.
 - **No refund path** in code; the `refund` ledger kind has no writer.
 - **Ban** flags the fan and ends his sessions but leaves the conversation mode and handoff as they were and emits no event.
-- **No seat password lockout** beyond Turnstile (R4).
+- **No seat password lockout** beyond Turnstile, a known gap.
 - **Real-email sign-in** and the seat flow in a real browser with Turnstile were covered by mocked tests only.
 - **Settings edits record no actor**, so an admin's change to Juno's never-list or prices is indistinguishable from hers.
 
 ### Paid and unpaid variants with identical text
 
 The paid variants of the inbound off-platform question and the verify off-platform question are word-for-word the same
-as the unpaid ones since  ([`questions.ts`](../lib/engine/questions.ts)). The branch is harmless but misleading;
+as the unpaid ones since off-platform talk was loosened for every fan ([`questions.ts`](../lib/engine/questions.ts)). The branch is harmless but misleading;
 removing it, or giving it a real difference, is a decision for the founder.
 
 ### Unused schema
@@ -1598,11 +1592,10 @@ Conversation mode `closed`, handoff reason `hardship_escalation`, chunk source `
 
 - The rapid eval ran on card v1; the persona and engine evals ran on v2, the newest card.
 - [METRICS.md](METRICS.md) predates the evals and most traffic.
-- Overtaken decisions are annotated in place, their text unchanged:  (admin scope superseded by ,  and
-  );  and  ([`pitch.min_gap_messages`](CONFIG.md#floors-jev-confidence-and-pitching) superseded by [`pitch.min_gap_rounds`](CONFIG.md#floors-jev-confidence-and-pitching), ); ,  and 
-  carry "as built" notes (the continue page, ; scripted money beats, R8; the personal item offered only by Juno, ).
-- [FINDINGS.md](../.product/FINDINGS.md) reused ,  and ; the second set (archify's checks, the `db: none`
-  config line, the unstyled wallet) was renumbered ,  and . Every existing reference meant the first set.
+- Decisions that were overtaken are annotated in the decision log with their text unchanged: the admin scope, the
+  message-count pitch gap (now [`pitch.min_gap_rounds`](CONFIG.md#floors-jev-confidence-and-pitching)), and the
+  decisions that carry "as built" notes (the continue page; scripted money beats; the personal item offered only
+  by Juno).
 
 ---
 
@@ -1650,6 +1643,5 @@ Conversation mode `closed`, handoff reason `hardship_escalation`, chunk source `
 | Fan simulator | [`lib/sim/`](../lib/sim/), [`app/admin/sim/`](../app/admin/sim/), [`scripts/sim/`](../scripts/sim/), [`data/sim/`](../data/sim/) |
 | Schema and migrations | [`db/schema.ts`](../db/schema.ts), [`drizzle/`](../drizzle/) |
 | Seeded config and catalogue | [`db/seed.ts`](../db/seed.ts), [CONFIG.md](CONFIG.md) |
-| Gate and test databases | [`scripts/gate.sh`](../scripts/gate.sh), [`.product/gate-steps`](../.product/gate-steps), [`scripts/test-db.mjs`](../scripts/test-db.mjs) |
-| Decisions, findings, residuals | [`.product/DECISIONS.md`](../.product/DECISIONS.md), [`.product/FINDINGS.md`](../.product/FINDINGS.md), [`.product/RESIDUALS.md`](../.product/RESIDUALS.md) |
+| Gate and test databases | [`scripts/gate.sh`](../scripts/gate.sh), [`scripts/test-db.mjs`](../scripts/test-db.mjs) |
 | Diagrams | [`docs/diagrams/flows.md`](diagrams/flows.md), the explainer [`docs/diagrams/engine.html`](diagrams/engine.html) |

@@ -3,11 +3,11 @@
 **Which card each result measures.** The sections below are written by their scripts and are never pooled across
 cards. The engine section and the persona section both ran on card v2, the published card and the newest card
 file (2026-11-09). The rapid eval (PERSONA-PIPELINE.md) ran on card v1 only. The engine section's
-pass bar is the one  fixed ( proposed it and is still marked open).
+pass bar is 0 safety violations and 0 errored turns; route accuracy and handoff precision and recall are reported, not gated.
 
 ## Retrieval (Postgres full-text vs Voyage vs hybrid)
 
-Decision : Voyage embeddings are used only if the eval shows they are genuinely better than
+Voyage embeddings are used only if the eval shows they are genuinely better than
 Postgres full-text search. The query set is `data/persona/eval/retrieval-queries.jsonl` (30 fan
 questions written to avoid her wording, each labelled against 40 candidate chunks); it is fixed and
 is never edited after a result is seen.
@@ -38,7 +38,7 @@ Winner by recall@5 (ties: MRR, then the cheaper strategy): **vector**. Written t
 
 ## Engine (real Jev and Claude, scenario bank)
 
-Decision : the engine's gate tests use fake providers, so nothing in the gate shows that real Jev and
+The engine's gate tests use fake providers, so nothing in the gate shows that real Jev and
 Claude route a self-harm message to Trust & Safety, refuse a meetup, sell without pressure and stay quiet after a
 hard stop. This eval plays a bank of scripted fan threads through the real pipeline and scores what the engine wrote.
 The pass bar is **0 safety violations**.

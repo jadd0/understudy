@@ -1,6 +1,6 @@
 # Message engine
 
-Status: as built. Decision ids refer to `.product/DECISIONS.md`. The sequence diagram is drawn in the diagrams PR.
+Status: as built. The sequence diagrams are under `docs/diagrams/`.
 The prompts the engine sends are quoted under "Engine prompts", the config rows under "Config rows the engine reads".
 
 ## The turn
@@ -16,7 +16,7 @@ One turn (`lib/engine/turn.ts`):
 
 1. **Lease.** `acquireLease` sets `lease_token` and `lease_until` on the conversation if it is in `ai` mode, the AI is
    on for the conversation and the creator, and no live lease exists. No lease, no turn.
-2. **Wait for him to settle** (`lib/engine/debounce.ts`, ). Load the inbound set, sleep `engine.debounce_ms` (250),
+2. **Wait for him to settle** (`lib/engine/debounce.ts`). Load the inbound set, sleep `engine.debounce_ms` (250),
    reload. A new message, or `conversations.fan_typing_until` still in the future (the fan's composer pings it while
    keys are pressed), starts another wait. Waiting stops at the first quiet pass without typing, or when the turn's
    total sleep reaches `engine.debounce_max_ms` (8000). With `engine.debounce_ms` 0 there is one load and no sleep.
@@ -30,7 +30,7 @@ One turn (`lib/engine/turn.ts`):
    hardship route) events are left out and age out. A turn holding events never makes an offer (an `offer` route drops
    to its fallback). The tip row's body (it holds the amount) never reaches batch text, memory, retrieval or Jev.
 4. **Facts.** One query against the database clock: no-pitch window, recent declines, daily cap reached, recent
-   unlocks, **rounds** since the last offer (a round is a fan batch plus a turn that replied to it, ), an open
+   unlocks, **rounds** since the last offer (a round is a fan batch plus a turn that replied to it), an open
    offer, an unresolved handoff; plus the high-value score. Whether the batch starts a new session (her silence
    before it is at least `engine.gap_marker_minutes`) comes from the loaded history.
 5. **Jev, call 1.** One state (the new messages and the last `engine.jev_context_rounds` rounds before them, with
@@ -52,11 +52,11 @@ One turn (`lib/engine/turn.ts`):
 8. **Draft.** Haiku writes the reply from the cached persona prefix plus a per-turn suffix (route instruction, the
    `## The chat right now` block, retrieved chunks, fan memory, the offer's title and teaser) and the last
    `engine.history_rounds` rounds of history. It never sees a price.
-9. **Verify.** Code checks (money fence, never-list, empty, `marker_echo`, `asks_media`: a request for him to send a pic, video or voice note, ) then Jev checks (`on_persona`,
+9. **Verify.** Code checks (money fence, never-list, empty, `marker_echo`, `asks_media`: a request for him to send a pic, video or voice note) then Jev checks (`on_persona`,
    `explicitness`, `offplatform_or_meetup`, `is_refusal`, `admits_ai`, `promises_price_or_free`, `reasks`, and on an offer route `leads_to_offer`) on the
    state `{ draft, fan_message, earlier_messages }` (plus `offer_item` on an offer route). A failed draft is regenerated, up to `engine.gen_attempts`.
    `reasks` is a quality check: a draft whose only failure is `reasks` is regenerated once with the re-ask note and
-   is still sent if no attempt does better. `offer_unsetup` (the offer draft never leads into the item, ) is quality
+   is still sent if no attempt does better. `offer_unsetup` (the offer draft never leads into the item) is quality
    only too: retried with a note, and if no attempt leads in, the draft is sent as the route's fallback without the card. The turn remembers the latest draft that passed every safety check; only
    a turn with no such draft saves the last draft as a suggestion and hands the conversation to the creator
    (`verify_failed`).
@@ -124,9 +124,9 @@ waits on a second pooled connection can deadlock the pool.
 
 ## Latency budget
 
-Debounce (250 ms after his last message, longer while he types, ), Jev call 1, retrieval, Haiku, Jev verify: about 6 to 9 s before the first bubble is due. The typing
-indicator (PR 5) covers it: `typing` is emitted with the time until the last bubble. The fan's chat holds the row
-back for `TYPING_AFTER_SEND_MS` (500 ms, `lib/ui/typing-delay.ts`, ) after each send, so it never appears the
+Debounce (250 ms after his last message, longer while he types), Jev call 1, retrieval, Haiku, Jev verify: about 6 to 9 s before the first bubble is due. The typing
+indicator covers it: `typing` is emitted with the time until the last bubble. The fan's chat holds the row
+back for `TYPING_AFTER_SEND_MS` (500 ms, `lib/ui/typing-delay.ts`) after each send, so it never appears the
 instant he hits Send; a second send restarts the hold.
 
 ## Measured latency and cost (live, 2026-11-03)
@@ -148,7 +148,7 @@ commit, 200 to 785 micro-dollars per turn (the first turn pays the 3,776-token c
 | Retrieval fails | reply without retrieved chunks |
 | Verify fails twice on safety, with no earlier draft that passed | suggestion for the creator, handoff `verify_failed` |
 | `reasks` fails (quality only) | one regeneration with the re-ask note, then the draft is sent anyway; never a handoff |
-| `leads_to_offer` fails on every attempt (quality only, ) | the safe draft is sent as the route's fallback, with no offer card |
+| `leads_to_offer` fails on every attempt (quality only) | the safe draft is sent as the route's fallback, with no offer card |
 | A later pass or attempt fails safety after a draft passed | the earlier safe draft is committed (for its own batch); no handoff |
 | Takeover or re-lease during the turn | turn `superseded`, draft unsent; a hard stop's template is still sent |
 | Memory extraction fails | logged; the reply already went out |
@@ -194,7 +194,7 @@ before them, oldest first, without `system` rows. A `time` entry (`— 38 minute
 
 **Scoring** (`lib/engine/route.ts`). The six yes/no questions are safety triggers: a category fires when Jev's probability
 for `yes` is at or above its floor `floor.safety.<key>` (a lower floor is stricter). `intent` is the only confidence
-floor: if the chosen intent's probability is below `floor.intent`, the message goes to Juno as `unsure`, unless the best guess is `buy_intent` and pacing allows a pitch, in which case it is offered. Before routing, a `smalltalk` or `flirt` read whose `buy_intent` probability is at or above `floor.buy_intent_runner_up` (1, so switched off, ) is routed as `buy_intent` (`promoteBuyRunnerUp`); `jev_in.parsed` carries `intent: "buy_intent"`, `buyIntentP` and `promotedFrom`, while `jev_in.answers.intent` keeps Jev's raw pick. No other intent is ever promoted. Order: hard
+floor: if the chosen intent's probability is below `floor.intent`, the message goes to Juno as `unsure`, unless the best guess is `buy_intent` and pacing allows a pitch, in which case it is offered. Before routing, a `smalltalk` or `flirt` read whose `buy_intent` probability is at or above `floor.buy_intent_runner_up` (1, so switched off) is routed as `buy_intent` (`promoteBuyRunnerUp`); `jev_in.parsed` carries `intent: "buy_intent"`, `buyIntentP` and `promotedFrom`, while `jev_in.answers.intent` keeps Jev's raw pick. No other intent is ever promoted. Order: hard
 stops (minor, self_harm, threat, location_offplatform, payment_dispute), then `unsure`, then `live_chat` and
 `custom_request` (Juno), `ai_question` (disclosure), `manipulation` (deflect), `explicit_request` or `explicit`
 (ppv offer or deflect), hardship (supportive reply, no offer), then buy intent and small talk (offer if pacing allows,
@@ -241,7 +241,7 @@ const INTENT_LABELS: Record<(typeof INTENTS)[number], string> = {
         }[k],
 ```
 
-The six yes/no safety questions (options `yes` and `no`; the key is the safety category). `LOCATION_OFFPLATFORM_PAID`, asked of a fan who has unlocked something, is byte-identical to `location_offplatform` since :
+The six yes/no safety questions (options `yes` and `no`; the key is the safety category). `LOCATION_OFFPLATFORM_PAID`, asked of a fan who has unlocked something, is byte-identical to `location_offplatform` since off-platform talk was loosened for every fan:
 
 <!-- prompt-src: lib/engine/questions.ts -->
 ```text
@@ -265,7 +265,7 @@ const LOCATION_OFFPLATFORM_PAID =
   "Do the fan's new messages ask to meet in person, ask where she lives or her exact location, ask to move the chat to another app or share contact details, or ask to pay her outside this platform? An invite to play an online game or do something online together is not.";
 ```
 
-`thread` question (; the answer shapes the `## The chat right now` line and gates AI pitches):
+`thread` question (the answer shapes the `## The chat right now` line and gates AI pitches):
 
 <!-- prompt-src: lib/engine/questions.ts -->
 ```text
@@ -508,7 +508,7 @@ const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
 };
 ```
 
-Chat-state lines (`## The chat right now`: one line from the `thread` answer, and a time line when the batch starts a session; both omitted when absent). When her last eight bubbles carried emoji, a line names them (`recentEmojiLine` in `lib/engine/emoji.ts`, ), and `dropRepeatedEmoji` removes any of them the draft repeats before verify:
+Chat-state lines (`## The chat right now`: one line from the `thread` answer, and a time line when the batch starts a session; both omitted when absent). When her last eight bubbles carried emoji, a line names them (`recentEmojiLine` in `lib/engine/emoji.ts`), and `dropRepeatedEmoji` removes any of them the draft repeats before verify:
 
 <!-- prompt-src: lib/engine/thread.ts -->
 ```text
@@ -572,7 +572,7 @@ export const VERIFY_QUESTIONS: Question[] = [
 ];
 ```
 
-For a fan who has unlocked something (`facts.hasUnlocked`, ) the same questions are asked with this one swapped. Since  loosened off-platform for every fan, its text is byte-identical to the unpaid question, so the swap changes nothing; `PAID_LINE` is the only live paid difference:
+For a fan who has unlocked something (`facts.hasUnlocked`) the same questions are asked with this one swapped. Because off-platform talk is loosened for every fan, its text is byte-identical to the unpaid question, so the swap changes nothing; `PAID_LINE` is the only live paid difference:
 
 <!-- prompt-src: lib/engine/questions.ts -->
 ```text
@@ -590,7 +590,7 @@ export const VERIFY_QUESTIONS_PAID: Question[] = VERIFY_QUESTIONS.map((q) =>
 currency word (including `cents` and `bux`) beside a number, no `\d%`, no price with two decimals (`9.99`), none of
 "on the house", "no charge", "for free", "gratis"; no never-list term (short terms such as "snapchat" or "cash app" in
 `persona_cards.never_list`, derived from the card's Never bullets by `neverTerms` in `scripts/persona/load.ts`, matched
-case-insensitively on word boundaries, a plural counts); not empty; the model did not stop with `refusal`); then `on_persona` is `yes` (except on `ai_disclosure`, ),
+case-insensitively on word boundaries, a plural counts); not empty; the model did not stop with `refusal`); then `on_persona` is `yes` (except on `ai_disclosure`),
 `explicitness` is not `explicit`, `offplatform_or_meetup` is `no`, `is_refusal` is `no`, `promises_price_or_free` is `no`,
 and `admits_ai` is `yes` on route `ai_disclosure` and `no` on every other route.
 
@@ -676,8 +676,8 @@ writes is **`suggestive`**; `explicit` is above it.
 | outbound | a draft Jev rates `explicit` fails verification (`explicit`) and is redrafted, then held for Juno | `verify.ts` `jevChecks` |
 | model | Haiku is told never to write explicit text; the two checks above do not rely on it | `prompt.ts` |
 
-This ceiling is a fixed level, not a config row: lowering it would let the AI write explicit text, which 
-rules out.
+This ceiling is a fixed level, not a config row: lowering it would let the AI write explicit text, which the content
+ceiling rules out.
 
 ### Pitch ceilings (how often the AI may sell)
 

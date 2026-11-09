@@ -132,7 +132,6 @@
       "type": "database",
       "label": "Commit",
       "sublabel": "compare-and-set",
-      "tag": "",
       "width": 128
     },
     {
