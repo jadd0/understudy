@@ -82,15 +82,6 @@ export const EVENT_ONLY_INSTRUCTION =
 
 export const TIP_LINE = "He just sent you a tip. Thank him warmly, in your own way. Never say how much it was or mention money.";
 
-/** Added to every drawn reply: a fan question gets a plain answer before any flirting. */
-export const ANSWER_FIRST_LINE =
-  "If he asked a question, answer it plainly first, using a fact from the lines she has said or posted if one fits.";
-
-/** The `## This reply` block for a style draw. */
-export function styleDrawBlock(draw: StyleDraw, pet: string | null): string {
-  return `## Voice for this reply\n${[...drawLines(draw, pet), ANSWER_FIRST_LINE].map((l) => `- ${l}`).join("\n")}`;
-}
-
 export const unlockLine = (title: string): string =>
   `He just unlocked ${title}. Check in about it warmly, like asking if he likes it. Do not pitch him anything else.`;
 
@@ -126,6 +117,15 @@ export function offerOutcomesBlock(outcomes: readonly OfferOutcome[], ownsAll = 
   if (outcomes.some((o) => o.outcome === "owned")) lines.push(OWNED_RULE);
   if (ownsAll) lines.push(OWNS_ALL_LINE);
   return `## What he has from you and what you offered\n${lines.join("\n")}`;
+}
+
+/** Added to every drawn reply: a fan question gets a plain answer before any flirting. */
+export const ANSWER_FIRST_LINE =
+  "If he asked a question, answer it plainly first, using a fact from the lines she has said or posted if one fits.";
+
+/** The `## Voice for this reply` block for a style draw. */
+export function styleDrawBlock(draw: StyleDraw, pet: string | null): string {
+  return `## Voice for this reply\n${[...drawLines(draw, pet), ANSWER_FIRST_LINE].map((l) => `- ${l}`).join("\n")}`;
 }
 
 /**
