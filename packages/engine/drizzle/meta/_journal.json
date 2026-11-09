@@ -43,6 +43,13 @@
       "when": 1794240748845,
       "tag": "0005_chubby_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794249155778,
+      "tag": "0006_large_thunderbird",
+      "breakpoints": true
     }
   ]
 }

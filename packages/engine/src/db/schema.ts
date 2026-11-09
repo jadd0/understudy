@@ -81,6 +81,8 @@ export const personaCards = pgTable(
     version: integer("version").notNull(),
     body: text("body").notNull(),
     neverList: text("never_list").array().notNull().default(sql`'{}'::text[]`),
+    /** Her measured voice-marker rates (persona build's style.json `markers`); null means no style draw. */
+    markers: jsonb("markers"),
     publishedAt: ts("published_at"),
   },
   (t) => [unique("persona_cards_creator_version_unique").on(t.creatorId, t.version)],

@@ -20,6 +20,16 @@ describe("drawStyle", () => {
     expect(draws.some((d) => !d.signoff)).toBe(true);
   });
 
+  test("mate and babe are drawn at their own rates, one at a time", () => {
+    const rates: StyleRates = { ...RATES, mate: 0.3, babe: 0.3 };
+    const rng = seededRandom(13);
+    const draws = Array.from({ length: 500 }, () => drawStyle(rates, "hey", rng));
+    const share = (a: string | null) => draws.filter((d) => d.address === a).length / draws.length;
+    expect(Math.abs(share("mate") - 0.3)).toBeLessThanOrEqual(0.05);
+    expect(Math.abs(share("babe") - 0.3)).toBeLessThanOrEqual(0.05);
+    expect(Math.abs(share(null) - 0.4)).toBeLessThanOrEqual(0.05);
+  });
+
   test("the same seed gives the same draws, whatever the fan wrote", () => {
     const a = seededRandom(3);
     const b = seededRandom(3);

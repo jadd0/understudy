@@ -26,7 +26,8 @@ import { inboundQuestions } from "../routing/questions";
 import { hardStopOf, parseInbound, promoteBuyRunnerUp, route as decideRoute } from "../routing/route";
 import { template, templateSender } from "../drafting/templates";
 import type { Facts, JevIn, Route } from "../types";
-import { qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify";
+import { enforceDraw, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify";
+import { drawStyle, parseRates } from "../drafting/style-draw";
 import { DeciderUnavailable } from "../ports/decider";
 
 /**
@@ -95,6 +96,8 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
     .orderBy(desc(personaCards.version))
     .limit(1);
   if (!card) throw new ConfigMissing("persona_card");
+  // Without stored rates there is no draw and the prompt is unchanged.
+  const styleRates = parseRates(card.markers);
   acc.personaVersion = card.version;
 
   const startedAt = clock.now();
@@ -384,6 +387,10 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
     let chosenUnsetup = false;
     let previous: VerifyFailure[] = [];
     const recent = recentEmoji(history);
+    // One draw per reply, kept across retries; the fixed-line routes never draw.
+    const styleDraw =
+      styleRates && ["reply", "offer", "deflect"].includes(route.name) ? drawStyle(styleRates, batchText, ctx.deps.random ?? Math.random) : null;
+    if (styleDraw) trail.push({ style: styleDraw });
     while (attempts < cfg.genAttempts && !ok) {
       attempts++;
       acc.attempts = attempts;
@@ -406,6 +413,7 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
         offerOutcomes,
         // A cooldown turn never hears "tease that more is coming".
         ownsAll: ownsAll && !facts.noPitchActive,
+        styleDraw: styleDraw && styleRates ? { draw: styleDraw, pet: styleRates.pet } : undefined,
       });
       // Name what failed, so the second draft drops that part instead of rephrasing it (a lobby invite became a voice-note dare).
       const reasons = previous.map((f) => RETRY_REASONS[f]).filter(Boolean);
@@ -456,7 +464,7 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
       trail.push({ attempt: attempts, failures: verdict.failures, answers: verdict.jevOut });
       // A draft that only repeats a question is still safe: if no later attempt does better, it is the one sent.
       if (verdict.ok || qualityOnly(verdict.failures)) {
-        chosen = draft;
+        chosen = styleDraw ? enforceDraw(draft, styleDraw) : draft;
         chosenUnsetup = verdict.failures.includes("offer_unsetup");
       }
       previous = verdict.failures;

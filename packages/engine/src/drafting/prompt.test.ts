@@ -8,7 +8,7 @@ const base: PromptInput = {
   neverList: [],
   chunks: [],
   profile: EMPTY_PROFILE,
-  route: { name: "reply" },
+  route: { name: "reply", hardship: false, alert: false },
   offer: null,
   history: [{ id: "1", sender: "fan", body: "hi", createdAt: new Date(0) }],
   thread: "unknown",
