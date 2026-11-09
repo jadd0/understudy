@@ -2,8 +2,7 @@
 
 The fan simulator spawns **sim fans**: real `users` rows with `is_sim = true` that talk to the engine through the same
 `sendFanMessage` path a human uses, so the dashboard, the queues and the money path have traffic to show and every
-safety and money moment can be produced on demand. Decision ids refer to `.product/DECISIONS.md` (,  to
-, ).
+safety and money moment can be produced on demand.
 
 Everything here is gate-checked: `lib/sim/docs.test.ts` fails if a section, a persona, a config row or a CLI flag is
 missing, if the two generated regions below drift from the persona files, and `scripts/persona/prompts-doc.test.mjs`
@@ -26,17 +25,15 @@ fails if a quoted prompt differs from its source.
 - **What it proves for the review call.** Twenty-five personas exercise every route, every handoff reason that fan
   behaviour can reach, both queues, pacing, the wallet and the human controls (section 4). Each beat carries its
   expected engine behaviour and is scored by the engine eval's own scorer (`lib/evals/score.ts`, 0 safety violations).
-  A finished run exports as a 9b eval thread (section 9).
-- **Pending engine work.** Some expectations are written against decisions the engine has not shipped yet (PR 4b, 
-  minor notice and read-only chat, has merged and is strict; PR 4c:  hold filler,  and  boundary line and
-  "Warning N of 3",  no personal chat in AI pitches,  thread reading; PR 4d:  a threat gets one boundary line
-  before the flag and the hand-off to T&S,  the strike notice text). A beat marked **engine PR 4c/4d**
-  reports a miss as `pending engine PR <n>` and never fails the run; a safety violation is never downgraded. When the
-  engine PR merges, delete the `pending` marker from the persona file and the expectation becomes strict.
-  **Status:**  and  shipped. The hold filler, the boundary line and "Warning N of 3" (,
-  , ) and the threat's boundary line were never built: a hold sends nothing, an off-platform ask is an
-  immediate hard stop to T&S with a fixed reply, and a threat is a silent hard stop. Their eight beats stay `pending`
-  (DECISIONS.md marks those decisions open).
+  A finished run exports as an engine eval thread (section 9).
+- **Pending engine work.** Some expectations are written against behaviour the engine does not have yet: the in-voice
+  hold filler, the boundary line and "Warning N of 3" notices for off-platform asks, and one boundary line for a
+  threat before the flag and hand-off to T&S. A beat marked `pending` reports a miss as `pending engine PR <n>` and
+  never fails the run; a safety violation is never downgraded. When the engine gains the behaviour, delete the
+  `pending` marker from the persona file and the expectation becomes strict. Today a hold sends nothing, an
+  off-platform ask is an immediate hard stop to T&S with a fixed reply, and a threat is a silent hard stop, so eight
+  beats stay `pending`. The minor notice with read-only chat, no personal chat in AI pitches and thread reading are
+  built and strict.
 
 ## 2. Quick start
 
@@ -54,7 +51,7 @@ running against a dev server for the top-ups (section 7). The command refuses a 
 `npm run sim:load-lines` once to embed the line library.
 
 The summary table is printed when the runs end. The format (this is the shape, not a recorded run: no live run was made
-when this PR was built):
+when this page was written):
 
 ```text
 database: neondb
@@ -1035,14 +1032,14 @@ sequenceDiagram
   R->>S: text, clientMsgId runId:beat:k
   S->>E: message stored, then the turn runs in-process
   E-->>R: turn rows, messages, handoffs, events to the fan window
-  R->>O: rows read into a 9b Observation plus sim extras
+  R->>O: rows read into an engine-eval Observation plus sim extras
   O-->>R: violations, failures, pending
   R->>R: append log entry and advance next_beat in one update
 ```
 
 ## 9. Reading results
 
-The CLI table has one row per persona: `status`, `beats` done of total, `viol` (9b's safety bar), `fail` (expectation
+The CLI table has one row per persona: `status`, `beats` done of total, `viol` (the engine eval's safety bar), `fail` (expectation
 misses and missed checkpoints), `pend` (misses on beats waiting on an engine PR, with the PR named underneath), `blocked`
 (guard blocks and refusals), the sim's own model cost and the engine's cost for the conversation. A **checkpoint** is reached
 when Jev's inbound classification of the beat's turn matches its `row` (an intent, or a safety key at or over its floor,
@@ -1216,7 +1213,7 @@ Add `data/sim/personas/<slug>.json` and `<slug>.brief.md`, and lines in `data/si
 edge, 0 never drawn), `variants[]` (`name`, `age`, `city`), `exercises[]` (names from `FEATURES` in `lib/sim/persona.ts`),
 `goals[]`, `brief` (the md file) and `beats[]`. A beat is one of `say` (a checkpoint the agent reaches in its own words, or
 `fixed` with `text`), `free` (small talk on a topic, only if `free_play`), `line` (a request grounded in the library),
-`burst`, `topup`, `tip`, `set_cap`, `unlock`, `nudge`, `human`, `wait`. Message beats carry `expect` (9b's expectation:
+`burst`, `topup`, `tip`, `set_cap`, `unlock`, `nudge`, `human`, `wait`. Message beats carry `expect` (the engine eval's expectation:
 `route`, `queue`, `offer`, `alert`, `must_not`, `admits_ai`, `silent`, `turns`), an optional `row` (the matrix row the
 checkpoint names), an optional `sim` block (flagged, notice, bubbles, offer kinds, and so on), and `pending: { pr, note }`
 for a decided behaviour the engine does not have yet. The gate checks: every file validates; slugs are unique and all

@@ -1,7 +1,7 @@
 # Authentication and access
 
 Auth.js v5 (`next-auth@beta`) with the Resend provider and the Drizzle adapter; sessions live in the
-database (`session.strategy = "database"`). Nothing is hand-rolled (, AGENTS.md). Files:
+database (`session.strategy = "database"`). Nothing is hand-rolled (AGENTS.md). Files:
 `lib/auth/index.ts`, `lib/auth/turnstile.ts`, `lib/auth/guards.ts`, `lib/auth/onboarding.ts`, `lib/auth/demo-seats.ts`,
 `app/signin/**`, `app/onboarding/**`, `app/api/auth/[...nextauth]/route.ts`.
 
@@ -51,7 +51,7 @@ route on the server from the user row read fresh, so a flag set after a session 
 | `flagged_at` set | redirect `/blocked`, except a fan flagged `minor_in_chat`, who may read `/chat` (route `chatRead`) and is sent there from `/` |
 | fan without `adult_confirmed_at` | redirect `/onboarding` |
 | `/chat` | fans only |
-| `/console` | creators and admins. An admin's inbox lists every conversation, T&S first (its read scope is all, ); settings apply to the platform creator; it acts as itself |
+| `/console` | creators and admins. An admin's inbox lists every conversation, T&S first (its read scope is all); settings apply to the platform creator; it acts as itself |
 | `/admin` | admins only |
 | any other role on a role route | 404, not a redirect, so the route's existence is not hinted |
 | `/onboarding` for a non-fan | 404; for a confirmed fan, redirect `/chat` |

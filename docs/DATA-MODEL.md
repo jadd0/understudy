@@ -45,7 +45,7 @@ ai_disclosure).
 | `persona_cards` | creator_id, version, body, never_list (text[]), published_at | the card the engine reads and Juno edits |
 | `persona_chunks` | creator_id, source, source_url, text, meta | retrieval corpus from `data/persona/bank/chunks.jsonl`; source caption, comment_reply or card |
 | | embedding | `vector(1024)`, null until embedded; HNSW index, cosine |
-| | tsv | `tsvector` generated from `to_tsvector('simple', text)`; GIN index; the Postgres full-text side of the  eval |
+| | tsv | `tsvector` generated from `to_tsvector('simple', text)`; GIN index; the Postgres full-text side of the retrieval eval |
 | `fan_memory` | creator_id, fan_id, profile (jsonb), version | rolling per-fan profile; pk (creator_id, fan_id) |
 
 ## Conversation

@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Conversations | her own, except any on the Trust & Safety side | every conversation, T&S ones first | their own with Juno |
 | Settings | AI switch, never-list, prices, persona card (read-only) | the same page for the platform creator, through `/console/settings`; no actor is recorded | none |
-| Actions | take over, reply, edit and send a suggestion, discard, hand back, per-chat AI switch, send an offer | take over (any chat, ), reply, edit and send a suggestion, discard, release, ban (on `/admin/[id]` only) | send, unlock, tip, typing pings |
+| Actions | take over, reply, edit and send a suggestion, discard, hand back, per-chat AI switch, send an offer | take over (any chat), reply, edit and send a suggestion, discard, release, ban (on `/admin/[id]` only) | send, unlock, tip, typing pings |
 | Turn labels (route, outcome, ms, cost) | on hover over an AI bubble | same | never |
 
 Navigation lives in the top bar (`components/ui/app-shell.tsx`, links from `lib/ui/app-nav.ts`): Juno gets Inbox,
@@ -15,7 +15,7 @@ seat label.
 
 **Admins in the console.** An admin may open `/console`. Its inbox there is the same all-conversations list
 (scope `true`, no tabs, filter ignored); settings apply to the platform creator (`consoleCreatorFor` → `primaryCreator`).
-In a thread it can refresh, reply, take over (to `human_ts`, ), release and send or discard a suggestion. Hand-back,
+In a thread it can refresh, reply, take over (to `human_ts`), release and send or discard a suggestion. Hand-back,
 the per-chat AI switch and offers stay creator-only, and ban is only on `/admin/[id]`.
 
 ## Viewer scoping
@@ -47,7 +47,7 @@ here lasts only until the next reload; put the term in the card as well.
 ## Takeover, hand-back, release, ban
 
 1. **Take over** (`takeOverConversation` → `takeover`): one transaction locks the conversation, sets mode
-   `human_creator` (or `human_ts` for an admin, from any mode, ), bumps `version` so a turn in flight fails its
+   `human_creator` (or `human_ts` for an admin, from any mode), bumps `version` so a turn in flight fails its
    compare-and-set, drops the lease, claims the open handoff, and supersedes AI bubbles the fan has not yet seen.
    A creator is refused on the T&S side. An admin may take over any conversation, including one another admin holds.
 2. **Reply** (`sendAsCreator`): only in the viewer's own human mode; stored as sender `creator` or `admin`. A
