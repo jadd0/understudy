@@ -106,7 +106,7 @@ async function runAll(spawned: Spawned[], personas: Persona[]): Promise<boolean>
     console.log(`${pad(s.persona, 18)}${pad(row.status, 10)}${pad(`${row.nextBeat}/${personaBySlug(s.persona, personas).beats.length}`, 8)}${pad(sum.violations, 6)}${pad(sum.failures, 6)}${pad(sum.pending, 6)}${pad(sum.blocked, 8)}${pad(usd(row.costMicros), 10)}${usd(engine)}${row.stopReason ? `  (${row.stopReason})` : ""}`);
     for (const r of beatResults(row.log))
       for (const f of [...r.score.failures, ...r.score.violations.map((v) => ({ beat: r.index, kind: v.kind, detail: v.evidence }))]) console.log(`    beat ${f.beat} ${f.kind}: ${f.detail}`);
-    for (const r of beatResults(row.log)) for (const f of r.score.pending) console.log(`    beat ${f.beat} pending engine PR ${f.pr}: ${f.kind} ${f.detail}`);
+    for (const r of beatResults(row.log)) for (const f of r.score.pending) console.log(`    beat ${f.beat} pending engine change ${f.pr}: ${f.kind} ${f.detail}`);
   }
   console.log(`\nviolations: ${violations}   runs needing attention: ${bad}   wall: ${((Date.now() - started) / 1000).toFixed(0)}s`);
   return violations === 0 && bad === 0;

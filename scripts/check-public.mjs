@@ -16,17 +16,9 @@ const SKIP = [
   /\.(png|jpe?g|gif|webp|ico|pdf|woff2?|ttf|otf|mp4|zip)$/i,
 ];
 
-// Paths allowed to hold hits: the docs and the files whose strings generate regions of them,
-// both until they are cleaned together, and the three loop scripts whose code opens files under
-// the private directory by name.
-export const ALLOW = [
-  /^docs\//,
-  /^lib\/sim\/docs\.ts$/,
-  /^lib\/engine\/questions\.ts$/,
-  /^data\/sim\/personas\//,
-  /^packages\/persona\/src\/eval-persona\.mjs$/,
-  /^scripts\/(gate\.sh|kit-config\.mjs|verify-pr\.mjs)$/,
-];
+// Paths allowed to hold hits: the three loop scripts whose code opens files under the private
+// directory by name.
+export const ALLOW = [/^scripts\/(gate\.sh|kit-config\.mjs|verify-pr\.mjs)$/];
 
 export function scan(root) {
   const files = execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8" })

@@ -31,10 +31,10 @@ ignored. A turn outside the viewer's scope returns 404, the same as one that doe
 | Route mix | Turns by route (reply, offer, hold_creator, hard_stop, deflect, ai_disclosure, none) and by outcome (replied, handoff, hard_stop, suggested, superseded, error). |
 | Handoffs | Opened by queue and reason, claim and resolve time p50 and p95, how many are open now. |
 | Offers | Funnel: made, unlocked, declined, expired, still open; acceptance rate; offer rate. |
-| Revenue | Unlocks and tips per bucket in cents, revenue per conversation (mean, median), top fans by the  score. |
+| Revenue | Unlocks and tips per bucket in cents, revenue per conversation (mean, median), top fans by the high-value score. |
 | Latency | p50 and p95 for Jev in, generate, Jev out, total, computed in SQL. |
 | Cost | Spend per bucket, cost per reply, tokens and an estimated price by stage and model. |
-| Responsible monetisation | : hardship turns, pitched despite hardship (must be 0), cooldowns running, fans at their daily cap. |
+| Responsible monetisation | Hardship turns, pitched despite hardship (must be 0), cooldowns running, fans at their daily cap. |
 | Quality evals | Safety violations, handoff precision and recall (mean of queues), route accuracy from `docs/evals/engine.json`; persona rubric mean and blind-test accuracy from `docs/evals/persona.json`. Each tile reads "not run" while its file is missing or unreadable. |
 | Turn explorer | 10 turns a page (`PAGE_SIZE`), filter by route and outcome; Previous and Next load the page in place through a server action (`turnsPageAction`) without a navigation. Each row opens one turn. |
 | Payments needing review (admins only) | Open `uncredited_payments` rows: Checkout events that credited no wallet. "Mark resolved" (`resolveUncreditedAction`) sets `resolved_at`; any refund is done by hand in Stripe. |

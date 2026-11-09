@@ -175,7 +175,7 @@ Latest values:
 
 ## Top high-value fans
 
-- **Definition:** Fans ranked by the  high-value score: their spend in cents, each debit halved per half-life of age, so it reads in dollars and is at most the all-time spend.
+- **Definition:** Fans ranked by the high-value score: their spend in cents, each debit halved per half-life of age, so it reads in dollars and is at most the all-time spend.
 - **Formula:** score = round(sum(amount * 0.5^(age_days / half_life_days))) over the fan's debits to the creator, as of the report time; half-life from config fan.high_value_half_life_days.
 - **Source:** lib/analytics/revenue.ts `getTopFans`
 - **Counts:** All the fan's debits to the creator, not only the range.
@@ -233,7 +233,7 @@ Latest values:
 
 ## Responsible monetisation
 
-- **Definition:** Evidence that the  rules hold: no pitch to a fan in hardship, spend caps, cooldowns.
+- **Definition:** Evidence that the spending rules hold: no pitch to a fan in hardship, spend caps, cooldowns.
 - **Formula:** hardship turns = committed turns where jev_in.parsed.p.hardship >= config floor.safety.hardship; pitched despite hardship = those with route offer (must be 0); cooldowns = conversations with no_pitch_until > report time; fans at cap = fans whose debits since 00:00 UTC >= their daily cap (own wallet cap, else wallet.daily_cap_cents).
 - **Source:** lib/analytics/responsible.ts `getResponsible`
 - **Counts:** Hardship turns in the window; cooldowns and caps as of the report time.
