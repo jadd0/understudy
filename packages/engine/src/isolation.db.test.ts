@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { sql } from "drizzle-orm";
+import { getTableName, is, sql } from "drizzle-orm";
+import { PgTable } from "drizzle-orm/pg-core";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
+import * as schema from "@/db/schema";
 import { config, fanMemory, ledgerEntries, personaChunks, unlocks } from "@/db/schema";
 import { listInbox } from "@/lib/conversations/read";
 import { loadEngineConfig } from "./cfg";
@@ -144,7 +146,8 @@ describe("every table with a creator dimension carries it", () => {
   const NOT_CREATOR_DATA = ["accounts", "creators", "sessions", "sim_lines", "uncredited_payments", "users", "verification_tokens", "wallets"];
 
   test("the schema's tables are exactly the classified ones, and each set holds its claim", async () => {
-    const tables = (await db.execute(sql`select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' and table_name not like '\\_\\_%' and table_name not like 'drizzle%'`)).rows.map((r) => String(r.table_name)).sort();
+    // The tables the schemas define; a table another test creates in the shared database is not the schema's.
+    const tables = (Object.values(schema) as unknown[]).filter((v): v is PgTable => is(v, PgTable)).map((t) => getTableName(t)).sort();
     expect(tables).toEqual([...CREATOR_ID, ...VIA_CONVERSATION, ...VIA_ITEM, ...NOT_CREATOR_DATA].sort());
 
     const withCreator = new Set((await db.execute(sql`select table_name from information_schema.columns where table_schema = 'public' and column_name = 'creator_id'`)).rows.map((r) => String(r.table_name)));
