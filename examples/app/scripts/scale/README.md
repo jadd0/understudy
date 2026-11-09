@@ -11,10 +11,10 @@ export TEST_DB_SCOPE=scale
 export DATABASE_URL=$(node scripts/test-db.mjs)
 
 # 2. about a minute at the defaults: 200 creators x 100 fans x 50 messages
-npx tsx scripts/scale/seed-volume.ts [--creators 200] [--fans-per-creator 100] [--messages-per-conversation 50]
+npx tsx examples/app/scripts/scale/seed-volume.ts [--creators 200] [--fans-per-creator 100] [--messages-per-conversation 50]
 
 # 3. EXPLAIN (ANALYZE, BUFFERS) each hot path, 20 runs after a warm-up
-npx tsx scripts/scale/explain.ts --out docs/scaling/explain.json
+npx tsx examples/app/scripts/scale/explain.ts --out docs/scaling/explain.json
 ```
 
 `explain.ts` calls the real code (`loadFacts`, `retrieveFts`, `retrieveVector`, `sweep`, `listInbox`, `getHandoffs`)

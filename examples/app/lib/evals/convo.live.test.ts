@@ -9,7 +9,7 @@ import { scoreRun } from "./score";
 import { loadThreads } from "./threads";
 import { prepareEvalWorld } from "./world";
 
-loadEnv({ path: ".env.local", quiet: true });
+loadEnv({ path: "examples/app/.env.local", quiet: true });
 
 const RUNS = 3;
 

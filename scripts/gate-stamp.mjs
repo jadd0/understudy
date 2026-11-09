@@ -10,7 +10,7 @@
 //
 // The fingerprint is content, not history: the tree hash of HEAD (an amend that leaves the content
 // identical still matches; a merge of a moved main does not), plus the untracked inputs the gate
-// reads, listed in the Kit section of the loop config (`gate_inputs`) (default `.env.local`, plus
+// reads, listed in the Kit section of the loop config (`gate_inputs`) (default `examples/app/.env.local`, plus
 // `node_modules/.package-lock.json` under `stack: node`, which every install rewrites). A dirty
 // working tree never produces a stamp and never matches one, so an edit made while a gate ran
 // cannot be blessed by it.

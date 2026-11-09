@@ -1,6 +1,6 @@
 // Saves the data a database rebuild would lose, and puts it back afterwards.
-//   node scripts/backup-engine-data.mjs <file>             dump persona cards, persona chunks and config from DATABASE_URL
-//   node scripts/backup-engine-data.mjs <file> --restore   write the cards and chunks back, report config differences
+//   node examples/app/scripts/backup-engine-data.mjs <file>             dump persona cards, persona chunks and config from DATABASE_URL
+//   node examples/app/scripts/backup-engine-data.mjs <file> --restore   write the cards and chunks back, report config differences
 // Rows are keyed by the creator's user email, not the creator id: a reseed makes new ids. A restore is one
 // transaction, so it either writes every row or none. Config comes from the seed; a differing row is reported, never written.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -92,7 +92,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [file, flag] = process.argv.slice(2);
   const url = process.env.DATABASE_URL;
   if (!file || !url || (flag && flag !== "--restore")) {
-    console.error("usage: DATABASE_URL=... node scripts/backup-engine-data.mjs <file> [--restore]");
+    console.error("usage: DATABASE_URL=... node examples/app/scripts/backup-engine-data.mjs <file> [--restore]");
     process.exit(1);
   }
   (flag ? restore(url, file) : dump(url, file)).then(

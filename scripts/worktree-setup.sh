@@ -62,14 +62,17 @@ if [ "$(cfg stack)" = "node" ]; then
 fi
 
 # --- env ----------------------------------------------------------------------------------------
-if [ -f ".env.local" ]; then
-  cp ".env.local" "$WORKTREE_PATH/.env.local"
-  # An editor can save .env.local with no final newline; appending to that fuses the new line
+# The Next app reads its own env file, examples/app/.env.local; nothing reads one at the repository root.
+ENV_REL="examples/app/.env.local"
+if [ -f "$ENV_REL" ]; then
+  mkdir -p "$(dirname "$WORKTREE_PATH/$ENV_REL")"
+  cp "$ENV_REL" "$WORKTREE_PATH/$ENV_REL"
+  # An editor can save the env file with no final newline; appending to that fuses the new line
   # onto the last key and leaves it unset.
-  if [ -s "$WORKTREE_PATH/.env.local" ] && [ "$(tail -c 1 "$WORKTREE_PATH/.env.local" | od -An -c | tr -d ' ')" != '\n' ]; then
-    printf '\n' >>"$WORKTREE_PATH/.env.local"
+  if [ -s "$WORKTREE_PATH/$ENV_REL" ] && [ "$(tail -c 1 "$WORKTREE_PATH/$ENV_REL" | od -An -c | tr -d ' ')" != '\n' ]; then
+    printf '\n' >>"$WORKTREE_PATH/$ENV_REL"
   fi
-  echo "Copied .env.local into $WORKTREE_PATH."
+  echo "Copied $ENV_REL into $WORKTREE_PATH."
 fi
 
 # --- db: postgres — one database per worktree ---------------------------------------------------
@@ -82,9 +85,9 @@ if [ "$(cfg db)" = "postgres" ]; then
     echo "worktree-setup: db: postgres needs db_prefix in the loop config's Kit section." >&2
     exit 1
   fi
-  ENV="$WORKTREE_PATH/.env.local"
+  ENV="$WORKTREE_PATH/$ENV_REL"
   if [ ! -f "$ENV" ]; then
-    echo "worktree-setup: no .env.local to copy, so no DSN to point at a worktree database; refusing to leave a worktree that would use the shared one." >&2
+    echo "worktree-setup: no $ENV_REL to copy, so no DSN to point at a worktree database; refusing to leave a worktree that would use the shared one." >&2
     exit 1
   fi
   # Postgres identifiers are 63 bytes; cut to 58 so a `__w<slot>` per-worker clone still fits.

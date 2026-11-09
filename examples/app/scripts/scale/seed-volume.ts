@@ -4,7 +4,7 @@
  * database whose name contains `_test_`, and refuses anything else before it connects. Ids and text are derived from
  * the loop counters, so two runs on an empty database produce the same rows.
  *
- *   DATABASE_URL=$(TEST_DB_SCOPE=scale node scripts/test-db.mjs) npx tsx scripts/scale/seed-volume.ts \
+ *   DATABASE_URL=$(TEST_DB_SCOPE=scale node scripts/test-db.mjs) npx tsx examples/app/scripts/scale/seed-volume.ts \
  *     [--creators 200] [--fans-per-creator 100] [--messages-per-conversation 50]
  */
 import { pathToFileURL } from "node:url";

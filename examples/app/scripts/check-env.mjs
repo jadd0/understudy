@@ -1,11 +1,11 @@
 // Checks an env file against the schema in lib/env and the extra shape rules below, and prints names only.
 //   npm run check:env -- [file] [--production]
-// file defaults to .env.local. --production also requires every key the deployed app needs at runtime
+// file defaults to the app's own .env.local (examples/app/.env.local). --production also requires every key the deployed app needs at runtime
 // (the schema leaves provider keys optional so local work does not need them) and an https AUTH_URL.
 // Exit 0 when nothing is wrong, 1 otherwise. A value is never printed, only the key name and the rule it broke.
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 /** Optional in the schema but required once deployed. CRON_SECRET is read by the cron route, outside the schema. */
 export const PRODUCTION_REQUIRED = [
@@ -104,7 +104,7 @@ export async function checkEnv(values, { production = false } = {}) {
 
 async function main(argv) {
   const production = argv.includes("--production");
-  const file = argv.find((a) => !a.startsWith("--")) ?? ".env.local";
+  const file = argv.find((a) => !a.startsWith("--")) ?? fileURLToPath(new URL("../.env.local", import.meta.url));
   let text;
   try {
     text = readFileSync(file, "utf8");

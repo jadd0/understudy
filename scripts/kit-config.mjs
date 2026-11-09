@@ -62,7 +62,7 @@ export function kitConfig(root = ROOT) {
     db_create: (raw.db_create || "true") === "true",
     db_migrate: raw.db_migrate || "",
     gate_env: raw.gate_env || "",
-    gate_inputs: list(raw.gate_inputs || (stack === "node" ? ".env.local, node_modules/.package-lock.json" : ".env.local")),
+    gate_inputs: list(raw.gate_inputs || (stack === "node" ? "examples/app/.env.local, node_modules/.package-lock.json" : "examples/app/.env.local")),
     scope_always_allowed: list(raw.scope_always_allowed || (stack === "node" ? "package-lock.json" : "")),
     queue_doc: raw.queue_doc || coordinator.queue_doc || ".product/roadmap.md",
     diagram_registry: raw.diagram_registry || "docs/diagrams/flows.md",

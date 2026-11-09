@@ -1,13 +1,13 @@
 // Creates (if absent) the per-branch test database `<base>_test_<branch-slug>` in the same Neon
 // project as DATABASE_URL, applies the migrations, and prints its URL on stdout.
-// Usage: node scripts/test-db.mjs   (DATABASE_URL from the environment or .env.local)
+// Usage: node scripts/test-db.mjs   (DATABASE_URL from the environment or examples/app/.env.local)
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
-import { isPreEngineDatabase, LOCK_KEY, migrateAll } from "./migrate.mjs";
+import { isPreEngineDatabase, LOCK_KEY, migrateAll } from "../examples/app/scripts/migrate.mjs";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -15,7 +15,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function baseUrl() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  const file = path.join(root, ".env.local");
+  const file = path.join(root, "examples/app/.env.local");
   if (existsSync(file)) {
     const m = readFileSync(file, "utf8").match(/^DATABASE_URL=(.*)$/m);
     if (m) return m[1].trim().replace(/^["']|["']$/g, "");

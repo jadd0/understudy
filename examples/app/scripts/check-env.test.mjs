@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { checkEnv, PRODUCTION_REQUIRED } from "./check-env.mjs";
 
+const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "check-env.mjs");
 const SECRET = "zzz-secret-marker-value";
 const good = {
   DATABASE_URL: `postgresql://u:${SECRET}@db.example.test/app`,
@@ -70,7 +72,7 @@ test("the CLI exits non-zero and never prints a value", () => {
   const file = join(dir, "env");
   const lines = Object.entries({ ...good, AUTH_URL: "bad url", STRIPE_WEBHOOK_SECRET: SECRET }).filter(([k]) => k !== "AUTH_SECRET");
   writeFileSync(file, lines.map(([k, v]) => `${k}=${v}`).join("\n"));
-  const run = spawnSync(process.execPath, ["scripts/check-env.mjs", file], { encoding: "utf8" });
+  const run = spawnSync(process.execPath, [SCRIPT, file], { encoding: "utf8" });
   assert.equal(run.status, 1);
   const out = run.stdout + run.stderr;
   assert.match(out, /AUTH_SECRET/);
@@ -80,5 +82,5 @@ test("the CLI exits non-zero and never prints a value", () => {
   assert.ok(!out.includes("bad url"), "no value appears in the output");
   const ok = writeFileSync(file, Object.entries(good).map(([k, v]) => `${k}=${v}`).join("\n"));
   assert.equal(ok, undefined);
-  assert.equal(spawnSync(process.execPath, ["scripts/check-env.mjs", file], { encoding: "utf8" }).status, 0);
+  assert.equal(spawnSync(process.execPath, [SCRIPT, file], { encoding: "utf8" }).status, 0);
 });

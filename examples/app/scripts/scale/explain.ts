@@ -6,7 +6,7 @@
  * warm-up) inside a transaction that rolls back, so writes leave nothing behind. For every statement the output
  * keeps p50 and p95 execution time, the rows, the index and scan nodes used, and any Seq Scan on a table over 10k rows.
  *
- *   DATABASE_URL=<test database> npx tsx scripts/scale/explain.ts [--out docs/scaling/explain.json]
+ *   DATABASE_URL=<test database> npx tsx examples/app/scripts/scale/explain.ts [--out docs/scaling/explain.json]
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";

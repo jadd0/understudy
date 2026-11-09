@@ -9,7 +9,7 @@ import ws from "ws";
 
 neonConfig.webSocketConstructor = ws;
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ENGINE_TABLE = "__understudy_engine_migrations";
 export const LOCK_KEY = 727001;
 
@@ -20,8 +20,8 @@ export async function migrateAll(url) {
   try {
     await lock.query("select pg_advisory_lock($1)", [LOCK_KEY]);
     const db = drizzle(pool);
-    await migrate(db, { migrationsFolder: path.join(root, "packages/engine/drizzle"), migrationsTable: ENGINE_TABLE });
-    await migrate(db, { migrationsFolder: path.join(root, "drizzle") });
+    await migrate(db, { migrationsFolder: path.join(appRoot, "../../packages/engine/drizzle"), migrationsTable: ENGINE_TABLE });
+    await migrate(db, { migrationsFolder: path.join(appRoot, "drizzle") });
   } finally {
     await lock.query("select pg_advisory_unlock($1)", [LOCK_KEY]).catch(() => undefined);
     lock.release();

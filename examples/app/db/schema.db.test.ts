@@ -44,7 +44,7 @@ const createdTables = (dir: string) =>
 
 describe("the two migration sets", () => {
   test("the host migration set creates no engine table", () => {
-    const host = createdTables(join(process.cwd(), "drizzle"));
+    const host = createdTables(join(process.cwd(), "examples/app/drizzle"));
     const engine = createdTables(join(process.cwd(), "packages/engine/drizzle"));
     expect(engine).toEqual([
       "conversations", "creator_settings", "fan_memory", "handoffs", "messages", "offers", "persona_cards", "persona_chunks", "strikes", "turns",

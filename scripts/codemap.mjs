@@ -83,8 +83,8 @@ function defines(p, src) {
   if (tables.length) out.push(`tables: ${tables.join(", ")}`);
   const enums = [...src.matchAll(/pgEnum\(\s*"([a-z0-9_]+)"/g)].map((m) => m[1]);
   if (enums.length) out.push(`enums: ${enums.join(", ")}`);
-  // Next.js App Router: `app/(group)/k/[token]/page.tsx` → `page /k/[token]`.
-  const r = p.match(/^app\/(.*?)\/?(page|route|layout|actions|loading|error|not-found)\.[jt]sx?$/);
+  // Next.js App Router: `examples/app/app/(group)/k/[token]/page.tsx` → `page /k/[token]`.
+  const r = p.match(/^(?:examples\/app\/)?app\/(.*?)\/?(page|route|layout|actions|loading|error|not-found)\.[jt]sx?$/);
   if (r) {
     const url = "/" + r[1].split("/").filter((s) => s && !/^\(.*\)$/.test(s) && !s.startsWith("_")).join("/");
     out.push(`${r[2]} ${url.replace(/\/$/, "") || "/"}`);
@@ -99,7 +99,7 @@ for (const t of tracked.filter(isTest)) {
   for (const m of read(t).matchAll(/(?:from\s+|import\s*\(?\s*|require\(\s*)["']([^"']+)["']/g)) {
     const spec = m[1];
     let target = null;
-    if (spec.startsWith("@/")) target = spec.slice(2);
+    if (spec.startsWith("@/")) target = `examples/app/${spec.slice(2)}`; // the alias points at the Next app
     else if (spec.startsWith(".")) target = posix.normalize(posix.join(posix.dirname(t), spec));
     if (!target) continue;
     const key = stem(target);

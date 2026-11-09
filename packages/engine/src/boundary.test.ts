@@ -49,7 +49,7 @@ describe("the engine package boundary", () => {
   });
 
   test("nothing outside the package imports a deep path inside it", () => {
-    const files = ["app", "lib", "scripts", "providers", "components", "db", "examples", "packages/providers/src"].flatMap((d) => walk(d));
+    const files = ["scripts", "examples", "packages/providers/src"].flatMap((d) => walk(d));
     expect(files.length).toBeGreaterThan(100);
     const offenders: string[] = [];
     let viaEntry = 0;
@@ -73,6 +73,6 @@ describe("the engine package boundary", () => {
         return false;
       }
     };
-    expect(["lib/engine", "lib/persona", "platform/ports", "providers/fake"].filter(exists)).toEqual([]);
+    expect(["lib/engine", "lib/persona", "platform/ports", "providers/fake", "examples/app/lib/engine", "examples/app/lib/persona", "examples/app/providers/fake", "app", "components", "db", "lib", "providers"].filter(exists)).toEqual([]);
   });
 });
