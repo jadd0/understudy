@@ -17,4 +17,4 @@ data/persona/eval/cache/
 !.env.example
 
 # Private loop state: roadmap, plans, decisions. Never committed.
-.product/
+/.product
