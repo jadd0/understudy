@@ -68,7 +68,7 @@ A test sits in the same folder as the file it tests: `lib/wallet/unlock.ts` → 
 Suffixes: `.test.ts` (pure), `.db.test.ts` (needs the per-branch test database), `.live.test.ts` (real
 providers, opt-in with `LIVE=1`, excluded from the gate). Shared helpers sit beside what they build:
 `db/test-helpers.ts`, `lib/wallet/test-helpers.ts`; fixtures beside their consumer
-(`scripts/persona/fixtures/`). Vitest's global setup is `vitest.global-setup.ts` at the root.
+(`packages/persona/fixtures/`). Vitest's global setup is `vitest.global-setup.ts` at the root.
 
 ## `lib/` is organised by domain
 
