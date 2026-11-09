@@ -51,7 +51,7 @@ describe("engine config through the port", () => {
 
   test("a missing key throws ConfigMissing naming the key", async () => {
     const config = portOver([]);
-    const err = await getConfig({ config }, "engine.lease_ms").catch((e) => e);
+    const err = (await getConfig({ config }, "engine.lease_ms").catch((e) => e)) as ConfigMissing;
     expect(err).toBeInstanceOf(ConfigMissing);
     expect(err.key).toBe("engine.lease_ms");
     // A loader with one required row absent fails closed too, naming that row.
