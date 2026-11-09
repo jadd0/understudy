@@ -414,7 +414,7 @@ handle from it appears anywhere in the tree.
   Re-run the rapid eval afterwards.
 - **Load** (`npm run persona:load -- --creator <handle>`) stores the newest `card/v<N>.md` as the next version, **unpublished**.
 - **Publish** (`npm run persona:publish -- --creator <handle> --card-version <N>`) marks that body published, inserting
-  it first if it isn't stored. The engine speaks only with the newest published card (`lib/engine/turn.ts`), so loading
+  it first if it isn't stored. The engine speaks only with the newest published card (`packages/engine/src/turn.ts`), so loading
   never changes the live voice by itself.
 
 ## Diagram source
