@@ -16,16 +16,16 @@ describe("test database hardening", () => {
       await expect(recreateDisposable(admin, name)).rejects.toThrow();
       expect(statements).toEqual([]);
     }
-    expect(() => assertDisposable("understudy_test_pr_3c2_server_s1")).not.toThrow();
+    expect(() => assertDisposable("other_test_branch_x")).not.toThrow();
   });
 
   test("a drop runs between taking and releasing the advisory lock", async () => {
     const { admin, statements } = fakeAdmin();
-    await recreateDisposable(admin, "understudy_test_branch_s2");
+    await recreateDisposable(admin, "other_test_branch_s2");
     expect(statements.map((s) => s.split(" ").slice(0, 3).join(" "))).toEqual([
       "select pg_advisory_lock($1)",
       "drop database if",
-      "create database \"understudy_test_branch_s2\"",
+      "create database \"other_test_branch_s2\"",
       "select pg_advisory_unlock($1)",
       "release",
     ]);
