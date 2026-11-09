@@ -3,14 +3,22 @@
 // file defaults to the app's own .env.local (examples/app/.env.local). --production also requires every key the deployed app needs at runtime
 // (the schema leaves provider keys optional so local work does not need them) and an https AUTH_URL.
 // It also names any safety check switched off in the server config or the app seed (or --safety-config), as information only.
+// It also prints what is on and, for each optional service that is off, what the app does without it.
 // Exit 0 when nothing is wrong, 1 otherwise. A value is never printed, only the key name and the rule it broke.
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+/** Keys the app cannot start without, in every mode. */
+export const REQUIRED = ["DATABASE_URL", "AUTH_SECRET", "CLAUDE_SECRET_KEY"];
+
 /** Optional in the schema but required once deployed. CRON_SECRET is read by the cron route, outside the schema. */
 export const PRODUCTION_REQUIRED = [
   "AUTH_URL",
+  "RESEND_API_KEY",
+  "EMAIL_FROM",
+  "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+  "TURNSTILE_SECRET_KEY",
   "CLAUDE_SECRET_KEY",
   "TYPESAFE_SECRET_KEY",
   "VOYAGE_API_KEY",
@@ -126,6 +134,22 @@ export function scanDisabledSafety(files) {
   return found;
 }
 
+/** The status table: each required key ok / missing / malformed, then each optional service on or off with its fallback. Names only. */
+export async function statusLines(values, problems) {
+  const { providerStatus } = await import(`../lib/env/index.ts?table=${loads++}`);
+  const lines = ["required:"];
+  for (const key of REQUIRED) {
+    const bad = problems.find((p) => p.key === key);
+    const state = !values[key] ? "missing" : bad ? "malformed" : "ok";
+    lines.push(`  ${key.padEnd(34)} ${state}`);
+  }
+  lines.push("optional:");
+  for (const s of providerStatus(values)) {
+    lines.push(`  ${s.name.padEnd(34)} ${s.on ? "on" : `off - without it: ${s.fallback}`}`);
+  }
+  return lines;
+}
+
 async function main(argv) {
   const production = argv.includes("--production");
   const file = argv.find((a) => !a.startsWith("--")) ?? fileURLToPath(new URL("../.env.local", import.meta.url));
@@ -136,10 +160,12 @@ async function main(argv) {
     console.error(`check-env: cannot read ${file}`);
     return 1;
   }
+  const values = parseEnv(text);
+  const problems = await checkEnv(values, { production });
+  for (const line of await statusLines(values, problems)) console.log(line);
   const override = argv.find((a) => a.startsWith("--safety-config="))?.slice("--safety-config=".length);
   const safetyFiles = override ? [override] : SAFETY_CONFIG_FILES.map((p) => fileURLToPath(new URL(p, import.meta.url)));
   for (const { file, check } of scanDisabledSafety(safetyFiles)) console.log(`check-env: safety check ${check} is disabled in ${file}`);
-  const problems = await checkEnv(parseEnv(text), { production });
   if (problems.length === 0) {
     console.log(`check-env: ${file} OK${production ? " (production)" : ""}`);
     return 0;

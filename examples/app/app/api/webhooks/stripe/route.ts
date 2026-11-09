@@ -1,3 +1,4 @@
+import { stripeConfigured } from "@/lib/env";
 import { stripeProvider } from "@/providers/stripe";
 import { applyCheckoutEvent, applyPaymentIntentSucceeded } from "@/lib/wallet/topup";
 
@@ -5,6 +6,8 @@ export const runtime = "nodejs";
 
 /** Stripe calls this. The raw body is verified against the signature before anything is read from it. */
 export async function POST(req: Request) {
+  // No Stripe on this install: the endpoint does not exist.
+  if (!stripeConfigured()) return new Response("not found", { status: 404 });
   const signature = req.headers.get("stripe-signature");
   if (!signature) return new Response("missing signature", { status: 400 });
   const raw = await req.text();

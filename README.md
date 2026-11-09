@@ -86,13 +86,38 @@ const { process } = await chatter.handleMessage({ creatorId, fanId, body, client
 await process(); // answer now, or later from a queue
 ```
 
+## Minimal setup
+
+The app needs three values: `DATABASE_URL` (Postgres with `pgvector`), `AUTH_SECRET` and `CLAUDE_SECRET_KEY`. The
+headless server needs `DATABASE_URL`, `UNDERSTUDY_API_KEY` and `CLAUDE_SECRET_KEY`. Everything else is optional and
+degrades as follows; `npm run check:env` prints which are on.
+
+| service | key(s) | without it |
+|---|---|---|
+| Jev (TypeSafe) | `TYPESAFE_SECRET_KEY` | Claude makes the reply decisions alone |
+| Voyage | `VOYAGE_API_KEY` | retrieval uses full-text search whatever retrieval.strategy says |
+| Stripe | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | demo wallet on the welcome credit, top-ups are off |
+| Pusher | `PUSHER_*`, `NEXT_PUBLIC_PUSHER_*` | no realtime events, the browser polls |
+| Resend | `RESEND_API_KEY`, `EMAIL_FROM` | the sign-in link is printed to the server console (refused in production) |
+| Turnstile | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | no human check outside production (refused in production) |
+
+Production (`NODE_ENV=production`) never skips the sign-in email or Turnstile: with either missing, sign-in is refused.
+`npm run check:env -- <file> --production` lists every key a deploy needs.
+
+The server runs in a container on any Postgres with `pgvector`:
+
+```bash
+docker build -t understudy-server .
+docker run -e DATABASE_URL=... -e UNDERSTUDY_API_KEY=... -e CLAUDE_SECRET_KEY=... -p 8787:8787 understudy-server
+```
+
 ## Quick start
 
 Needs Node, npm and a Postgres database with `pgvector`.
 
 ```bash
 npm ci
-cp examples/app/.env.example examples/app/.env.local   # DATABASE_URL, CLAUDE_SECRET_KEY, VOYAGE_API_KEY at minimum
+cp examples/app/.env.example examples/app/.env.local   # DATABASE_URL, AUTH_SECRET, CLAUDE_SECRET_KEY at minimum
 npm run check:env              # names missing or malformed keys, never prints a value
 npm run db:migrate && npm run db:seed && npm run persona:load -- --creator junovale
 npm run dev                    # the app at http://localhost:3000

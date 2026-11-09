@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { checkEnv, disabledSafetyChecks, PRODUCTION_REQUIRED } from "./check-env.mjs";
+import { checkEnv, disabledSafetyChecks, PRODUCTION_REQUIRED, statusLines } from "./check-env.mjs";
+import { providerStatus } from "../lib/env/index.ts";
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "check-env.mjs");
 const SECRET = "zzz-secret-marker-value";
@@ -98,4 +99,44 @@ test("a config with one safety check disabled is reported by name, and the CLI p
   assert.equal(run.status, 0);
   assert.match(run.stdout, /safety check minor is disabled/);
   assert.doesNotMatch(run.stdout, /threat/);
+});
+
+const MINIMAL = { DATABASE_URL: `postgresql://u:${SECRET}@db.example.test/app`, AUTH_SECRET: SECRET, CLAUDE_SECRET_KEY: SECRET };
+const runWith = (values, ...args) => {
+  const dir = mkdtempSync(join(tmpdir(), "check-env-min-"));
+  const file = join(dir, "env");
+  writeFileSync(file, Object.entries(values).map(([k, v]) => `${k}=${v}`).join("\n"));
+  return spawnSync(process.execPath, [SCRIPT, file, ...args], { encoding: "utf8" });
+};
+
+test("the minimal set passes, and the table shows every optional service off with its fallback", async () => {
+  assert.deepEqual(await checkEnv(MINIMAL), []);
+  const run = runWith(MINIMAL);
+  assert.equal(run.status, 0);
+  const services = providerStatus(MINIMAL);
+  assert.equal(services.length, 6);
+  for (const s of services) {
+    assert.ok(!s.on);
+    assert.ok(run.stdout.includes(`${s.name.padEnd(34)} off - without it: ${s.fallback}`), s.name);
+  }
+  for (const key of ["DATABASE_URL", "AUTH_SECRET", "CLAUDE_SECRET_KEY"]) assert.match(run.stdout, new RegExp(`${key}\\s+ok`));
+  assert.ok(!(run.stdout + run.stderr).includes(SECRET));
+});
+
+test("the table marks a missing and a malformed required key", async () => {
+  const values = { ...MINIMAL, DATABASE_URL: "mysql://x" };
+  delete values.CLAUDE_SECRET_KEY;
+  const lines = (await statusLines(values, await checkEnv(values))).join("\n");
+  assert.match(lines, /DATABASE_URL\s+malformed/);
+  assert.match(lines, /CLAUDE_SECRET_KEY\s+missing/);
+  assert.match(lines, /AUTH_SECRET\s+ok/);
+});
+
+test("--production on the minimal set exits 1 naming the sign-in, Turnstile and provider keys", () => {
+  const run = runWith(MINIMAL, "--production");
+  assert.equal(run.status, 1);
+  for (const key of ["AUTH_URL", "RESEND_API_KEY", "EMAIL_FROM", "NEXT_PUBLIC_TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY", "STRIPE_SECRET_KEY", "VOYAGE_API_KEY"]) {
+    assert.match(run.stderr, new RegExp(`check-env: ${key} `), key);
+  }
+  assert.ok(!(run.stdout + run.stderr).includes(SECRET));
 });

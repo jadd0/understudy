@@ -60,9 +60,9 @@ export async function startServer(opts: StartOptions): Promise<Running> {
   sweeper.unref();
   let url: string | null = null;
   if (opts.listen) {
-    await app.listen({ port: env.port, host: "127.0.0.1" });
+    await app.listen({ port: env.port, host: env.host });
     const addr = app.server.address();
-    url = typeof addr === "object" && addr ? `http://127.0.0.1:${addr.port}` : null;
+    url = typeof addr === "object" && addr ? `http://${addr.address === "0.0.0.0" ? "127.0.0.1" : addr.address}:${addr.port}` : null;
   }
   return {
     app,

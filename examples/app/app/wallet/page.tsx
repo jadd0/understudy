@@ -26,6 +26,7 @@ const ERRORS: Record<string, string> = {
   "error=amount": "Enter a whole-dollar or cent amount within the allowed range.",
   "error=cap": "Enter an amount at or above the minimum limit.",
   "error=stripe": "Could not start the payment. Try again.",
+  "error=topups-off": "Top-ups are off on this install.",
 };
 
 export default async function WalletPage({ searchParams }: { searchParams: Promise<Record<string, string>> }) {

@@ -13,6 +13,24 @@ The build contract is `AGENTS.md`.
    idempotently; each is skipped with a message if its variable is unset.
 5. `npm run dev`. Run the Next scripts from the repository root: the app reads `data/` and `docs/quality/evals/` relative to the working directory, and the root scripts start Next with the repository root as that directory.
 
+## Minimal setup
+
+Only `DATABASE_URL`, `AUTH_SECRET` and `CLAUDE_SECRET_KEY` are required for the app. Every other provider is optional
+and has a fallback:
+
+| service | key(s) | without it |
+|---|---|---|
+| Jev (TypeSafe) | `TYPESAFE_SECRET_KEY` | Claude makes the reply decisions alone |
+| Voyage | `VOYAGE_API_KEY` | retrieval uses full-text search whatever retrieval.strategy says |
+| Stripe | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | demo wallet on the welcome credit, top-ups are off |
+| Pusher | `PUSHER_*`, `NEXT_PUBLIC_PUSHER_*` | no realtime events, the browser polls |
+| Resend | `RESEND_API_KEY`, `EMAIL_FROM` | the sign-in link is printed to the server console (refused in production) |
+| Turnstile | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | no human check outside production (refused in production) |
+
+With no Resend key, `/signin` still works: Auth.js issues its normal one-time link and the server console prints
+`sign-in link for <address>: <url>`. Open that link in the same browser. `npm run check:env` prints the table above for
+your `.env.local`. The headless server is `npm run server:dev` (`examples/server/.env.example` lists its variables).
+
 ## Commands
 
 | command | does |
