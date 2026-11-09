@@ -1,4 +1,4 @@
-import type { Events } from "@/platform/ports/events";
+import type { Events } from "@understudy/engine";
 import { defaultEvents } from "@/providers/pusher/events";
 
 let cached: Events | undefined;

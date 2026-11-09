@@ -1,4 +1,4 @@
-import type { Facts, JevIn, RouteCfg } from "@/lib/engine/types";
+import type { Facts, JevIn, RouteCfg } from "./types";
 
 export const CFG: RouteCfg = {
   floors: {

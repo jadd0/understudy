@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { personaChunks } from "@/db/schema";
-import { makeCreator } from "@/lib/engine/test-db";
+import { makeCreator } from "@understudy/engine/testing";
 import { FtsRetriever } from "./fts-retriever";
 
 describe("FtsRetriever", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { personaChunks } from "@/db/schema";
-import { makeCreator } from "@/lib/engine/test-db";
+import { makeCreator } from "@understudy/engine/testing";
 import { parseStrategy, PersonaRetriever, promptText } from "./persona-retriever";
 
 const unit = (i: number) => Array.from({ length: 1024 }, (_, j) => (j === i ? 1 : 0));

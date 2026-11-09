@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { FakeDecider } from "@/providers/fake/decider";
+import { FakeDecider } from "@understudy/engine/testing";
 import { guard } from "./guard";
 
 const decider = (level: string) => new FakeDecider({ script: { explicitness: level } });

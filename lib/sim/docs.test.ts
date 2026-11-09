@@ -54,7 +54,7 @@ describe("docs/FAN-SIM.md", () => {
     const blocks = [...doc.matchAll(/<!-- prompt-src: (\S+) -->\n```text\n([\s\S]*?)\n```/g)];
     expect(blocks.length).toBeGreaterThanOrEqual(7);
     const sources = new Set(blocks.map((b) => b[1]));
-    expect([...sources].sort()).toEqual(["lib/engine/questions.ts", "lib/sim/agent.ts", "lib/sim/prompt.ts"]);
+    expect([...sources].sort()).toEqual(["packages/engine/src/questions.ts", "lib/sim/agent.ts", "lib/sim/prompt.ts"]);
     expect(blocks.some((b) => b[2].startsWith("You are acting as a fan in a text chat"))).toBe(true);
     expect(readFileSync("docs/README.md", "utf8")).toContain("[FAN-SIM.md](FAN-SIM.md)");
     expect(readFileSync("docs/SAFETY.md", "utf8")).toContain("FAN-SIM.md");

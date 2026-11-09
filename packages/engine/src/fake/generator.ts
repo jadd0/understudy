@@ -1,4 +1,4 @@
-import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@/platform/ports/generator";
+import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "../ports/generator";
 
 export interface FakeGeneratorOptions {
   /** Replies in order; the last one repeats. A function sees the input. */

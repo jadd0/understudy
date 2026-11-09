@@ -1,5 +1,5 @@
 import Pusher from "pusher";
-import type { Events } from "@/platform/ports/events";
+import type { Events } from "@understudy/engine";
 import { noopEvents } from "@/providers/noop/events";
 import { EVENT_RENAMES, toPusherChannel } from "./channels";
 

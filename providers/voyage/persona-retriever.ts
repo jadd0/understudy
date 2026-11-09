@@ -1,6 +1,5 @@
 import type { Db } from "@/db/client";
-import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps } from "@/lib/persona/retrieve";
-import type { Chunk, Retriever } from "@/platform/ports/retriever";
+import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps, type Chunk, type Retriever } from "@understudy/engine";
 
 /**
  * Reply chunks read "fan: <comment> / juno: @user <reply>": Instagram puts the @mention in front of every comment

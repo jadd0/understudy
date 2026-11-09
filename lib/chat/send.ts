@@ -2,8 +2,8 @@ import { after } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversations, creators, messages, users } from "@/db/schema";
-import { defaultDeps } from "@/lib/engine/deps";
-import { processConversation } from "@/lib/engine/process";
+import { defaultDeps } from "@/lib/host/deps";
+import { processConversation } from "@understudy/engine";
 
 /** A host page or route that calls `sendFanMessage` re-exports this as its `maxDuration` (seconds). */
 export const ENGINE_MAX_DURATION_S = 60;

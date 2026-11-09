@@ -5,7 +5,7 @@ import {
   type DeciderResult,
   type DeciderState,
   type Question,
-} from "@/platform/ports/decider";
+} from "../ports/decider";
 
 /** What a scripted question answers: a bare choice, a choice with probabilities, or a function of the state. */
 export type Scripted =

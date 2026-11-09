@@ -1,5 +1,5 @@
 import { recentEmojiLine } from "./emoji";
-import type { GenerateMessage } from "@/platform/ports/generator";
+import type { GenerateMessage } from "./ports/generator";
 import { THREADS, type ThreadAnswer } from "./types";
 
 /** A stored chat message as the engine reads it: `createdAt` comes from the database clock. */

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
-import type { DeciderResult } from "@/platform/ports/decider";
-import { parseInbound, promoteBuyRunnerUp, route } from "@/lib/engine/route";
-import { INTENTS } from "@/lib/engine/types";
-import { THREADS } from "@/lib/engine/types";
+import type { DeciderResult } from "./ports/decider";
+import { parseInbound, promoteBuyRunnerUp, route } from "./route";
+import { INTENTS } from "./types";
+import { THREADS } from "./types";
 import { CFG, facts, jev, PITCHABLE } from "./test-fixtures";
 
 const r = (j = jev(), f = facts()) => route(j, f, CFG);

@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db, withTx } from "@/db/client";
 import { messages, offers } from "@/db/schema";
-import { seedChat } from "@/lib/engine/test-db";
+import { seedChat } from "@understudy/engine/testing";
 import { makeItem, makeOffer } from "@/lib/wallet/test-helpers";
 import { BadCursor, decodeSync, encodeOlder, encodeSync } from "./cursor";
 import { getChanges, getOlderMessages, getWindowedSnapshot } from "./paging";

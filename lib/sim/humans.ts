@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { conversations, creators, messages, personaCards, users } from "@/db/schema";
 import { ban, handBackConversation, releaseConversation, sendAsCreator, sendSuggested, setConversationAi, setGlobalAi, setNeverList, takeOverConversation } from "@/lib/conversations/controls";
 import type { Viewer } from "@/lib/conversations/read";
-import type { Events } from "@/platform/ports/events";
+import type { Events } from "@understudy/engine";
 import type { Beat } from "./persona";
 
 type HumanBeat = Extract<Beat, { kind: "human" }>;

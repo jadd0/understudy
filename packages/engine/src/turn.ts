@@ -2,11 +2,11 @@ import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversations, messages, personaCards, turns } from "@/db/schema";
 import { ConfigMissing, getConfig } from "@/lib/config";
-import type { Clock } from "@/platform/ports/clock";
-import type { Decider } from "@/platform/ports/decider";
-import type { Events } from "@/platform/ports/events";
-import type { Generator } from "@/platform/ports/generator";
-import type { Retriever } from "@/platform/ports/retriever";
+import type { Clock } from "./ports/clock";
+import type { Decider } from "./ports/decider";
+import type { Events } from "./ports/events";
+import type { Generator } from "./ports/generator";
+import type { Retriever } from "./ports/retriever";
 import { loadEngineConfig, type EngineCfg } from "./cfg";
 import { bubbleGap } from "./bubbles";
 import { CostLedger, costMicros } from "./cost";
@@ -26,7 +26,7 @@ import { hardStopOf, parseInbound, promoteBuyRunnerUp, route as decideRoute } fr
 import { template, templateSender } from "./templates";
 import type { Facts, JevIn, Route } from "./types";
 import { qualityOnly, verifyDraft, type VerifyFailure } from "./verify";
-import { DeciderUnavailable } from "@/platform/ports/decider";
+import { DeciderUnavailable } from "./ports/decider";
 
 export interface Deps {
   decider: Decider;

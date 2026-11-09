@@ -2,8 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { simRuns, turns } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import { costMicros } from "@/lib/engine/cost";
-import type { GenerateUsage } from "@/platform/ports/generator";
+import { costMicros, type GenerateUsage } from "@understudy/engine";
 
 /** One sim model call in whole micro-dollars, from the model's own `price.<model>.*` config rows. */
 export async function simCallMicros(model: string, usage: GenerateUsage): Promise<number> {
