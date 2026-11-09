@@ -1,3 +1,4 @@
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Pool } from "@neondatabase/serverless";
 import { migrate } from "drizzle-orm/neon-serverless/migrator";
@@ -9,8 +10,8 @@ export const ENGINE_MIGRATIONS_TABLE = "__understudy_engine_migrations";
 /** Every migration run on a database takes this session advisory lock, so two runners never interleave. */
 export const MIGRATION_LOCK_KEY = 727001;
 
-/** Where the package's generated migrations live, resolved from this file so it works from any working directory. */
-export const ENGINE_MIGRATIONS_FOLDER = fileURLToPath(new URL("../drizzle", import.meta.url));
+/** Where the package's generated migrations live, resolved from this file with path joins (a `new URL(..., import.meta.url)` is bundled as an asset by the app's build) so it works from any working directory. */
+export const ENGINE_MIGRATIONS_FOLDER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "drizzle");
 
 /**
  * Creates or updates the engine's tables. It needs no host table, so run it before the host's own migrations: the
