@@ -188,13 +188,13 @@ Turns that missed their expectations
 <!-- persona:start -->
 ## Persona (rubric judge and blind test)
 
-Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply with the card as its system prompt. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, in seeded random order, and says which is hers. Accuracy is the share of items where it picked hers; 50% means the two are indistinguishable. Prompts: [PERSONA-PROMPTS.md](../persona/PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.
+Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](../persona/PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.
 
 Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `examples/app/.env.local`; interrupted runs resume from `data/persona/eval/cache/`).
 
 ### Card v2
 
-Generator `claude-haiku-5-5`, judge `claude-sonnet-5-5`, seed `understudy-2026`, card sha `088f1042b93ea004`, 50 test pairs. Tokens spent by the run that wrote this: 316322 (cached calls cost nothing).
+Generator `claude-haiku-5-5`, judge `claude-sonnet-5-5`, seed `understudy-2026`, drafter card alone, card sha `088f1042b93ea004`, 50 test pairs. Tokens spent by the run that wrote this: 316322 (cached calls cost nothing).
 
 **Rubric judge** (49 scored, 1 errors):
 
@@ -213,4 +213,6 @@ Generator `claude-haiku-5-5`, judge `claude-sonnet-5-5`, seed `understudy-2026`,
 | >30 | 18 | 11 | 61.1% | 38.6% to 79.7% |
 
 Reading: The 95% interval (50.2% to 77.6%) is above 50%: the judge detects the bot better than chance. The judge answered "A" 69.8% of the time, a position bias that pulls accuracy towards 50% regardless of the writing. Buckets with fewer than 20 items (<=10, >30) have wide intervals and should not be read on their own.
+
+_This run predates the style draw and the both-order judging: the bot was written from the card alone and each pair was judged once. The next run replaces it._
 <!-- persona:end -->

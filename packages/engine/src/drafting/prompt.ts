@@ -3,6 +3,7 @@ import type { Chunk } from "../ports/retriever";
 import { eventMarker, type OfferOutcome, type PendingEvent } from "../conversation/events";
 import { renderProfile, type FanProfile } from "./memory";
 import { claudeHistory, threadBlock, type ChatMessage } from "./thread";
+import { drawLines, type StyleDraw } from "./style-draw";
 import type { Route, ThreadAnswer } from "../types";
 
 export interface PromptInput {
@@ -33,6 +34,8 @@ export interface PromptInput {
   offerOutcomes?: readonly OfferOutcome[];
   /** He owns every ppv and bundle item she lists: there is nothing new to offer him. */
   ownsAll?: boolean;
+  /** This reply's voice-marker draw, with the pet's name for the wording; absent means no constraints. */
+  styleDraw?: { draw: StyleDraw; pet: string | null };
   /** Overrides the route's instruction: the one boundary line written before a threat is flagged. */
   instruction?: "threat_boundary";
 }
@@ -116,6 +119,15 @@ export function offerOutcomesBlock(outcomes: readonly OfferOutcome[], ownsAll = 
   return `## What he has from you and what you offered\n${lines.join("\n")}`;
 }
 
+/** Added to every drawn reply: a fan question gets a plain answer before any flirting. */
+export const ANSWER_FIRST_LINE =
+  "If he asked a question, answer it plainly first, using a fact from the lines she has said or posted if one fits.";
+
+/** The `## Voice for this reply` block for a style draw. */
+export function styleDrawBlock(draw: StyleDraw, pet: string | null): string {
+  return `## Voice for this reply\n${[...drawLines(draw, pet), ANSWER_FIRST_LINE].map((l) => `- ${l}`).join("\n")}`;
+}
+
 /**
  * System text is split in two: the card and rules never change between turns of one creator, so they sit in the
  * cached prefix; everything that varies per turn comes after it.
@@ -158,6 +170,7 @@ export function buildPrompt(input: PromptInput): { system: { cached: string; tur
     if (input.offer.owned) turnParts[turnParts.length - 1] += `\n${OWNED_ITEM_LINE}`;
   }
   if (input.chunks.length) turnParts.push(`## Things she has said or posted (for facts and tone)\n${input.chunks.map((c) => `- ${c.text}`).join("\n")}`);
+  if (input.styleDraw) turnParts.push(styleDrawBlock(input.styleDraw.draw, input.styleDraw.pet));
   const memory = renderProfile(input.profile);
   if (memory) turnParts.push(`## What she knows about this fan\n${memory}`);
 

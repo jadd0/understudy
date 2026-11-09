@@ -1,6 +1,7 @@
 import { answerOf, type Decider, type DeciderResult } from "../ports/decider";
 import { LEADS_TO_OFFER_QUESTION, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "../routing/questions";
 import { MARKER_PATTERN, type JevLine } from "./thread";
+import type { StyleDraw } from "./style-draw";
 import type { RouteName } from "../types";
 
 export type VerifyFailure =
@@ -150,4 +151,38 @@ export async function verifyDraft(
     usage: result.usage,
     ms: now() - started,
   };
+}
+
+/** What may follow a word at the end of a bubble without it being mid-sentence: spaces, punctuation, emoji. */
+const TAIL = String.raw`(?=[\s\p{P}\p{Extended_Pictographic}\u{FE0F}]*$)`;
+const SIGNOFF_AT_END = new RegExp(String.raw`\s*(?<![\p{L}\p{N}])x{1,3}(?![\p{L}\p{N}])${TAIL}`, "iu");
+const addressAtEnd = (term: string) => new RegExp(String.raw`,?\s*(?<![\p{L}\p{N}])${term}(?![\p{L}\p{N}])${TAIL}`, "iu");
+// "mate, …" and "mate that's mad" open with an address; "mate of mine" and "mate's van" use it as a noun and stay.
+const addressAtStart = (term: string) => new RegExp(String.raw`^\s*${term}(?![\p{L}\p{N}'’])(?:\s*,\s*|\s+(?!of\b))`, "iu");
+
+/**
+ * Removes a sign-off x or an address term ("mate", "babe") the style draw did not allow, from the edges of the
+ * reply only: a closing x on the last bubble, and a term that opens or closes any bubble. Nothing mid-sentence is
+ * touched. A change that would leave a bubble or the whole reply empty is not made, so a reply is never emptied
+ * here; the normal checks already ran on the draft.
+ */
+export function enforceDraw(draft: string, draw: StyleDraw): string {
+  const lines = draft.split("\n");
+  const out = lines.map((line, i) => {
+    let next = line;
+    const attempt = (re: RegExp) => {
+      const trimmed = next.replace(re, "");
+      // A bubble keeps at least one letter or digit; an edit that leaves only emoji or punctuation is not made.
+      if (/[\p{L}\p{N}]/u.test(trimmed) && trimmed !== next) next = trimmed.replace(/^[ \t]+|[ \t]+$/gu, "");
+    };
+    if (!draw.signoff && i === lines.length - 1) attempt(SIGNOFF_AT_END);
+    for (const term of ["mate", "babe"] as const) {
+      if (draw.address === term) continue;
+      attempt(addressAtEnd(term));
+      attempt(addressAtStart(term));
+    }
+    return next;
+  });
+  const joined = out.join("\n");
+  return joined.trim() === "" ? draft : joined;
 }

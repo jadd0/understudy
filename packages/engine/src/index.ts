@@ -32,3 +32,8 @@ export type { Explicitness, RouteCfg } from "./types";
 export { humanReply, MAX_HUMAN_BODY_CHARS, takeOver, TakeoverRefused } from "./conversation/takeover";
 export type { HumanActor, TakeoverRefusedCode } from "./conversation/takeover";
 export { mentionsMoney } from "./drafting/verify";
+export { buildPrompt } from "./drafting/prompt";
+export type { PromptInput } from "./drafting/prompt";
+export { drawStyle, parseRates } from "./drafting/style-draw";
+export type { StyleDraw, StyleRates } from "./drafting/style-draw";
+export { enforceDraw } from "./drafting/verify";

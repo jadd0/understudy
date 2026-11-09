@@ -8,11 +8,13 @@ import { pathToFileURL } from "node:url";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { creators, personaCards } from "@/db/schema";
-import { neverTerms } from "./load";
+import { neverTerms, readMarkers } from "./load";
 
 export type PublishResult = { version: number; inserted: boolean; alreadyPublished: boolean };
 
-export async function publishCard(creatorId: string, body: string): Promise<PublishResult> {
+/** `markers` are her measured voice-marker rates; left out, the stored ones are not touched. */
+export async function publishCard(creatorId: string, body: string, markers?: Record<string, unknown> | null): Promise<PublishResult> {
+  const stored = markers === undefined ? {} : { markers };
   return db.transaction(async (tx) => {
     // Serialise publishes for one creator so two runs cannot both take the same next version.
     await tx.execute(sql`select id from creators where id = ${creatorId} for update`);
@@ -28,13 +30,13 @@ export async function publishCard(creatorId: string, body: string): Promise<Publ
       if (same.publishedAt) {
         await tx
           .update(personaCards)
-          .set({ neverList: terms })
+          .set({ neverList: terms, ...stored })
           .where(and(eq(personaCards.creatorId, creatorId), eq(personaCards.version, same.version)));
         return { version: same.version, inserted: false, alreadyPublished: true };
       }
       await tx
         .update(personaCards)
-        .set({ publishedAt: sql`now()`, neverList: terms })
+        .set({ publishedAt: sql`now()`, neverList: terms, ...stored })
         .where(and(eq(personaCards.creatorId, creatorId), eq(personaCards.version, same.version)));
       return { version: same.version, inserted: false, alreadyPublished: false };
     }
@@ -45,7 +47,7 @@ export async function publishCard(creatorId: string, body: string): Promise<Publ
       .orderBy(desc(personaCards.version))
       .limit(1);
     const version = (latest?.version ?? 0) + 1;
-    await tx.insert(personaCards).values({ creatorId, version, body, neverList: terms, publishedAt: sql`now()` as unknown as Date });
+    await tx.insert(personaCards).values({ creatorId, version, body, neverList: terms, ...stored, publishedAt: sql`now()` as unknown as Date });
     return { version, inserted: true, alreadyPublished: false };
   });
 }
@@ -63,7 +65,7 @@ async function main() {
   const [creator] = await db.select({ id: creators.id }).from(creators).where(eq(creators.handle, handle));
   if (!creator) throw new Error(`no creator with handle ${handle}; run npm run db:seed first`);
   const body = readFileSync(path.resolve("data/persona/card", `v${fileVersion}.md`), "utf8");
-  const res = await publishCard(creator.id, body);
+  const res = await publishCard(creator.id, body, readMarkers("data/persona"));
   console.log(
     `card file v${fileVersion} → stored version ${res.version}: ${res.alreadyPublished ? "already published" : res.inserted ? "inserted and published" : "published"}`,
   );

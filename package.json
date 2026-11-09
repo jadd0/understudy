@@ -24,7 +24,7 @@
     "eval:retrieval": "tsx --env-file-if-exists=examples/app/.env.local examples/app/scripts/persona/eval-retrieval.ts",
     "persona:publish": "tsx --env-file-if-exists=examples/app/.env.local examples/app/scripts/persona/publish-card.ts",
     "eval:engine": "tsx --env-file-if-exists=examples/app/.env.local examples/app/scripts/eval-engine.ts",
-    "eval:persona": "node --env-file-if-exists=examples/app/.env.local packages/persona/src/cli.mjs eval",
+    "eval:persona": "tsx --env-file-if-exists=examples/app/.env.local examples/app/scripts/persona/eval-persona.ts",
     "persona:build": "node --env-file-if-exists=examples/app/.env.local packages/persona/src/cli.mjs build",
     "persona:synth": "node --env-file-if-exists=examples/app/.env.local packages/persona/src/cli.mjs synth",
     "persona:scrape": "node --env-file-if-exists=examples/app/.env.local packages/persona/src/cli.mjs scrape",
