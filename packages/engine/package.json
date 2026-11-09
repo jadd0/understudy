@@ -7,8 +7,8 @@
   "license": "ISC",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.ts",
-    "./migrate": "./src/migrate.ts",
+    "./schema": "./src/db/schema.ts",
+    "./migrate": "./src/db/migrate.ts",
     "./testing": "./src/testing.ts",
     "./fakes": "./src/fakes.ts"
   },

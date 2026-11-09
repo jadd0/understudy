@@ -134,30 +134,30 @@ async function main() {
   const paths: HotPath[] = [
     {
       name: "lease claim",
-      source: "acquireLease (packages/engine/src/lease.ts), statement read from the source",
-      fixed: { text: statementOf("packages/engine/src/lease.ts", "acquireLease"), values: [crypto.randomUUID(), 60, convPlain] },
+      source: "acquireLease (packages/engine/src/conversation/lease.ts), statement read from the source",
+      fixed: { text: statementOf("packages/engine/src/conversation/lease.ts", "acquireLease"), values: [crypto.randomUUID(), 60, convPlain] },
     },
     {
       name: "inbound load",
-      source: "loadInbound (packages/engine/src/turn.ts), statement read from the source",
-      fixed: { text: statementOf("packages/engine/src/turn.ts", "loadInbound"), values: [convUnanswered, convUnanswered] },
+      source: "loadInbound (packages/engine/src/turn/inbound.ts), statement read from the source",
+      fixed: { text: statementOf("packages/engine/src/turn/inbound.ts", "loadInbound"), values: [convUnanswered, convUnanswered] },
     },
     {
       name: "facts",
-      source: "loadFacts (packages/engine/src/facts.ts)",
+      source: "loadFacts (packages/engine/src/turn/facts.ts)",
       run: () => chatter.loadFacts(convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60, strikeWindowDays: 90 }),
       pick: (c) => /no_pitch_active/.test(c.text),
     },
     {
       name: "published card read",
-      source: "the select in runTurn (packages/engine/src/turn.ts), built with the same drizzle calls",
+      source: "the select in runTurn (packages/engine/src/turn/run.ts), built with the same drizzle calls",
       run: () =>
         db.select().from(personaCards).where(and(eq(personaCards.creatorId, creatorId), isNotNull(personaCards.publishedAt))).orderBy(desc(personaCards.version)).limit(1),
       pick: (c) => /persona_cards/.test(c.text),
     },
     {
       name: "chat history",
-      source: "loadHistory (packages/engine/src/turn.ts), built with the same drizzle calls",
+      source: "loadHistory (packages/engine/src/turn/inbound.ts), built with the same drizzle calls",
       run: () =>
         db
           .select({ id: messages.id })
@@ -167,11 +167,11 @@ async function main() {
           .limit(600),
       pick: (c) => /from "messages"/.test(c.text),
     },
-    { name: "retrieval, full text", source: "retrieveFts (packages/engine/src/retrieve.ts)", run: () => retrieveFts(creatorId, "coffee lighthouse sunrise", 6, retrieveDeps), pick: (c) => /persona_chunks/.test(c.text) },
-    { name: "retrieval, vector", source: "retrieveVector (packages/engine/src/retrieve.ts)", run: () => retrieveVector(creatorId, "anything", 6, retrieveDeps), pick: (c) => /persona_chunks/.test(c.text) },
+    { name: "retrieval, full text", source: "retrieveFts (packages/engine/src/retrieval/retrieve.ts)", run: () => retrieveFts(creatorId, "coffee lighthouse sunrise", 6, retrieveDeps), pick: (c) => /persona_chunks/.test(c.text) },
+    { name: "retrieval, vector", source: "retrieveVector (packages/engine/src/retrieval/retrieve.ts)", run: () => retrieveVector(creatorId, "anything", 6, retrieveDeps), pick: (c) => /persona_chunks/.test(c.text) },
     {
       name: "sweep scan",
-      source: "sweep (packages/engine/src/sweep.ts), run with a clock past its start budget so it scans and processes nothing",
+      source: "sweep (packages/engine/src/conversation/sweep.ts), run with a clock past its start budget so it scans and processes nothing",
       run: () => chatter.sweep(),
       pick: (c) => /group by c\.id/.test(c.text),
     },

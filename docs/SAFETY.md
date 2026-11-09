@@ -71,7 +71,7 @@ and velocity limits still apply to an explicit request.
   conversation goes to T&S, who can ban. If self-harm fires in the same message the crisis resources are sent instead
   (a person in crisis always gets them) and the flag and restriction still apply. An under-18 date at onboarding
   still ends at `/blocked` with the sessions deleted.
-<!-- prompt-src: packages/engine/src/templates.ts -->
+<!-- prompt-src: packages/engine/src/drafting/templates.ts -->
 ```text
     "Hi — we think this account may belong to someone under 18, so messaging is turned off. You can still read this chat. If we've got this wrong, contact {support_email}.",
 ```
@@ -79,7 +79,7 @@ and velocity limits still apply to an explicit request.
 - Self-harm sends the fixed crisis reply with resources and a payment dispute sends a fixed short reply, neither from a
   model. The strike notices are the platform's own fixed wording:
 
-<!-- prompt-src: packages/engine/src/templates.ts -->
+<!-- prompt-src: packages/engine/src/drafting/templates.ts -->
 ```text
     ? `Warning ${max} of ${max}: this chat is paused for a safety review. You can still read it.`
     : `Warning ${n} of ${max}: keep it on the app. Meetups, other apps and outside payments aren't allowed. ${max} warnings pauses this chat.`;

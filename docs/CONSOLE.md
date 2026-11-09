@@ -88,7 +88,7 @@ platform notice rather than an Juno bubble, the unlock button is gone, and the c
 is turned off for this account." Sessions are kept, so `/` lands on `/chat`. Every other route, including `chat`
 itself (so sends and unlocks) and `/wallet`, stays `/blocked`, as does any fan flagged for another reason, an
 under-18 date at onboarding included. The engine side (the notice, setting the flag, refusing sends) is built:
-`flagUser` in `packages/engine/src/lease.ts` and the `restricted` refusal in `examples/app/lib/chat/send.ts`.
+`flagUser` in `packages/engine/src/conversation/lease.ts` and the `restricted` refusal in `examples/app/lib/chat/send.ts`.
 Proof: `minor_in_chat_fan_reads_chat_read_only` in `examples/app/lib/auth/guards.db.test.ts`.
 
 A restricted fan cannot authorise a private Pusher channel (the auth route refuses flagged users), so their read-only

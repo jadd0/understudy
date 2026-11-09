@@ -10,7 +10,7 @@ can take over any conversation. Code decides routing, offers and prices; the mod
 packages/   the library: engine, providers, persona (the conversation engine, its model and payment adapters, the persona pipeline)
 examples/
   server/   a headless Fastify host on the packages: HTTP in, server-sent replies, human takeover, a signed webhook
-  app/      a Next.js host on the packages: fan chat, creator console, admin, wallet, Stripe, Pusher
+  examples/app/app/      a Next.js host on the packages: fan chat, creator console, admin, wallet, Stripe, Pusher
 data/       the synthetic creator's persona bank, eval threads and simulator personas
 docs/       the documentation index is docs/README.md
 ```
