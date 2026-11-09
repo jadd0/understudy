@@ -146,7 +146,7 @@ export async function runThread(thread: Thread, ctx: RunnerContext): Promise<Obs
     let refused = false;
     for (const [k, text] of turn.say.entries()) {
       try {
-        const sent = await sendFanMessage(fan.id, ctx.creatorId, text, `${ctx.runTag}:${thread.id}:${turnIndex}:${k}`, () => {});
+        const sent = await sendFanMessage(fan.id, ctx.creatorId, text, `${ctx.runTag}:${thread.id}:${turnIndex}:${k}`, () => {}, async () => chatterFor(ctx.deps));
         conversationId = sent.conversationId;
       } catch (e) {
         if (e instanceof SendRefused) refused = true;
@@ -179,7 +179,7 @@ export async function runThread(thread: Thread, ctx: RunnerContext): Promise<Obs
       // Messages scheduled with say_later arrive while the engine is working, the way a fan types on.
       const later = (turn.say_later ?? []).map(async (l, k) => {
         await wait(l.after_ms);
-        await sendFanMessage(fan.id, ctx.creatorId, l.text, `${ctx.runTag}:${thread.id}:${turnIndex}:later${k}`, () => {});
+        await sendFanMessage(fan.id, ctx.creatorId, l.text, `${ctx.runTag}:${thread.id}:${turnIndex}:later${k}`, () => {}, async () => chatterFor(ctx.deps));
       });
       const run = await captureEngineErrors(async () => {
         const [answered] = await Promise.all([chatterFor(ctx.deps).processConversation(convId), ...later]);

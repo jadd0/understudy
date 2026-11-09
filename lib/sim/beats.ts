@@ -136,7 +136,7 @@ export async function messageBeat(env: BeatEnv, index: number, beat: Kind<"say" 
   const sends = texts.map(async (text, k) => {
     if (k > 0) await deps.sleep(gap * k);
     try {
-      const sent = await sendFanMessage(env.fanId, env.creatorId, text, `${env.runId}:${index}:${k}`, () => {});
+      const sent = await sendFanMessage(env.fanId, env.creatorId, text, `${env.runId}:${index}:${k}`, () => {}, async () => chatterFor(deps.engine));
       conversationId = sent.conversationId;
     } catch (e) {
       if (e instanceof SendRefused) refused = true;

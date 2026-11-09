@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { creators, users } from "@/db/schema";
 import { chatter } from "@/lib/host/deps";
-import { MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS, MessageRefused } from "@understudy/engine";
+import { MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS, MessageRefused, type Chatter } from "@understudy/engine";
 
 /** A host page or route that calls `sendFanMessage` re-exports this as its `maxDuration` (seconds). */
 export const ENGINE_MAX_DURATION_S = 60;
@@ -40,6 +40,8 @@ export async function sendFanMessage(
   body: string,
   clientMsgId: string,
   schedule: (task: () => Promise<unknown>) => void = (task) => after(task),
+  /** The engine to store through. Callers that run the engine themselves pass their own wiring instead of the production one. */
+  engine: () => Promise<Chatter> = chatter,
 ): Promise<SendResult> {
   // Cheap input checks first, so a malformed send is refused for that before any lookup.
   const text = body.trim();
@@ -57,7 +59,7 @@ export async function sendFanMessage(
   if (!creator) throw new SendRefused("no_creator");
 
   try {
-    const handled = await (await chatter()).handleMessage({ creatorId, fanId, body, clientMsgId });
+    const handled = await (await engine()).handleMessage({ creatorId, fanId, body, clientMsgId });
     if (!handled.duplicate) schedule(handled.process);
     return { conversationId: handled.conversationId, messageId: handled.messageId, duplicate: handled.duplicate };
   } catch (e) {
