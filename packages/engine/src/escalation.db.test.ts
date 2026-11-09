@@ -108,14 +108,17 @@ describe("runEscalations: creator-queue handoffs", () => {
   });
 
   test("a claimed handoff is never auto-resolved", async () => {
-    const w = await world();
-    const h = await hold(w, { status: "claimed" });
-    expect(await runEscalations(rig().ctx)).toEqual({ autoResolved: 0, tsBreaches: 0 });
-    expect(await handoffOf(h.id)).toMatchObject({ status: "claimed", resolvedBy: null, resolvedAt: null });
-    const conv = await getConversation(w.conv.id);
-    expect(conv.mode).toBe("human_creator");
-    expect(conv.holdSuppressedUntil).toBeNull();
-    expect(await aiMessages(w.conv.id)).toHaveLength(0);
+    // The mode a takeover leaves, and the mode as if the takeover had not reached the conversation row: the claim alone protects it.
+    for (const mode of ["human_creator", "handoff_creator"]) {
+      const w = await world();
+      const h = await hold(w, { status: "claimed", mode });
+      expect(await runEscalations(rig().ctx)).toEqual({ autoResolved: 0, tsBreaches: 0 });
+      expect(await handoffOf(h.id)).toMatchObject({ status: "claimed", resolvedBy: null, resolvedAt: null });
+      const conv = await getConversation(w.conv.id);
+      expect(conv.mode).toBe(mode);
+      expect(conv.holdSuppressedUntil).toBeNull();
+      expect(await aiMessages(w.conv.id)).toHaveLength(0);
+    }
   });
 
   test("engine_error is left for a human", async () => {
