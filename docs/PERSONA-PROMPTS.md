@@ -106,7 +106,7 @@ bank. `v<N>.meta.json` stores the prompt's sha256, so any change to the prompt i
 
 ## 2. Writing a reply as her (Claude, rapid eval)
 
-For each of the 132 **validation** pairs (rapid eval) and each of the 125 **test** pairs (sections 6
+For each of the 78 **validation** pairs (rapid eval) and each of the 50 **test** pairs (sections 6
 and 7), through the one shared `generateReply` in `rapid-eval.mjs`. System prompt = the whole card
 (`card/v<N>.md`). `max_tokens` 300. The output has surrounding quotes and any leading `@handle`
 stripped. `${comment}` is the fan comment (`replying_to`).
@@ -161,14 +161,12 @@ never scored.
 
 | card | scored (errors) | indistinguishable | score | Jev picked the bot as her | mean confidence |
 |---|---|---|---|---|---|
-| v1 | 130 (2) | 126 | 0.9692 | 0.7846 | 0.5729 |
-| v2 as drafted | 131 (1) | 130 | 0.9924 | 0.9008 | 0.5339 |
-| v2 + 7 founder examples (published, ) | 132 (0) | 129 | 0.9773 | 0.8409 | 0.5459 |
+| v1 | 70 (8) | 67 | 0.9571 | 0.7429 | 0.4377 |
 
-Both from `data/persona/card/v<N>.eval.json` (gen `claude-haiku-5-5`, Jev `jev-1.14.0`).
+From `data/persona/card/v1.eval.json` (gen `claude-haiku-5-5`, Jev `jev-1.14.0`).
 
 **What this does and does not show.** Jev prefers the generated reply most of the time, which means
-it is not discriminating well on replies this short (median 9 characters). The score shows the card
+it is not discriminating well on replies this short (median 30 characters). The score shows the card
 does not read as obviously machine-written to Jev; it does not prove the card is good. It is a fast
 iteration signal. The real persona measures are the Claude judge scoring voice, fact
 consistency and pitch (rubric 1–5), and a blind test on the untouched **test** split.

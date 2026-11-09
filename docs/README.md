@@ -8,7 +8,7 @@ An AI chatter for creators, run here on the synthetic creator Juno. Decision ids
 | doc | what it covers | status |
 |---|---|---|
 | [APP.md](APP.md) | **Start here.** The whole app in one document, written from the code and checked against it: product, flows, engine, data, money, safety, realtime, console, sim, analytics, evals, deploy, decisions, known gaps, and a where-to-find-X index, with every file linked and every diagram embedded | built |
-| [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) | Persona data pipeline: scrape, anonymised bank, splits, style, card, rapid eval, query set | built |
+| [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) | Persona data pipeline: raw export, anonymised bank, splits, style, card, rapid eval, query set | built |
 | [diagrams/persona-pipeline.html](diagrams/persona-pipeline.html) | Data-flow diagram of that pipeline, generated from its Diagram source | built |
 | [RAG.md](RAG.md) | Retrieval end to end: corpus, Voyage embeddings, pgvector/full-text storage, query strategies, prompt assembly, the eval behind vector, failure modes | built |
 | [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) | Every Claude and Jev prompt used to draft and evaluate the persona, verbatim, with state, options and scoring; gate-checked against the code | built |
@@ -36,8 +36,8 @@ An AI chatter for creators, run here on the synthetic creator Juno. Decision ids
 
 ## How the system fits together
 
-1. A scrape of the creator's public Instagram is cleaned into a committed, anonymised bank
-   (`data/persona/bank/`); the raw scrape stays out of git.
+1. The creator's raw posts and replies (synthetic for Juno; a real scrape would stay out of git, ) are
+   cleaned into a committed, anonymised bank (`data/persona/bank/`).
 2. The bank is split 60/20/20 by post; a script drafts a persona card from the train split and
    scores it with Jev on the validation split. The test split is kept for a blind test.
 3. The bank's chunks are loaded into pgvector next (PR 3b), with a retrieval eval deciding whether
