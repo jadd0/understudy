@@ -1,1 +1,0 @@
-ALTER TABLE "conversations" ADD COLUMN "fan_typing_until" timestamp with time zone;

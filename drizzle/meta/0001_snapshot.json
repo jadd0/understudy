@@ -1,6 +1,6 @@
 {
-  "id": "e02f300c-5cb5-49f9-a10a-d4a7c76d0826",
-  "prevId": "7bfc3aa1-c438-4738-bf9a-ae3e07b0999a",
+  "id": "9ef26550-ad2a-4d99-aed3-6cf307e8f740",
+  "prevId": "09044be1-7141-498c-8bdd-98843c7ada05",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -250,128 +250,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.conversations": {
-      "name": "conversations",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "creator_id": {
-          "name": "creator_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "fan_id": {
-          "name": "fan_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "mode": {
-          "name": "mode",
-          "type": "conversation_mode",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'ai'"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "lease_token": {
-          "name": "lease_token",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lease_until": {
-          "name": "lease_until",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ai_enabled": {
-          "name": "ai_enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "last_pitch_at": {
-          "name": "last_pitch_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pitch_declines": {
-          "name": "pitch_declines",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "conversations_creator_id_creators_id_fk": {
-          "name": "conversations_creator_id_creators_id_fk",
-          "tableFrom": "conversations",
-          "tableTo": "creators",
-          "columnsFrom": [
-            "creator_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "conversations_fan_id_users_id_fk": {
-          "name": "conversations_fan_id_users_id_fk",
-          "tableFrom": "conversations",
-          "tableTo": "users",
-          "columnsFrom": [
-            "fan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "conversations_creator_fan_unique": {
-          "name": "conversations_creator_fan_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "creator_id",
-            "fan_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.creators": {
       "name": "creators",
       "schema": "",
@@ -400,13 +278,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "ai_enabled": {
-          "name": "ai_enabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         }
       },
       "indexes": {},
@@ -442,203 +313,6 @@
           ]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.fan_memory": {
-      "name": "fan_memory",
-      "schema": "",
-      "columns": {
-        "creator_id": {
-          "name": "creator_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "fan_id": {
-          "name": "fan_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "profile": {
-          "name": "profile",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "fan_memory_creator_id_creators_id_fk": {
-          "name": "fan_memory_creator_id_creators_id_fk",
-          "tableFrom": "fan_memory",
-          "tableTo": "creators",
-          "columnsFrom": [
-            "creator_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "fan_memory_fan_id_users_id_fk": {
-          "name": "fan_memory_fan_id_users_id_fk",
-          "tableFrom": "fan_memory",
-          "tableTo": "users",
-          "columnsFrom": [
-            "fan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "fan_memory_creator_id_fan_id_pk": {
-          "name": "fan_memory_creator_id_fan_id_pk",
-          "columns": [
-            "creator_id",
-            "fan_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.handoffs": {
-      "name": "handoffs",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "queue": {
-          "name": "queue",
-          "type": "handoff_queue",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "handoff_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'open'"
-        },
-        "claimed_by": {
-          "name": "claimed_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "opened_at": {
-          "name": "opened_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "claimed_at": {
-          "name": "claimed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "handoffs_one_unresolved_per_conversation": {
-          "name": "handoffs_one_unresolved_per_conversation",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"handoffs\".\"status\" <> 'resolved'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "handoffs_conversation_id_conversations_id_fk": {
-          "name": "handoffs_conversation_id_conversations_id_fk",
-          "tableFrom": "handoffs",
-          "tableTo": "conversations",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "handoffs_claimed_by_users_id_fk": {
-          "name": "handoffs_claimed_by_users_id_fk",
-          "tableFrom": "handoffs",
-          "tableTo": "users",
-          "columnsFrom": [
-            "claimed_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -681,6 +355,12 @@
         },
         "stripe_event_id": {
           "name": "stripe_event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stripe_session_id": {
+          "name": "stripe_session_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -729,6 +409,22 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ledger_entries_stripe_session_uq": {
+          "name": "ledger_entries_stripe_session_uq",
+          "columns": [
+            {
+              "expression": "stripe_session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"ledger_entries\".\"stripe_session_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -806,462 +502,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.messages": {
-      "name": "messages",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sender": {
-          "name": "sender",
-          "type": "sender",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sender_user_id": {
-          "name": "sender_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "body": {
-          "name": "body",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "offer_id": {
-          "name": "offer_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "message_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'sent'"
-        },
-        "client_msg_id": {
-          "name": "client_msg_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+      "checkConstraints": {
+        "ledger_entries_sign_by_kind": {
+          "name": "ledger_entries_sign_by_kind",
+          "value": "(\"ledger_entries\".\"kind\" in ('topup', 'refund', 'grant') and \"ledger_entries\".\"amount_cents\" > 0) or (\"ledger_entries\".\"kind\" in ('unlock', 'tip') and \"ledger_entries\".\"amount_cents\" < 0)"
         }
       },
-      "indexes": {
-        "messages_conversation_created_idx": {
-          "name": "messages_conversation_created_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "messages_conversation_id_conversations_id_fk": {
-          "name": "messages_conversation_id_conversations_id_fk",
-          "tableFrom": "messages",
-          "tableTo": "conversations",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "messages_sender_user_id_users_id_fk": {
-          "name": "messages_sender_user_id_users_id_fk",
-          "tableFrom": "messages",
-          "tableTo": "users",
-          "columnsFrom": [
-            "sender_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "messages_offer_id_offers_id_fk": {
-          "name": "messages_offer_id_offers_id_fk",
-          "tableFrom": "messages",
-          "tableTo": "offers",
-          "columnsFrom": [
-            "offer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "messages_client_msg_id_unique": {
-          "name": "messages_client_msg_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "client_msg_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.offers": {
-      "name": "offers",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "item_id": {
-          "name": "item_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "price_cents": {
-          "name": "price_cents",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "offer_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'open'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "turn_id": {
-          "name": "turn_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "offers_conversation_id_conversations_id_fk": {
-          "name": "offers_conversation_id_conversations_id_fk",
-          "tableFrom": "offers",
-          "tableTo": "conversations",
-          "columnsFrom": [
-            "conversation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "offers_item_id_catalogue_items_id_fk": {
-          "name": "offers_item_id_catalogue_items_id_fk",
-          "tableFrom": "offers",
-          "tableTo": "catalogue_items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "offers_turn_id_turns_id_fk": {
-          "name": "offers_turn_id_turns_id_fk",
-          "tableFrom": "offers",
-          "tableTo": "turns",
-          "columnsFrom": [
-            "turn_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.persona_cards": {
-      "name": "persona_cards",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "creator_id": {
-          "name": "creator_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "body": {
-          "name": "body",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "never_list": {
-          "name": "never_list",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::text[]"
-        },
-        "published_at": {
-          "name": "published_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "persona_cards_creator_id_creators_id_fk": {
-          "name": "persona_cards_creator_id_creators_id_fk",
-          "tableFrom": "persona_cards",
-          "tableTo": "creators",
-          "columnsFrom": [
-            "creator_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "persona_cards_creator_version_unique": {
-          "name": "persona_cards_creator_version_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "creator_id",
-            "version"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.persona_chunks": {
-      "name": "persona_chunks",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "creator_id": {
-          "name": "creator_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "chunk_source",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source_url": {
-          "name": "source_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "text": {
-          "name": "text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "meta": {
-          "name": "meta",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "embedding": {
-          "name": "embedding",
-          "type": "vector(1024)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tsv": {
-          "name": "tsv",
-          "type": "tsvector",
-          "primaryKey": false,
-          "notNull": false,
-          "generated": {
-            "as": "to_tsvector('simple', text)",
-            "type": "stored"
-          }
-        }
-      },
-      "indexes": {
-        "persona_chunks_embedding_hnsw": {
-          "name": "persona_chunks_embedding_hnsw",
-          "columns": [
-            {
-              "expression": "embedding",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last",
-              "opclass": "vector_cosine_ops"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "hnsw",
-          "with": {}
-        },
-        "persona_chunks_tsv_gin": {
-          "name": "persona_chunks_tsv_gin",
-          "columns": [
-            {
-              "expression": "tsv",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gin",
-          "with": {}
-        },
-        "persona_chunks_creator_idx": {
-          "name": "persona_chunks_creator_idx",
-          "columns": [
-            {
-              "expression": "creator_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "persona_chunks_creator_id_creators_id_fk": {
-          "name": "persona_chunks_creator_id_creators_id_fk",
-          "tableFrom": "persona_chunks",
-          "tableTo": "creators",
-          "columnsFrom": [
-            "creator_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.sessions": {
@@ -1309,8 +555,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.turns": {
-      "name": "turns",
+    "public.sim_lines": {
+      "name": "sim_lines",
       "schema": "",
       "columns": {
         "id": {
@@ -1320,111 +566,60 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "conversation_id": {
-          "name": "conversation_id",
-          "type": "uuid",
+        "persona": {
+          "name": "persona",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "inbound_ids": {
-          "name": "inbound_ids",
-          "type": "uuid[]",
+        "intent": {
+          "name": "intent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lang": {
+          "name": "lang",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'{}'::uuid[]"
+          "default": "'en'"
         },
-        "jev_in": {
-          "name": "jev_in",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "route": {
-          "name": "route",
+        "text": {
+          "name": "text",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "offer_id": {
-          "name": "offer_id",
-          "type": "uuid",
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(1024)",
           "primaryKey": false,
           "notNull": false
-        },
-        "draft": {
-          "name": "draft",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "jev_out": {
-          "name": "jev_out",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "outcome": {
-          "name": "outcome",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "persona_version": {
-          "name": "persona_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "models": {
-          "name": "models",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tokens": {
-          "name": "tokens",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cost_micros": {
-          "name": "cost_micros",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ms_jev_in": {
-          "name": "ms_jev_in",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ms_gen": {
-          "name": "ms_gen",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ms_jev_out": {
-          "name": "ms_jev_out",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
-        "turns_conversation_idx": {
-          "name": "turns_conversation_idx",
+        "sim_lines_embedding_hnsw": {
+          "name": "sim_lines_embedding_hnsw",
           "columns": [
             {
-              "expression": "conversation_id",
+              "expression": "embedding",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "vector_cosine_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "hnsw",
+          "with": {}
+        },
+        "sim_lines_persona_idx": {
+          "name": "sim_lines_persona_idx",
+          "columns": [
+            {
+              "expression": "persona",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1434,12 +629,157 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sim_lines_persona_text_unique": {
+          "name": "sim_lines_persona_text_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "persona",
+            "text"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sim_runs": {
+      "name": "sim_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
-        "turns_created_idx": {
-          "name": "turns_created_idx",
+        "persona_slug": {
+          "name": "persona_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "sim_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "sim_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "creator_id": {
+          "name": "creator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fan_id": {
+          "name": "fan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seed": {
+          "name": "seed",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "variant": {
+          "name": "variant",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "next_beat": {
+          "name": "next_beat",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "lease_token": {
+          "name": "lease_token",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_until": {
+          "name": "lease_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cost_micros": {
+          "name": "cost_micros",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "log": {
+          "name": "log",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "stop_reason": {
+          "name": "stop_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "sim_runs_status_idx": {
+          "name": "sim_runs_status_idx",
           "columns": [
             {
-              "expression": "created_at",
+              "expression": "status",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1452,12 +792,12 @@
         }
       },
       "foreignKeys": {
-        "turns_conversation_id_conversations_id_fk": {
-          "name": "turns_conversation_id_conversations_id_fk",
-          "tableFrom": "turns",
-          "tableTo": "conversations",
+        "sim_runs_creator_id_creators_id_fk": {
+          "name": "sim_runs_creator_id_creators_id_fk",
+          "tableFrom": "sim_runs",
+          "tableTo": "creators",
           "columnsFrom": [
-            "conversation_id"
+            "creator_id"
           ],
           "columnsTo": [
             "id"
@@ -1465,12 +805,25 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "turns_offer_id_offers_id_fk": {
-          "name": "turns_offer_id_offers_id_fk",
-          "tableFrom": "turns",
-          "tableTo": "offers",
+        "sim_runs_fan_id_users_id_fk": {
+          "name": "sim_runs_fan_id_users_id_fk",
+          "tableFrom": "sim_runs",
+          "tableTo": "users",
           "columnsFrom": [
-            "offer_id"
+            "fan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "sim_runs_conversation_id_conversations_id_fk": {
+          "name": "sim_runs_conversation_id_conversations_id_fk",
+          "tableFrom": "sim_runs",
+          "tableTo": "conversations",
+          "columnsFrom": [
+            "conversation_id"
           ],
           "columnsTo": [
             "id"
@@ -1481,6 +834,101 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.uncredited_payments": {
+      "name": "uncredited_payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "stripe_event_id": {
+          "name": "stripe_event_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stripe_session_id": {
+          "name": "stripe_session_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fan_id": {
+          "name": "fan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount_cents": {
+          "name": "amount_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "uncredited_payment_reason",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "uncredited_payments_open_idx": {
+          "name": "uncredited_payments_open_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"uncredited_payments\".\"resolved_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uncredited_payments_stripe_event_id_unique": {
+          "name": "uncredited_payments_stripe_event_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "stripe_event_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1786,44 +1234,6 @@
         "personal"
       ]
     },
-    "public.chunk_source": {
-      "name": "chunk_source",
-      "schema": "public",
-      "values": [
-        "caption",
-        "comment_reply",
-        "card"
-      ]
-    },
-    "public.conversation_mode": {
-      "name": "conversation_mode",
-      "schema": "public",
-      "values": [
-        "ai",
-        "handoff_creator",
-        "human_creator",
-        "handoff_ts",
-        "human_ts",
-        "closed"
-      ]
-    },
-    "public.handoff_queue": {
-      "name": "handoff_queue",
-      "schema": "public",
-      "values": [
-        "creator",
-        "ts"
-      ]
-    },
-    "public.handoff_status": {
-      "name": "handoff_status",
-      "schema": "public",
-      "values": [
-        "open",
-        "claimed",
-        "resolved"
-      ]
-    },
     "public.ledger_kind": {
       "name": "ledger_kind",
       "schema": "public",
@@ -1831,26 +1241,8 @@
         "topup",
         "unlock",
         "tip",
-        "refund"
-      ]
-    },
-    "public.message_status": {
-      "name": "message_status",
-      "schema": "public",
-      "values": [
-        "sent",
-        "superseded",
-        "blocked"
-      ]
-    },
-    "public.offer_status": {
-      "name": "offer_status",
-      "schema": "public",
-      "values": [
-        "open",
-        "accepted",
-        "declined",
-        "expired"
+        "refund",
+        "grant"
       ]
     },
     "public.role": {
@@ -1862,15 +1254,37 @@
         "admin"
       ]
     },
-    "public.sender": {
-      "name": "sender",
+    "public.sim_mode": {
+      "name": "sim_mode",
       "schema": "public",
       "values": [
-        "fan",
-        "ai",
-        "creator",
-        "admin",
-        "system"
+        "demo",
+        "auto"
+      ]
+    },
+    "public.sim_status": {
+      "name": "sim_status",
+      "schema": "public",
+      "values": [
+        "queued",
+        "running",
+        "waiting_human",
+        "done",
+        "stopped",
+        "failed"
+      ]
+    },
+    "public.uncredited_payment_reason": {
+      "name": "uncredited_payment_reason",
+      "schema": "public",
+      "values": [
+        "missing_fan",
+        "unknown_fan",
+        "flagged_fan",
+        "non_usd",
+        "unpaid",
+        "bad_amount",
+        "async_failed"
       ]
     }
   },

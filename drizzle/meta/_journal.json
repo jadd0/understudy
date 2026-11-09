@@ -5,57 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1793717201402,
-      "tag": "0000_tricky_starbolt",
+      "when": 1794226679959,
+      "tag": "0000_extensions",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1793718997459,
-      "tag": "0001_illegal_carmella_unuscione",
+      "when": 1794226680307,
+      "tag": "0001_host_baseline",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1793719922442,
-      "tag": "0002_known_blur",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1793729021805,
-      "tag": "0003_calm_the_stranger",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1793732369617,
-      "tag": "0004_loving_silver_sable",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1793737269051,
-      "tag": "0005_short_steel_serpent",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1793742267044,
-      "tag": "0006_known_forgotten_one",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1793783843818,
-      "tag": "0007_nervous_infant_terrible",
+      "when": 1794226687532,
+      "tag": "0002_ledger_append_only",
       "breakpoints": true
     }
   ]

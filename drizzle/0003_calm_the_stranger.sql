@@ -1,1 +1,0 @@
-ALTER TYPE "public"."ledger_kind" ADD VALUE 'grant';

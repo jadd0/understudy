@@ -1,8 +1,9 @@
 import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db/client";
-import { conversations, creators, messages, personaCards, users } from "@/db/schema";
+import { conversations, messages, personaCards, users } from "@/db/schema";
 import { ban, handBackConversation, releaseConversation, sendAsCreator, sendSuggested, setConversationAi, setGlobalAi, setNeverList, takeOverConversation } from "@/lib/conversations/controls";
 import type { Viewer } from "@/lib/conversations/read";
+import { chatter } from "@/lib/host/deps";
 import type { Events } from "@understudy/engine";
 import type { Beat } from "./persona";
 
@@ -49,6 +50,9 @@ export interface HumanCtx {
   persist?: (undo: UndoRecord[]) => Promise<void>;
 }
 
+/** The creator's AI switch, read through the engine. */
+const creatorAiOn = async (creatorId: string) => (await chatter()).creatorAi(creatorId);
+
 export type HumanResult = { ok: true } | { ok: false; code: string };
 
 const SEAT_FOR: Record<HumanBeat["action"], "creator" | "admin"> = {
@@ -94,8 +98,7 @@ export async function humanAct(ctx: HumanCtx, beat: HumanBeat): Promise<HumanRes
         await setConversationAi(viewer, convId, true);
         break;
       case "global_ai_off": {
-        const [c] = await db.select({ on: creators.aiEnabled }).from(creators).where(eq(creators.id, ctx.creatorId));
-        ctx.undo.push({ label: "global_ai_off", priorOn: c?.on ?? true });
+        ctx.undo.push({ label: "global_ai_off", priorOn: await creatorAiOn(ctx.creatorId) });
         await ctx.persist?.(ctx.undo);
         await setGlobalAi(viewer, false);
         break;
@@ -183,9 +186,9 @@ export function expectedState(ctx: Pick<HumanCtx, "conversationId" | "fanId" | "
     case "ai_on":
       return async () => (await convMode())?.ai === true;
     case "global_ai_off":
-      return async () => (await db.select({ a: creators.aiEnabled }).from(creators).where(eq(creators.id, ctx.creatorId)))[0]?.a === false;
+      return async () => (await creatorAiOn(ctx.creatorId)) === false;
     case "global_ai_on":
-      return async () => (await db.select({ a: creators.aiEnabled }).from(creators).where(eq(creators.id, ctx.creatorId)))[0]?.a === true;
+      return async () => (await creatorAiOn(ctx.creatorId)) === true;
     default:
       return null;
   }

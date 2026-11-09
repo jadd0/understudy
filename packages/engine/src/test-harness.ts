@@ -1,7 +1,5 @@
 // Fakes and a world builder for the engine's tests. Not imported by product code.
 import { db } from "@/db/client";
-import { creators } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { FakeDecider, type Scripted } from "./fake/decider";
 import { FakeGenerator, type FakeGeneratorOptions } from "./fake/generator";
 import { dbConfigPort } from "@/lib/config";
@@ -10,6 +8,7 @@ import { FtsRetriever } from "@/providers/pg/fts-retriever";
 import type { Events } from "./ports/events";
 import { createChatter, type Chatter } from "./chatter";
 import type { Deps, EngineCtx } from "./ctx";
+import { setCreatorAi as setCreatorAiSwitch } from "./creator-settings";
 import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "./test-db";
 
 const NO = { value: "no", probabilities: { yes: 0.02, no: 0.98 } };
@@ -131,7 +130,7 @@ export async function world(over: Record<string, unknown> = {}, text = "hey, how
 }
 
 export async function setCreatorAi(creatorId: string, aiEnabled: boolean) {
-  await db.update(creators).set({ aiEnabled }).where(eq(creators.id, creatorId));
+  await setCreatorAiSwitch(db, creatorId, aiEnabled);
 }
 
 export function deferred<T = void>() {

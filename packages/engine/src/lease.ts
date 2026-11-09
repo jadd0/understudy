@@ -28,7 +28,7 @@ export async function acquireLease(ctx: EngineCtx, conversationId: string, lease
     set lease_token = ${token}::uuid, lease_until = now() + make_interval(secs => ${leaseMs / 1000})
     where c.id = ${conversationId} and c.mode = 'ai' and c.ai_enabled
       and (c.lease_until is null or c.lease_until < now())
-      and exists (select 1 from creators cr where cr.id = c.creator_id and cr.ai_enabled)
+      and coalesce((select s.ai_enabled from creator_settings s where s.creator_id = c.creator_id), true)
     returning c.version, c.creator_id as "creatorId", c.fan_id as "fanId"`);
   const row = rows[0] as { version: number; creatorId: string; fanId: string } | undefined;
   return row ? { conversationId, token, version: row.version, creatorId: row.creatorId, fanId: row.fanId } : null;

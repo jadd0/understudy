@@ -4,6 +4,7 @@ import { FormAlert } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { requireConsole } from "@/lib/auth/guards";
 import { consoleCreatorFor } from "@/lib/conversations/read";
+import { chatter } from "@/lib/host/deps";
 import { saveGlobalAi } from "../actions";
 import {
   CataloguePrices,
@@ -37,6 +38,7 @@ export default async function ConsoleSettingsPage({ searchParams }: { searchPara
   const user = await requireConsole();
   const creator = await consoleCreatorFor({ id: user.id, role: user.role });
   if (!creator) notFound();
+  const aiEnabled = await (await chatter()).creatorAi(creator.id);
   const p = await searchParams;
   // Started once, awaited by the two sections that read it.
   const card = latestCard(creator.id);
@@ -48,8 +50,8 @@ export default async function ConsoleSettingsPage({ searchParams }: { searchPara
 
       <Section title="AI answers" hint={HINTS.ai}>
         <form action={saveGlobalAi} className="flex items-center justify-between gap-4 rounded-row border border-line px-4 py-3">
-          <span className="text-[15px] font-medium">{creator.aiEnabled ? "AI is answering your fans" : "AI is off"}</span>
-          <Switch on={creator.aiEnabled} name="ai" label="AI answers for all conversations" />
+          <span className="text-[15px] font-medium">{aiEnabled ? "AI is answering your fans" : "AI is off"}</span>
+          <Switch on={aiEnabled} name="ai" label="AI answers for all conversations" />
         </form>
       </Section>
 

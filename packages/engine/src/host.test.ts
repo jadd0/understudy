@@ -14,7 +14,7 @@ const sourceFiles = (dir: string): string[] =>
     return /\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) && !/^test-/.test(e.name) && e.name !== "fake-host.ts" ? [rel] : [];
   });
 
-// Host tables the engine must not name. `creators` stays allowed in lease.ts until the engine owns its own AI switch.
+// Host tables the engine must not name, in code or in raw SQL (lease.ts included).
 // `unlocks` and `users` are also property and column words, so they count only as SQL tables or drizzle imports.
 const HOST_TABLES = [
   /\bledger_entries\b/,
@@ -24,9 +24,6 @@ const HOST_TABLES = [
   /\.(update|insert|delete)\((users|unlocks|wallets|ledgerEntries|catalogueItems)\)/,
   /\bimport\s*\{[^}]*\b(users|unlocks|wallets|ledgerEntries|catalogueItems)\b[^}]*\}\s*from\s*"@\/db\/schema"/,
 ];
-const CREATORS_ALLOWED = new Set(["packages/engine/src/lease.ts"]);
-// The engine tables and the id-only foreign-key targets they point at; the next change drops those references.
-const FK_TARGET_FILES = new Set(["packages/engine/src/schema.ts", "packages/engine/src/host-tables.ts"]);
 
 describe("the engine's host boundary", () => {
   test("the engine package source files import nothing from @/lib/wallet and name no host table", () => {
@@ -39,10 +36,9 @@ describe("the engine's host boundary", () => {
       const code = readFileSync(join(ROOT, f), "utf8")
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/^\s*\/\/.*$/gm, "");
-      if (FK_TARGET_FILES.has(f)) continue;
       if (/@\/lib\/wallet/.test(code)) offenders.push(`${f}: imports @/lib/wallet`);
       for (const t of HOST_TABLES) if (t.test(code)) offenders.push(`${f}: names ${t.source}`);
-      if (/\bcreators\b/.test(code) && !CREATORS_ALLOWED.has(f)) offenders.push(`${f}: names creators`);
+      if (/\bcreators\b/.test(code)) offenders.push(`${f}: names creators`);
     }
     expect(offenders).toEqual([]);
   });
