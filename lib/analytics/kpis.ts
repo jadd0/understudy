@@ -138,7 +138,7 @@ export const KPIS: Kpi[] = [
   {
     id: "top-fans",
     title: "Top high-value fans",
-    definition: "Fans ranked by the  high-value score: their spend in cents, each debit halved per half-life of age, so it reads in dollars and is at most the all-time spend.",
+    definition: "Fans ranked by the high-value score: their spend in cents, each debit halved per half-life of age, so it reads in dollars and is at most the all-time spend.",
     formula: "score = round(sum(amount * 0.5^(age_days / half_life_days))) over the fan's debits to the creator, as of the report time; half-life from config fan.high_value_half_life_days.",
     source: "lib/analytics/revenue.ts `getTopFans`",
     counts: "All the fan's debits to the creator, not only the range.",
@@ -177,7 +177,7 @@ export const KPIS: Kpi[] = [
   {
     id: "responsible",
     title: "Responsible monetisation",
-    definition: "Evidence that the  rules hold: no pitch to a fan in hardship, spend caps, cooldowns.",
+    definition: "Evidence that the responsible-selling rules hold: no pitch to a fan in hardship, spend caps, cooldowns.",
     formula: "hardship turns = committed turns where jev_in.parsed.p.hardship >= config floor.safety.hardship; pitched despite hardship = those with route offer (must be 0); cooldowns = conversations with no_pitch_until > report time; fans at cap = fans whose debits since 00:00 UTC >= their daily cap (own wallet cap, else wallet.daily_cap_cents).",
     source: "lib/analytics/responsible.ts `getResponsible`",
     counts: "Hardship turns in the window; cooldowns and caps as of the report time.",
