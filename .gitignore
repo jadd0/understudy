@@ -15,3 +15,6 @@ data/persona/eval/cache/
 .vercel
 .env*
 !.env.example
+
+# Private loop state: roadmap, plans, decisions. Never committed.
+.product/

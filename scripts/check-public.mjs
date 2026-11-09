@@ -18,7 +18,7 @@ const SKIP = [
 
 // Paths allowed to hold hits: the three loop scripts whose code opens files under the private
 // directory by name.
-export const ALLOW = [/^scripts\/(gate\.sh|kit-config\.mjs|verify-pr\.mjs|export-public\.sh)$/];
+export const ALLOW = [/^scripts\/(gate\.sh|kit-config\.mjs|verify-pr\.mjs|export-public\.sh|worktree-setup\.sh)$/, /^\.gitignore$/];
 
 export function scan(root) {
   const files = execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8" })
