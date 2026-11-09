@@ -10,7 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Pool } from "@neondatabase/serverless";
 import { isPreEngineDatabase, LOCK_KEY, migrateAll } from "../examples/app/scripts/migrate.mjs";
-import { DEFAULT_LOCAL_BASE, isLocalHost, useLocalNeon } from "./neon-local.mjs";
+import { DEFAULT_LOCAL_BASE, isLocalHost, pointAtLocalNeon } from "./neon-local.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -26,7 +26,7 @@ export function baseUrl(env = process.env) {
   if (!isLocalHost(new URL(url).hostname) && env.TEST_DB_ALLOW_HOSTED !== "1") {
     throw new Error("test databases are local only: TEST_DATABASE_BASE_URL names a non-local host");
   }
-  useLocalNeon(url);
+  pointAtLocalNeon(url);
   return url;
 }
 

@@ -14,7 +14,7 @@ export function isLocalHost(hostname) {
 }
 
 /** Configures the driver for the local proxy when `url` is local; returns whether it did. */
-export function useLocalNeon(url) {
+export function pointAtLocalNeon(url) {
   neonConfig.webSocketConstructor ??= ws;
   if (!url || !isLocalHost(new URL(url).hostname)) return false;
   neonConfig.wsProxy = (host) => `${host}:${LOCAL_PROXY_PORT}/v2`;
