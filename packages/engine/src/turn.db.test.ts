@@ -346,7 +346,90 @@ describe("routing outcomes", () => {
     expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
     expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "custom_request" }]);
     expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+    // the fan gets the short holding line, and nothing else from the AI
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toMatchObject([{ body: "hey you, how was your day", status: "sent" }]);
+  });
+
+  test("a hold sends a filler that passed verify", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } } },
+      replies: ["saw this one, i'll come back to you on it"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
+    const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
+    expect(ai).toMatchObject([{ body: "saw this one, i'll come back to you on it", status: "sent", suggested: false }]);
+    // the filler was written on the hold instruction and went through the verify questions
+    const gen = r.generator.calls.filter((c) => !isMemoryCall(c));
+    expect(gen).toHaveLength(1);
+    expect(gen[0].system.turn).toContain("do not promise anything");
+    expect(r.decider.calls.some((c) => c.keys.includes("promises_price_or_free"))).toBe(true);
+    const [t] = await turnsOf(w.conv.id);
+    expect(t.jevOut).toMatchObject([{ filler: true, failures: [] }]);
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "custom_request" }]);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+    // the creator's queue row is due 30 minutes after it opened
+    const [h] = await handoffsOf(w.conv.id);
+    const { rows } = await db.execute(sql`select extract(epoch from (due_at - opened_at)) / 60 as mins from handoffs where id = ${h.id}`);
+    expect(Number((rows[0] as { mins: string }).mins)).toBe(30);
+  });
+
+  test("a filler that fails verify is not sent and the chat is still held", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } } },
+      replies: ["sure, it's $20 for the video"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
     expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toHaveLength(0);
+    // one attempt only: a second Claude call on a hold is not made
+    expect(r.generator.calls.filter((c) => !isMemoryCall(c))).toHaveLength(1);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ reason: "custom_request" }]);
+  });
+
+  test("a filler that Jev rejects is not sent and the chat is still held", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } }, promises_price_or_free: YES },
+    });
+    await runTurn(r.ctx, w.conv.id);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toHaveLength(0);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+  });
+
+  test("a generator error on the filler still holds the chat", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } } },
+      generator: { failOn: { 1: "overloaded" } },
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed", route: "hold_creator", outcome: "handoff" });
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toHaveLength(0);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ reason: "custom_request" }]);
+  });
+
+  test("a decider error while verifying the filler still holds the chat", async () => {
+    const w = await world({}, "can you make a video just for me");
+    // the second Jev call of the turn is the filler's verify
+    const r = rig({ script: { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } } }, decider: { failOn: { 2: "down" } } });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed", route: "hold_creator" });
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toHaveLength(0);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+  });
+
+  test("a repeated request inside the suppression window is deflected, not held again", async () => {
+    const w = await world({}, "can you make a video just for me");
+    await db.execute(sql`update conversations set hold_suppressed_until = now() + interval '1 hour' where id = ${w.conv.id}`);
+    const r = rig({ script: { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } } } });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "deflect", outcome: "replied" });
+    expect(await handoffsOf(w.conv.id)).toHaveLength(0);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "ai" });
+    // once the window lapses the same request is held again
+    await db.execute(sql`update conversations set hold_suppressed_until = now() - interval '1 second' where id = ${w.conv.id}`);
+    await addMessage(w.conv.id, "fan", "please, a video just for me", { ageSeconds: 5 });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator" });
   });
 
   test("a sincere 'are u a bot' admits it; a draft that denies it fails verification", async () => {
