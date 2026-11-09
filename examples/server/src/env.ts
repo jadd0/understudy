@@ -7,6 +7,8 @@ export interface ServerEnv {
   webhookUrl: string | null;
   webhookSecret: string | null;
   port: number;
+  /** The address to listen on: loopback by default, 0.0.0.0 in the container image. */
+  host: string;
 }
 
 export class EnvMissing extends Error {
@@ -39,5 +41,6 @@ export function readEnv(source: Record<string, string | undefined> = process.env
     webhookUrl,
     webhookSecret: webhookUrl ? webhookSecret : null,
     port,
+    host: opt(source.HOST) ?? "127.0.0.1",
   };
 }
