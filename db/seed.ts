@@ -34,6 +34,8 @@ export const WALLET_CONFIG: Record<string, unknown> = {
 // `price / 1e6` micro-dollars and every cost stays an integer. Sources, read 2026-11-03:
 //   Claude Haiku 5.5 (prompts up to 100K tokens): input $0.10, output $0.50, 5m cache write $0.125, cache read $0.01
 //     per Mtok, https://platform.claude.com/docs/en/about-claude/pricing
+//   Claude Sonnet 5.5: input $2, output $10, 5m cache write $2.50, cache read $0.20 per Mtok (Anthropic's published
+//     model pricing table)
 //   jev-1.14.0: input $0.042 per Mtok, output tokens free, https://docs.typesafe.ai/models.md
 export const ENGINE_CONFIG: Record<string, unknown> = {
   "jev.model": "jev-1.14.0",
@@ -81,6 +83,10 @@ export const ENGINE_CONFIG: Record<string, unknown> = {
   "price.claude-haiku-5-5.output_per_mtok": 500000,
   "price.claude-haiku-5-5.cache_read_per_mtok": 10000,
   "price.claude-haiku-5-5.cache_write_per_mtok": 125000,
+  "price.claude-sonnet-5-5.input_per_mtok": 2000000,
+  "price.claude-sonnet-5-5.output_per_mtok": 10000000,
+  "price.claude-sonnet-5-5.cache_read_per_mtok": 200000,
+  "price.claude-sonnet-5-5.cache_write_per_mtok": 2500000,
   "price.jev-1.14.0.input_per_mtok": 42000,
   "price.jev-1.14.0.output_per_mtok": 0,
 };

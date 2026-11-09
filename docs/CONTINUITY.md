@@ -73,8 +73,11 @@ The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresh
   propagation); `lib/engine/failover.db.test.ts` (a turn completes through the fallback).
 - **Not covered.** A vendor-wide Anthropic loss: the second model shares the account and the outage. A second
   generator vendor slots in as another `Generator` in the list; it is not built because it needs a new account and a
-  new dependency. Replies from the fallback model are priced at the primary model's rate in the turn cost, because
-  the generator result carries no model name; this under-states cost while the fallback serves.
+  new dependency. The fallback model's price rows are seeded, but the turn prices a draft at the configured generate model's
+  rate because the generator result carries no model name and the engine reads none; this under-states cost while
+  the fallback serves. Closing it means the generator result exposing the serving model and the engine pricing it.
+  Sonnet 5.5 takes a different request field to turn thinking off than Haiku 5.5, and `thinkingOff` in
+  `providers/anthropic/generator.ts` chooses it by model id.
 
 ## TypeSafe (Jev)
 
@@ -87,21 +90,20 @@ The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresh
   answer is always one of the listed option keys. The verify question is answered, not skipped. When both are down the
   turn fails as it always has: an error turn that keeps what it learned, and the third failure in a row hands over to
   the creator (`lib/engine/turn.db.test.ts`, "the decider down").
-- **What changes while Claude serves.** Claude returns no probabilities, so each answer reports confidence 1 and
-  `{ value: 1 }`. Rules that read probabilities see a confident answer. Concretely:
-  - The safety floors (`floor.safety.*`) become binary. A "yes" trips the stop; a "no" never does, so a borderline
-    case Jev would have stopped at a probability between the floor and 0.5 is not stopped by the fallback.
-  - `floor.intent` always passes for the intent chosen.
-  - `pitch.fit_floor` becomes yes or no.
-  - `floor.buy_intent_runner_up` has no effect (it is switched off by its default of 1 and a fallback answer has no
-    runner-up).
-  This is the cost of staying up; the strictest reading of the safety questions in the Claude prompt is the
-  mitigation, and the creator's handoff queue is the backstop.
+- **What changes while Claude serves.** Claude is asked for a choice and a probability for every option, normalised
+  to sum to 1 (`providers/anthropic/decider.ts`). The safety floors (`floor.safety.*`), the intent floor and
+  `pitch.fit_floor` stay graded: a borderline "yes" at 0.4 reaches the floors as 0.4 and stops the conversation when
+  the floor is at or below it. The numbers are the model's own estimates and are not calibrated against Jev's, so the
+  same message can land on either side of a floor depending on which decider answered. A choice that is not within
+  0.05 of its highest-probability option, or any missing, non-numeric or negative probability, is rejected as
+  malformed and the turn falls through as an outage. `floor.buy_intent_runner_up` is switched off by its default of 1.
+  The model for this fallback must accept a forced tool choice, so Sonnet 5.5, Opus 5.5 and Fable 5.1 are refused at
+  construction; use `claude-haiku-5-5`.
 - **Tests.** `providers/anthropic/decider.test.ts` (forced tool, option mapping, every failure is a short code, no fan
   text in an error); `providers/failover/decider.test.ts`; `lib/engine/failover.db.test.ts` (Jev down, turn completes,
   the safety question is answered).
-- **Not covered.** Evaluating the fallback on the engine eval bank to set safety floors tuned for it. The step is
-  running `npm run eval:engine` with the decider list reversed.
+- **Not covered.** Floors tuned for the fallback. The step is running `npm run eval:engine` with the fallback decider
+  serving and adjusting the floors it needs.
 
 ## Voyage
 

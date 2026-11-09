@@ -63,6 +63,10 @@ tokens (`_per_mtok`). Times carry their unit in the name.
 | `price.claude-haiku-5-5.output_per_mtok` | `500000` | output price | as above |
 | `price.claude-haiku-5-5.cache_read_per_mtok` | `10000` | cache read price | as above |
 | `price.claude-haiku-5-5.cache_write_per_mtok` | `125000` | 5-minute cache write price | as above |
+| `price.claude-sonnet-5-5.input_per_mtok` | `2000000` | input price of the generator fallback model | as above |
+| `price.claude-sonnet-5-5.output_per_mtok` | `10000000` | output price | as above |
+| `price.claude-sonnet-5-5.cache_read_per_mtok` | `200000` | cache read price | as above |
+| `price.claude-sonnet-5-5.cache_write_per_mtok` | `2500000` | 5-minute cache write price | as above |
 | `price.jev-1.14.0.input_per_mtok` | `42000` | Jev input price | as above |
 | `price.jev-1.14.0.output_per_mtok` | `0` | Jev output tokens are free | as above |
 
