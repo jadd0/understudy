@@ -13,7 +13,7 @@ import {
 } from "@understudy/providers";
 import { defaultEvents } from "@/providers/pusher/events";
 import { dbConfigPort, getConfig } from "@/lib/config";
-import { createChatter, systemClock, type Chatter, type Deps } from "@understudy/engine";
+import { createChatter, systemClock, type Chatter, type Deps, type Events } from "@understudy/engine";
 
 /**
  * The production wiring: Jev by REST with Claude behind it as the decider fallback, Claude by its SDK with a second
@@ -58,6 +58,11 @@ function lazyDeps(): Deps {
 /** The production engine. Built on every call, so a changed model row applies to the next send. */
 export async function chatter(): Promise<Chatter> {
   return chatterFor(lazyDeps());
+}
+
+/** The engine for a caller that only stores or flips state, reporting to the events it is handed instead of Pusher. */
+export function chatterWithEvents(events: Events): Chatter {
+  return chatterFor({ ...lazyDeps(), events });
 }
 
 type Failover = Pick<Deps, "decider" | "generator">;

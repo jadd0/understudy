@@ -26,4 +26,6 @@ export type { SweepResult } from "./sweep";
 export type { TurnResult } from "./turn";
 export { SAFETY_KEYS, THREADS } from "./types";
 export type { Explicitness, RouteCfg } from "./types";
+export { humanReply, MAX_HUMAN_BODY_CHARS, takeOver, TakeoverRefused } from "./takeover";
+export type { HumanActor, TakeoverRefusedCode } from "./takeover";
 export { mentionsMoney } from "./verify";
