@@ -1,13 +1,17 @@
 import { db } from "@/db/client";
 import { dbHost } from "@/lib/host/engine-host";
-import { ClaudeDecider } from "@/providers/anthropic/decider";
-import { AnthropicGenerator } from "@/providers/anthropic/generator";
-import { FailoverDecider } from "@/providers/failover/decider";
-import { FailoverGenerator, withModel } from "@/providers/failover/generator";
+import {
+  AnthropicGenerator,
+  ClaudeDecider,
+  embed,
+  FailoverDecider,
+  FailoverGenerator,
+  parseStrategy,
+  PersonaRetriever,
+  TypeSafeDecider,
+  withModel,
+} from "@understudy/providers";
 import { defaultEvents } from "@/providers/pusher/events";
-import { embed } from "@/providers/voyage/embed";
-import { parseStrategy, PersonaRetriever } from "@/providers/voyage/persona-retriever";
-import { TypeSafeDecider } from "@/providers/typesafe/decider";
 import { dbConfigPort, getConfig } from "@/lib/config";
 import { createChatter, systemClock, type Chatter, type Deps } from "@understudy/engine";
 

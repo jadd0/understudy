@@ -77,10 +77,10 @@ One turn (`packages/engine/src/turn.ts`):
 
 | Port | Production adapter | Test adapter |
 |---|---|---|
-| `Decider` (`packages/engine/src/ports/decider.ts`) | `providers/typesafe/decider.ts` (Jev by REST) | `packages/engine/src/fake/decider.ts` |
-| `Generator` | `providers/anthropic/generator.ts` (official SDK, Bearer token) | `packages/engine/src/fake/generator.ts` |
-| `Retriever` | `providers/voyage/persona-retriever.ts`: the `retrieval.strategy` row picks `fts`, `vector` (Voyage `retrieval.voyage_model`) or `hybrid`; a Voyage error falls back to full-text for that turn | `providers/pg/fts-retriever.ts`, on the test database |
-| `Events` | `providers/pusher/events.ts` (`defaultEvents()`; `providers/noop/events.ts` when the Pusher keys are absent) | a recorder |
+| `Decider` (`packages/engine/src/ports/decider.ts`) | `packages/providers/src/typesafe/decider.ts` (Jev by REST) | `packages/engine/src/fake/decider.ts` |
+| `Generator` | `packages/providers/src/anthropic/generator.ts` (official SDK, Bearer token) | `packages/engine/src/fake/generator.ts` |
+| `Retriever` | `packages/providers/src/voyage/persona-retriever.ts`: the `retrieval.strategy` row picks `fts`, `vector` (Voyage `retrieval.voyage_model`) or `hybrid`; a Voyage error falls back to full-text for that turn | `packages/providers/src/pg/fts-retriever.ts`, on the test database |
+| `Events` | `providers/pusher/events.ts` (`defaultEvents()`; `packages/providers/src/noop/events.ts` when the Pusher keys are absent) | a recorder |
 | `Clock` | `systemClock` (sleep and elapsed ms only) | a sleep hook |
 
 Everything persisted or compared against stored rows uses the database clock (`now()`), the same clock the wallet

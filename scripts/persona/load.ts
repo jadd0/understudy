@@ -5,7 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { creators, personaCards, personaChunks } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import { embed, VoyageError, type EmbedResult } from "@/providers/voyage/embed";
+import { embed, VoyageError, type EmbedResult } from "@understudy/providers";
 
 type BankChunk = {
   id: string;

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { messages, turns } from "@/db/schema";
+import { messages, turns } from "@understudy/engine/schema";
 import { DeciderUnavailable, GeneratorError, VERIFY_QUESTIONS, type Decider, type Generator } from "@understudy/engine";
 import { getConversation, rig, world } from "@understudy/engine/testing";
 import { FailoverDecider } from "./decider";
