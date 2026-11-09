@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { readFileSync } from "node:fs";
 import { seededRandom } from "../testing/rng";
-import { drawLines, drawStyle, namesPet, parseRates, type StyleRates } from "./style-draw";
+import { drawLines, drawStyle, namesPet, parseRates, targetLength, type StyleRates } from "./style-draw";
 
 const RATES: StyleRates = { signoff_x: 0.13, mate: 0.07, babe: 0.05, pet_name: 0.035, emoji: 0.2, pet: "biscuit" };
 
@@ -70,6 +70,78 @@ describe("drawStyle", () => {
   });
 });
 
+describe("length, lines and questions", () => {
+  const LEN = { p25: 23, p50: 30, p75: 35, p90: 42 };
+  const WITH: StyleRates = { ...RATES, length: LEN, multiline: 0.3, question: 0.2 };
+
+  test("over 500 seeded draws multiline and question sit within 5 points and the target median within 15% of her p50", () => {
+    const rng = seededRandom(21);
+    const draws = Array.from({ length: 500 }, () => drawStyle(WITH, "hey", rng));
+    const share = (f: (d: (typeof draws)[number]) => boolean) => draws.filter(f).length / draws.length;
+    expect(Math.abs(share((d) => d.multiline === true) - 0.3)).toBeLessThanOrEqual(0.05);
+    expect(Math.abs(share((d) => d.question === true) - 0.2)).toBeLessThanOrEqual(0.05);
+    const targets = draws.map((d) => d.targetChars as number).sort((a, b) => a - b);
+    expect(targets.every((t) => Number.isFinite(t))).toBe(true);
+    expect(Math.abs(targets[250] - LEN.p50) / LEN.p50).toBeLessThanOrEqual(0.15);
+    // never longer than her p90, never shorter than half her p25, and not constant
+    expect(Math.max(...targets)).toBeLessThanOrEqual(LEN.p90);
+    expect(Math.min(...targets)).toBeGreaterThanOrEqual(LEN.p25 / 2);
+    expect(new Set(targets).size).toBeGreaterThan(5);
+  });
+
+  test("the committed markers draw a length and, at her measured rates, almost never a question or a second line", () => {
+    const style = JSON.parse(readFileSync(new URL("../../../../data/persona/bank/style.json", import.meta.url), "utf8")) as { markers: unknown };
+    const measured = parseRates(style.markers)!;
+    expect(measured.length).not.toBeNull();
+    const rng = seededRandom(4);
+    const draws = Array.from({ length: 500 }, () => drawStyle(measured, "hey", rng));
+    expect(draws.every((d) => typeof d.targetChars === "number" && d.multiline === false)).toBe(true);
+    expect(draws.filter((d) => d.question).length / 500).toBeLessThanOrEqual(0.05);
+  });
+
+  test("the inverse CDF hits her percentiles", () => {
+    expect([0, 0.25, 0.5, 0.75, 0.9, 0.999].map((u) => targetLength(LEN, u))).toEqual([12, 23, 30, 35, 42, 42]);
+  });
+
+  test("the number of rng calls is fixed whatever the rates carry", () => {
+    const calls = (rates: StyleRates) => {
+      let n = 0;
+      drawStyle(rates, "hey", () => (n++, 0.5));
+      return n;
+    };
+    expect(calls(WITH)).toBe(7);
+    expect(calls(RATES)).toBe(7);
+  });
+
+  test("markers from before these measures draw none of the new parts", () => {
+    const old = parseRates({ signoff_x: 0.13, mate: 0.07, babe: 0.05, pet_name: 0.03, emoji: 0.05, pet: "biscuit" })!;
+    const draw = drawStyle(old, "hey", seededRandom(1));
+    expect(draw.targetChars).toBeUndefined();
+    expect(draw.multiline).toBeUndefined();
+    expect(draw.question).toBeUndefined();
+    const lines = drawLines(draw, "biscuit").join("\n");
+    expect(lines).not.toMatch(/characters|line|question/);
+  });
+
+  test("a malformed length is ignored, not half-read", () => {
+    const base = { signoff_x: 0, mate: 0, babe: 0, pet_name: 0, emoji: 0 };
+    for (const bad of [{ p25: 30, p50: 20, p75: 35, p90: 42 }, { p25: 1, p50: 2, p75: 3 }, { p25: 0, p50: 0, p75: 0, p90: 0 }, "x"]) {
+      expect(parseRates({ ...base, length_chars: bad })!.length).toBeNull();
+    }
+  });
+
+  test("drawLines states the length and what is drawn about lines and questions", () => {
+    const base = { signoff: false, address: null, petName: false, emoji: false } as const;
+    const one = drawLines({ ...base, targetChars: 28, multiline: false, question: false }, null).join("\n");
+    expect(one).toContain("Keep it to about 28 characters, one line.");
+    expect(one).toContain("Do not ask him a question.");
+    const two = drawLines({ ...base, targetChars: 40, multiline: true, question: true }, null).join("\n");
+    expect(two).toContain("Keep it to about 40 characters.");
+    expect(two).toContain("You may use a second line.");
+    expect(two).toContain("You may ask one short question.");
+  });
+});
+
 describe("parseRates", () => {
   test("reads the stored markers and rejects anything that is not rates", () => {
     expect(parseRates({ n: 606, pet: "Biscuit", signoff_x: 0.13, mate: 0.07, babe: 0.05, pet_name: 0.03, emoji: 0.05, concrete_fact: 0.09 })).toEqual({
@@ -78,6 +150,9 @@ describe("parseRates", () => {
       babe: 0.05,
       pet_name: 0.03,
       emoji: 0.05,
+      length: null,
+      multiline: null,
+      question: null,
       pet: "biscuit",
     });
     for (const bad of [null, undefined, {}, "x", { signoff_x: 0.1 }, { signoff_x: "a", mate: 0, babe: 0, pet_name: 0, emoji: 0 }]) expect(parseRates(bad)).toBeNull();

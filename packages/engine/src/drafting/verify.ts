@@ -1,7 +1,7 @@
 import { answerOf, type Decider, type DeciderResult } from "../ports/decider";
 import { LEADS_TO_OFFER_QUESTION, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "../routing/questions";
 import { MARKER_PATTERN, type JevLine } from "./thread";
-import type { StyleDraw } from "./style-draw";
+import { namesPet, type StyleDraw, type StyleRates } from "./style-draw";
 import type { RouteName } from "../types";
 
 export type VerifyFailure =
@@ -19,7 +19,9 @@ export type VerifyFailure =
   | "marker_echo"
   | "asks_media"
   | "reasks"
-  | "offer_unsetup";
+  | "offer_unsetup"
+  | "too_long"
+  | "pet_disallowed";
 
 const CURRENCY_SYMBOL = /[$€£¥₹₩]/;
 const CURRENCY_WORD = "usd|dollars?|bucks?|bux|euros?|eur|gbp|pounds?|quid|cents?";
@@ -101,7 +103,7 @@ export function jevChecks(result: DeciderResult, route: RouteName, boundary = fa
 }
 
 /** Failures that cost a regeneration but never make a draft unsafe to send. */
-const QUALITY: readonly VerifyFailure[] = ["reasks", "offer_unsetup"];
+const QUALITY: readonly VerifyFailure[] = ["reasks", "offer_unsetup", "too_long", "pet_disallowed"];
 
 /** A draft whose only failures are quality ones is still safe to send: the turn may regenerate, then sends it anyway. */
 export const qualityOnly = (failures: readonly VerifyFailure[]): boolean => failures.length > 0 && failures.every((f) => QUALITY.includes(f));
@@ -160,14 +162,43 @@ const addressAtEnd = (term: string) => new RegExp(String.raw`,?\s*(?<![\p{L}\p{N
 // "mate, …" and "mate that's mad" open with an address; "mate of mine" and "mate's van" use it as a noun and stay.
 const addressAtStart = (term: string) => new RegExp(String.raw`^\s*${term}(?![\p{L}\p{N}'’])(?:\s*,\s*|\s+(?!of\b))`, "iu");
 
+const EMOJI = /\p{Regional_Indicator}{2}|\p{Extended_Pictographic}(?:\u{FE0F}|\p{Emoji_Modifier})?(?:\u{200D}\p{Extended_Pictographic}(?:\u{FE0F}|\p{Emoji_Modifier})?)*/gu;
+const hasContent = (s: string) => /[\p{L}\p{N}]/u.test(s);
+
+/** The reply's length as a fan sees it: characters, with any run of whitespace (a line break included) as one space. */
+const lengthOf = (draft: string): number => [...draft.replace(/\s+/g, " ").trim()].length;
+
 /**
- * Removes a sign-off x or an address term ("mate", "babe") the style draw did not allow, from the edges of the
- * reply only: a closing x on the last bubble, and a term that opens or closes any bubble. Nothing mid-sentence is
- * touched. A change that would leave a bubble or the whole reply empty is not made, so a reply is never emptied
- * here; the normal checks already ran on the draft.
+ * The draw's length and pet limits, which code cannot enforce without breaking a sentence: a reply longer than
+ * max(2 x the target, her p90), and one that names her pet when the draw did not allow it. Both are quality-only, so a
+ * draft that fails only these is still sent when no attempt does better. Nothing is checked without a draw.
+ */
+export function drawFailures(draft: string, draw: StyleDraw | null, rates: StyleRates | null): VerifyFailure[] {
+  if (!draw || !rates) return [];
+  const failures: VerifyFailure[] = [];
+  if (draw.targetChars !== undefined && rates.length && lengthOf(draft) > Math.max(2 * draw.targetChars, rates.length.p90)) failures.push("too_long");
+  if (!draw.petName && namesPet(draft, rates.pet)) failures.push("pet_disallowed");
+  return failures;
+}
+
+/**
+ * Removes an emoji the draw did not allow, a sign-off x or an address term ("mate", "babe") it did not allow, from
+ * the edges of the reply only: a closing x on the last bubble, and a term that opens or closes any bubble. Nothing
+ * mid-sentence is touched. A reply the draw keeps to one line is joined with spaces. A change that would leave a
+ * bubble or the whole reply without a letter or digit is not made, so a reply is never emptied here (a bare emoji
+ * answer stays); the normal checks already ran on the draft.
  */
 export function enforceDraw(draft: string, draw: StyleDraw): string {
-  const lines = draft.split("\n");
+  let source = draft;
+  if (!draw.emoji) {
+    const stripped = draft
+      .split("\n")
+      .map((l) => l.replace(EMOJI, "").replace(/[ \t]{2,}/g, " ").replace(/^[ \t]+|[ \t]+$/gu, ""))
+      .filter((l) => l !== "")
+      .join("\n");
+    if (hasContent(stripped)) source = stripped;
+  }
+  const lines = source.split("\n");
   const out = lines.map((line, i) => {
     let next = line;
     const attempt = (re: RegExp) => {
@@ -183,6 +214,7 @@ export function enforceDraw(draft: string, draw: StyleDraw): string {
     }
     return next;
   });
-  const joined = out.join("\n");
+  const kept = draw.multiline === false ? out.map((l) => l.trim()).filter((l) => l !== "") : out;
+  const joined = kept.join(draw.multiline === false ? " " : "\n");
   return joined.trim() === "" ? draft : joined;
 }
