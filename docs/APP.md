@@ -613,9 +613,16 @@ out. The order is the policy: Trust & Safety first, then Juno's queue, then the 
 
 [![Engine routing decision](diagrams/png/engine-routing.png)](diagrams/engine-routing.html)
 
-1. **Hard stops**, checked strictest first: `minor`, `self_harm`, `threat`, `location_offplatform`, `payment_dispute`.
+1. **Hard stops**, checked strictest first: `minor`, `self_harm`, `threat`, `payment_dispute`.
    The first that fires names the handoff reason. If `self_harm` fired at all, the crisis template is sent even when a
-   stricter reason names the handoff.
+   stricter reason names the handoff. A threat first gets one line in her voice (below).
+   A meetup or off-platform ask (`location_offplatform`) is not a hard stop: it is a **strike**. The route is `boundary`:
+   she writes a boundary line, the platform adds "Warning n of 3", Trust & Safety gets an alert that leaves the mode
+   alone, and the AI keeps chatting. The strike that reaches
+   [`ts.max_strikes`](CONFIG.md#floors-jev-confidence-and-pitching) (3) is a `hard_stop` that pauses the chat for
+   review with the paused notice and no line; it does not flag the account. Strikes count per fan per creator inside
+   [`ts.strike_window_days`](CONFIG.md#floors-jev-confidence-and-pitching) (90), several asks in one batch are one
+   strike, and the commit counts them under the conversation lock so two commits never both read "strike 2".
 2. **Unsure** (intent probability below `floor.intent`): held for Juno as `unsure`, unless the best guess is
    `buy_intent`, there is no hardship and pacing allows, in which case a ppv or bundle offer is made.
 3. `live_chat` → held for Juno (`explicit_live_chat`). `custom_request` → held for Juno (`custom_request`).
@@ -641,7 +648,8 @@ handoff for Juno while the AI keeps replying.
 |---|---|---|---|
 | `reply`, `offer`, `deflect`, `ai_disclosure` | `replied` | Her reply in up to 3 bubbles; an offer's locked card on the last | stays `ai` |
 | `hold_creator` | `handoff` | Nothing | `handoff_creator`, creator-queue handoff |
-| `hard_stop` | `hard_stop` | The fixed template, if the reason has one, at once | `handoff_ts`, ts-queue handoff; `minor` and `threat` also flag the account |
+| `boundary` | `replied` | Her boundary line, then the platform notice "Warning n of 3" (sender `system`) | stays `ai`; a ts-queue alert handoff, no mode change |
+| `hard_stop` | `hard_stop` | The fixed template, if the reason has one, at once; a threat gets one line in her voice; the last strike gets only the paused notice | `handoff_ts`, ts-queue handoff; `minor` and `threat` also flag the account, a strike does not |
 
 The AI never offers the `personal` item; only Juno can, from the console.
 
@@ -859,7 +867,9 @@ A takeover, a hand-back or a re-lease after an expired lease changes one of thos
 When the update applies, the same transaction:
 
 1. inserts the `turns` row (route, Jev answers, draft, verify trail, persona version, models, tokens, cost, timings);
-2. opens or escalates the handoff, and a `high_value_alert` if flagged;
+2. opens or escalates the handoff, and a `high_value_alert` if flagged; for a boundary strike it counts the fan's strikes
+   under the conversation lock, writes the strike row, sends the platform notice after her line and opens the ts alert (or,
+   on the last strike, moves the conversation to `handoff_ts`);
 3. for a hard stop, flags the user (minor, threat) and supersedes AI bubbles not yet delivered, expiring any open offer
    they carried, so the template is never followed by an older reply;
 4. marks a declined offer, and inserts a new offer with the catalogue price and `expires_at = now() + offer.ttl_minutes`;
@@ -990,8 +1000,8 @@ The lifecycle is drawn in [`diagrams/escalation.html`](diagrams/escalation.html)
 |---|---|---|
 | `minor` | The platform notice, sender `system`: "Hi — we think this account may belong to someone under 18, so messaging is turned off. You can still read this chat. If we've got this wrong, contact {support_email}." | Flagged `minor_in_chat`: sessions kept, `/chat` read-only, every send refused |
 | `self_harm` | A crisis reply in her voice with 988 and findahelpline.com | Not flagged |
-| `threat` | Nothing | Flagged `threat`; the fan lands on `/blocked` |
-| `location_offplatform` | "i keep my chats here, so i can't meet up, share where i am or move to another app…" | Not flagged |
+| `threat` | One line in her voice, written under its own instruction and checked like a reply; nothing if no line passes | Flagged `threat`; the fan lands on `/blocked`, which shows that line |
+| `location_offplatform` | Not a hard stop until the last strike: strikes 1 and 2 are a boundary line and "Warning n of 3" with the AI still chatting; the last is "Warning 3 of 3: this chat is paused for a safety review. You can still read it." If no boundary line passes its checks the fixed text "i keep my chats here, so i can't meet up, share where i am or move to another app…" goes instead | Not flagged |
 | `payment_dispute` | "i'm sorry about that, i hear you. i've passed this to the support team…" | Not flagged |
 
 The texts live in [`packages/engine/src/templates.ts`](../packages/engine/src/templates.ts). If `self_harm` fires together with a
@@ -1513,7 +1523,8 @@ bumps the version and the stale turn is recorded `superseded`. A per-minute swee
 task dropped, and every bound (10 conversations per sweep, 5 turns per call) keeps one invocation finite.
 
 **Why the safety routing looks like this.** Two queues, strictest owner wins, safety never on the creator.
-Flag the account only for minors and threats; a person in crisis always gets resources. A minor in chat gets a
+Flag the account only for minors and threats; a person in crisis always gets resources. A first off-platform ask is
+a warning with a boundary line, not a hand-off: only the third strike pauses the chat. A minor in chat gets a
 plain platform notice and a read-only chat rather than silence. No safety classification once a human owns the
 chat. An unsure read that is most likely a purchase gets an offer, not a hold. Off-platform was loosened
 to allow online plans and saying where she streams, for every fan.
@@ -1584,12 +1595,11 @@ one stands now. Remaining gaps are in [§22](#22-known-gaps-risks-and-open-findi
 
 | What it says | What the code does |
 |---|---|
-| A meetup or off-platform request gets a boundary line, the AI keeps chatting, and a platform notice "Warning n of 3"; the third hands to T&S (`ts.max_strikes`) | The first request is an immediate hard stop to T&S with a fixed template ([`route.ts`](../packages/engine/src/route.ts)); no strike count or `ts.max_strikes` row exists |
-| A threat gets one boundary line in her voice before the flag | A threat is a silent hard stop plus a flag |
+| A real address handed over goes to T&S at once | No detector reads for one: an address is one more off-platform ask and counts as a strike |
 | Sim agents use tools for money actions | The agent returns send, wait or leave; money steps are scripted beats |
 
-The first three are decided but not built, and the decision log says so with a note naming the code that does
-otherwise; the fourth carries an "as built" note. Eight sim beats wait on them as `pending`.
+Each is decided but not built, and the decision log says so with a note naming the code that does
+otherwise. Two sim beats (the filler for a held chat) stay `pending`.
 
 ### Risks in the code
 

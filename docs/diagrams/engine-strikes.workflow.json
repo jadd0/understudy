@@ -1,0 +1,203 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Boundary Strikes and Threat Line",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    {
+      "id": "checks",
+      "label": "route() and the draft"
+    },
+    {
+      "id": "commit",
+      "label": "One commit, under the conversation lock"
+    },
+    {
+      "id": "ts",
+      "label": "Trust & Safety",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "ask",
+    "count",
+    "draft",
+    "verify",
+    "strike",
+    "notice"
+  ],
+  "nodes": [
+    {
+      "id": "ask",
+      "lane": "checks",
+      "col": 0,
+      "type": "cloud",
+      "label": "Off-platform ask",
+      "sublabel": "p >= floor, no minor or self-harm",
+      "tag": "route.ts",
+      "width": 150
+    },
+    {
+      "id": "count",
+      "lane": "checks",
+      "col": 1,
+      "type": "backend",
+      "label": "Strikes so far",
+      "sublabel": "per fan per creator, in window",
+      "tag": "facts.ts",
+      "width": 150
+    },
+    {
+      "id": "draft",
+      "lane": "checks",
+      "col": 2,
+      "type": "frontend",
+      "label": "Boundary line",
+      "sublabel": "her voice, one draft loop",
+      "tag": "prompt.ts",
+      "width": 150
+    },
+    {
+      "id": "verify",
+      "lane": "checks",
+      "col": 3,
+      "type": "security",
+      "label": "Verify",
+      "sublabel": "a refusal is allowed, an invite is not",
+      "tag": "verify.ts",
+      "width": 150
+    },
+    {
+      "id": "fixed",
+      "lane": "checks",
+      "col": 4,
+      "type": "backend",
+      "label": "Fixed line",
+      "sublabel": "on a failed or erroring draft",
+      "tag": "templates.ts",
+      "width": 150
+    },
+    {
+      "id": "strike",
+      "lane": "commit",
+      "col": 4,
+      "type": "database",
+      "label": "Strike row",
+      "sublabel": "counted again inside the commit",
+      "tag": "strikes.ts",
+      "width": 150
+    },
+    {
+      "id": "notice",
+      "lane": "commit",
+      "col": 5,
+      "type": "messagebus",
+      "label": "Warning n of 3",
+      "sublabel": "platform notice after her line",
+      "tag": "lease.ts",
+      "width": 150
+    },
+    {
+      "id": "alert",
+      "lane": "ts",
+      "col": 5,
+      "type": "security",
+      "label": "T&S alert",
+      "sublabel": "mode stays ai",
+      "width": 150
+    },
+    {
+      "id": "pause",
+      "lane": "ts",
+      "col": 2,
+      "type": "security",
+      "label": "Third strike",
+      "sublabel": "handoff_ts, paused notice, no flag",
+      "width": 150
+    },
+    {
+      "id": "threat",
+      "lane": "ts",
+      "col": 1,
+      "type": "external",
+      "label": "Threat",
+      "sublabel": "one line first, then flag and hand-off",
+      "tag": "turn.ts",
+      "width": 150
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-ask",
+      "from": "ask",
+      "to": "count",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-count",
+      "from": "count",
+      "to": "draft",
+      "label": "n + 1 < max",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-draft",
+      "from": "draft",
+      "to": "verify",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-fail",
+      "from": "verify",
+      "to": "fixed",
+      "label": "fails",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e-ok",
+      "from": "verify",
+      "to": "strike",
+      "label": "passes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-fixed",
+      "from": "fixed",
+      "to": "strike",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-strike",
+      "from": "strike",
+      "to": "notice",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-alert",
+      "from": "notice",
+      "to": "alert",
+      "variant": "default",
+      "role": "branch"
+    },
+    {
+      "id": "e-max",
+      "from": "count",
+      "to": "pause",
+      "label": "n + 1 = max",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e-threat",
+      "from": "ask",
+      "to": "threat",
+      "label": "threat outranks",
+      "variant": "security",
+      "role": "error"
+    }
+  ]
+}
