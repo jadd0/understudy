@@ -36,6 +36,13 @@
       "when": 1794239101273,
       "tag": "0004_yielding_magma",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794240748845,
+      "tag": "0005_chubby_the_hood",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,7 @@ An AI chatter for creators, run here on the synthetic creator Juno.
 | [DEPLOY.md](DEPLOY.md) | Vercel deploy: env table, Stripe webhook events, Neon branch, migrate and seed, persona publish, cron and Hobby limit, smoke test, rollback | built |
 | [SAFETY.md](SAFETY.md) | Routing matrix: what the AI handles and what goes to a human | draft |
 | [MONETISATION.md](MONETISATION.md) | Wallet, ledger, Stripe top-up, unlocks, tips, spend cap, high-value score | built |
+| [SCALING.md](SCALING.md) | Measured hot-path plans at a million messages, the one index added, isolation between creators, the partitioning design, the throughput limit | built |
 | [CONTINUITY.md](CONTINUITY.md) | What happens when each third party goes down: failure modes, the fallback or degraded path, what is tested and what is not, and the failover diagram | built |
 | [CONFIG.md](CONFIG.md) | Every tunable value: each config row (default, what it does, where it is read), the code timing constants, and how to change them | built |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Message engine: the turn, ports, lease and compare-and-set, failure table, every prompt verbatim, every config row | built |

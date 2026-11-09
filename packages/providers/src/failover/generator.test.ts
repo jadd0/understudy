@@ -3,8 +3,9 @@ import { GeneratorError, type GenerateInput, type GenerateResult, type Generator
 import { FailoverGenerator, withModel } from "./generator";
 
 const INPUT: GenerateInput = { system: { cached: "c", turn: "t" }, messages: [{ role: "user", content: "hi" }], maxTokens: 10, model: "m1" };
-const OK = (text: string): GenerateResult => ({
+const OK = (text: string, model = "m1"): GenerateResult => ({
   text,
+  model,
   stopReason: "end_turn",
   usage: { inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0 },
 });
@@ -34,6 +35,15 @@ describe("FailoverGenerator", () => {
     expect(r.text).toBe("b");
     expect(b.models).toEqual(["m2"]);
     expect(lines).toEqual(["provider: claude unavailable (http_529), using claude-fallback"]);
+  });
+
+  it("the result names the model that served", async () => {
+    const a = fake(() => new GeneratorError("http_529"));
+    const b = fake((i) => OK("b", i.model));
+    const { g } = build([["claude", a], ["claude-fallback", withModel(b, "m2")]]);
+    expect((await g.generate(INPUT)).model).toBe("m2");
+    const ok = build([["claude", fake((i) => OK("a", i.model))], ["claude-fallback", withModel(b, "m2")]]);
+    expect((await ok.g.generate(INPUT)).model).toBe("m1");
   });
 
   it("skips an open breaker without calling it", async () => {

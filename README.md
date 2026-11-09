@@ -49,6 +49,6 @@ All of it is in [docs/](docs/README.md), which has the full index. By topic:
 | Collecting your own Instagram (own account or written consent only) | [SCRAPER.md](docs/SCRAPER.md) |
 | Auth, wallet, safety | [AUTH.md](docs/AUTH.md), [MONETISATION.md](docs/MONETISATION.md), [SAFETY.md](docs/SAFETY.md) |
 | Platform risk and fallbacks | [CONTINUITY.md](docs/CONTINUITY.md) |
-| Data | [DATA-MODEL.md](docs/DATA-MODEL.md) |
+| Data | [DATA-MODEL.md](docs/DATA-MODEL.md), [SCALING.md](docs/SCALING.md) |
 | Realtime and consoles | [REALTIME.md](docs/REALTIME.md), [CONSOLE.md](docs/CONSOLE.md) |
 | Measurement | [EVALS.md](docs/EVALS.md), [METRICS.md](docs/METRICS.md), [ANALYTICS.md](docs/ANALYTICS.md) |

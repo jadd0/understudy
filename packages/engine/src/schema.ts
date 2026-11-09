@@ -216,6 +216,11 @@ export const messages = pgTable(
     index("messages_conversation_updated_idx").on(t.conversationId, t.updatedAt),
     // An offer's state change, found from the offer back to the bubble that carries it.
     index("messages_offer_idx").on(t.offerId).where(sql`${t.offerId} is not null`),
+    // The newest message a human sent (and the fan saw) in a conversation: the sweep and the inbound load read it to
+    // find which fan messages came after a person stepped in. Without it each lookup walks the whole conversation.
+    index("messages_staff_sent_idx")
+      .on(t.conversationId, t.createdAt)
+      .where(sql`${t.sender} in ('creator', 'admin') and ${t.status} = 'sent'`),
     // The sweep's "fan messages nobody has answered" scan.
     index("messages_unanswered_idx")
       .on(t.conversationId, t.createdAt)

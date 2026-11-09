@@ -558,7 +558,10 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
           model: cfg.generateModel,
         });
         acc.msGen = (acc.msGen ?? 0) + (clock.now() - t0);
-        addCost("generate", cfg.prices[cfg.generateModel], gen.usage);
+        // Priced at the model that served, not the one asked for: a failover answers from its fallback at that model's rows.
+        const servedPrices = cfg.prices[gen.model];
+        if (!servedPrices) throw new ConfigMissing(`price.${gen.model}.input_per_mtok`);
+        addCost("generate", servedPrices, gen.usage);
         // An emoji she just used is dropped even if the model repeats it after being told not to.
         draft = dropRepeatedEmoji(gen.text.trim(), recent);
         acc.draft = draft;
