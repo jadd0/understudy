@@ -7,7 +7,7 @@ import { findEmails, findForeignHandles } from "./lib/anonymise.mjs";
 import { readJsonl } from "./lib/io.mjs";
 import { normalise } from "./normalise.mjs";
 
-const RAW = new URL("./fixtures/raw", import.meta.url).pathname;
+const RAW = new URL("../fixtures/raw", import.meta.url).pathname;
 
 function run() {
   const outDir = mkdtempSync(join(tmpdir(), "persona-norm-"));

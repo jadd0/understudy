@@ -3,7 +3,7 @@
 // TRAIN reply id, exactly like the model-picked examples, and the ids and the reason are recorded in
 // v<N>.meta.json (`extra_example_ids`, `extra_examples_reason`). Validation and test ids are refused.
 //
-//   node scripts/persona/add-examples.mjs --card-version 2 --ids id1,id2 --reason "founder: more cheeky ones"
+//   understudy-persona add-examples --card-version 2 --ids id1,id2 --reason "founder: more cheeky ones"
 import { join } from "node:path";
 import { readFileSync, writeFileSync } from "node:fs";
 import { isMain, parseArgs, readJson, readJsonl, writeJson } from "./lib/io.mjs";

@@ -1,0 +1,19 @@
+{
+  "name": "@understudy/persona",
+  "version": "0.1.0",
+  "description": "Persona pipeline and Instagram scraper: turn a creator's posts and replies into an anonymised bank, a persona card and its evals.",
+  "type": "module",
+  "private": true,
+  "license": "ISC",
+  "engines": { "node": ">=22" },
+  "exports": {
+    ".": { "types": "./src/index.d.ts", "default": "./src/index.mjs" },
+    "./cli": "./src/cli.mjs"
+  },
+  "types": "./src/index.d.ts",
+  "bin": { "understudy-persona": "./src/cli.mjs" },
+  "files": ["src", "fixtures", "README.md"],
+  "scripts": {
+    "test": "node --test \"src/**/*.test.mjs\""
+  }
+}

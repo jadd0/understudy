@@ -1,7 +1,7 @@
 // Collects one Instagram account's posts, captions and the owner's own comments into the raw layout
 // normalise.mjs reads:  <out>/<handle>/{posts.jsonl, profile.json, NOTES.md}
 //
-//   IG_SESSIONID=<your sessionid cookie> node scripts/persona/scrape/scrape.mjs --handle <you>
+//   IG_SESSIONID=<your sessionid cookie> understudy-persona scrape --handle <you>
 //
 // Use it only on an account you own or have written permission to collect. The output holds other
 // people's comments and stays out of git. Run with --help for the flags.
@@ -24,7 +24,7 @@ export const DEFAULTS = {
   threadPages: 1,
 };
 
-export const USAGE = `Usage: IG_SESSIONID=<sessionid cookie> node scripts/persona/scrape/scrape.mjs --handle <account> [flags]
+export const USAGE = `Usage: IG_SESSIONID=<sessionid cookie> understudy-persona scrape --handle <account> [flags]
 
 Collects an account's posts, captions and your own comment replies into
 <out>/<handle>/{posts.jsonl, profile.json, NOTES.md}, the layout the persona normalise step reads.

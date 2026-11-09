@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { ENDPOINTS, InstagramError, ORIGIN, createClient } from "./scrape/instagram.mjs";
 
-const FIX = new URL("./fixtures/instagram/", import.meta.url).pathname;
+const FIX = new URL("../fixtures/instagram/", import.meta.url).pathname;
 const ROUTES = JSON.parse(readFileSync(`${FIX}routes.json`, "utf8"));
 const SESSION = "SECRET-SESSION-VALUE";
 

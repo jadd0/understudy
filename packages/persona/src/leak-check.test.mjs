@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { leakCheck, main } from "./leak-check.mjs";
 
-const RAW = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "raw");
+const RAW = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "raw");
 
 function tree(files) {
   const dir = mkdtempSync(join(tmpdir(), "leak-tree-"));
