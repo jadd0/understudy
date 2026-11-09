@@ -61,6 +61,14 @@ if [ "$(cfg stack)" = "node" ]; then
   fi
 fi
 
+# --- loop state -----------------------------------------------------------------------------------
+# The loop state directory is gitignored here, so a new worktree has none: link the main checkout's,
+# so every worktree reads and writes the one roadmap, plan set and decision log.
+if [ -d ".product" ] && [ ! -e "$WORKTREE_PATH/.product" ] && git check-ignore -q .product; then
+  ln -s "$(pwd)/.product" "$WORKTREE_PATH/.product"
+  echo "Linked the loop state into $WORKTREE_PATH."
+fi
+
 # --- env ----------------------------------------------------------------------------------------
 if [ -f ".env.local" ]; then
   cp ".env.local" "$WORKTREE_PATH/.env.local"
