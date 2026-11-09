@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { FakeDecider } from "../testing/fakes/decider";
-import { codeChecks, mentionsMoney, qualityOnly, verifyDraft } from "./verify";
+import { codeChecks, enforceDraw, mentionsMoney, qualityOnly, verifyDraft } from "./verify";
 import type { RouteName } from "../types";
 
 const GOOD = { reasks: "no", on_persona: "yes", explicitness: "flirty", offplatform_or_meetup: "no", is_refusal: "no", admits_ai: "no", promises_price_or_free: "no" };
@@ -144,5 +144,42 @@ describe("an offer draft must lead into the item", () => {
     const { out, decider } = await offerVerify("no", "reply");
     expect(out.ok).toBe(true);
     expect(decider.calls[0].keys).not.toContain("leads_to_offer");
+  });
+});
+
+describe("enforceDraw", () => {
+  const none = { signoff: false, address: null, petName: false, emoji: false } as const;
+  test("strips a sign-off x and an edge address term the draw disallowed", () => {
+    expect(enforceDraw("see you soon x", none)).toBe("see you soon");
+    expect(enforceDraw("see you soon xx", none)).toBe("see you soon");
+    expect(enforceDraw("night night x 💛", none)).toBe("night night 💛");
+    expect(enforceDraw("hey, mate", none)).toBe("hey");
+    expect(enforceDraw("ok mate!", none)).toBe("ok!");
+    expect(enforceDraw("mate, that's mad", none)).toBe("that's mad");
+    expect(enforceDraw("mate that's mad", none)).toBe("that's mad");
+    expect(enforceDraw("babe, you're sweet", none)).toBe("you're sweet");
+    expect(enforceDraw("proper tired babe x", none)).toBe("proper tired");
+    expect(enforceDraw("first line mate\nsecond line x", none)).toBe("first line\nsecond line");
+  });
+  test("keeps what the draw allowed", () => {
+    expect(enforceDraw("see you soon x", { ...none, signoff: true })).toBe("see you soon x");
+    expect(enforceDraw("hey, mate", { ...none, address: "mate" })).toBe("hey, mate");
+    expect(enforceDraw("babe, hi", { ...none, address: "babe" })).toBe("babe, hi");
+    // an allowed babe does not allow mate
+    expect(enforceDraw("babe, hi mate", { ...none, address: "babe" })).toBe("babe, hi");
+  });
+  test("never touches mid-sentence words or words that contain the term", () => {
+    for (const t of ["checkmate", "merry xmas", "x marks the spot", "my mate Dave is mad", "a babe in the woods is odd", "xD", "mates"]) {
+      expect(enforceDraw(t, none), t).toBe(t);
+    }
+    expect(enforceDraw("my mate said hi x", none)).toBe("my mate said hi");
+    // an x that is not on the last bubble is not a sign-off
+    expect(enforceDraw("ha x\nok", none)).toBe("ha x\nok");
+  });
+  test("a change that would empty the reply is not made", () => {
+    expect(enforceDraw("x", none)).toBe("x");
+    expect(enforceDraw("xx", none)).toBe("xx");
+    expect(enforceDraw("mate", none)).toBe("mate");
+    expect(enforceDraw("mate x", none)).toBe("mate");
   });
 });
