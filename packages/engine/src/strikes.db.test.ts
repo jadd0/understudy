@@ -5,7 +5,7 @@ import { messages, strikes } from "@/db/schema";
 import { countStrikes, recordStrike } from "./strikes";
 import { addMessage, makeConversation, makeCreator, makePersona } from "./test-db";
 import { deferred, rig, world, YES } from "./test-harness";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 
 const scope = (w: Awaited<ReturnType<typeof world>>) => ({ creatorId: w.creator.id, fanId: w.fan.id, windowDays: 90 });
 const one = (w: Awaited<ReturnType<typeof world>>) => ({ ...scope(w), conversationId: w.conv.id, turnId: null, reason: "location_offplatform" });

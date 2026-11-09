@@ -5,7 +5,7 @@ import { fanMemory, offers, personaCards } from "@/db/schema";
 import { TypeSafeDecider } from "@understudy/providers";
 import { addMessage } from "./test-db";
 import { rig, world } from "./test-harness";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 
 const CARD_SENTINEL = "ZEBRA-CARD-SENTINEL";
 const MEMORY_SENTINEL = "kayak-sentinel";

@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { messages, turns } from "@/db/schema";
 import { processConversation } from "./process";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 import { addMessage } from "./test-db";
 import { rig, world, YES } from "./test-harness";
 

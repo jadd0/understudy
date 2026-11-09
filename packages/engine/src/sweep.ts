@@ -4,7 +4,7 @@ import type { EngineCtx } from "./ctx";
 import { runEscalations } from "./escalation";
 import { expireOffers } from "./offer";
 import { processConversation } from "./process";
-import { describeError } from "./turn";
+import { describeError } from "./result";
 
 export interface SweepResult {
   leasesCleared: number;

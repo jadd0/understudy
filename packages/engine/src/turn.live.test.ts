@@ -9,7 +9,7 @@ import { dbConfigPort } from "@/lib/config";
 import { defaultDeps } from "@/lib/host/deps";
 import { dbHost } from "@/lib/host/engine-host";
 import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "./test-db";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 
 loadEnv({ path: ".env.local", quiet: true });
 

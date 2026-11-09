@@ -1,16 +1,22 @@
-import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import type { EngineCtx } from "./ctx";
 import { ConfigMissing } from "./ports/config";
-import { conversations, messages, personaCards, turns } from "./schema";
-import type { Events } from "./ports/events";
+import { conversations, personaCards, turns } from "./schema";
 import { getConfig, loadEngineConfig, loadSla, type EngineCfg } from "./cfg";
 import { bubbleGap } from "./bubbles";
 import { CostLedger, costMicros } from "./cost";
 import { waitForMore, waitForQuiet, type InboundState, type WaitDeps, type WaitStats } from "./debounce";
-import { eventJevLines, eventRecord, hasPendingEvents, loadEvents, loadOfferOutcomes, type EventRecord, type PendingEvent } from "./events";
+import { eventJevLines, eventRecord, loadEvents, loadOfferOutcomes, type PendingEvent } from "./events";
 import { loadFacts } from "./facts";
 import { canPitch } from "./pacing";
-import { acquireLease, commitTurn, recordFailure, releaseLease, type CommitPlan, type CommitResult, type Lease, type TurnRecord } from "./lease";
+import { commitTurn } from "./commit";
+import { emitDelivery } from "./deliver";
+import { RETRY_NOTE, RETRY_REASONS, qualityNote } from "./draft";
+import { loadHistory, loadInbound, loadTyping, newWorkSince } from "./inbound";
+import { NO_FAN_TEXT, tipRowIds, type Candidate, type JevInRecord, type PassResult } from "./pass";
+import { describeError, type TurnResult } from "./result";
+import { acquireLease, recordFailure, releaseLease, type Lease } from "./lease";
+import type { CommitPlan, TurnRecord } from "./plan";
 import { EMPTY_PROFILE, extractMemory, loadProfile } from "./memory";
 import { buildOwnedShortlist, buildShortlist, openOfferId, ownsEverything, pickOffer, type ShortlistItem } from "./offer";
 import { buildPrompt } from "./prompt";
@@ -22,70 +28,6 @@ import { template, templateSender } from "./templates";
 import type { Facts, JevIn, Route } from "./types";
 import { qualityOnly, verifyDraft, type VerifyFailure } from "./verify";
 import { DeciderUnavailable } from "./ports/decider";
-
-export type TurnResult =
-  | { status: "busy" | "idle" }
-  | { status: "committed"; turnId: string; route: Route["name"]; outcome: string; creatorId: string }
-  | { status: "superseded"; turnId: string }
-  | { status: "error"; turnId: string };
-
-/** Class and code only: an error's message can carry fan text. */
-export function describeError(e: unknown): string {
-  const err = e as { name?: string; code?: string; reason?: string; status?: number };
-  return [err?.name ?? "Error", err?.code ?? err?.reason ?? (err?.status ? `http_${err.status}` : "")].filter(Boolean).join(" ");
-}
-
-interface InboundRow {
-  id: string;
-  body: string;
-}
-
-/**
- * Fan messages no turn has answered, newer than the last message a human sent. AI replies do not count: a turn
- * stamps what it answered, so a fan message that arrived while a reply was being written is still waiting.
- */
-export async function loadInbound(ctx: EngineCtx, conversationId: string): Promise<InboundRow[]> {
-  const { rows } = await ctx.db.execute(sql`
-    select m.id, m.body from messages m
-    where m.conversation_id = ${conversationId} and m.sender = 'fan' and m.turn_id is null
-      and m.created_at > coalesce((select max(o.created_at) from messages o
-                                   where o.conversation_id = ${conversationId} and o.sender in ('creator', 'admin') and o.status = 'sent'),
-                                  'epoch'::timestamptz)
-    order by m.created_at, m.id`);
-  return rows as unknown as InboundRow[];
-}
-
-/** Rows read per round of history; bounds the query, and `lastRounds` then cuts at round boundaries. */
-const HISTORY_ROWS_PER_ROUND = 30;
-
-async function loadHistory(ctx: EngineCtx, conversationId: string, rounds: number): Promise<ChatMessage[]> {
-  const rows = await ctx.db
-    .select({ id: messages.id, sender: messages.sender, body: messages.body, createdAt: messages.createdAt })
-    .from(messages)
-    .where(and(eq(messages.conversationId, conversationId), eq(messages.status, "sent"), ne(messages.sender, "system")))
-    .orderBy(desc(messages.createdAt), desc(messages.id))
-    .limit(Math.max(1, rounds) * HISTORY_ROWS_PER_ROUND);
-  return rows.reverse();
-}
-
-/** True while the fan's composer says he is typing (database clock). */
-async function loadTyping(ctx: EngineCtx, conversationId: string): Promise<boolean> {
-  const { rows } = await ctx.db.execute(sql`select coalesce(fan_typing_until > now(), false) as typing from conversations where id = ${conversationId}`);
-  return (rows[0] as { typing: boolean } | undefined)?.typing ?? false;
-}
-
-/** Tells the fan's channel about the messages a commit stored for delivery; a failed emit is logged, never thrown. */
-export async function emitDelivery(events: Events, conversationId: string, result: Pick<CommitResult, "messageIds" | "deliverInMs">) {
-  if (result.messageIds.length === 0) return;
-  const channel = `conversation:${conversationId}`;
-  const holdMs = Math.max(...result.deliverInMs);
-  // The typing indicator stays on until the last bubble is due.
-  const sends = [
-    events.emit(channel, "typing", { holdMs }),
-    ...result.messageIds.map((messageId, i) => events.emit(channel, "message.created", { messageId, deliverInMs: result.deliverInMs[i] })),
-  ];
-  await Promise.all(sends).catch((e) => console.error(`engine: emit failed ${describeError(e)}`));
-}
 
 /**
  * One turn: lease, wait out the debounce, classify, route, (pick an offer, draft, verify), commit. Provider calls
@@ -132,86 +74,6 @@ export async function runTurn(ctx: EngineCtx, conversationId: string): Promise<T
     }
   }
 }
-
-const RETRY_NOTE = "\n\n## Retry\nYour previous draft was rejected by a safety check. Write a different reply that follows every rule above.";
-const REASK_LINE =
-  "Your previous draft asked him something he already answered, or handed his own question back to him. Answer what he asked and use what he told you. Do not write wbu or ask what he is up to. End with a different hook.";
-const OFFER_LINE =
-  "Your previous draft never led into the locked item. The app shows its card right after your message, so after answering him, tease that item: say what it is or why he would want it.";
-/** The retry note when every failure was a quality one: one line per failure, in a fixed order. */
-function qualityNote(failures: readonly VerifyFailure[]): string {
-  const lines = [failures.includes("reasks") ? REASK_LINE : "", failures.includes("offer_unsetup") ? OFFER_LINE : ""].filter(Boolean);
-  return `\n\n## Retry\n${lines.join("\n")}`;
-}
-const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
-  money: "It mentioned money, a price or something being free.",
-  never_list: "It used a word she never uses.",
-  explicit: "It was sexually explicit.",
-  offplatform_or_meetup:
-    "It agreed to meet him in person, gave a real location, or shared a phone number, email or private account to talk on.",
-  asks_media: "It asked him to send a photo, video or voice note, which this chat cannot carry.",
-  off_persona: "It did not sound like her.",
-  refusal:
-    "It read as a refusal. If he asked for a lower price or something free, do not say no or can't, and do not repeat discount, deal or free: tease him for trying and tell him why it is worth it.",
-  promises_price_or_free: "It promised content, a price or something free.",
-  marker_echo: "It copied a time marker from the chat.",
-  offer_unsetup: "It never led into the locked item the app shows next.",
-};
-
-/**
- * What the turn read: Jev's parsed answers (null on a turn that only reacts to a tip or an unlock, which asks Jev
- * nothing about fan text), and the events it reacted to, which is how an unlock is never reacted to twice.
- */
-type JevInRecord = {
-  parsed: JevIn | null;
-  answers: Record<string, string>;
-  events?: EventRecord;
-  debounce?: { waitedMs: number; passes: number; foldIns: number };
-};
-
-/** A draft that passed every safety check (a quality-only failure still counts), with the batch it answers. */
-interface Candidate {
-  draft: string;
-  route: Route;
-  offerItem: ShortlistItem | null;
-  inboundIds: string[];
-  /** The tips and unlocks it reacts to. */
-  events: PendingEvent[];
-  /** Every fan message and event the pass saw, reacted to or not: anything beyond these is new. */
-  seenKeys: string[];
-  batchText: string;
-  jevIn: JevInRecord;
-  declineOfferId: string | null;
-  attempts: number;
-}
-
-type PassResult =
-  | { kind: "idle" }
-  /** A hard stop or a hold: nothing to draft. */
-  | { kind: "final"; plan: CommitPlan; batchText: string; route: Route }
-  /** A drafted reply: `candidate` is null when no attempt passed safety; `lastDraft` is then the draft for the creator to edit. */
-  | {
-      kind: "draft";
-      candidate: Candidate | null;
-      lastDraft: string;
-      failed: { route: Route; batchText: string; declineOfferId: string | null; record: JevInRecord; events: PendingEvent[] };
-    };
-
-/** Tip rows among the events: the commit stamps them with the turn id. */
-const tipRowIds = (events: readonly PendingEvent[]) => events.filter((e) => e.kind === "tip").map((e) => e.id);
-
-/** The synthetic read of a turn with no fan text: nothing to classify, so nothing fires. */
-const NO_FAN_TEXT: JevIn = {
-  intent: "smalltalk",
-  intentP: 1,
-  explicitness: "none",
-  p: { minor: 0, self_harm: 0, threat: 0, location_offplatform: 0, payment_dispute: 0, hardship: 0 },
-  offerResponse: "na",
-  thread: "unknown",
-  pitchFitP: null,
-  buyIntentP: 0,
-  promotedFrom: null,
-};
 
 async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: TurnRecord): Promise<TurnResult> {
   const { decider, retriever, events, clock } = ctx.deps;
@@ -724,14 +586,3 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
   }
 }
 
-/** True when unanswered fan messages, or tips and unlocks, exist beyond the ones the draft's pass saw. */
-async function newWorkSince(ctx: EngineCtx, conversationId: string, seen: readonly string[], windowMinutes: number): Promise<boolean> {
-  const [inbound, events] = await Promise.all([loadInbound(ctx, conversationId), loadEvents(ctx, conversationId, windowMinutes)]);
-  return [...inbound.map((m) => m.id), ...events.map((e) => e.id)].some((id) => !seen.includes(id));
-}
-
-/** Whether a conversation holds anything a turn should still take: an unanswered fan message or a pending event. */
-export async function hasPendingWork(ctx: EngineCtx, conversationId: string, creatorId: string): Promise<boolean> {
-  const [inbound, events] = await Promise.all([loadInbound(ctx, conversationId), hasPendingEvents(ctx, conversationId, creatorId)]);
-  return inbound.length > 0 || events;
-}

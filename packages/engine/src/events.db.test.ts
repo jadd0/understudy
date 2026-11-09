@@ -8,7 +8,7 @@ import { processConversation } from "./process";
 import { EVENT_ONLY_INSTRUCTION, OWNED_ITEM_LINE, OWNS_ALL_LINE, TIP_LINE, unlockLine } from "./prompt";
 import { addMessage, getConversation, makeItem } from "./test-db";
 import { isMemoryCall, rig, world } from "./test-harness";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 
 const turnsOf = (conversationId: string) =>
   db.select().from(turns).where(eq(turns.conversationId, conversationId)).orderBy(asc(turns.createdAt), asc(turns.id));

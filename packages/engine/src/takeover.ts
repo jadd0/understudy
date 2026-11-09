@@ -1,6 +1,6 @@
 import { and, eq, ne, sql } from "drizzle-orm";
 import type { EngineCtx } from "./ctx";
-import { supersedeUnseenBubbles } from "./lease";
+import { supersedeUnseenBubbles } from "./commit";
 import { conversations, handoffs, messages } from "./schema";
 
 /** Who is acting on a conversation. A creator holds only her own, non-T&S chats; the T&S side holds any. */

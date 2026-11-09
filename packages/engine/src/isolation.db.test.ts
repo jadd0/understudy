@@ -10,7 +10,7 @@ import { loadEngineConfig } from "./cfg";
 import { loadProfile } from "./memory";
 import { buildShortlist } from "./offer";
 import { retrieveFts, retrieveVector, type RetrieveDeps } from "./retrieve";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 import { takeOver } from "./takeover";
 import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "./test-db";
 import { isMemoryCall, rig } from "./test-harness";

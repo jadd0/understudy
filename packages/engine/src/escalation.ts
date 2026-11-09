@@ -3,7 +3,7 @@ import { getConfig } from "./cfg";
 import type { EngineCtx } from "./ctx";
 import { processConversation } from "./process";
 import { conversations, handoffs } from "./schema";
-import { describeError } from "./turn";
+import { describeError } from "./result";
 import type { HandoffReason } from "./types";
 
 export interface EscalationResult {

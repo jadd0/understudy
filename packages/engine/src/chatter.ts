@@ -3,7 +3,8 @@ import type { EngineCtx, Deps } from "./ctx";
 import { loadFacts, type FactsCfg, type LoadedFacts } from "./facts";
 import type { HostPort } from "./host";
 import { creatorAi, setCreatorAi } from "./creator-settings";
-import { handBack, supersedeUnseenBubbles } from "./lease";
+import { handBack } from "./lease";
+import { supersedeUnseenBubbles } from "./commit";
 import { migrateEngine } from "./migrate";
 import { expireOffers } from "./offer";
 import type { ConfigPort } from "./ports/config";
@@ -12,7 +13,8 @@ import { processConversation } from "./process";
 import { conversations, messages } from "./schema";
 import { sweep, type SweepResult } from "./sweep";
 import { humanReply, takeOver, type HumanActor } from "./takeover";
-import { runTurn, type TurnResult } from "./turn";
+import { runTurn } from "./run";
+import type { TurnResult } from "./result";
 
 export const MAX_MESSAGE_CHARS = 2000;
 

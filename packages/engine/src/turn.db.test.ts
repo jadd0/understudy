@@ -4,7 +4,7 @@ import { db } from "@/db/client";
 import { config, fanMemory, handoffs, ledgerEntries, messages, offers, personaCards, sessions, strikes, turns, users, wallets } from "@/db/schema";
 import { processConversation } from "./process";
 import { PAID_LINE } from "./thread";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 import { loadFacts } from "./facts";
 import { addMessage, getConversation, seedChat, setEngineConfig } from "./test-db";
 import { ConfigMissing } from "@/lib/config";

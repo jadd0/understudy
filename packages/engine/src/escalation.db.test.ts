@@ -7,7 +7,7 @@ import { runEscalations } from "./escalation";
 import { processConversation } from "./process";
 import { addMessage, getConversation } from "./test-db";
 import { rig, world } from "./test-harness";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 import type { HandoffQueue, HandoffReason } from "./types";
 
 vi.mock("@/lib/host/deps", async () => {

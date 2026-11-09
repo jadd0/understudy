@@ -4,9 +4,11 @@ import { db, withTx } from "@/db/client";
 import { handoffs, messages, offers, turns, users } from "@/db/schema";
 import { unlockOffer } from "@/lib/wallet/unlock";
 import { fund } from "@/lib/wallet/test-helpers";
-import { acquireLease, commitTurn, handBack, type CommitPlan } from "./lease";
+import { acquireLease, handBack } from "./lease";
+import { commitTurn } from "./commit";
+import type { CommitPlan } from "./plan";
 import { processConversation } from "./process";
-import { runTurn } from "./turn";
+import { runTurn } from "./run";
 import { addMessage, getConversation } from "./test-db";
 import { deferred, rig, world, YES } from "./test-harness";
 
