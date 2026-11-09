@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": { "title": "Headless Server", "quality_profile": "standard", "viewBox": [1100, 640] },
+  "stages": [{ "label": "Callers" }, { "label": "HTTP" }, { "label": "Engine" }, { "label": "Bus" }, { "label": "Out" }],
+  "nodes": [
+    { "id": "client", "type": "external", "label": "Fan client", "sublabel": "API key", "stage": 0, "row": 0 },
+    { "id": "operator", "type": "external", "label": "Operator", "sublabel": "creator or T&S", "stage": 0, "row": 2 },
+    { "id": "routes", "type": "security", "label": "Fastify routes", "sublabel": "bearer key, timing-safe", "stage": 1, "row": 1, "tag": "/v1" },
+    { "id": "engine", "type": "backend", "label": "Engine", "sublabel": "handleMessage, takeOver", "stage": 2, "row": 1 },
+    { "id": "models", "type": "cloud", "label": "Claude, Jev", "sublabel": "decide, draft", "stage": 2, "row": 0 },
+    { "id": "db", "type": "database", "label": "Postgres", "sublabel": "turns, bubbles, offers", "stage": 2, "row": 2 },
+    { "id": "bus", "type": "backend", "label": "Event bus", "sublabel": "waits deliverInMs", "stage": 3, "row": 1 },
+    { "id": "sse", "type": "external", "label": "SSE stream", "sublabel": "message, typing, mode", "stage": 4, "row": 0 },
+    { "id": "hook", "type": "external", "label": "Webhook", "sublabel": "HMAC-SHA256 signed", "stage": 4, "row": 2 }
+  ],
+  "flows": [
+    { "id": "f-client", "from": "client", "to": "routes", "label": "POST message", "variant": "emphasis" },
+    { "id": "f-operator", "from": "operator", "to": "routes", "label": "takeover, reply, hand-back", "variant": "security" },
+    { "id": "f-routes", "from": "routes", "to": "engine", "label": "chatter calls", "variant": "emphasis" },
+    { "id": "f-models", "from": "engine", "to": "models", "label": "questions, draft", "variant": "emphasis" },
+    { "id": "f-db", "from": "engine", "to": "db", "label": "one transaction per turn", "labelAt": [530, 314], "variant": "emphasis" },
+    { "id": "f-bus", "from": "engine", "to": "bus", "label": "bubbles, typing", "variant": "emphasis" },
+    { "id": "f-sse", "from": "bus", "to": "sse", "label": "bubble when due", "variant": "emphasis" },
+    { "id": "f-hook", "from": "bus", "to": "hook", "label": "every event, 3 tries", "variant": "emphasis" }
+  ]
+}

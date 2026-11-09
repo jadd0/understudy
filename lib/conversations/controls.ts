@@ -2,11 +2,11 @@ import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db, withTx } from "@/db/client";
 import { catalogueItems, conversations, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import { chatter } from "@/lib/host/deps";
+import { chatter, chatterWithEvents } from "@/lib/host/deps";
 import type { Events } from "@understudy/engine";
 import { defaultEvents } from "@/providers/pusher/events";
 import { InvalidAmount } from "@/lib/wallet/errors";
-import { handBack, takeover } from "./actions";
+import { handBack, humanActorOf, takeover, TakeoverRefused } from "./actions";
 import { assertVisible, consoleCreatorFor, ConversationNotFound, creatorFor, type Viewer } from "./read";
 
 /** The viewer's role does not allow this action on this row. Pages answer it with a 404. */
@@ -160,26 +160,14 @@ async function insertHumanMessage(viewer: Viewer, conversationId: string, body: 
   const conv = await visibleToStaff(viewer, conversationId);
   const text = body.trim();
   if (!text || text.length > MAX_BODY_CHARS) throw new InvalidInput("body");
-  const sender = viewer.role === "admin" ? "admin" : "creator";
-  const id = await withTx(async (tx) => {
-    const [locked] = await tx.select().from(conversations).where(eq(conversations.id, conversationId)).for("update");
-    const want = viewer.role === "admin" ? "human_ts" : "human_creator";
-    if (!locked || locked.mode !== want) throw new Forbidden();
-    const [m] = await tx
-      .insert(messages)
-      .values({ conversationId, sender, senderUserId: viewer.id, body: text, clientMsgId })
-      .onConflictDoNothing({ target: messages.clientMsgId })
-      .returning({ id: messages.id });
-    if (m) return m.id;
-    // A retried send with the same browser id: the message is already saved, so it is not written twice.
-    const [held] = await tx.select({ id: messages.id }).from(messages).where(and(eq(messages.clientMsgId, clientMsgId!), eq(messages.senderUserId, viewer.id)));
-    if (!held) throw new InvalidInput("client_msg_id");
-    return held.id;
-  });
-  await Promise.allSettled([
-    events.emit(`conversation:${conversationId}`, "message.created", { messageId: id, deliverInMs: 0 }),
-    events.emit(isTsSide(conv.mode) ? "ts" : `creator:${conv.creatorId}`, "inbox.changed", { conversationId }),
-  ]);
+  let id: string;
+  try {
+    id = await chatterWithEvents(events).humanReply(conversationId, await humanActorOf(viewer.id), text, { clientMsgId });
+  } catch (e) {
+    if (e instanceof TakeoverRefused) throw new Forbidden();
+    throw e;
+  }
+  await Promise.allSettled([events.emit(isTsSide(conv.mode) ? "ts" : `creator:${conv.creatorId}`, "inbox.changed", { conversationId })]);
   return id;
 }
 

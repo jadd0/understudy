@@ -6,7 +6,8 @@
     "doc": "docs"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ],
   "scripts": {
     "test": "vitest run",
@@ -32,7 +33,9 @@
     "test:live": "LIVE=1 vitest run --config vitest.live.config.mts",
     "sim": "tsx --env-file-if-exists=.env.local scripts/sim/run.ts",
     "sim:load-lines": "tsx --env-file-if-exists=.env.local scripts/sim/load-lines.ts",
-    "sim:review": "tsx --env-file-if-exists=.env.local scripts/sim/review.ts"
+    "sim:review": "tsx --env-file-if-exists=.env.local scripts/sim/review.ts",
+    "server:dev": "npm run dev --workspace @understudy/example-server",
+    "server:demo": "npm run demo --workspace @understudy/example-server --"
   },
   "keywords": [],
   "author": "",

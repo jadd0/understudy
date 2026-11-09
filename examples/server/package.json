@@ -1,0 +1,22 @@
+{
+  "name": "@understudy/example-server",
+  "version": "0.1.0",
+  "description": "A headless Fastify host for the Understudy engine: HTTP in, server-sent replies out, human takeover, a signed webhook.",
+  "private": true,
+  "type": "module",
+  "license": "ISC",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "migrate": "tsx src/main.ts --migrate-only",
+    "seed": "tsx src/seed.ts",
+    "demo": "tsx src/demo.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "@understudy/engine": "*",
+    "@understudy/providers": "*",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.12.8",
+    "ws": "^8.22.1"
+  }
+}
