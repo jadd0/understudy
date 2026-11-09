@@ -1,0 +1,171 @@
+{
+  "database": "test_pr_4b_scaling_scale4b",
+  "volume": {
+    "creators": 200,
+    "conversations": 20000,
+    "messages": 1000000,
+    "turns": 499600,
+    "offers": 8000,
+    "persona_chunks": 8000,
+    "handoffs": 200
+  },
+  "bigTableRowsOver": 10000,
+  "results": [
+    {
+      "name": "lease claim",
+      "source": "acquireLease (packages/engine/src/lease.ts)",
+      "statement": "update conversations c set lease_token = $1::uuid, lease_until = now() + make_interval(secs => $2) where c.id = $3 and c.mode = 'ai' and c.ai_enabled and (c.lease_until is null or c.lease_until < now()) and coalesce((select s.ai_enabled from creator_settings s where s.creator_id = c.creator_id), true) returning c.version, c.creator_id as \"creatorId\", c.fan_id as \"fanId\"",
+      "runs": 20,
+      "p50Ms": 0.076,
+      "p95Ms": 0.082,
+      "rows": 1,
+      "scans": [
+        "Index Scan on conversations using conversations_pkey",
+        "Seq Scan on creator_settings"
+      ],
+      "seqScansOnBigTables": []
+    },
+    {
+      "name": "inbound load",
+      "source": "loadInbound (packages/engine/src/turn.ts)",
+      "statement": "select m.id, m.body from messages m where m.conversation_id = $1 and m.sender = 'fan' and m.turn_id is null and m.created_at > coalesce((select max(o.created_at) from messages o where o.conversation_id = $2 and o.sender in ('creator', 'admin') and o.status = 'sent'), 'epoch'::timestamptz) order by m.created_at, m.id",
+      "runs": 20,
+      "p50Ms": 0.128,
+      "p95Ms": 0.131,
+      "rows": 1,
+      "scans": [
+        "Bitmap Heap Scan on messages",
+        "Bitmap Index Scan using messages_conversation_updated_idx",
+        "Index Scan on messages using messages_unanswered_idx"
+      ],
+      "seqScansOnBigTables": []
+    },
+    {
+      "name": "facts",
+      "source": "loadFacts (packages/engine/src/facts.ts)",
+      "statement": "select coalesce((select no_pitch_until > now() from conversations where id = $1), false) as no_pitch_active, (select count(*)::int from offers where conversation_id = $2 and status = 'declined' and resolved_at > now() - make_interval(mins => $3::int)) as declines, (select count(*)::int from turns t where t.conversation_id = $4 and t.outcome = 'replied' and t.offer_id is null and cardinality(t.inbound_ids) > 0 and t.created_at > coalesce((select max(created_at) from offers where conversation_id = $5), 'epoch'::timestamptz)) as since_offer, exists(select 1 from handoffs where conversation_id = $6 and status <> 'resolved') as unresolved, exists(select 1 from offers where conversation_id = $7 and status = 'open' and expires_at > now()) as open_offer, exists(select 1 from offers where conversation_id = $8 and status = 'accepted') as unlocked, exists( select 1 from offers o where o.conversation_id = $9 and o.status = 'accepted' and o.resolved_at > coalesce( (select max(m.created_at) from messages m where m.conversation_id = $10 and m.sender in ('ai', 'creator', 'admin') and m.status = 'sent'), '-infinity'::timestamptz) ) as just_unlocked",
+      "runs": 20,
+      "p50Ms": 0.173,
+      "p95Ms": 0.178,
+      "rows": 1,
+      "scans": [
+        "Bitmap Heap Scan on offers",
+        "Bitmap Heap Scan on turns",
+        "Bitmap Index Scan using offers_conversation_idx",
+        "Bitmap Index Scan using turns_conversation_idx",
+        "Index Scan on conversations using conversations_pkey",
+        "Index Scan on messages using messages_conversation_created_idx",
+        "Seq Scan on handoffs"
+      ],
+      "seqScansOnBigTables": []
+    },
+    {
+      "name": "published card read",
+      "source": "the select in runTurn (packages/engine/src/turn.ts), built with the same drizzle calls",
+      "statement": "select \"id\", \"creator_id\", \"version\", \"body\", \"never_list\", \"published_at\" from \"persona_cards\" where (\"persona_cards\".\"creator_id\" = $1 and \"persona_cards\".\"published_at\" is not null) order by \"persona_cards\".\"version\" desc limit $2",
+      "runs": 20,
+      "p50Ms": 0.04,
+      "p95Ms": 0.045,
+      "rows": 1,
+      "scans": [
+        "Index Scan on persona_cards using persona_cards_creator_version_unique"
+      ],
+      "seqScansOnBigTables": []
+    },
+    {
+      "name": "chat history",
+      "source": "loadHistory (packages/engine/src/turn.ts), built with the same drizzle calls",
+      "statement": "select \"id\" from \"messages\" where (\"messages\".\"conversation_id\" = $1 and \"messages\".\"status\" = $2 and \"messages\".\"sender\" <> $3) order by \"messages\".\"created_at\" desc, \"messages\".\"id\" desc limit $4",
+      "runs": 20,
+      "p50Ms": 0.128,
+      "p95Ms": 0.14,
+      "rows": 50,
+      "scans": [
+        "Bitmap Heap Scan on messages",
+        "Bitmap Index Scan using messages_conversation_updated_idx"
+      ],
+      "seqScansOnBigTables": []
+    },
+    {
+      "name": "retrieval, full text",
+      "source": "retrieveFts (packages/engine/src/retrieve.ts)",
+      "statement": "select meta->>'chunk_id' as chunk_id, text, ts_rank_cd(tsv, to_tsquery('simple', $1)) as score from persona_chunks where creator_id = $2 and tsv @@ to_tsquery('simple', $3) order by score desc, id limit $4",
+      "runs": 20,
+      "p50Ms": 0.121,
+      "p95Ms": 0.131,
+      "rows": 6,
+      "scans": [
+        "Bitmap Heap Scan on persona_chunks",
+        "Bitmap Index Scan using persona_chunks_creator_idx"
+      ],
+      "seqScansOnBigTables": []
+    },
+    {
+      "name": "retrieval, vector",
+      "source": "retrieveVector (packages/engine/src/retrieve.ts)",
+      "statement": "select meta->>'chunk_id' as chunk_id, text, 1 - (embedding <=> $1::vector) as score from persona_chunks where creator_id = $2 and embedding is not null order by embedding <=> $3::vector, id limit $4",
+      "runs": 20,
+      "p50Ms": 0.298,
+      "p95Ms": 0.311,
+      "rows": 6,
+      "scans": [
+        "Bitmap Heap Scan on persona_chunks",
+        "Bitmap Index Scan using persona_chunks_creator_idx"
+      ],
+      "seqScansOnBigTables": []
+    },
+    {
+      "name": "sweep scan",
+      "source": "sweep (packages/engine/src/sweep.ts), run with a clock past its start budget so it scans and processes nothing",
+      "statement": "select c.id, min(m.created_at) as oldest from conversations c join messages m on m.conversation_id = c.id where c.mode = 'ai' and c.ai_enabled and c.lease_until is null and m.sender = 'fan' and m.turn_id is null and m.created_at < now() - make_interval(secs => $1) and m.created_at > coalesce((select max(o.created_at) from messages o where o.conversation_id = c.id and o.sender in ('creator', 'admin') and o.status = 'sent'), 'epoch'::timestamptz) group by c.id order by min(m.created_at), c.id limit $2",
+      "runs": 20,
+      "p50Ms": 23.844,
+      "p95Ms": 28.784,
+      "rows": 10,
+      "scans": [
+        "Bitmap Heap Scan on messages",
+        "Bitmap Index Scan using messages_conversation_updated_idx",
+        "Index Only Scan on messages using messages_unanswered_idx",
+        "Seq Scan on conversations"
+      ],
+      "seqScansOnBigTables": [
+        "conversations"
+      ]
+    },
+    {
+      "name": "creator inbox page",
+      "source": "listInbox (lib/conversations/read.ts)",
+      "statement": "select \"conversations\".\"id\", \"conversations\".\"mode\", \"conversations\".\"ai_enabled\", \"users\".\"name\", \"users\".\"email\", \"conversations\".\"created_at\", (select m.body from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1), (select m.sender::text from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1), (select extract(epoch from now() - coalesce(m.deliver_at, m.created_at)) * 1000 from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1)::float8, exists (select 1 from handoffs h where h.conversation_id = \"conversations\".\"id\" and h.queue = 'creator' and h.status <> 'resolved'), exists (select 1 from messages m where m.conversation_id = \"conversations\".\"id\" and m.suggested and m.status = 'blocked'), extract(epoch from now() - \"conversations\".\"created_at\") * 1000 from \"conversations\" inner join \"users\" on \"users\".\"id\" = \"conversations\".\"fan_id\" where (\"conversations\".\"creator_id\" in (select \"id\" from \"creators\" where \"creators\".\"user_id\" = $1) and \"conversations\".\"mode\" not in ('handoff_ts','human_ts') and not exists (select 1 from \"handoffs\" where (\"handoffs\".\"conversation_id\" = \"conversations\".\"id\" and \"handoffs\".\"queue\" = $2 and \"handoffs\".\"status\" <> $3))) order by '0'::text, coalesce((select max(coalesce(m.deliver_at, m.created_at)) from messages m where m.conversation_id = \"conversations\".\"id\"), \"conversations\".\"created_at\") desc, \"conversations\".\"id\" desc",
+      "runs": 20,
+      "p50Ms": 16.283,
+      "p95Ms": 17.308,
+      "rows": 100,
+      "scans": [
+        "Bitmap Heap Scan on conversations",
+        "Bitmap Heap Scan on messages",
+        "Bitmap Index Scan using conversations_creator_fan_unique",
+        "Bitmap Index Scan using messages_conversation_updated_idx",
+        "Index Scan on users using users_pkey",
+        "Seq Scan on creators",
+        "Seq Scan on handoffs"
+      ],
+      "seqScansOnBigTables": []
+    },
+    {
+      "name": "handoff queue (open handoffs for one creator)",
+      "source": "getHandoffs (lib/analytics/handoffs.ts)",
+      "statement": "select count(*) as n from handoffs h join conversations c on c.id = h.conversation_id where ((c.creator_id in ($1::uuid) and not exists (select 1 from users ef where ef.id = c.fan_id and ef.email like $2) and true) and c.mode not in ('handoff_ts', 'human_ts') and not exists (select 1 from handoffs th where th.conversation_id = c.id and th.queue = 'ts')) and h.status = 'open'",
+      "runs": 20,
+      "p50Ms": 0.141,
+      "p95Ms": 0.153,
+      "rows": 1,
+      "scans": [
+        "Bitmap Heap Scan on conversations",
+        "Bitmap Index Scan using conversations_creator_fan_unique",
+        "Index Scan on users using users_email_unique",
+        "Seq Scan on handoffs"
+      ],
+      "seqScansOnBigTables": []
+    }
+  ]
+}

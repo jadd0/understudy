@@ -10,6 +10,7 @@
 import { pathToFileURL } from "node:url";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
+import { ENGINE_CONFIG, RETRIEVAL_CONFIG, WALLET_CONFIG } from "@/db/seed";
 
 export interface VolumeOptions {
   creators: number;
@@ -95,11 +96,18 @@ async function seedCreators(db: SqlClient, o: VolumeOptions, from: number, to: n
     select md5('seed:handoff:' || id)::uuid, id, 'creator', 'custom_request', 'open', created + interval '1 hour' from seed_conv where handoff`);
 }
 
+/** The platform config rows the engine and the wallet read, so the code under measurement runs as it does in the app. */
+export async function seedConfig(db: SqlClient) {
+  const rows = JSON.stringify({ ...WALLET_CONFIG, ...RETRIEVAL_CONFIG, "retrieval.strategy": "fts", ...ENGINE_CONFIG }).replace(/'/g, "''");
+  await db.query(`insert into config (key, value) select key, value from jsonb_each('${rows}'::jsonb) on conflict do nothing`);
+}
+
 export async function seedVolume(db: SqlClient, options: Partial<VolumeOptions> = {}) {
   const o = { ...DEFAULTS, ...options };
   int(o.creators, "creators");
   int(o.fansPerCreator, "fans per creator");
   if (!Number.isInteger(o.messagesPerConversation) || o.messagesPerConversation < 3) throw new Error("messages per conversation must be at least 3");
+  await seedConfig(db);
   const first = await db.query(`select 1 from creators where id = md5('seed:creator:1')::uuid`);
   if (first.rows.length) throw new Error("this database already holds the volume seed");
   // About 50k messages per batch keeps each statement short.
