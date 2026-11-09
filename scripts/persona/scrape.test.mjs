@@ -154,3 +154,127 @@ test("a collab post owned by another account carries caption_author_note", () =>
   assert.equal(own.location, "Test Harbour");
   assert.equal(own.description, "");
 });
+
+// ---- the collection loop and the CLI ----
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, readdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { readJsonl } from "./lib/io.mjs";
+import { normalise } from "./normalise.mjs";
+import { main, scrape } from "./scrape/scrape.mjs";
+
+const NOW = () => new Date("2026-06-01T12:00:00Z");
+const scrapeFixture = async ({ fetch = fakeFetch(), caps, out = mkdtempSync(join(tmpdir(), "scrape-")), maxPosts } = {}) => {
+  const client = createClient({ fetch, sessionId: SESSION, delayMs: 0, sleep: noSleep });
+  const result = await scrape({ client, handle: "fixturecreator", out, caps, maxPosts, now: NOW });
+  return { out, ...result, posts: readJsonl(join(out, "fixturecreator", "posts.jsonl")) };
+};
+
+test("a fixture account scrapes into the raw layout and normalise accepts it unchanged", async () => {
+  const { out, posts, counts } = await scrapeFixture();
+  assert.deepEqual(readdirSync(join(out, "fixturecreator")).sort(), ["NOTES.md", "posts.jsonl", "profile.json"]);
+  assert.deepEqual(posts.map((p) => p.shortcode), ["FIX1", "FIX2", "FIX3", "FIX4"]);
+  assert.deepEqual(posts.map((p) => p.index), [0, 1, 2, 3]);
+  const expectedKeys = ["index", "url", "shortcode", "type", "date", "caption", "post_owner", "pinned", "found_in", "hashtags", "mentions", "tagged_users",
+    "collab_coauthors", "location", "like_count", "comment_count", "play_count", "description", "her_comments", "comment_scan"];
+  for (const post of posts) {
+    const missing = expectedKeys.filter((key) => !(key in post));
+    assert.deepEqual(missing, [], post.shortcode);
+  }
+  assert.deepEqual(posts.map((p) => p.type), ["photo", "reel", "carousel", "photo"]);
+  assert.deepEqual(counts, { posts: 4, capped: 0, replies: 8, exact: 4, threadRoot: 4, topLevel: 1, nonText: 2 });
+
+  const bank = mkdtempSync(join(tmpdir(), "scrape-bank-"));
+  const result = normalise({ rawDir: out, outDir: bank, creator: "fixturecreator" });
+  assert.deepEqual(result.counts, {
+    posts_in: 4, posts_kept: 3, skipped_no_caption_no_replies: 1, captions_voice: 2, captions_not_voice: 1, collab_captions: 1,
+    replies: 9, replies_text: 7, replies_non_text: 2, replies_exact: 4, replies_thread_first: 4, top_level_comments: 1,
+  });
+  assert.equal(result.profile.handle, "fixturecreator");
+  const gif = result.replies.filter((r) => r.non_text);
+  assert.equal(gif.length, 2);
+  assert.ok(gif.every((r) => r.text === "" && r.replying_to_non_text === true));
+  const collab = result.captions.find((c) => c.id === "FIX3");
+  assert.deepEqual([collab.voice, collab.collab], [false, true]);
+});
+
+test("pagination follows the cursor until the cap, and a capped post is marked more_left_unscanned", async () => {
+  const log = [];
+  const full = await scrapeFixture({ fetch: fakeFetch(log) });
+  const first = full.posts.find((p) => p.shortcode === "FIX1");
+  assert.deepEqual(first.comment_scan, { pages: 2, top_level_comments_seen: 5, more_left_unscanned: false, reply_threads_expanded: 4 });
+  assert.ok(log.some((r) => r.url.includes("min_id=p1cursor2")));
+  assert.ok(log.some((r) => r.url.includes("max_id=feedcursor2")));
+
+  const capped = await scrapeFixture({ caps: { maxCommentPages: 1 } });
+  const post = capped.posts.find((p) => p.shortcode === "FIX1");
+  assert.deepEqual(post.comment_scan, { pages: 1, top_level_comments_seen: 3, more_left_unscanned: true, reply_threads_expanded: 3 });
+  assert.equal(capped.counts.capped, 1);
+  assert.match(readFileSync(join(capped.out, "fixturecreator", "NOTES.md"), "utf8"), /hit a scan cap \(more_left_unscanned\) \| 1 \|/);
+
+  const fewThreads = await scrapeFixture({ caps: { maxThreads: 1 } });
+  assert.equal(fewThreads.posts.find((p) => p.shortcode === "FIX1").comment_scan.more_left_unscanned, true);
+  assert.equal(fewThreads.posts.find((p) => p.shortcode === "FIX4").comment_scan.more_left_unscanned, false);
+});
+
+test("a repeating cursor stops the loop instead of looping forever", async () => {
+  const requests = [];
+  const loopFetch = fakeFetch(requests, {
+    "/api/v1/media/1001/comments/?min_id=p1cursor2": async () =>
+      new Response(JSON.stringify({ comments: [], has_more_comments: true, next_min_id: "p1cursor2" }), { status: 200 }),
+  });
+  const { posts } = await scrapeFixture({ fetch: loopFetch, maxPosts: 1 });
+  assert.equal(posts[0].comment_scan.more_left_unscanned, true);
+  assert.ok(requests.length < 40);
+});
+
+test("a 429 stops the run, keeps what was written, and records it in NOTES.md", async () => {
+  const out = mkdtempSync(join(tmpdir(), "scrape-"));
+  const limited = fakeFetch([], { "/api/v1/media/1003/info/": async () => new Response("slow down", { status: 429 }) });
+  const client = createClient({ fetch: limited, sessionId: SESSION, delayMs: 0, sleep: noSleep });
+  await assert.rejects(() => scrape({ client, handle: "fixturecreator", out, now: NOW }), (error) => error.status === 429);
+  const kept = readJsonl(join(out, "fixturecreator", "posts.jsonl"));
+  assert.deepEqual(kept.map((p) => p.shortcode), ["FIX1", "FIX2"]);
+  const notes = readFileSync(join(out, "fixturecreator", "NOTES.md"), "utf8");
+  assert.match(notes, /Incomplete/);
+  assert.match(notes, /429/);
+  assert.ok(!notes.includes(SESSION));
+});
+
+test("writing into a synthetic creator's directory is refused, before any request", async () => {
+  const log = [];
+  const client = createClient({ fetch: fakeFetch(log), sessionId: SESSION, delayMs: 0, sleep: noSleep });
+  const out = mkdtempSync(join(tmpdir(), "scrape-"));
+  for (const handle of ["junovale", "JunoFilm"]) {
+    await assert.rejects(() => scrape({ client, handle, out, now: NOW }), /synthetic creator/);
+    assert.equal(existsSync(join(out, handle)), false);
+  }
+  assert.equal(log.length, 0);
+});
+
+test("the CLI exits 1 naming IG_SESSIONID when it is missing, with no request made", async () => {
+  const log = [];
+  const errors = [];
+  const code = await main({ argv: ["--handle", "fixturecreator", "--out", mkdtempSync(join(tmpdir(), "scrape-"))], env: {}, fetch: fakeFetch(log), stderr: (m) => errors.push(m) });
+  assert.equal(code, 1);
+  assert.equal(log.length, 0);
+  assert.match(errors.join("\n"), /IG_SESSIONID/);
+});
+
+test("the CLI runs a fixture scrape, the cookie never reaches output, and --help prints the consent line", async () => {
+  const out = mkdtempSync(join(tmpdir(), "scrape-"));
+  const printed = [];
+  const code = await main({
+    argv: ["--handle", "fixturecreator", "--out", out, "--delay-ms", "0"],
+    env: { IG_SESSIONID: SESSION }, fetch: fakeFetch(), sleep: noSleep, stdout: (m) => printed.push(m), stderr: (m) => printed.push(m), now: NOW,
+  });
+  assert.equal(code, 0);
+  assert.ok(!printed.join("\n").includes(SESSION));
+  for (const name of readdirSync(join(out, "fixturecreator"))) {
+    assert.ok(!readFileSync(join(out, "fixturecreator", name), "utf8").includes(SESSION), name);
+  }
+  const help = execFileSync("node", [new URL("./scrape/scrape.mjs", import.meta.url).pathname, "--help"], { encoding: "utf8", env: { PATH: process.env.PATH } });
+  assert.match(help, /--handle/);
+  assert.match(help, /you own or have written permission/);
+});
