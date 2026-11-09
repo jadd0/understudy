@@ -31,6 +31,11 @@ interface PlanNode {
   "Relation Name"?: string;
   "Index Name"?: string;
   "Actual Rows"?: number;
+  "Plan Rows"?: number;
+  "Actual Loops"?: number;
+  "Actual Total Time"?: number;
+  "Shared Hit Blocks"?: number;
+  "Shared Read Blocks"?: number;
   Plans?: PlanNode[];
 }
 
@@ -94,7 +99,7 @@ function statementOf(file: string, name: string): string {
 const squash = (s: string) => s.replace(/\s+/g, " ").trim();
 
 async function main() {
-  const name = assertTestDatabase(process.env.DATABASE_URL);
+  assertTestDatabase(process.env.DATABASE_URL);
   const out = process.argv.includes("--out") ? process.argv[process.argv.indexOf("--out") + 1] : "docs/scaling/explain.json";
 
   const { db } = await import("@/db/client");
@@ -186,9 +191,17 @@ async function main() {
   for (const r of (await pool.query(`select relname from pg_class where relkind = 'r' and reltuples > ${BIG_TABLE_ROWS}`)).rows) bigTables.add(String(r.relname));
   const counts = (await pool.query(
     `select (select count(*) from creators)::int creators, (select count(*) from conversations)::int conversations, (select count(*) from messages)::int messages,
-            (select count(*) from turns)::int turns, (select count(*) from offers)::int offers, (select count(*) from persona_chunks)::int persona_chunks, (select count(*) from handoffs)::int handoffs`,
+            (select count(*) from turns)::int turns, (select count(*) from offers)::int offers, (select count(*) from persona_chunks)::int persona_chunks, (select count(*) from handoffs)::int handoffs,
+            (select count(*) from messages where sender in ('creator', 'admin'))::int staff_messages, (select count(distinct conversation_id) from messages where sender in ('creator', 'admin'))::int staff_conversations`,
   )).rows[0];
 
+  const server = (
+    await pool.query(
+      `select current_setting('server_version') as version, current_setting('shared_buffers') as shared_buffers,
+              current_setting('effective_cache_size') as effective_cache_size, current_setting('max_connections') as max_connections,
+              current_setting('work_mem') as work_mem`,
+    )
+  ).rows[0];
   const results = [];
   for (const path of paths) {
     const statements = path.fixed ? [path.fixed] : (await capture(path.run!)).filter(path.pick!);
@@ -220,12 +233,40 @@ async function main() {
       p95Ms: percentile(times, 95),
       rows: plan!.Plan["Actual Rows"] ?? 0,
       scans: [...new Set(nodes.filter((n) => /Scan/.test(n["Node Type"])).map((n) => `${n["Node Type"]}${n["Relation Name"] ? ` on ${n["Relation Name"]}` : ""}${n["Index Name"] ? ` using ${n["Index Name"]}` : ""}`))].sort(),
+      sharedHitBlocks: plan!.Plan["Shared Hit Blocks"] ?? 0,
+      sharedReadBlocks: plan!.Plan["Shared Read Blocks"] ?? 0,
+      // Every node with what the planner expected and what happened; "loops" multiplies the per-loop rows and time.
+      nodes: nodes.map((n) => ({
+        type: n["Node Type"],
+        relation: n["Relation Name"] ?? null,
+        index: n["Index Name"] ?? null,
+        planRows: n["Plan Rows"] ?? null,
+        actualRows: n["Actual Rows"] ?? null,
+        loops: n["Actual Loops"] ?? null,
+        actualTotalMs: n["Actual Total Time"] ?? null,
+        sharedHitBlocks: n["Shared Hit Blocks"] ?? null,
+      })),
       seqScansOnBigTables: [...new Set(nodes.filter((n) => n["Node Type"] === "Seq Scan" && n["Relation Name"] && bigTables.has(n["Relation Name"])).map((n) => n["Relation Name"]!))].sort(),
     });
     console.log(`${path.name}: p50 ${percentile(times, 50).toFixed(2)} ms, p95 ${percentile(times, 95).toFixed(2)} ms`);
   }
 
-  writeFileSync(out, JSON.stringify({ database: name.replace(/^.*_test_/, "test_"), volume: counts, bigTableRowsOver: BIG_TABLE_ROWS, results }, null, 2) + "\n");
+  // Size on disk of every table over 1,000 rows and of the indexes on the big ones, as the database reports it.
+  const tables = (
+    await pool.query(
+      `select c.relname as table, c.reltuples::bigint as rows, pg_table_size(c.oid) as heap_bytes, pg_indexes_size(c.oid) as index_bytes,
+              pg_total_relation_size(c.oid) as total_bytes, round(pg_total_relation_size(c.oid)::numeric / nullif(c.reltuples::numeric, 0), 1) as total_bytes_per_row
+       from pg_class c where c.relkind = 'r' and c.relnamespace = 'public'::regnamespace and c.reltuples > 1000 order by pg_total_relation_size(c.oid) desc`,
+    )
+  ).rows.map((r) => ({ table: r.table, rows: Number(r.rows), heapBytes: Number(r.heap_bytes), indexBytes: Number(r.index_bytes), totalBytes: Number(r.total_bytes), totalBytesPerRow: Number(r.total_bytes_per_row) }));
+  const indexes = (
+    await pool.query(
+      `select s.relname as table, s.indexrelname as index, pg_relation_size(s.indexrelid) as bytes from pg_stat_user_indexes s
+       where s.relname in ('messages', 'turns', 'persona_chunks') order by s.relname, pg_relation_size(s.indexrelid) desc`,
+    )
+  ).rows.map((r) => ({ table: r.table, index: r.index, bytes: Number(r.bytes) }));
+
+  writeFileSync(out, JSON.stringify({ server, volume: counts, bigTableRowsOver: BIG_TABLE_ROWS, tables, indexes, results }, null, 2) + "\n");
   console.log(`wrote ${out}`);
   await pool.end();
   process.exit(0);

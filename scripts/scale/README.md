@@ -25,3 +25,7 @@ under `seqScansOnBigTables`.
 
 The seed is deterministic: ids come from the loop counters, so two runs on an empty database give the same rows.
 Drop the database when you are done; it is several hundred megabytes.
+
+The JSON also records the server version and settings (`server`), the row counts (`volume`), the size of each table and
+of the indexes on the big ones (`tables`, `indexes`), and for every path the buffer hits and each plan node's planned
+rows, actual rows, loops and time (`results[].sharedHitBlocks`, `results[].nodes`). The database name is left out.
