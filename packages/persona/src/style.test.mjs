@@ -91,7 +91,28 @@ test("markers are measured on train and style_only replies, one count per reply"
     pet_name: 0.2,
     emoji: 0.2,
     concrete_fact: 0.4,
+    multiline: 0,
+    question: 0,
+    length_chars: { p25: 17, p50: 23, p75: 26, p90: 35 },
   });
+});
+
+test("length percentiles, line-break and question rates are measured on the cleaned train and style_only replies", () => {
+  const rs = [
+    reply("a", "@x one"),
+    reply("b", "two\nlines"),
+    reply("c", "is it? https://example.com/a/very/long/link"),
+    reply("d", "trailing\n"),
+    reply("e", "no break here"),
+    reply("hold", "held out?\nand longer than all the rest by a lot"),
+  ];
+  const sp = { replies: { train: ["a", "b", "c", "d"], validation: ["hold"], test: [], style_only: ["e"] } };
+  const { markers } = computeStyle({ captions: [], replies: rs, splits: sp, pet: null });
+  // cleaned lengths: 3, 9, 6, 8, 13 (a newline folds to a space, a link and a mention are removed)
+  assert.deepEqual(markers.length_chars, { p25: 6, p50: 8, p75: 9, p90: 13 });
+  // only "two\nlines" has text on both sides of a break; a trailing newline is not a second line
+  assert.equal(markers.multiline, 0.2);
+  assert.equal(markers.question, 0.2);
 });
 
 test("petFromProfile reads the assistant line, null without one", () => {

@@ -68,11 +68,19 @@ export function usesConcreteFact(text, pet) {
   return [...text.matchAll(CAPITALISED)].some((m) => m[0].toLowerCase() !== (pet ?? "") && m[0] !== "I");
 }
 
-/** Share of replies using each marker, on the cleaned text. Rates are shares of texts, 4 places. */
+// A line break with text on both sides; the cleaned text folds line breaks away, so this reads the raw reply.
+const MULTILINE = /\S[^\S\n]*\n\s*\S/u;
+const stripLinks = (raw) => raw.replace(/https?:\/\/\S+/g, " ").replace(/@[\p{L}\p{N}_.]+/gu, " ");
+
+/** Share of replies using each marker, on the cleaned text, plus the length distribution and the line-break and question rates. */
 export function measureMarkers(texts, pet) {
-  const counts = { signoff_x: 0, mate: 0, babe: 0, pet_name: 0, emoji: 0, concrete_fact: 0 };
+  const counts = { signoff_x: 0, mate: 0, babe: 0, pet_name: 0, emoji: 0, concrete_fact: 0, multiline: 0, question: 0 };
+  const lengths = [];
   for (const raw of texts) {
     const text = cleaned(raw);
+    lengths.push([...text].length);
+    if (MULTILINE.test(stripLinks(raw))) counts.multiline++;
+    if (text.includes("?")) counts.question++;
     if (SIGNOFF_X.test(text)) counts.signoff_x++;
     if (MATE.test(text)) counts.mate++;
     if (BABE.test(text)) counts.babe++;
@@ -80,10 +88,12 @@ export function measureMarkers(texts, pet) {
     if ([...text.matchAll(EMOJI)].length > 0) counts.emoji++;
     if (usesConcreteFact(text, pet)) counts.concrete_fact++;
   }
+  lengths.sort((a, b) => a - b);
   return {
     n: texts.length,
     pet,
     ...Object.fromEntries(Object.entries(counts).map(([k, v]) => [k, rate(v, texts.length)])),
+    length_chars: { p25: percentile(lengths, 0.25), p50: percentile(lengths, 0.5), p75: percentile(lengths, 0.75), p90: percentile(lengths, 0.9) },
   };
 }
 

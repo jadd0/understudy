@@ -112,7 +112,7 @@ and 7). The rapid eval calls `generateReply` in `rapid-eval.mjs` with the whole 
 the engine's own prompt builder: the card and rules, the lines retrieved from her train replies and
 captions, and a `Voice for this reply` block listing which voice markers this reply may use. The markers
 are drawn per pair from a seeded generator at her measured train rates (`markers` in `bank/style.json`),
-and the engine's edge clean-up removes a sign-off or address term the draw did not allow. The text of
+and the draw also sets a target length (sampled from the distribution of her train replies, so replies are not all one size), whether a second line is allowed and whether a question is. The engine's edge clean-up removes an emoji, sign-off or address term the draw did not allow and joins lines when one line was drawn; a reply over max(2 x the target, her p90) characters, or naming her pet when the draw did not allow it, is drafted once more with the reason, as in a live turn. The text of
 that block is in `packages/engine/src/drafting/style-draw.ts` and `prompt.ts`. `max_tokens` 300. The output has surrounding quotes and any leading `@handle`
 stripped. `${comment}` is the fan comment (`replying_to`).
 

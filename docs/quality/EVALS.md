@@ -188,40 +188,43 @@ Turns that missed their expectations
 <!-- persona:start -->
 ## Persona (rubric judge and blind test)
 
-Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](../persona/PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.
+Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, how long it should run, whether it may take a second line or ask a question, all drawn at her measured train rates with a seeded generator), the engine's edge clean-up (strips an emoji or sign-off the draw did not allow and joins lines when one line was drawn) and, as the engine does, one more draft when a reply runs over the draw's length or names her pet when the draw did not allow it. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](../persona/PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.
 
 Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `.env.local`; interrupted runs resume from `data/persona/eval/cache/`).
 
 ### Card v2
 
-Generator `claude-haiku-5-5`, judge `claude-sonnet-5-5`, seed `understudy-2026`, drafter engine prompt, retrieval over train chunks, style draw, card sha `088f1042b93ea004`, 50 test pairs. Tokens spent by the run that wrote this: 10153 (cached calls cost nothing).
+Generator `claude-haiku-5-5`, judge `claude-sonnet-5-5`, seed `understudy-2026`, drafter engine prompt, retrieval over train chunks, style draw, one retry on length or pet, card sha `088f1042b93ea004`, 50 test pairs. Tokens spent by the run that wrote this: 470660 (cached calls cost nothing).
 
 **Rubric judge** (50 scored, 0 errors):
 
 | criterion | scored | na | mean | 1 / 2 / 3 / 4 / 5 |
 |---|---|---|---|---|
-| voice | 50 | 0 | 2.92 | 1 / 15 / 21 / 13 / 0 |
-| fact_consistency | 50 | 0 | 3.64 | 3 / 4 / 11 / 22 / 10 |
-| natural_pitch | 3 | 47 | 2.6667 | 0 / 1 / 2 / 0 / 0 |
+| voice | 50 | 0 | 3.22 | 0 / 9 / 21 / 20 / 0 |
+| fact_consistency | 50 | 0 | 3.62 | 3 / 6 / 10 / 19 / 12 |
+| natural_pitch | 2 | 48 | 2.5 | 0 / 1 / 1 / 0 / 0 |
 
-**Blind test** (100 judgements, 0 pairs with an error): the judge picked her real reply 65 of 100 times, accuracy **65.0%**, 95% Wilson interval 55.3% to 73.6%. Mean confidence 0.6544. The judge answered "A" 73.0% of the time; the bot was in position A 50.0% of the time. Accuracy with the bot in A: 42.0%; with the bot in B: 88.0%.
+**Blind test** (100 judgements, 0 pairs with an error): the judge picked her real reply 58 of 100 times, accuracy **58.0%**, 95% Wilson interval 48.2% to 67.2%. Mean confidence 0.6355. The judge answered "A" 72.0% of the time; the bot was in position A 50.0% of the time. Accuracy with the bot in A: 36.0%; with the bot in B: 80.0%.
 
 | her reply length | scored | correct | accuracy | 95% interval |
 |---|---|---|---|---|
-| <=10 | 4 | 4 | 100.0% | 51.0% to 100.0% |
-| 11-30 | 52 | 30 | 57.7% | 44.2% to 70.1% |
-| >30 | 44 | 31 | 70.5% | 55.8% to 81.8% |
+| <=10 | 4 | 2 | 50.0% | 15.0% to 85.0% |
+| 11-30 | 52 | 29 | 55.8% | 42.3% to 68.4% |
+| >30 | 44 | 27 | 61.4% | 46.6% to 74.3% |
 
-Reading: The 95% interval (55.3% to 73.6%) is above 50%: the judge detects the bot better than chance. The judge answered "A" 73.0% of the time, a position bias that pulls accuracy towards 50% regardless of the writing. Buckets with fewer than 20 items (<=10) have wide intervals and should not be read on their own.
+Reading: The 95% interval (48.2% to 67.2%) includes 50%, so the judge cannot reliably tell her real reply from the bot's on this sample. The judge answered "A" 72.0% of the time, a position bias that pulls accuracy towards 50% regardless of the writing. Buckets with fewer than 20 items (<=10) have wide intervals and should not be read on their own.
 
 **Voice markers** (share of replies using each, over the 50 pairs with a generated reply):
 
 | marker | her train replies | her test replies | the bot |
 |---|---|---|---|
-| sign-off "x" | 13.0% | 12.0% | 8.0% |
-| "mate" | 6.6% | 10.0% | 6.0% |
+| sign-off "x" | 13.0% | 12.0% | 10.0% |
+| "mate" | 6.6% | 10.0% | 2.0% |
 | "babe" | 5.0% | 6.0% | 0.0% |
-| pet's name | 3.5% | 2.0% | 12.0% |
-| emoji | 5.3% | 6.0% | 22.0% |
+| pet's name | 3.5% | 2.0% | 10.0% |
+| emoji | 5.3% | 6.0% | 0.0% |
 | concrete fact (price or place) | 9.1% | 8.0% | 6.0% |
+| more than one line | 0.0% | 0.0% | 0.0% |
+| a question | 0.8% | 4.0% | 10.0% |
+| median length (characters) | 30 | 27 | 41 |
 <!-- persona:end -->

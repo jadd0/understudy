@@ -27,7 +27,7 @@ export async function testServer(opts: { rows?: Record<string, unknown>; env?: R
   const catalogue = readCatalogue(path.join(SERVER_DIR, "catalogue.json")).map((i) => ({ ...i, id: randomUUID(), creatorId }));
   const env = readEnv({ DATABASE_URL: process.env.DATABASE_URL, UNDERSTUDY_API_KEY: API_KEY, PORT: "0", ...opts.env }, { fake: true });
   const { db, end } = connect(env.databaseUrl);
-  await seedPersona(db, creatorId);
+  await seedPersona(db, creatorId, undefined, { scripted: true });
   await end();
   const running = await startServer({ env, fake: true, config, catalogue, listen: opts.listen });
   return { ...running, creatorId, apiKey: API_KEY };

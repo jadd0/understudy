@@ -168,6 +168,7 @@ export const cardDrafter = Object.assign(
     prompt: `A fan commented on your Instagram post:\n\n"${pair.replying_to}"\n\nWrite your reply. Output only the reply text, nothing else.`,
     draw: null,
     finish: (text) => text,
+    retry: () => null,
   }),
   { label: "card alone as the system prompt, no retrieval, no style draw" },
 );
@@ -198,7 +199,16 @@ export async function evaluateItem({ pair, card, summary, claude, genModel, judg
     generated = await cached({ stage: "gen", model: genModel, thinking: "off", request: sha16(`${prepared.system}\n${prepared.prompt}`), draw }, async () => {
       const gen = await claude.complete({ model: genModel, system: prepared.system, prompt: prepared.prompt, maxTokens: 300 });
       budget.addClaude(gen.usage);
-      return prepared.finish(cleanReply(gen.text));
+      let text = prepared.finish(cleanReply(gen.text));
+      // One more draft, as the engine makes when a reply breaks the draw's length or pet limit; it replaces the first unless empty.
+      const again = prepared.retry?.(text);
+      if (again) {
+        const second = await claude.complete({ model: genModel, system: again.system, prompt: again.prompt, maxTokens: 300 });
+        budget.addClaude(second.usage);
+        const redone = prepared.finish(cleanReply(second.text));
+        if (redone !== "") text = redone;
+      }
+      return text;
     });
     if (real === "" || generated === "") throw new JudgeOutputError("empty_reply");
   } catch (error) {
@@ -248,7 +258,7 @@ const accuracyOf = (judgements) => {
   return { n: judgements.length, correct, accuracy: rate4(correct, judgements.length), wilson95: wilson(correct, judgements.length) };
 };
 
-const MARKER_KEYS = ["signoff_x", "mate", "babe", "pet_name", "emoji", "concrete_fact"];
+const MARKER_KEYS = ["signoff_x", "mate", "babe", "pet_name", "emoji", "concrete_fact", "multiline", "question"];
 
 /** Marker rates for her real replies and the bot's on the same items, and her train rates if given. */
 function markerTable(items, { pet = null, train = null } = {}) {
@@ -259,6 +269,7 @@ function markerTable(items, { pet = null, train = null } = {}) {
   return {
     n: both.length,
     rates: Object.fromEntries(MARKER_KEYS.map((k) => [k, { train: train?.[k] ?? null, real: real[k], bot: bot[k] }])),
+    length_p50: { train: train?.length_chars?.p50 ?? null, real: real.length_chars.p50, bot: bot.length_chars.p50 },
   };
 }
 
@@ -355,7 +366,18 @@ export function readingOf(blind) {
   return lines.join(" ");
 }
 
-const MARKER_LABELS = { signoff_x: 'sign-off "x"', mate: '"mate"', babe: '"babe"', pet_name: "pet's name", emoji: "emoji", concrete_fact: "concrete fact (price or place)" };
+const MARKER_LABELS = {
+  signoff_x: 'sign-off "x"',
+  mate: '"mate"',
+  babe: '"babe"',
+  pet_name: "pet's name",
+  emoji: "emoji",
+  concrete_fact: "concrete fact (price or place)",
+  multiline: "more than one line",
+  question: "a question",
+};
+
+const chars = (n) => (n === null || n === undefined ? "n/a" : String(n));
 
 /** The per-marker table: her train rate, her real test replies, the bot's. Empty when the run recorded none. */
 function markerRows(markers) {
@@ -367,6 +389,7 @@ function markerRows(markers) {
     "| marker | her train replies | her test replies | the bot |",
     "|---|---|---|---|",
     ...Object.entries(markers.rates).map(([key, r]) => `| ${MARKER_LABELS[key] ?? key} | ${pct(r.train)} | ${pct(r.real)} | ${pct(r.bot)} |`),
+    ...(markers.length_p50 ? [`| median length (characters) | ${chars(markers.length_p50.train)} | ${chars(markers.length_p50.real)} | ${chars(markers.length_p50.bot)} |`] : []),
   ];
 }
 
@@ -408,7 +431,7 @@ export function renderSection(persona) {
   return [
     "## Persona (rubric judge and blind test)",
     "",
-    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](../persona/PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.",
+    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, how long it should run, whether it may take a second line or ask a question, all drawn at her measured train rates with a seeded generator), the engine's edge clean-up (strips an emoji or sign-off the draw did not allow and joins lines when one line was drawn) and, as the engine does, one more draft when a reply runs over the draw's length or names her pet when the draw did not allow it. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](../persona/PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.",
     "",
     "Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `.env.local`; interrupted runs resume from `data/persona/eval/cache/`).",
     "",

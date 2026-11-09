@@ -156,6 +156,7 @@ commit, 200 to 785 micro-dollars per turn (the first turn pays the 3,776-token c
 | Retrieval fails | reply without retrieved chunks |
 | Verify fails twice on safety, with no earlier draft that passed | suggestion for the creator, handoff `verify_failed` |
 | `reasks` fails (quality only) | one regeneration with the re-ask note, then the draft is sent anyway; never a handoff |
+| `too_long` or `pet_disallowed` (quality only, from the style draw: a reply over max(2 x its drawn length, her p90) characters, or naming her pet when the draw kept it out) | one regeneration with a reason line ("Shorter: one line, about N characters." / "Do not mention <pet>."), then the draft is sent anyway, after the edge clean-up; never a handoff |
 | `leads_to_offer` fails on every attempt (quality only) | the safe draft is sent as the route's fallback, with no offer card |
 | A later pass or attempt fails safety after a draft passed | the earlier safe draft is committed (for its own batch); no handoff |
 | Takeover or re-lease during the turn | turn `superseded`, draft unsent; a hard stop's template is still sent |
@@ -516,9 +517,27 @@ export const REASK_LINE =
   "Your previous draft asked him something he already answered, or handed his own question back to him. Answer what he asked and use what he told you. Do not write wbu or ask what he is up to. End with a different hook.";
 export const OFFER_LINE =
   "Your previous draft never led into the locked item. The app shows its card right after your message, so after answering him, tease that item: say what it is or why he would want it.";
+/** What the draw's limits need to say in a retry: the length it drew and the pet it kept out of the reply. */
+export interface DrawNote {
+  targetChars?: number;
+  pet?: string | null;
+}
+
+/** The retry lines for a reply that ran over the draw's length or named the pet it kept out. */
+export function drawReasons(failures: readonly VerifyFailure[], note: DrawNote): string[] {
+  const lines: string[] = [];
+  if (failures.includes("too_long")) lines.push(note.targetChars ? `Shorter: one line, about ${note.targetChars} characters.` : "Shorter: one line.");
+  if (failures.includes("pet_disallowed")) lines.push(note.pet ? `Do not mention ${note.pet[0].toUpperCase()}${note.pet.slice(1)}.` : "Do not mention your pet.");
+  return lines;
+}
+
 /** The retry note when every failure was a quality one: one line per failure, in a fixed order. */
-export function qualityNote(failures: readonly VerifyFailure[]): string {
-  const lines = [failures.includes("reasks") ? REASK_LINE : "", failures.includes("offer_unsetup") ? OFFER_LINE : ""].filter(Boolean);
+export function qualityNote(failures: readonly VerifyFailure[], note: DrawNote = {}): string {
+  const lines = [
+    failures.includes("reasks") ? REASK_LINE : "",
+    failures.includes("offer_unsetup") ? OFFER_LINE : "",
+    ...drawReasons(failures, note),
+  ].filter(Boolean);
   return `\n\n## Retry\n${lines.join("\n")}`;
 }
 export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {

@@ -174,6 +174,46 @@ test("per-marker rates are computed for her real replies and the bot's, beside h
   assert.equal(markers.rates.concrete_fact.bot, 0.25);
 });
 
+test("the marker table carries median length, line-break and question rates, and renders them", async () => {
+  const item = (real, generated) => ({ length_bucket: "<=10", blind: null, rubric: null, real, generated });
+  const agg = aggregate(
+    [item("one two", "a much longer reply\nwith a second line?"), item("fine thanks", "ok?"), item("lol", "sure thing then")],
+    { pet: null, train: { signoff_x: 0.1, multiline: 0, question: 0.0083, length_chars: { p25: 23, p50: 30, p75: 35, p90: 42 } } },
+  );
+  assert.deepEqual(agg.markers.rates.multiline, { train: 0, real: 0, bot: 0.3333 });
+  assert.deepEqual(agg.markers.rates.question, { train: 0.0083, real: 0, bot: 0.6667 });
+  assert.deepEqual(agg.markers.length_p50, { train: 30, real: 7, bot: 15 });
+  const bank = makeBank({ test: 4 });
+  const result = await run(bank, fakeClaude());
+  const text = renderSection({ versions: { 2: { ...result, aggregate: { ...result.aggregate, markers: agg.markers } } } });
+  assert.match(text, /\| more than one line \| 0\.0% \| 0\.0% \| 33\.3% \|/);
+  assert.match(text, /\| a question \| 0\.8% \| 0\.0% \| 66\.7% \|/);
+  assert.match(text, /\| median length \(characters\) \| 30 \| 7 \| 15 \|/);
+});
+
+test("a drafter's retry makes one more generator call whose text replaces the first, and an empty retry does not", async () => {
+  const bank = makeBank({ test: 2 });
+  const gens = [];
+  const claude = fakeClaude();
+  const original = claude.complete;
+  claude.complete = async (call) => {
+    if (call.system?.startsWith("You are")) return original(call);
+    gens.push(call.system);
+    return { text: gens.length % 2 === 1 ? "a rather long first draft" : "short one", usage: { input_tokens: 1, output_tokens: 1 } };
+  };
+  const drafter = async ({ pair, card }) => ({
+    system: card,
+    prompt: pair.replying_to,
+    draw: null,
+    finish: (t) => t,
+    retry: (t) => (t.length > 10 ? { system: `${card}\nSHORTER`, prompt: pair.replying_to } : null),
+  });
+  const result = await run(bank, claude, { drafter, concurrency: 1 });
+  assert.deepEqual(result.items.map((i) => i.generated), ["short one", "short one"]);
+  assert.equal(gens.length, 4);
+  assert.equal(gens.filter((g) => g.includes("SHORTER")).length, 2);
+});
+
 test("an item that errors is tried once more, and only once", async () => {
   const bank = makeBank({ test: 3 });
   let blindCalls = 0;

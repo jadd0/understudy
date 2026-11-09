@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { FakeDecider } from "../testing/fakes/decider";
-import { codeChecks, enforceDraw, mentionsMoney, qualityOnly, verifyDraft } from "./verify";
+import { codeChecks, drawFailures, enforceDraw, mentionsMoney, qualityOnly, verifyDraft } from "./verify";
+import type { StyleRates } from "./style-draw";
 import type { RouteName } from "../types";
 
 const GOOD = { reasks: "no", on_persona: "yes", explicitness: "flirty", offplatform_or_meetup: "no", is_refusal: "no", admits_ai: "no", promises_price_or_free: "no" };
@@ -148,7 +149,7 @@ describe("an offer draft must lead into the item", () => {
 });
 
 describe("enforceDraw", () => {
-  const none = { signoff: false, address: null, petName: false, emoji: false } as const;
+  const none = { signoff: false, address: null, petName: false, emoji: true } as const;
   test("keeps a noun use at the start and never leaves a bubble of emoji or space only", () => {
     expect(enforceDraw("mate of mine runs that shop", none)).toBe("mate of mine runs that shop");
     expect(enforceDraw("mate's van, not mine", none)).toBe("mate's van, not mine");
@@ -187,5 +188,61 @@ describe("enforceDraw", () => {
     expect(enforceDraw("xx", none)).toBe("xx");
     expect(enforceDraw("mate", none)).toBe("mate");
     expect(enforceDraw("mate x", none)).toBe("mate");
+  });
+});
+
+describe("enforceDraw: emoji and lines", () => {
+  const quiet = { signoff: true, address: null, petName: false, emoji: false } as const;
+  test("strips every emoji when the draw disallowed them, keeping the words", () => {
+    expect(enforceDraw("haha stop 😂 you're mad 🙈", quiet)).toBe("haha stop you're mad");
+    expect(enforceDraw("morning 👩🏽‍🎤\nbusy day 🇬🇧", quiet)).toBe("morning\nbusy day");
+    expect(enforceDraw("haha 😂", { ...quiet, emoji: true })).toBe("haha 😂");
+  });
+  test("a reply that is only emoji is kept, as is a bubble of one", () => {
+    expect(enforceDraw("🐕", quiet)).toBe("🐕");
+    expect(enforceDraw("🐕🐕", quiet)).toBe("🐕🐕");
+    expect(enforceDraw("😂\n🙈", quiet)).toBe("😂\n🙈");
+  });
+  test("joins lines with a space only when the draw said one line", () => {
+    const one = { ...quiet, emoji: true, multiline: false };
+    expect(enforceDraw("first bit\nsecond bit\n\nthird", one)).toBe("first bit second bit third");
+    expect(enforceDraw("first bit\nsecond bit", { ...one, multiline: true })).toBe("first bit\nsecond bit");
+    expect(enforceDraw("first bit\nsecond bit", { ...quiet, emoji: true })).toBe("first bit\nsecond bit");
+  });
+  test("a question is never stripped or emptied, whatever the draw", () => {
+    expect(enforceDraw("you?", { ...quiet, question: false })).toBe("you?");
+  });
+});
+
+describe("drawFailures", () => {
+  const rates: StyleRates = { signoff_x: 0, mate: 0, babe: 0, pet_name: 0, emoji: 0, length: { p25: 23, p50: 30, p75: 35, p90: 42 }, pet: "biscuit" };
+  const draw = { signoff: false, address: null, petName: false, emoji: false, targetChars: 20 } as const;
+  test("too_long fires above max(2 x target, p90) and not at it, counting a line break as one space", () => {
+    expect(drawFailures("a".repeat(42), draw, rates)).toEqual([]);
+    expect(drawFailures("a".repeat(43), draw, rates)).toEqual(["too_long"]);
+    expect(drawFailures(`${"a".repeat(21)}\n${"b".repeat(21)}`, draw, rates)).toEqual(["too_long"]);
+    // a longer target raises the limit past p90
+    expect(drawFailures("a".repeat(60), { ...draw, targetChars: 35 }, rates)).toEqual([]);
+    expect(drawFailures("a".repeat(71), { ...draw, targetChars: 35 }, rates)).toEqual(["too_long"]);
+  });
+  test("a concrete price or shop under her p90 is not too long", () => {
+    expect(drawFailures("it's the Co-op on Western Road", draw, rates)).toEqual([]);
+  });
+  test("pet_disallowed fires only when the pet is named and the draw did not allow it", () => {
+    expect(drawFailures("biscuit says hi", draw, rates)).toEqual(["pet_disallowed"]);
+    expect(drawFailures("Biscuit says hi", { ...draw, petName: true }, rates)).toEqual([]);
+    expect(drawFailures("my dog says hi", draw, rates)).toEqual([]);
+    expect(drawFailures("biscuit says hi", draw, { ...rates, pet: null })).toEqual([]);
+  });
+  test("both can fire, and nothing fires without a draw, a length or rates", () => {
+    expect(drawFailures(`biscuit ${"a".repeat(60)}`, draw, rates)).toEqual(["too_long", "pet_disallowed"]);
+    expect(drawFailures("a".repeat(200), null, rates)).toEqual([]);
+    expect(drawFailures("a".repeat(200), draw, null)).toEqual([]);
+    expect(drawFailures("a".repeat(200), { ...draw, targetChars: undefined }, rates)).toEqual([]);
+    expect(drawFailures("a".repeat(200), draw, { ...rates, length: null })).toEqual([]);
+  });
+  test("both are quality-only: a draft failing only these may still be sent", () => {
+    expect(qualityOnly(["too_long", "pet_disallowed"])).toBe(true);
+    expect(qualityOnly(["too_long", "money"])).toBe(false);
   });
 });

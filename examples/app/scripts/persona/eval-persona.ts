@@ -5,7 +5,7 @@
 // engine's check. Results are recorded in docs/quality/evals/persona.json and docs/quality/EVALS.md like any other run.
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { buildPrompt, drawStyle, enforceDraw, parseRates } from "@understudy/engine";
+import { buildPrompt, drawFailures, drawStyle, enforceDraw, parseRates, qualityNote } from "@understudy/engine";
 // The persona package is plain .mjs and takes no dependency on the engine, so the engine path is wired here.
 // @ts-expect-error no declarations for the package's internals
 import { evalPersona, recordResult, retrieveChunks, trainChunks } from "../../../../packages/persona/src/eval-persona.mjs";
@@ -35,15 +35,23 @@ export function engineDrafter({ rates, chunks, seed }: { rates: unknown; chunks:
       gapMarkerMinutes: 30,
       styleDraw: draw && parsed ? { draw, pet: parsed.pet } : undefined,
     });
+    const prompt = built.messages.map((m) => m.content).join("\n\n");
+    const finish = (text: string) => (draw ? enforceDraw(text, draw) : text);
     return {
       system: `${built.system.cached}\n\n${built.system.turn}`,
-      prompt: built.messages.map((m) => m.content).join("\n\n"),
+      prompt,
       draw,
-      finish: (text: string) => (draw ? enforceDraw(text, draw) : text),
+      finish,
+      // The engine's second draft: a reply over the draw's length, or naming the pet it kept out, is asked for again once with the reason.
+      retry: (finished: string) => {
+        const failures = drawFailures(finished, draw, parsed);
+        if (failures.length === 0) return null;
+        return { system: `${built.system.cached}\n\n${built.system.turn}${qualityNote(failures, { targetChars: draw?.targetChars, pet: parsed?.pet })}`, prompt };
+      },
     };
   };
   return Object.assign(drafter, {
-    label: parsed ? "engine prompt, retrieval over train chunks, style draw" : "engine prompt, retrieval over train chunks, no style draw",
+    label: parsed ? "engine prompt, retrieval over train chunks, style draw, one retry on length or pet" : "engine prompt, retrieval over train chunks, no style draw",
   });
 }
 

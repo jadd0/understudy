@@ -64,7 +64,7 @@ export interface SeedResult {
  * Gives the creator her published card and her chunks (no embeddings: retrieval is full text). Idempotent: a card
  * whose body is already published is kept, and the chunks are replaced as a set.
  */
-export async function seedPersona(db: EngineDb, creatorId: string, dir = defaultPersonaDir()): Promise<SeedResult> {
+export async function seedPersona(db: EngineDb, creatorId: string, dir = defaultPersonaDir(), opts: { scripted?: boolean } = {}): Promise<SeedResult> {
   const body = latestCard(dir);
   const chunks = readFileSync(path.join(dir, "bank", "chunks.jsonl"), "utf8")
     .split("\n")
@@ -75,7 +75,10 @@ export async function seedPersona(db: EngineDb, creatorId: string, dir = default
   if (chunks.length === 0) throw new Error("chunks.jsonl holds no chunk to load");
   // Her measured voice-marker rates, when the persona build wrote them: the card then draws a style per reply.
   const styleFile = path.join(dir, "bank", "style.json");
-  const markers = existsSync(styleFile) ? ((JSON.parse(readFileSync(styleFile, "utf8")) as { markers?: Record<string, unknown> }).markers ?? null) : null;
+  const stored = existsSync(styleFile) ? ((JSON.parse(readFileSync(styleFile, "utf8")) as { markers?: Record<string, unknown> }).markers ?? null) : null;
+  // Scripted providers answer from a fixed list of two-bubble replies that name her pet. Her real length, line and pet
+  // limits would join and retry them, advancing the script, so a scripted seed leaves those limits out.
+  const markers = opts.scripted && stored ? { ...stored, multiline: undefined, length_chars: undefined, pet: null } : stored;
 
   return db.transaction(async (tx) => {
     const [same] = await tx

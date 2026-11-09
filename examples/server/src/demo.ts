@@ -72,7 +72,7 @@ export async function runDemo(opts: DemoOptions): Promise<DemoResult> {
     // The server migrates on start, so Juno is seeded after it: on an empty database her tables do not exist before.
     const running = await startServer({ env: serverEnv, fake: opts.fake, config, listen: true });
     const { db, end } = connect(serverEnv.databaseUrl);
-    await seedPersona(db, config.creatorId);
+    await seedPersona(db, config.creatorId, undefined, { scripted: opts.fake });
     await end();
     base = running.url!;
     stop = running.close;

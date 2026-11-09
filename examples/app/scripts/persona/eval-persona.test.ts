@@ -88,6 +88,42 @@ describe("the persona eval drafts through the engine", () => {
   });
 });
 
+describe("the eval mirrors the engine's retry on length and the pet", () => {
+  const SHAPED = { ...RATES, length_chars: { p25: 20, p50: 20, p75: 20, p90: 20 }, multiline: 0, question: 0 };
+  test("a long reply naming the pet is asked for again once with the reason, and the second draft is the one recorded", async () => {
+    const b = bank(SHAPED);
+    const claude = fakeClaude();
+    const reply = claude.complete;
+    const gens: { system: string }[] = [];
+    let n = 0;
+    claude.complete = async (call: { system: string; prompt: string }) => {
+      if (call.system.startsWith("You are a strict") || call.system.startsWith("You are shown")) return reply(call);
+      gens.push(call);
+      n++;
+      return { text: n % 2 === 1 ? "honestly babe Biscuit has been barking at every single bird outside all morning 😂\nso tired" : "ha proper tired 😂", usage: { input_tokens: 1, output_tokens: 1 } };
+    };
+    const dirs = { bankDir: b.bankDir, cardDir: b.cardDir };
+    const result = await evalPersona({ ...dirs, version: 2, claude, genModel: "g", judgeModel: "j", seed: "s", budget: new TokenBudget(), drafter: engineDrafter({ rates: b.markers, chunks: trainChunks(b.bankDir), seed: "s" }), concurrency: 1 });
+    expect(gens).toHaveLength(8);
+    const retries = gens.filter((g) => g.system.includes("## Retry"));
+    expect(retries).toHaveLength(4);
+    for (const g of retries) {
+      expect(g.system).toMatch(/Shorter: one line, about \d+ characters\./);
+      expect(g.system).toContain("Do not mention Biscuit.");
+    }
+    expect(result.items.map((i: { generated: string }) => i.generated)).toEqual(Array(4).fill("ha proper tired"));
+  });
+
+  test("a reply within the draw is not asked for twice", async () => {
+    const b = bank(SHAPED);
+    const claude = fakeClaude();
+    const dirs = { bankDir: b.bankDir, cardDir: b.cardDir };
+    await evalPersona({ ...dirs, version: 2, claude, genModel: "g", judgeModel: "j", seed: "s", budget: new TokenBudget(), drafter: engineDrafter({ rates: b.markers, chunks: trainChunks(b.bankDir), seed: "s" }) });
+    const gen = claude.calls.filter((c) => !c.system.startsWith("You are a strict") && !c.system.startsWith("You are shown"));
+    expect(gen).toHaveLength(4);
+  });
+});
+
 describe("retrieveChunks", () => {
   test("ranks by shared words and returns nothing when none are shared", () => {
     const chunks = [
