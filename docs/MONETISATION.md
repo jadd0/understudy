@@ -113,11 +113,11 @@ finite number throws `ConfigInvalid` rather than dividing by it.
 
 ## Pitch pacing
 
-The engine may put an offer in front of a fan only when `canPitch` (`lib/engine/pacing.ts`) allows, checked in this
+The engine may put an offer in front of a fan only when `canPitch` (`packages/engine/src/pacing.ts`) allows, checked in this
 order: no active hardship cooldown (`pitch.hardship_cooldown_hours`); fewer than `pitch.max_declines` declines in
 `pitch.decline_window_minutes`; not at the daily cap; fewer than `pitch.velocity_max_unlocks` unlocks in
 `pitch.velocity_window_minutes`; and at least `pitch.min_gap_rounds` rounds since the last offer (skipped for a buy
-intent or an explicit request). The facts are read in `lib/engine/facts.ts`. The cap is one rule, `capAllows` in
+intent or an explicit request). The facts are read in `packages/engine/src/facts.ts`. The cap is one rule, `capAllows` in
 `lib/wallet/cap.ts` (spend today plus the amount within the cap): the debit refuses what it refuses, and the engine's
 shortlist drops every item whose price it refuses, so the AI never pitches an item the cap would then refuse. The `pitch.*` keys can be overridden per creator; only `floor.*` and `platform.*` rows are platform-only.
 Juno's own offers from the console skip pacing. Full routing: `docs/APP.md` §8.6.

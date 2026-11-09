@@ -2,9 +2,8 @@ import { eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { handoffs, messages, offers, turns, users } from "@/db/schema";
-import { addMessage, getConversation, makeConversation, makeCreator, makeFan } from "@/lib/engine/test-db";
-import { deferred, rig, world } from "@/lib/engine/test-harness";
-import { runTurn } from "@/lib/engine/turn";
+import { addMessage, getConversation, makeConversation, makeCreator, makeFan, deferred, rig, world } from "@understudy/engine/testing";
+import { runTurn } from "@understudy/engine";
 import { handBack, takeover, TakeoverRefused } from "./actions";
 
 async function admin() {

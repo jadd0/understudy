@@ -2,11 +2,11 @@
 import { db } from "@/db/client";
 import { creators } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { FakeDecider, type Scripted } from "@/providers/fake/decider";
-import { FakeGenerator, type FakeGeneratorOptions } from "@/providers/fake/generator";
+import { FakeDecider, type Scripted } from "./fake/decider";
+import { FakeGenerator, type FakeGeneratorOptions } from "./fake/generator";
 import { dbHost } from "@/lib/host/engine-host";
 import { FtsRetriever } from "@/providers/pg/fts-retriever";
-import type { Events } from "@/platform/ports/events";
+import type { Events } from "./ports/events";
 import type { Deps } from "./turn";
 import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "./test-db";
 

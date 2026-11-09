@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { fanMemory } from "@/db/schema";
-import type { Generator, GenerateUsage } from "@/platform/ports/generator";
+import type { Generator, GenerateUsage } from "./ports/generator";
 import { mentionsMoney } from "./verify";
 
 /**

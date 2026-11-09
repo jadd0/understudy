@@ -1,8 +1,7 @@
 import type { Db } from "@/db/client";
-import { retrieveFts } from "@/lib/persona/retrieve";
-import type { Chunk, Retriever } from "@/platform/ports/retriever";
+import { retrieveFts, type Chunk, type Retriever } from "@understudy/engine";
 
-/** The engine's default retriever: the Postgres full-text strategy of `lib/persona/retrieve`, behind the retriever port. */
+/** The engine's default retriever: the Postgres full-text strategy of `retrieve` in the engine package, behind the retriever port. */
 export class FtsRetriever implements Retriever {
   constructor(private readonly db: Db) {}
 

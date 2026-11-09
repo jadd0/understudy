@@ -5,7 +5,7 @@ import { conversations, messages, offers, turns } from "@/db/schema";
 import { rig, world } from "./test-harness";
 import { sweep } from "./sweep";
 
-vi.mock("@/lib/engine/deps", async () => {
+vi.mock("@/lib/host/deps", async () => {
   const { rig: makeRig } = await import("./test-harness");
   return { defaultDeps: async () => makeRig().deps };
 });

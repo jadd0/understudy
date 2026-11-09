@@ -6,7 +6,7 @@ import { sql } from "drizzle-orm";
 import { getConfig } from "@/lib/config";
 import { capAllows } from "@/lib/wallet/cap";
 import { isHighValue } from "@/lib/wallet/score";
-import { makeConversation, makeCreator, makeFan, makeItem, setEngineConfig } from "@/lib/engine/test-db";
+import { makeConversation, makeCreator, makeFan, makeItem, setEngineConfig } from "@understudy/engine/testing";
 import { dbHost } from "./engine-host";
 
 beforeAll(async () => {

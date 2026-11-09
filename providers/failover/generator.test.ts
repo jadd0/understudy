@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@/platform/ports/generator";
+import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@understudy/engine";
 import { FailoverGenerator, withModel } from "./generator";
 
 const INPUT: GenerateInput = { system: { cached: "c", turn: "t" }, messages: [{ role: "user", content: "hi" }], maxTokens: 10, model: "m1" };

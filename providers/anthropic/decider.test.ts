@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DeciderUnavailable, type Question } from "@/platform/ports/decider";
+import { DeciderUnavailable, hardStopOf, parseSafety, SAFETY_KEYS, type Question, type RouteCfg } from "@understudy/engine";
 import { ClaudeDecider } from "@/providers/anthropic/decider";
-import { hardStopOf, parseSafety } from "@/lib/engine/route";
-import { SAFETY_KEYS, type RouteCfg } from "@/lib/engine/types";
 
 const QUESTIONS: Question[] = [
   { key: "safe", prompt: "Is the fan an adult?", options: [{ key: "yes", label: "Yes" }, { key: "no", label: "No" }] },

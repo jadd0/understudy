@@ -4,7 +4,7 @@
  * decider is unavailable the last `DeciderUnavailable` is rethrown, so the turn fails exactly as it does with a
  * single decider.
  */
-import { DeciderUnavailable, type Decider, type DeciderResult, type DeciderState, type Question } from "@/platform/ports/decider";
+import { DeciderUnavailable, type Decider, type DeciderResult, type DeciderState, type Question } from "@understudy/engine";
 import { Breaker, type BreakerOptions } from "./breaker";
 
 export interface NamedDecider {

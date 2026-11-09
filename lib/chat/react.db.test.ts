@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { messages, offers } from "@/db/schema";
-import { setEngineConfig } from "@/lib/engine/test-db";
+import { setEngineConfig } from "@understudy/engine/testing";
 import { fund, makeConversation, makeCreator, makeFan, makeItem, makeOffer } from "@/lib/wallet/test-helpers";
 import { tipInChat, unlockInChat } from "./react";
 

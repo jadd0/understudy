@@ -61,7 +61,7 @@ and velocity limits still apply to an explicit request.
   conversation goes to T&S, who can ban. If self-harm fires in the same message the crisis resources are sent instead
   (a person in crisis always gets them) and the flag and restriction still apply. An under-18 date at onboarding
   still ends at `/blocked` with the sessions deleted.
-<!-- prompt-src: lib/engine/templates.ts -->
+<!-- prompt-src: packages/engine/src/templates.ts -->
 ```text
     "Hi — we think this account may belong to someone under 18, so messaging is turned off. You can still read this chat. If we've got this wrong, contact {support_email}.",
 ```

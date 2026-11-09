@@ -12,8 +12,8 @@ import { getEvents } from "@/lib/conversations/events";
 import { getSnapshot, type Viewer } from "@/lib/conversations/read";
 import { getChanges, getOlderMessages } from "@/lib/conversations/paging";
 import { toResult, windowRead } from "@/lib/conversations/result";
-import { defaultDeps } from "@/lib/engine/deps";
-import { processConversation } from "@/lib/engine/process";
+import { defaultDeps } from "@/lib/host/deps";
+import { processConversation } from "@understudy/engine";
 import { dollarsToCents } from "@/lib/wallet/money";
 
 /**

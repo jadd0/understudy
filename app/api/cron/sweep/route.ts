@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { defaultDeps } from "@/lib/engine/deps";
-import { sweep } from "@/lib/engine/sweep";
+import { defaultDeps } from "@/lib/host/deps";
+import { sweep } from "@understudy/engine";
 
 export const maxDuration = 60;
 

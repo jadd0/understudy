@@ -1,9 +1,9 @@
 import { and, eq, ne, sql } from "drizzle-orm";
 import { withTx } from "@/db/client";
 import { conversations, creators, handoffs, users } from "@/db/schema";
-import { supersedeUnseenBubbles } from "@/lib/engine/lease";
+import { supersedeUnseenBubbles } from "@understudy/engine";
 
-export { handBack } from "@/lib/engine/lease";
+export { handBack } from "@understudy/engine";
 
 export class TakeoverRefused extends Error {
   constructor(public readonly code: "not_found" | "not_allowed") {

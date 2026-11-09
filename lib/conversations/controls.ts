@@ -2,7 +2,7 @@ import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db, withTx } from "@/db/client";
 import { catalogueItems, conversations, creators, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import type { Events } from "@/platform/ports/events";
+import type { Events } from "@understudy/engine";
 import { defaultEvents } from "@/providers/pusher/events";
 import { InvalidAmount } from "@/lib/wallet/errors";
 import { handBack, takeover } from "./actions";

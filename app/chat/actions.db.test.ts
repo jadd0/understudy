@@ -3,13 +3,13 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { db } from "@/db/client";
 import { ledgerEntries, messages, users } from "@/db/schema";
 import { makeConversation, makeCreator, makeFan } from "@/lib/conversations/test-helpers";
-import { setEngineConfig } from "@/lib/engine/test-db";
+import { setEngineConfig } from "@understudy/engine/testing";
 import { fund } from "@/lib/wallet/test-helpers";
 
 const session = { current: null as { user: { id: string } } | null };
 vi.mock("@/lib/auth", () => ({ auth: async () => session.current }));
 vi.mock("@/lib/conversations/events", () => ({ getEvents: () => ({ emit: async () => {} }) }));
-// The engine turn a tip schedules is captured, not run: its reaction is tested in lib/engine/events.db.test.ts.
+// The engine turn a tip schedules is captured, not run: its reaction is tested in packages/engine/src/events.db.test.ts.
 const scheduled: unknown[] = [];
 vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: (task: unknown) => void scheduled.push(task) }));
 

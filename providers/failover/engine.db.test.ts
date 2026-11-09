@@ -2,14 +2,10 @@ import { describe, expect, test } from "vitest";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { messages, turns } from "@/db/schema";
-import { DeciderUnavailable, type Decider } from "@/platform/ports/decider";
-import { GeneratorError, type Generator } from "@/platform/ports/generator";
-import { FailoverDecider } from "@/providers/failover/decider";
-import { FailoverGenerator } from "@/providers/failover/generator";
-import { VERIFY_QUESTIONS } from "./questions";
-import { runTurn } from "./turn";
-import { getConversation } from "./test-db";
-import { rig, world } from "./test-harness";
+import { DeciderUnavailable, GeneratorError, runTurn, VERIFY_QUESTIONS, type Decider, type Generator } from "@understudy/engine";
+import { getConversation, rig, world } from "@understudy/engine/testing";
+import { FailoverDecider } from "./decider";
+import { FailoverGenerator } from "./generator";
 
 const clock = { t: 0, now() { return this.t; } };
 const breaker = { failures: 2, windowMs: 60_000, cooldownMs: 30_000, clock };

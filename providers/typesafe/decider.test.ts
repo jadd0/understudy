@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DeciderUnavailable, TypeSafeNotConfigured, type Question } from "@/platform/ports/decider";
+import { DeciderUnavailable, TypeSafeNotConfigured, type Question } from "@understudy/engine";
 import { TypeSafeDecider } from "@/providers/typesafe/decider";
 
 const Q: Question[] = [

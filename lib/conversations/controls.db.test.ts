@@ -4,12 +4,11 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { db } from "@/db/client";
 import { catalogueItems, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
 import { sendFanMessage } from "@/lib/chat/send";
-import { rig, world } from "@/lib/engine/test-harness";
-import { runTurn } from "@/lib/engine/turn";
+import { rig, world } from "@understudy/engine/testing";
+import { runTurn, type Events } from "@understudy/engine";
 import { InvalidAmount } from "@/lib/wallet/errors";
 import { unlockOffer } from "@/lib/wallet/unlock";
 import { balanceOf, fund, setConfig as setWalletConfig } from "@/lib/wallet/test-helpers";
-import type { Events } from "@/platform/ports/events";
 import {
   ban, CREATOR_OFFER_BODY, discardSuggested, Forbidden, OfferAlreadyOpen, release, releaseConversation, sendAsCreator, sendOfferAsCreator, sendSuggested, setConversationAi, setGlobalAi, setItemPrice,
   setNeverList, takeOverConversation, handBackConversation,

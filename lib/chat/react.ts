@@ -1,9 +1,8 @@
 import { after } from "next/server";
 import { db } from "@/db/client";
 import { messages } from "@/db/schema";
-import { defaultDeps } from "@/lib/engine/deps";
-import { TIP_ROW_PREFIX } from "@/lib/engine/events";
-import { processConversation } from "@/lib/engine/process";
+import { defaultDeps } from "@/lib/host/deps";
+import { TIP_ROW_PREFIX, processConversation } from "@understudy/engine";
 import { formatCents } from "@/lib/wallet/money";
 import { tip } from "@/lib/wallet/tip";
 import { unlockOffer, type UnlockResult } from "@/lib/wallet/unlock";

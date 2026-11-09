@@ -2,7 +2,7 @@ import { and, asc, count, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { catalogueItems, conversations, fanMemory, handoffs, messages, offers, sessions, turns, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import type { LoadedFacts } from "@/lib/engine/facts";
+import type { LoadedFacts } from "@understudy/engine";
 import type { Observation } from "@/lib/evals/score";
 import type { Expect, MatrixRow } from "@/lib/evals/threads";
 

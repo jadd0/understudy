@@ -1,4 +1,4 @@
-import { answerOf, type Decider, type DeciderResult } from "@/platform/ports/decider";
+import { answerOf, type Decider, type DeciderResult } from "./ports/decider";
 import { LEADS_TO_OFFER_QUESTION, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "./questions";
 import { MARKER_PATTERN, type JevLine } from "./thread";
 import type { RouteName } from "./types";

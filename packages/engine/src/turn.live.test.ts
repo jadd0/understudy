@@ -5,7 +5,7 @@ import { config as loadEnv } from "dotenv";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, turns } from "@/db/schema";
-import { defaultDeps } from "./deps";
+import { defaultDeps } from "@/lib/host/deps";
 import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "./test-db";
 import { runTurn } from "./turn";
 

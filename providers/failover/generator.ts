@@ -2,7 +2,7 @@
  * Ordered failover over generators, the same shape as `FailoverDecider`: a breaker per generator, an open one is
  * skipped, `GeneratorError` is the outage, anything else propagates, and all-failed rethrows the last error.
  */
-import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@/platform/ports/generator";
+import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@understudy/engine";
 import { Breaker, type BreakerOptions } from "./breaker";
 
 export interface NamedGenerator {

@@ -10,9 +10,9 @@ the product does when it does, and what is not covered. Every provider is reache
 
 | platform | used for | if it goes down | fallback | tested by |
 |---|---|---|---|---|
-| Instagram | collecting the creator's public posts, once, at onboarding | nothing in chat changes; onboarding a new creator waits | none needed: the persona bank is ours and chat never calls Instagram | `packages/persona/src/index.test.mjs` (the pipeline runs from the committed bank), `lib/engine/turn.db.test.ts` (a turn needs no Instagram) |
+| Instagram | collecting the creator's public posts, once, at onboarding | nothing in chat changes; onboarding a new creator waits | none needed: the persona bank is ours and chat never calls Instagram | `packages/persona/src/index.test.mjs` (the pipeline runs from the committed bank), `packages/engine/src/turn.db.test.ts` (a turn needs no Instagram) |
 | Anthropic | writing replies and the per-fan memory; the decider fallback | replies stop unless a second model answers | `FailoverGenerator` over the primary and a fallback model; breaker per model | `providers/failover/generator.test.ts`, `providers/anthropic/generator.test.ts` |
-| TypeSafe (Jev) | reading each message and verifying each draft (choice questions) | every turn fails at the first question unless another decider answers | `FailoverDecider` falls through to `ClaudeDecider` | `providers/failover/decider.test.ts`, `providers/anthropic/decider.test.ts`, `lib/engine/failover.db.test.ts` |
+| TypeSafe (Jev) | reading each message and verifying each draft (choice questions) | every turn fails at the first question unless another decider answers | `FailoverDecider` falls through to `ClaudeDecider` | `providers/failover/decider.test.ts`, `providers/anthropic/decider.test.ts`, `providers/failover/engine.db.test.ts` |
 | Voyage | embedding the fan's message for vector retrieval | none visible: retrieval falls back to full-text | full-text search over the same chunks | `providers/voyage/persona-retriever.db.test.ts` |
 | Stripe | the only way money enters: wallet top-up | fans cannot top up; spending an existing balance is unaffected | none for top-up; the ledger is internal | `lib/wallet/topup.db.test.ts`, `lib/wallet/unlock.db.test.ts` |
 | Pusher | pushing "something changed" to open chats and consoles | live updates stop; the database is still the truth | clients poll and refetch | `providers/pusher/events.test.ts` |
@@ -41,7 +41,7 @@ a price change shows up in the per-turn cost the analytics already record.
 The failover wrappers are built once per server instance and reused across requests, so a breaker's failure count
 survives from one turn to the next; a cold instance starts with every breaker closed.
 
-The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresholds are config rows:
+The wiring is in `defaultDeps` (`lib/host/deps.ts`). Models and breaker thresholds are config rows:
 `model.decide_fallback`, `model.generate_fallback`, `breaker.failures`, `breaker.window_ms`, `breaker.cooldown_ms`
 (see [CONFIG.md](CONFIG.md)).
 
@@ -54,7 +54,7 @@ The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresh
 - **What happens today.** Nothing in chat is affected. The bank is committed (`data/persona/bank/`), the card is a
   database row, and retrieval reads the `persona_chunks` table, so a running creator keeps working.
 - **Fallback and test.** None is needed for running creators. `packages/persona/src/index.test.mjs` runs the pipeline
-  from the committed bank, and `lib/engine/turn.db.test.ts` runs turns with no Instagram dependency at all.
+  from the committed bank, and `packages/engine/src/turn.db.test.ts` runs turns with no Instagram dependency at all.
 - **Not covered.** Onboarding a new creator while the collector is blocked. The step that covers it is accepting a
   creator-supplied export, which the pipeline's raw-export stage already reads.
 
@@ -65,12 +65,12 @@ The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresh
 - **How it fails.** Outage or overload (HTTP 5xx, 529), rate limit (429), account or policy termination (401/403
   that does not clear), or a price change.
 - **What happens today.** `FailoverGenerator([primary model, fallback model])` in `defaultDeps`
-  (`lib/engine/deps.ts:defaultDeps`). The fallback is a second model on the same vendor
+  (`lib/host/deps.ts:defaultDeps`). The fallback is a second model on the same vendor
   (`model.generate_fallback`), reached by the same adapter with the model replaced. When both fail the turn fails and
   is recorded as an error turn; the conversation stays in AI mode and the failure count hands over to a human at the
-  limit (`lib/engine/turn.ts`).
+  limit (`packages/engine/src/turn.ts`).
 - **Tests.** `providers/failover/generator.test.ts` (fall-through, open breaker skipped, all-down rethrow, bug
-  propagation); `lib/engine/failover.db.test.ts` (a turn completes through the fallback).
+  propagation); `providers/failover/engine.db.test.ts` (a turn completes through the fallback).
 - **Not covered.** A vendor-wide Anthropic loss: the second model shares the account and the outage. A second
   generator vendor slots in as another `Generator` in the list; it is not built because it needs a new account and a
   new dependency. The fallback model's price rows are seeded, but the turn prices a draft at the configured generate model's
@@ -89,7 +89,7 @@ The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresh
   Claude (`model.decide_fallback`) as one forced tool call whose input has one enum property per question, so the
   answer is always one of the listed option keys. The verify question is answered, not skipped. When both are down the
   turn fails as it always has: an error turn that keeps what it learned, and the third failure in a row hands over to
-  the creator (`lib/engine/turn.db.test.ts`, "the decider down").
+  the creator (`packages/engine/src/turn.db.test.ts`, "the decider down").
 - **What changes while Claude serves.** Claude is asked for a choice and a probability for every option, normalised
   to sum to 1 (`providers/anthropic/decider.ts`). The safety floors (`floor.safety.*`), the intent floor and
   `pitch.fit_floor` stay graded: a borderline "yes" at 0.4 reaches the floors as 0.4 and stops the conversation when
@@ -100,7 +100,7 @@ The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresh
   The model for this fallback must accept a forced tool choice, so Sonnet 5.5, Opus 5.5 and Fable 5.1 are refused at
   construction; use `claude-haiku-5-5`.
 - **Tests.** `providers/anthropic/decider.test.ts` (forced tool, option mapping, every failure is a short code, no fan
-  text in an error); `providers/failover/decider.test.ts`; `lib/engine/failover.db.test.ts` (Jev down, turn completes,
+  text in an error); `providers/failover/decider.test.ts`; `providers/failover/engine.db.test.ts` (Jev down, turn completes,
   the safety question is answered).
 - **Not covered.** Floors tuned for the fallback. The step is running `npm run eval:engine` with the fallback decider
   serving and adjusting the floors it needs.
@@ -141,7 +141,7 @@ The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresh
 - **How it fails.** Outage or key revocation.
 - **What happens today.** Without Pusher keys, or when an event is overdue, `useRealtime`
   (`components/chat/use-realtime.ts`) polls the same refetch on an interval. A failed emit is logged and
-  never thrown (`lib/engine/turn.ts:emitDelivery`), so a Pusher outage does not fail a turn.
+  never thrown (`packages/engine/src/turn.ts:emitDelivery`), so a Pusher outage does not fail a turn.
 - **Test.** `providers/pusher/events.test.ts` (keys come from the environment only when all four exist; the adapter
   sends ids only, so a client that never hears an event loses nothing).
 - **Not covered.** Typing indicators are push-only and simply stop.

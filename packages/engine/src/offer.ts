@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db, type Tx } from "@/db/client";
-import { answerOf, DeciderUnavailable, type Decider, type DeciderState } from "@/platform/ports/decider";
+import { answerOf, DeciderUnavailable, type Decider, type DeciderState } from "./ports/decider";
 import type { HostPort, ShortlistItem } from "./host";
 import { offerPickQuestion } from "./questions";
 

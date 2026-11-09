@@ -17,7 +17,7 @@ import {
   type DeciderResult,
   type DeciderState,
   type Question,
-} from "@/platform/ports/decider";
+} from "@understudy/engine";
 
 export interface ClaudeDeciderOptions {
   readonly authToken: string;

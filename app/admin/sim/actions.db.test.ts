@@ -4,7 +4,7 @@ import { db } from "@/db/client";
 import { config, simRuns, users } from "@/db/schema";
 import { seatAwareSender } from "@/lib/auth/demo-seats";
 import { makeAdmin } from "@/lib/conversations/test-helpers";
-import { makeFan } from "@/lib/engine/test-db";
+import { makeFan } from "@understudy/engine/testing";
 import { spawnRun } from "@/lib/sim/spawn";
 import { setSimConfig, simWorld } from "@/lib/sim/test-helpers";
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { FakeDecider } from "@/providers/fake/decider";
-import { codeChecks, mentionsMoney, qualityOnly, verifyDraft } from "@/lib/engine/verify";
-import type { RouteName } from "@/lib/engine/types";
+import { FakeDecider } from "./fake/decider";
+import { codeChecks, mentionsMoney, qualityOnly, verifyDraft } from "./verify";
+import type { RouteName } from "./types";
 
 const GOOD = { reasks: "no", on_persona: "yes", explicitness: "flirty", offplatform_or_meetup: "no", is_refusal: "no", admits_ai: "no", promises_price_or_free: "no" };
 

@@ -37,7 +37,7 @@ async function main() {
   const { prepareEvalWorld } = await import("@/lib/evals/world");
   const { scoreRun } = await import("@/lib/evals/score");
   const { analyticsSummary, renderEngineSection, spliceEngineSection } = await import("@/lib/evals/render");
-  const { defaultDeps } = await import("@/lib/engine/deps");
+  const { defaultDeps } = await import("@/lib/host/deps");
   const { getConfig } = await import("@/lib/config");
 
   assertEvalDatabase();
