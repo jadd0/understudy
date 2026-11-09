@@ -7,6 +7,7 @@ export default defineConfig({
     environment: "node",
     include: ["**/*.test.ts"], exclude: ["**/node_modules/**", ".claude/**", "**/.next/**", "**/*.live.test.ts"],
     globalSetup: ["vitest.global-setup.ts"],
+    setupFiles: ["vitest.setup.ts"],
     fileParallelism: false,
     server: { deps: { inline: ["next-auth"] } },
     testTimeout: 30000,

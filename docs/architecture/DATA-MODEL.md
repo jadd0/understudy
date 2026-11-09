@@ -114,8 +114,10 @@ The balance-equals-ledger-sum invariant is asserted by the wallet tests (`assert
 ## Test database
 
 Tests never touch the dev database. `vitest.global-setup.ts` calls `scripts/test-db.mjs`, which creates
-`<db>_test_<branch-slug>` in the same Neon project if absent (the slug is the lower-cased branch name,
+`<db>_test_<branch-slug>` on the local Postgres from `docker-compose.yml` if absent (the slug is the lower-cased branch name,
 non-alphanumerics collapsed to `_`, at most 40 characters; override with `TEST_DB_BRANCH`), applies
 the engine's migrations and then `examples/app/drizzle/`, and returns its URL. Global setup refuses to proceed unless the name contains `_test_`, then
 truncates every table except `__drizzle_migrations` and points `DATABASE_URL` at it. Parallel branches
-therefore never share test data while sharing one Neon project. Dev and demo use `neondb`.
+therefore never share test data. The base is `TEST_DATABASE_BASE_URL` (default the compose database); a non-local base
+is refused unless `TEST_DB_ALLOW_HOSTED=1`, so no test run reaches the hosted database. Dev and demo use the hosted
+`DATABASE_URL`.

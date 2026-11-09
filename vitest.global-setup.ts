@@ -2,14 +2,17 @@ import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 // @ts-expect-error -- plain ESM script without types
 import { ensureTestDb } from "./scripts/test-db.mjs";
+// @ts-expect-error -- plain ESM script without types
+import { useLocalNeon } from "./scripts/neon-local.mjs";
 
-// Points every test at the per-branch database, migrated and emptied once per run.
+// Points every test at the per-branch database on the local Postgres, migrated and emptied once per run.
 export default async function setup() {
   const url: string = await ensureTestDb();
   const name = new URL(url).pathname;
   if (!name.includes("_test_")) throw new Error("refusing to truncate a non-test database");
 
   neonConfig.webSocketConstructor = ws;
+  useLocalNeon(url);
   const pool = new Pool({ connectionString: url });
   try {
     const { rows } = await pool.query(

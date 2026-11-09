@@ -6,8 +6,9 @@ results are in `docs/operations/scaling/explain.json` and written up in `docs/op
 Both scripts refuse a database whose name does not contain `_test_`.
 
 ```bash
-# 1. a database of its own on the project (name ends in the scope; the scope is capped at 8 characters)
-export TEST_DB_SCOPE=scale
+# 1. a database of its own next to the base (name ends in the scope; the scope is capped at 8 characters).
+#    The published figures were measured on the hosted project, which test-db.mjs only uses when asked by name:
+export TEST_DB_SCOPE=scale TEST_DB_ALLOW_HOSTED=1 TEST_DATABASE_BASE_URL="<hosted connection string>"
 export DATABASE_URL=$(node scripts/test-db.mjs)
 
 # 2. about a minute at the defaults: 200 creators x 100 fans x 50 messages
