@@ -212,7 +212,15 @@
     "babe": 0.0495,
     "pet_name": 0.0347,
     "emoji": 0.0528,
-    "concrete_fact": 0.0908
+    "concrete_fact": 0.0908,
+    "multiline": 0,
+    "question": 0.0083,
+    "length_chars": {
+      "p25": 23,
+      "p50": 30,
+      "p75": 35,
+      "p90": 42
+    }
   },
   "replies": {
     "n": 606,
