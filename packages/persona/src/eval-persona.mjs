@@ -60,22 +60,32 @@ class JudgeOutputError extends Error {
   }
 }
 
-/** The model may wrap its JSON in one code fence; nothing else is tolerated. */
+/**
+ * The model may wrap its JSON in a code fence or put a sentence before or after it; the object from the first "{" to
+ * the last "}" is read. A reply with no object in it is still rejected.
+ */
 function parseJsonObject(text) {
   const body = text.trim().replace(/^```(?:json)?\s*\n([\s\S]*)\n```$/, "$1").trim();
   let value;
   try {
     value = JSON.parse(body);
   } catch {
-    throw new JudgeOutputError("not_json");
+    const start = body.indexOf("{");
+    const end = body.lastIndexOf("}");
+    try {
+      if (start < 0 || end <= start) throw new Error("no object");
+      value = JSON.parse(body.slice(start, end + 1));
+    } catch {
+      throw new JudgeOutputError("not_json");
+    }
   }
   if (value === null || typeof value !== "object" || Array.isArray(value)) throw new JudgeOutputError("not_object");
   return value;
 }
 
-const keysOf = (value, allowed) => {
-  const keys = Object.keys(value).sort();
-  if (keys.join() !== [...allowed].sort().join()) throw new JudgeOutputError("wrong_keys");
+/** Every required key must be there; an extra key the judge adds (a "note") is ignored, never read. */
+const keysOf = (value, required) => {
+  if (!required.every((k) => Object.hasOwn(value, k))) throw new JudgeOutputError("wrong_keys");
 };
 
 const reasonOf = (value) => {

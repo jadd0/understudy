@@ -102,6 +102,14 @@ test("rubric_judge_never_receives_real_reply", async () => {
   assert.ok(claude.calls.filter((c) => c.system.startsWith("You are shown")).every((c) => c.prompt.includes("hersxx")));
 });
 
+test("judge_json_in_prose_or_with_an_extra_key_is_read", async () => {
+  const bank = makeBank({ test: 2 });
+  const verdict = JSON.stringify({ author: "A", confidence: 0.8, reason: "terse", note: "extra" });
+  const result = await run(bank, fakeClaude({ blind: () => `Here is my answer:\n${verdict}\nThanks.` }));
+  assert.equal(result.aggregate.blind.errors, 0);
+  assert.equal(result.aggregate.blind.scored, 4);
+});
+
 test("malformed_judge_json_is_error_not_score", async () => {
   const bank = makeBank({ test: 4 });
   const cases = [
