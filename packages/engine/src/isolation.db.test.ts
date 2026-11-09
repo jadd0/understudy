@@ -4,7 +4,7 @@ import { PgTable } from "drizzle-orm/pg-core";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
-import { config, fanMemory, ledgerEntries, personaChunks, unlocks } from "@/db/schema";
+import { config, fanMemory, ledgerEntries, personaCards, personaChunks, unlocks } from "@/db/schema";
 import { listInbox } from "@/lib/conversations/read";
 import { loadEngineConfig } from "./cfg";
 import { loadProfile } from "./memory";
@@ -33,7 +33,12 @@ async function twoCreators() {
       .returning();
     return { creator, card, item, conv, chunk: chunk[0] };
   };
-  return { fan, a: await make("alpha"), b: await make("bravo") };
+  const a = await make("alpha");
+  const b = await make("bravo");
+  // B's newer published version is created after A's card and outranks it by version, so a card read that forgot to
+  // filter by creator would pick B's.
+  await db.insert(personaCards).values({ creatorId: b.creator.id, version: 2, body: `You are bravo, version two. signature bravo${tag}.`, neverList: [], publishedAt: new Date() });
+  return { fan, a, b };
 }
 
 const replyOf = async (w: Awaited<ReturnType<typeof twoCreators>>["a"], text: string) => {
