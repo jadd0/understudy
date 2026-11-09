@@ -157,7 +157,8 @@ export async function verifyDraft(
 const TAIL = String.raw`(?=[\s\p{P}\p{Extended_Pictographic}\u{FE0F}]*$)`;
 const SIGNOFF_AT_END = new RegExp(String.raw`\s*(?<![\p{L}\p{N}])x{1,3}(?![\p{L}\p{N}])${TAIL}`, "iu");
 const addressAtEnd = (term: string) => new RegExp(String.raw`,?\s*(?<![\p{L}\p{N}])${term}(?![\p{L}\p{N}])${TAIL}`, "iu");
-const addressAtStart = (term: string) => new RegExp(String.raw`^\s*(?<![\p{L}\p{N}])${term}(?![\p{L}\p{N}])\s*,?\s*`, "iu");
+// "mate, …" and "mate that's mad" open with an address; "mate of mine" and "mate's van" use it as a noun and stay.
+const addressAtStart = (term: string) => new RegExp(String.raw`^\s*${term}(?![\p{L}\p{N}'’])(?:\s*,\s*|\s+(?!of\b))`, "iu");
 
 /**
  * Removes a sign-off x or an address term ("mate", "babe") the style draw did not allow, from the edges of the
@@ -171,7 +172,8 @@ export function enforceDraw(draft: string, draw: StyleDraw): string {
     let next = line;
     const attempt = (re: RegExp) => {
       const trimmed = next.replace(re, "");
-      if (trimmed.replace(/[\s\p{P}]/gu, "") !== "" && trimmed !== next) next = trimmed.replace(/[ \t]+$/u, "");
+      // A bubble keeps at least one letter or digit; an edit that leaves only emoji or punctuation is not made.
+      if (/[\p{L}\p{N}]/u.test(trimmed) && trimmed !== next) next = trimmed.replace(/^[ \t]+|[ \t]+$/gu, "");
     };
     if (!draw.signoff && i === lines.length - 1) attempt(SIGNOFF_AT_END);
     for (const term of ["mate", "babe"] as const) {

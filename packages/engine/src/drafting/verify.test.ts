@@ -149,6 +149,12 @@ describe("an offer draft must lead into the item", () => {
 
 describe("enforceDraw", () => {
   const none = { signoff: false, address: null, petName: false, emoji: false } as const;
+  test("keeps a noun use at the start and never leaves a bubble of emoji or space only", () => {
+    expect(enforceDraw("mate of mine runs that shop", none)).toBe("mate of mine runs that shop");
+    expect(enforceDraw("mate's van, not mine", none)).toBe("mate's van, not mine");
+    expect(enforceDraw("mate 😘", none)).toBe("mate 😘");
+    expect(enforceDraw("hi\nmate 😘", none)).toBe("hi\nmate 😘");
+  });
   test("strips a sign-off x and an edge address term the draw disallowed", () => {
     expect(enforceDraw("see you soon x", none)).toBe("see you soon");
     expect(enforceDraw("see you soon xx", none)).toBe("see you soon");
