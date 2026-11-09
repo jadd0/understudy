@@ -17,6 +17,26 @@ const msgsOf = (conversationId: string) =>
 const handoffsOf = (conversationId: string) => db.select().from(handoffs).where(eq(handoffs.conversationId, conversationId));
 
 describe("a reply turn", () => {
+  test("a turn served by the fallback generator is priced at the fallback's rows", async () => {
+    const wa = await world();
+    const wb = await world();
+    await runTurn(rig().ctx, wa.conv.id);
+    const served = rig({ generator: { servedModel: "claude-sonnet-5-5" } });
+    await runTurn(served.ctx, wb.conv.id);
+    const [primary] = await turnsOf(wa.conv.id);
+    const [fallback] = await turnsOf(wb.conv.id);
+    // 100 input + 20 output tokens: haiku 100000/500000, sonnet 2000000/10000000 micro-dollars per Mtok
+    expect(fallback.costMicros - primary.costMicros).toBe((100 * 2000000 + 20 * 10000000) / 1e6 - (100 * 100000 + 20 * 500000) / 1e6);
+  });
+
+  test("a serving model with no price rows fails the turn closed", async () => {
+    const w = await world();
+    const r = rig({ generator: { servedModel: "claude-unpriced" } });
+    expect((await runTurn(r.ctx, w.conv.id)).status).toBe("error");
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "engine_error" }]);
+    expect(await msgsOf(w.conv.id).then((m) => m.filter((x) => x.role === "creator_ai"))).toHaveLength(0);
+  });
+
   test("writes one message and a complete turn row, stamps the inbound, and costs tokens", async () => {
     const w = await world();
     const r = rig();

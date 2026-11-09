@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
+import { ENGINE_CONFIG, RETRIEVAL_CONFIG, WALLET_CONFIG } from "@/db/seed";
+import { loadEngineConfig } from "./cfg";
 import { CostLedger, costMicros } from "./cost";
+import type { ConfigPort } from "./ports/config";
 
 const HAIKU = { input: 100000, output: 500000, cacheRead: 10000, cacheWrite: 125000 };
 const JEV = { input: 42000, output: 0, cacheRead: 0, cacheWrite: 0 };
@@ -22,5 +25,24 @@ describe("costMicros", () => {
     expect(l.costMicros).toBe(200000 + 42);
     expect(l.tokens.gen.inputTokens).toBe(2_000_000);
     expect(Object.keys(l.tokens).sort()).toEqual(["gen", "jev_in"]);
+  });
+});
+
+describe("prices of the models a turn can be served by", () => {
+  const port = (rows: Record<string, unknown>): Pick<{ config: ConfigPort }, "config"> => ({
+    config: { rows: async () => Object.entries(rows).map(([key, value]) => ({ key, value, creatorId: null })) } as unknown as ConfigPort,
+  });
+  const all = { ...WALLET_CONFIG, ...RETRIEVAL_CONFIG, ...ENGINE_CONFIG };
+
+  test("the fallback generator's rows are loaded beside the primary's", async () => {
+    const cfg = await loadEngineConfig(port(all), "c1");
+    expect(Object.keys(cfg.prices).sort()).toEqual(["claude-haiku-5-5", "claude-sonnet-5-5", "jev-1.14.0"]);
+    expect(cfg.prices["claude-sonnet-5-5"]).toEqual({ input: 2000000, output: 10000000, cacheRead: 200000, cacheWrite: 2500000 });
+  });
+
+  test("a fallback with no price rows is left out, so serving from it fails closed", async () => {
+    const rows = { ...all, "model.generate_fallback": "claude-unpriced" };
+    const cfg = await loadEngineConfig(port(rows), "c1");
+    expect(cfg.prices["claude-unpriced"]).toBeUndefined();
   });
 });

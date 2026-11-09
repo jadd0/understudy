@@ -73,9 +73,9 @@ The wiring is in `defaultDeps` (`lib/host/deps.ts`). Models and breaker threshol
   propagation); `packages/providers/src/failover/engine.db.test.ts` (a turn completes through the fallback).
 - **Not covered.** A vendor-wide Anthropic loss: the second model shares the account and the outage. A second
   generator vendor slots in as another `Generator` in the list; it is not built because it needs a new account and a
-  new dependency. The fallback model's price rows are seeded, but the turn prices a draft at the configured generate model's
-  rate because the generator result carries no model name and the engine reads none; this under-states cost while
-  the fallback serves. Closing it means the generator result exposing the serving model and the engine pricing it.
+  new dependency.
+  Each generator result names the model that served it, and the turn prices the draft at that model's rows, so a turn
+  answered by the fallback is costed at the fallback's rate. A serving model with no price rows fails the turn closed.
   Sonnet 5.5 takes a different request field to turn thinking off than Haiku 5.5, and `thinkingOff` in
   `packages/providers/src/anthropic/generator.ts` chooses it by model id.
 

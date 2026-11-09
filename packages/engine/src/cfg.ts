@@ -68,6 +68,9 @@ const KEYS = [
   "pitch.velocity_window_minutes",
 ];
 
+/** Read when present: the models a failover may serve from. */
+const OPTIONAL_KEYS = ["model.generate_fallback", "model.decide_fallback"];
+
 /** A creator can tune voice and pacing but never loosen safety: these keys are read from platform rows only. */
 export function isPlatformOnly(key: string): boolean {
   return key.startsWith("floor.") || key.startsWith("platform.");
@@ -100,8 +103,8 @@ export async function getConfig<T = unknown>(ctx: Pick<EngineCtx, "config">, key
  * keys), and a missing row throws `ConfigMissing`.
  */
 export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId: string): Promise<EngineCfg> {
-  const rows = await ctx.config.rows({ keys: KEYS, prefixes: [PRICE_PREFIX], creatorId });
-  const keySet = new Set(KEYS);
+  const rows = await ctx.config.rows({ keys: [...KEYS, ...OPTIONAL_KEYS], prefixes: [PRICE_PREFIX], creatorId });
+  const keySet = new Set([...KEYS, ...OPTIONAL_KEYS]);
   const map = resolve(rows, creatorId, (k) => keySet.has(k) || k.startsWith(PRICE_PREFIX));
   const get = <T>(key: string): T => {
     if (!map.has(key)) throw new ConfigMissing(key);
@@ -112,13 +115,20 @@ export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId
   const generateModel = get<string>("model.generate");
   const memoryModel = get<string>("model.memory");
   const prices: Record<string, Prices> = {};
-  for (const [model, cached] of [[jevModel, false], [generateModel, true], [memoryModel, true]] as const) {
-    prices[model] = {
-      input: get<number>(`price.${model}.input_per_mtok`),
-      output: get<number>(`price.${model}.output_per_mtok`),
-      cacheRead: cached ? get<number>(`price.${model}.cache_read_per_mtok`) : 0,
-      cacheWrite: cached ? get<number>(`price.${model}.cache_write_per_mtok`) : 0,
-    };
+  const priceRow = (model: string, cached: boolean): Prices => ({
+    input: get<number>(`price.${model}.input_per_mtok`),
+    output: get<number>(`price.${model}.output_per_mtok`),
+    cacheRead: cached ? get<number>(`price.${model}.cache_read_per_mtok`) : 0,
+    cacheWrite: cached ? get<number>(`price.${model}.cache_write_per_mtok`) : 0,
+  });
+  for (const [model, cached] of [[jevModel, false], [generateModel, true], [memoryModel, true]] as const) prices[model] = priceRow(model, cached);
+  // A failover can serve a turn from a fallback model, so its rows are loaded too. A fallback with no price rows is
+  // left out and the turn fails closed if that model ever serves.
+  for (const [key, cached] of [["model.generate_fallback", true], ["model.decide_fallback", false]] as const) {
+    const model = map.get(key);
+    if (typeof model !== "string" || prices[model]) continue;
+    const complete = [`price.${model}.input_per_mtok`, `price.${model}.output_per_mtok`, ...(cached ? [`price.${model}.cache_read_per_mtok`, `price.${model}.cache_write_per_mtok`] : [])].every((k) => map.has(k));
+    if (complete) prices[model] = priceRow(model, cached);
   }
   const floors = { intent: get<number>("floor.intent"), buyIntentRunnerUp: get<number>("floor.buy_intent_runner_up") } as RouteCfg["floors"];
   for (const k of SAFETY_KEYS) floors[k] = get<number>(`floor.safety.${k}`);
