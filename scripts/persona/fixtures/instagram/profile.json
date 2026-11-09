@@ -1,0 +1,27 @@
+{
+  "data": {
+    "user": {
+      "id": "9001",
+      "username": "fixturecreator",
+      "full_name": "Fixture Creator",
+      "category_name": "Artist",
+      "biography": "invented account for tests\nnot a real person",
+      "bio_links": [
+        {
+          "title": "fixture page",
+          "url": "https://example.test/fixturecreator"
+        }
+      ],
+      "edge_followed_by": {
+        "count": 1200
+      },
+      "edge_follow": {
+        "count": 80
+      },
+      "edge_owner_to_timeline_media": {
+        "count": 4
+      }
+    }
+  },
+  "status": "ok"
+}

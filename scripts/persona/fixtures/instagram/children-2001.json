@@ -1,0 +1,17 @@
+{
+  "child_comments": [
+    {
+      "pk": "3001",
+      "text": "@fan_amy thank you!",
+      "created_at": 1772623800,
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "comment_like_count": 2,
+      "child_comment_count": 0
+    }
+  ],
+  "has_more_tail_child_comments": false,
+  "status": "ok"
+}

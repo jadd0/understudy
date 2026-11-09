@@ -1,0 +1,17 @@
+{
+  "child_comments": [
+    {
+      "pk": "3007",
+      "text": "ha, no @ here so this answers the thread",
+      "created_at": 1772627400,
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0
+    }
+  ],
+  "has_more_tail_child_comments": false,
+  "status": "ok"
+}

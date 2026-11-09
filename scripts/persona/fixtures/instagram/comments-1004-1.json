@@ -1,0 +1,17 @@
+{
+  "comments": [
+    {
+      "pk": "2301",
+      "text": "first",
+      "created_at": 1772362800,
+      "user": {
+        "username": "fan_fay",
+        "pk": "6006"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0
+    }
+  ],
+  "has_more_comments": false,
+  "status": "ok"
+}
