@@ -13,7 +13,7 @@ Data flow: [diagrams/analytics.html](diagrams/analytics.html).
 | Admin (Trust & Safety) | Every creator | Includes T&S conversations; read-only. |
 | Fan, signed out, flagged | None | Signed out goes to `/signin`, a flagged account to `/blocked`, any other role gets a 404. |
 
-The scope is computed on the server from the session by `analyticsScope` (`lib/analytics/scope.ts`), which reads the
+The scope is computed on the server from the session by `analyticsScope` (`examples/app/lib/analytics/scope.ts`), which reads the
 role fresh from the user row. Every query takes that scope; no page passes its own list. A `?creator=` in the URL is
 ignored. A turn outside the viewer's scope returns 404, the same as one that does not exist.
 
@@ -52,12 +52,12 @@ the models and tokens used.
 ## The report
 
 `npm run metrics:report` writes [METRICS.md](METRICS.md) from the database: every KPI over the last 30 days for all
-creators, from the same functions the page calls (`getDashboard`). It is generated; edit `lib/analytics/kpis.ts` or
+creators, from the same functions the page calls (`getDashboard`). It is generated; edit `examples/app/lib/analytics/kpis.ts` or
 the query and regenerate. The report reads whatever database `DATABASE_URL` names, so migrate it first.
 
 ## Charts
 
-Hand-drawn SVG in `components/charts/` on the kit's tokens (`accent`, `ink`, `surface`, `line`), one hue, no library.
+Hand-drawn SVG in `examples/app/components/charts/` on the kit's tokens (`accent`, `ink`, `surface`, `line`), one hue, no library.
 Each chart has a title, a hover title on every mark, and a screen-reader table; the visible tables repeat every
 number a bar shows.
 

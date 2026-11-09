@@ -43,8 +43,8 @@ An AI chatter for creators, run here on the synthetic creator Juno.
    Voyage beats Postgres full-text.
 4. Fans sign in with an emailed one-tap link behind Cloudflare Turnstile, on Auth.js; fans confirm 18+
    before chat. Juno and Trust & Safety sign in to shared demo seats.
-5. Server-side guards send each role to its own area; a wrong role gets a 404 (`lib/auth/guards.ts`).
-6. One Neon Postgres holds identity, persona, conversation and money tables (`db/schema.ts`).
+5. Server-side guards send each role to its own area; a wrong role gets a 404 (`examples/app/lib/auth/guards.ts`).
+6. One Neon Postgres holds identity, persona, conversation and money tables (`examples/app/db/schema.ts`).
 7. Each fan message goes through Jev (classify), code (route), Haiku (draft), Jev (check); offers and
    prices are chosen by code, never the model.
 8. Fans top up a wallet through Stripe; a signature-checked webhook credits an append-only ledger and

@@ -17,21 +17,21 @@ Pusher Channels. The database is the truth; an event only says "refetch".
 | `conversation.mode` `{ conversationId }` | takeover, hand-back, release | none (server actions emit it) |
 | `inbox.changed` `{ conversationId }` | a fan message, a human reply, a mode change, a tip, and an engine commit that applied (a reply, a hold or a hard stop) | `inbox.changed`, on `creator:<id>` |
 
-The engine emits on `conversation:<id>` with the names in the right-hand column. `providers/pusher/events.ts` maps
+The engine emits on `conversation:<id>` with the names in the right-hand column. `examples/app/providers/pusher/events.ts` maps
 them to the Pusher names above, because Pusher channel names cannot contain `:` and a private channel needs the
 `private-` prefix. A payload keeps only numbers, booleans and uuid-shaped strings, so a message body can never
 travel through Pusher (`idsOnly`, tested).
 
 ## Authorisation
 
-`POST /api/pusher/auth` (`app/api/pusher/auth/route.ts`) reads the Auth.js session, reads the user row fresh
+`POST /api/pusher/auth` (`examples/app/app/api/pusher/auth/route.ts`) reads the Auth.js session, reads the user row fresh
 (role, flag), parses the channel name against the three shapes above, and asks `canSubscribe`
-(`lib/conversations/read.ts`). A conversation channel follows exactly the thread scope: whoever may not read the
+(`examples/app/lib/conversations/read.ts`). A conversation channel follows exactly the thread scope: whoever may not read the
 thread may not subscribe. Anything else is a 403.
 
 ## What the browser does
 
-`components/chat/live-thread.tsx` renders the first snapshot from the server, then refetches on any event: the
+`examples/app/components/chat/live-thread.tsx` renders the first snapshot from the server, then refetches on any event: the
 whole snapshot (`getSnapshot`), or only the changes once the view is windowed (see Message windowing). Rows are keyed by message id, so an early or repeated event cannot duplicate a bubble.
 
 - A bubble whose `deliver_at` is still ahead is hidden by the database. `getThread` returns `pendingMs` (database
@@ -45,8 +45,8 @@ whole snapshot (`getSnapshot`), or only the changes once the view is windowed (s
 ## Message windowing
 
 A thread no longer reads the whole conversation on every refresh. The server side lives in
-`lib/conversations/paging.ts`, the cursors in `lib/conversations/cursor.ts`, and the shapes in
-`lib/conversations/window.ts`.
+`examples/app/lib/conversations/paging.ts`, the cursors in `examples/app/lib/conversations/cursor.ts`, and the shapes in
+`examples/app/lib/conversations/window.ts`.
 
 - **First load** (`getWindowedSnapshot`, `getFanWindowedSnapshot`): the newest `MESSAGE_PAGE_SIZE` (15) visible
   bubbles, oldest first, plus `window: { olderCursor, syncCursor }`. The pages call it. The fan's visibility rules
@@ -75,6 +75,6 @@ A thread no longer reads the whole conversation on every refresh. The server sid
   channel: a hard stop, a `recordFailure` escalation and a superseded hard stop reach the admin queue by the inbox poll.
 - An admin holding a `human_ts` chat is not pushed the fan's new messages: the fan's send emits only on the creator
   channel, and the admin's thread does not poll while Pusher is up (read from the code, not tested).
-- Message windowing: the client half is built (`lib/ui/thread-window.ts`), but no page passes `window` yet, so
+- Message windowing: the client half is built (`examples/app/lib/ui/thread-window.ts`), but no page passes `window` yet, so
   every refresh still refetches the whole snapshot.
 - No `wallet.updated` yet; the wallet page reads on load.

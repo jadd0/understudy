@@ -13,7 +13,7 @@ that scrape, so anyone can run it on their own account and feed the result to th
 
 1. Log in to instagram.com in a browser as the account you are collecting. In the browser's developer
    tools, copy the value of the `sessionid` cookie.
-2. Put it in `.env.local` as `IG_SESSIONID=<value>` (the file is gitignored), or export it in the shell.
+2. Put it in `examples/app/.env.local` as `IG_SESSIONID=<value>` (the file is gitignored; `npm run persona:scrape` reads it), or export it in the shell. Run on its own, the CLI reads `.env.local` in the working directory.
    The scraper alone reads this key; the app's environment does not include it.
 3. Run:
 

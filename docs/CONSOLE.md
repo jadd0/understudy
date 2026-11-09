@@ -9,7 +9,7 @@
 | Actions | take over, reply, edit and send a suggestion, discard, hand back, per-chat AI switch, send an offer | take over (any chat), reply, edit and send a suggestion, discard, release, ban (on `/admin/[id]` only) | send, unlock, tip, typing pings |
 | Turn labels (route, outcome, ms, cost) | on hover over an AI bubble | same | never |
 
-Navigation lives in the top bar (`components/ui/app-shell.tsx`, links from `lib/ui/app-nav.ts`): Juno gets Inbox,
+Navigation lives in the top bar (`examples/app/components/ui/app-shell.tsx`, links from `examples/app/lib/ui/app-nav.ts`): Juno gets Inbox,
 Settings and Analytics; an admin gets Safety queue, Console, Simulator and Analytics. The inbox header shows only the
 seat label.
 
@@ -21,14 +21,14 @@ the per-chat AI switch and offers stay creator-only, and ban is only on `/admin/
 ## Viewer scoping
 
 Every read takes a viewer `{ id, role }` from the session and is filtered by one function, `scopeFor`, in
-`lib/conversations/read.ts`. A creator sees her conversations where the mode is not `handoff_ts` or `human_ts` and
+`examples/app/lib/conversations/read.ts`. A creator sees her conversations where the mode is not `handoff_ts` or `human_ts` and
 there is no unresolved `ts` handoff; an admin sees every conversation, T&S ones listed first; a fan sees their own. A
 conversation outside the scope is `ConversationNotFound`, which pages turn into a 404, so a creator cannot tell a
 T&S conversation from one that does not exist. Controls call the same function before acting.
 
-Proof: `lib/conversations/read.db.test.ts` (`creator_never_lists_ts_conversation`,
+Proof: `examples/app/lib/conversations/read.db.test.ts` (`creator_never_lists_ts_conversation`,
 `creator_getThread_on_ts_conversation_throws_not_found`, `admin_lists_every_conversation_with_ts_first`) and
-`app/api/pusher/auth/route.db.test.ts` (`creator_cannot_auth_ts_conversation`) for the realtime door.
+`examples/app/app/api/pusher/auth/route.db.test.ts` (`creator_cannot_auth_ts_conversation`) for the realtime door.
 
 ## Controls
 
@@ -83,13 +83,13 @@ with "· late" once the handoff passed `escalation.ts_sla_minutes`. Taking the c
 ## Restricted fans
 
 A fan flagged `minor_in_chat` is restricted, not blocked. `/chat` and its refresh action use `requireChatReader`
-(route `chatRead` in `lib/auth/guards.ts`): the full history shows read-only, `system` messages render as a centred
+(route `chatRead` in `examples/app/lib/auth/guards.ts`): the full history shows read-only, `system` messages render as a centred
 platform notice rather than an Juno bubble, the unlock button is gone, and the composer is replaced by "Messaging
 is turned off for this account." Sessions are kept, so `/` lands on `/chat`. Every other route, including `chat`
 itself (so sends and unlocks) and `/wallet`, stays `/blocked`, as does any fan flagged for another reason, an
 under-18 date at onboarding included. The engine side (the notice, setting the flag, refusing sends) is built:
-`flagUser` in `packages/engine/src/lease.ts` and the `restricted` refusal in `lib/chat/send.ts`.
-Proof: `minor_in_chat_fan_reads_chat_read_only` in `lib/auth/guards.db.test.ts`.
+`flagUser` in `packages/engine/src/lease.ts` and the `restricted` refusal in `examples/app/lib/chat/send.ts`.
+Proof: `minor_in_chat_fan_reads_chat_read_only` in `examples/app/lib/auth/guards.db.test.ts`.
 
 A restricted fan cannot authorise a private Pusher channel (the auth route refuses flagged users), so their read-only
 chat refreshes by a 30 s poll instead. Their wallet icon and tip button are hidden.
@@ -97,10 +97,10 @@ chat refreshes by a 30 s poll instead. Their wallet icon and tip button are hidd
 ## Tips
 
 The fan chat has a "Tip" button above the composer: presets from `wallet.tip_options_cents`, a custom amount, and a
-minimum from `wallet.tip_min_cents` (both `config` rows, seeded by `db/seed.ts`; an existing database needs
-`npm run db:seed`). `tipAction` (`app/chat/actions.ts`) takes the fan from the session, finds their own conversation
-with Juno, calls `lib/wallet/tip.ts` with a client idempotency key and the conversation id, then posts a `system`
+minimum from `wallet.tip_min_cents` (both `config` rows, seeded by `examples/app/db/seed.ts`; an existing database needs
+`npm run db:seed`). `tipAction` (`examples/app/app/chat/actions.ts`) takes the fan from the session, finds their own conversation
+with Juno, calls `examples/app/lib/wallet/tip.ts` with a client idempotency key and the conversation id, then posts a `system`
 row "You tipped $5.00" keyed by the same key, so a retry charges and posts once. The engine does not thank on its
 own, so no thank-you from Juno follows; she sees the same row in her console as a platform note. Flagged and
 restricted fans are redirected to `/blocked` by the guard before the action runs.
-Proof: `app/chat/actions.db.test.ts`.
+Proof: `examples/app/app/chat/actions.db.test.ts`.

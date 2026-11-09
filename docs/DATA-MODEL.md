@@ -1,6 +1,6 @@
 # Data model
 
-Source: `db/host-schema.ts` and `packages/engine/src/schema.ts` (Drizzle, re-exported by `db/schema.ts`), migrations `packages/engine/drizzle/` (applied first) and `drizzle/`. One Neon Postgres, accessed
+Source: `examples/app/db/host-schema.ts` and `packages/engine/src/schema.ts` (Drizzle, re-exported by `examples/app/db/schema.ts`), migrations `packages/engine/drizzle/` (applied first) and `examples/app/drizzle/`. One Neon Postgres, accessed
 through `@neondatabase/serverless` with a WebSocket `Pool` so transactions are interactive.
 Conventions (AGENTS.md): ids are `uuid default gen_random_uuid()`; timestamps are `timestamptz`; money is
 integer cents in `_cents` columns; every top-level creator-owned row carries `creator_id` (child rows of a
@@ -90,7 +90,7 @@ ai_disclosure).
 
 ## Constraints that enforce invariants
 
-| constraint | enforces | test (`db/schema.db.test.ts`) |
+| constraint | enforces | test (`examples/app/db/schema.db.test.ts`) |
 |---|---|---|
 | `wallets_balance_non_negative`: CHECK `balance_cents >= 0` | the database refuses an overdraft even if code is wrong | rejects negative, accepts zero |
 | `wallets_caps_positive`: CHECK `daily_cap_cents > 0 and pending_cap_cents > 0` | a fan's cap is never zero or negative | none |
@@ -101,7 +101,7 @@ ai_disclosure).
 | `ledger_entries_sign_by_kind`: CHECK topup, refund, grant `> 0`; unlock, tip `< 0` | the sign always matches the kind | wrong sign refused (`ledger.db.test.ts`) |
 | `ledger_entries_append_only`: BEFORE UPDATE OR DELETE trigger | the ledger only grows; test cleanup uses TRUNCATE, which row triggers do not see | update and delete refused (`ledger.db.test.ts`) |
 | `unlocks` pk (`fan_id`, `item_id`) | a fan can unlock an item once | duplicate fails |
-| `config_key_creator_unique`: unique (`key`, `creator_id`) NULLS NOT DISTINCT | one platform row per key, because creator_id null would otherwise never collide | see `lib/config.db.test.ts` for the lookup order |
+| `config_key_creator_unique`: unique (`key`, `creator_id`) NULLS NOT DISTINCT | one platform row per key, because creator_id null would otherwise never collide | see `examples/app/lib/config.db.test.ts` for the lookup order |
 | `catalogue_items_price_positive`: CHECK `price_cents > 0` | no free or negative priced item | rejects zero |
 | `conversations_creator_fan_unique` | one conversation per creator and fan | duplicate fails |
 | `persona_cards_creator_version_unique` | one row per card version | none |
@@ -109,13 +109,13 @@ ai_disclosure).
 | `creators.user_id`, `creators.handle` unique | one creator profile per user; unique handles | none |
 
 The balance-equals-ledger-sum invariant is asserted by the wallet tests (`assertBalanceEqualsLedger` in
-`lib/wallet/test-helpers.ts`), not by the schema.
+`examples/app/lib/wallet/test-helpers.ts`), not by the schema.
 
 ## Test database
 
 Tests never touch the dev database. `vitest.global-setup.ts` calls `scripts/test-db.mjs`, which creates
 `<db>_test_<branch-slug>` in the same Neon project if absent (the slug is the lower-cased branch name,
 non-alphanumerics collapsed to `_`, at most 40 characters; override with `TEST_DB_BRANCH`), applies
-the engine's migrations and then `drizzle/`, and returns its URL. Global setup refuses to proceed unless the name contains `_test_`, then
+the engine's migrations and then `examples/app/drizzle/`, and returns its URL. Global setup refuses to proceed unless the name contains `_test_`, then
 truncates every table except `__drizzle_migrations` and points `DATABASE_URL` at it. Parallel branches
 therefore never share test data while sharing one Neon project. Dev and demo use `neondb`.

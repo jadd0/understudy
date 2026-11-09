@@ -11,9 +11,9 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "dev": "npm run dev --workspace @understudy/example-app",
-    "build": "npm run build --workspace @understudy/example-app",
-    "start": "npm run start --workspace @understudy/example-app",
+    "dev": "next dev examples/app",
+    "build": "next build examples/app",
+    "start": "next start examples/app",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:generate": "npm exec --workspace @understudy/engine -- drizzle-kit generate && npm exec --workspace @understudy/example-app -- drizzle-kit generate",

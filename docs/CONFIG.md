@@ -3,13 +3,13 @@
 Every tunable value in the product, in one place. There are two kinds.
 
 1. **Config rows** (the `config` table). Floors, ceilings, round counts, timings, model ids and prices. The app reads
-   them at runtime through `getConfig(key, creatorId?)` (`lib/config`), which throws `ConfigMissing` instead of falling
+   them at runtime through `getConfig(key, creatorId?)` (`examples/app/lib/config`), which throws `ConfigMissing` instead of falling
    back to a default, so a missing row stops the feature rather than guessing. A row can be set per creator (the
    `creator_id` column) or platform-wide (null).
 2. **Code constants.** Client and server timings that are part of how a screen behaves, not product policy. Changing one
    is a code change and a deploy.
 
-`db/config-doc.test.ts` fails the gate if a config row or one of the constants below is missing from this file or its
+`examples/app/db/config-doc.test.ts` fails the gate if a config row or one of the constants below is missing from this file or its
 default here differs from the code.
 
 ## Changing a value
@@ -20,7 +20,7 @@ default here differs from the code.
   update config set value = '0.55'::jsonb where key = 'floor.intent' and creator_id is null;
   ```
 
-- **New databases:** change the default in `db/seed.ts` (the four `*_CONFIG` objects) and in the table below. A re-seed
+- **New databases:** change the default in `examples/app/db/seed.ts` (the four `*_CONFIG` objects) and in the table below. A re-seed
   never overwrites a row that already exists, so an edited value survives `npm run db:seed`.
 - **A code constant:** edit it in the file named in its row, and the row here.
 
@@ -33,19 +33,19 @@ tokens (`_per_mtok`). Times carry their unit in the name.
 
 | key | default | what it does | read in |
 |---|---|---|---|
-| `wallet.topup_options_cents` | `[1000,2500,5000]` | the top-up amounts offered on /wallet | `lib/wallet/topup.ts`, `app/wallet/page.tsx` |
-| `wallet.topup_min_cents` | `500` | smallest custom top-up | `lib/wallet/topup.ts` |
-| `wallet.topup_max_cents` | `50000` | largest custom top-up | `lib/wallet/topup.ts` |
-| `wallet.welcome_credit_cents` | `5000` | credit granted once when a fan confirms 18+ | `lib/wallet/grant.ts` |
-| `wallet.tip_options_cents` | `[200,500,1000]` | the tip amounts in the chat's tip sheet | `app/chat/page.tsx` |
-| `wallet.tip_min_cents` | `100` | smallest custom tip | `app/chat/actions.ts` |
-| `wallet.daily_cap_cents` | `20000` | platform daily spend cap for a fan who has not set their own | `lib/wallet/cap.ts` |
-| `wallet.cap_min_cents` | `500` | floor on the cap a fan may set | `lib/wallet/cap.ts` |
-| `cap.max_daily_cents` | `100000` | ceiling on the cap a fan may set | `lib/wallet/cap.ts` |
-| `wallet.cap_raise_delay_hours` | `24` | a raised cap takes effect after this; a lowered one is immediate | `lib/wallet/cap.ts` |
-| `fan.high_value_threshold_cents` | `10000` | decayed spend at or above this makes a fan high-value (Juno gets an alert) | `lib/wallet/score.ts` |
-| `fan.high_value_half_life_days` | `7` | half-life of the spend decay in the high-value score | `lib/wallet/score.ts` |
-| `offer.ttl_minutes` | `1440` | how long an offer stays open before it expires | `packages/engine/src/cfg.ts`, `lib/conversations/controls.ts` |
+| `wallet.topup_options_cents` | `[1000,2500,5000]` | the top-up amounts offered on /wallet | `examples/app/lib/wallet/topup.ts`, `examples/app/app/wallet/page.tsx` |
+| `wallet.topup_min_cents` | `500` | smallest custom top-up | `examples/app/lib/wallet/topup.ts` |
+| `wallet.topup_max_cents` | `50000` | largest custom top-up | `examples/app/lib/wallet/topup.ts` |
+| `wallet.welcome_credit_cents` | `5000` | credit granted once when a fan confirms 18+ | `examples/app/lib/wallet/grant.ts` |
+| `wallet.tip_options_cents` | `[200,500,1000]` | the tip amounts in the chat's tip sheet | `examples/app/app/chat/page.tsx` |
+| `wallet.tip_min_cents` | `100` | smallest custom tip | `examples/app/app/chat/actions.ts` |
+| `wallet.daily_cap_cents` | `20000` | platform daily spend cap for a fan who has not set their own | `examples/app/lib/wallet/cap.ts` |
+| `wallet.cap_min_cents` | `500` | floor on the cap a fan may set | `examples/app/lib/wallet/cap.ts` |
+| `cap.max_daily_cents` | `100000` | ceiling on the cap a fan may set | `examples/app/lib/wallet/cap.ts` |
+| `wallet.cap_raise_delay_hours` | `24` | a raised cap takes effect after this; a lowered one is immediate | `examples/app/lib/wallet/cap.ts` |
+| `fan.high_value_threshold_cents` | `10000` | decayed spend at or above this makes a fan high-value (Juno gets an alert) | `examples/app/lib/wallet/score.ts` |
+| `fan.high_value_half_life_days` | `7` | half-life of the spend decay in the high-value score | `examples/app/lib/wallet/score.ts` |
+| `offer.ttl_minutes` | `1440` | how long an offer stays open before it expires | `packages/engine/src/cfg.ts`, `examples/app/lib/conversations/controls.ts` |
 
 ### Models and prices
 
@@ -54,11 +54,11 @@ tokens (`_per_mtok`). Times carry their unit in the name.
 | `jev.model` | `"jev-1.14.0"` | the classifier for inbound reading and verify | `packages/engine/src/cfg.ts` |
 | `model.generate` | `"claude-haiku-5-5"` | writes Juno's replies | `packages/engine/src/cfg.ts` |
 | `model.memory` | `"claude-haiku-5-5"` | updates the per-fan memory | `packages/engine/src/cfg.ts` |
-| `model.decide_fallback` | `"claude-haiku-5-5"` | answers the choice questions when Jev is unavailable | `lib/host/deps.ts` |
-| `model.generate_fallback` | `"claude-sonnet-5-5"` | writes the reply when `model.generate` is unavailable | `lib/host/deps.ts` |
-| `breaker.failures` | `3` | failures inside the window that open a provider's circuit breaker | `lib/host/deps.ts` |
-| `breaker.window_ms` | `60000` | the window those failures are counted in | `lib/host/deps.ts` |
-| `breaker.cooldown_ms` | `30000` | how long an open breaker skips its provider before letting one call through | `lib/host/deps.ts` |
+| `model.decide_fallback` | `"claude-haiku-5-5"` | answers the choice questions when Jev is unavailable | `examples/app/lib/host/deps.ts` |
+| `model.generate_fallback` | `"claude-sonnet-5-5"` | writes the reply when `model.generate` is unavailable | `examples/app/lib/host/deps.ts` |
+| `breaker.failures` | `3` | failures inside the window that open a provider's circuit breaker | `examples/app/lib/host/deps.ts` |
+| `breaker.window_ms` | `60000` | the window those failures are counted in | `examples/app/lib/host/deps.ts` |
+| `breaker.cooldown_ms` | `30000` | how long an open breaker skips its provider before letting one call through | `examples/app/lib/host/deps.ts` |
 | `price.claude-haiku-5-5.input_per_mtok` | `100000` | input price, for turn cost | read as `price.<model>.*` in `packages/engine/src/cfg.ts` |
 | `price.claude-haiku-5-5.output_per_mtok` | `500000` | output price | as above |
 | `price.claude-haiku-5-5.cache_read_per_mtok` | `10000` | cache read price | as above |
@@ -94,9 +94,9 @@ A new model needs its four (Claude) or two (Jev) price rows, or turn cost throws
 | `delivery.bubble_gap_ms_min` | `1500` | shortest gap between her bubbles | `packages/engine/src/cfg.ts` |
 | `delivery.bubble_gap_ms_max` | `4000` | longest gap between her bubbles | `packages/engine/src/cfg.ts` |
 | `platform.support_email` | `"support@understudy.example"` | the address in support and dispute replies | `packages/engine/src/cfg.ts` |
-| `escalation.creator_sla_minutes` | `30` | a creator-queue handoff's due time after it opens; the creator's queue row shows it | `packages/engine/src/cfg.ts`, `lib/conversations/read.ts` |
+| `escalation.creator_sla_minutes` | `30` | a creator-queue handoff's due time after it opens; the creator's queue row shows it | `packages/engine/src/cfg.ts`, `examples/app/lib/conversations/read.ts` |
 | `escalation.ts_sla_minutes` | `15` | a Trust & Safety handoff's due time; past it the sweep stamps the breach and alerts, and never resolves it | `packages/engine/src/cfg.ts` |
-| `escalation.auto_resolve_reasons` | `["unsure","verify_failed","custom_request","explicit_live_chat","high_value_alert"]` | creator-queue reasons the sweep may settle by policy once due and unclaimed; any other reason (such as `engine_error`) waits for a person | `packages/engine/src/escalation.ts`, `lib/conversations/read.ts` |
+| `escalation.auto_resolve_reasons` | `["unsure","verify_failed","custom_request","explicit_live_chat","high_value_alert"]` | creator-queue reasons the sweep may settle by policy once due and unclaimed; any other reason (such as `engine_error`) waits for a person | `packages/engine/src/escalation.ts`, `examples/app/lib/conversations/read.ts` |
 | `escalation.hold_suppress_minutes` | `1440` | after the sweep settles a hold, the same chat's next hold is answered by the AI for this long | `packages/engine/src/escalation.ts` |
 
 ### Floors (Jev confidence) and pitching
@@ -111,7 +111,7 @@ message is treated as not that. The safety floors are read as `floor.safety.<key
 | `floor.safety.threat` | `0.5` | threat or harassment: hard stop, account flagged | `packages/engine/src/cfg.ts` |
 | `floor.safety.location_offplatform` | `0.5` | meetup, location, contact details or paying outside: a boundary line and a numbered warning; the `ts.max_strikes`th pauses the chat | `packages/engine/src/cfg.ts` |
 | `floor.safety.payment_dispute` | `0.6` | refund or charge complaint: hard stop | `packages/engine/src/cfg.ts` |
-| `floor.safety.hardship` | `0.5` | money trouble: no hard stop, pitching pauses for `pitch.hardship_cooldown_hours` | `packages/engine/src/cfg.ts`, `lib/analytics/responsible.ts` |
+| `floor.safety.hardship` | `0.5` | money trouble: no hard stop, pitching pauses for `pitch.hardship_cooldown_hours` | `packages/engine/src/cfg.ts`, `examples/app/lib/analytics/responsible.ts` |
 | `floor.intent` | `0.5` | below this the intent read is "unsure" and the turn goes to Juno, unless the best guess is a buy | `packages/engine/src/cfg.ts` |
 | `floor.buy_intent_runner_up` | `1` | off; at 1 nothing is promoted. Below 1: when Jev picks `smalltalk` or `flirt` but gives `buy_intent` at least this, the read is routed as `buy_intent` (recorded as `jev_in.parsed.promotedFrom`) | `packages/engine/src/cfg.ts`, `packages/engine/src/route.ts` |
 | `pitch.min_gap_rounds` | `5` | rounds between AI-started pitches (a buy ask skips it) | `packages/engine/src/cfg.ts` |
@@ -128,28 +128,28 @@ message is treated as not that. The safety floors are read as `floor.safety.<key
 
 | key | default | what it does | read in |
 |---|---|---|---|
-| `retrieval.voyage_model` | `"voyage-4"` | embedding model for persona chunks and sim lines | `lib/host/deps.ts` |
+| `retrieval.voyage_model` | `"voyage-4"` | embedding model for persona chunks and sim lines | `examples/app/lib/host/deps.ts` |
 | `retrieval.k` | `5` | persona chunks retrieved per turn | `packages/engine/src/cfg.ts` |
-| `retrieval.strategy` | `"vector"` | `fts`, `vector` or `hybrid`; seeded `vector`, the retrieval eval's winner. Test helpers pin `fts` so tests never call Voyage | `lib/host/deps.ts` |
+| `retrieval.strategy` | `"vector"` | `fts`, `vector` or `hybrid`; seeded `vector`, the retrieval eval's winner. Test helpers pin `fts` so tests never call Voyage | `examples/app/lib/host/deps.ts` |
 
 ### Fan simulator
 
 | key | default | what it does | read in |
 |---|---|---|---|
-| `sim.enabled` | `false` | kill switch; off refuses spawns and stops live runs at the next beat | `lib/sim/run.ts`, `lib/sim/spawn.ts` |
-| `sim.welcome_credit` | `true` | a spawned sim fan gets the welcome credit | `lib/sim/spawn.ts` |
-| `sim.model` | `"claude-haiku-5-5"` | the sim fan's voice | `lib/sim/agent.ts` |
-| `sim.max_tokens` | `120` | cap on one sim fan message | `lib/sim/agent.ts` |
-| `sim.max_concurrent_runs` | `5` | live runs at once; the rest queue | `lib/sim/run.ts` |
-| `sim.max_cost_micros_per_run` | `1000000` | a run at or over this stops (`cost_cap`) | `lib/sim/run.ts` |
-| `sim.max_cost_micros_per_batch` | `10000000` | a batch at or over this stops its runs | `lib/sim/run.ts` |
-| `sim.lease_ms` | `120000` | how long one caller holds a run | `lib/sim/drive.ts` |
-| `sim.tick_budget_ms` | `45000` | how long one cron tick advances runs | `app/api/cron/sim/route.ts` |
-| `sim.burst_gap_ms` | `100` | gap between the lines of a burst beat | `lib/sim/beats.ts` |
-| `sim.demo_gap_ms` | `8000` | pause before each fan message in demo mode | `lib/sim/beats.ts` |
-| `sim.human_wait_ms` | `600000` | how long demo mode waits for a person at a human step | `lib/sim/beats.ts` |
-| `sim.webhook_wait_ms` | `20000` | how long a sim top-up waits for the Stripe webhook | `lib/sim/stripe.ts` |
-| `sim.topup_payment_method` | `"pm_card_visa"` | the Stripe test payment method sim top-ups use | `lib/sim/stripe.ts` |
+| `sim.enabled` | `false` | kill switch; off refuses spawns and stops live runs at the next beat | `examples/app/lib/sim/run.ts`, `examples/app/lib/sim/spawn.ts` |
+| `sim.welcome_credit` | `true` | a spawned sim fan gets the welcome credit | `examples/app/lib/sim/spawn.ts` |
+| `sim.model` | `"claude-haiku-5-5"` | the sim fan's voice | `examples/app/lib/sim/agent.ts` |
+| `sim.max_tokens` | `120` | cap on one sim fan message | `examples/app/lib/sim/agent.ts` |
+| `sim.max_concurrent_runs` | `5` | live runs at once; the rest queue | `examples/app/lib/sim/run.ts` |
+| `sim.max_cost_micros_per_run` | `1000000` | a run at or over this stops (`cost_cap`) | `examples/app/lib/sim/run.ts` |
+| `sim.max_cost_micros_per_batch` | `10000000` | a batch at or over this stops its runs | `examples/app/lib/sim/run.ts` |
+| `sim.lease_ms` | `120000` | how long one caller holds a run | `examples/app/lib/sim/drive.ts` |
+| `sim.tick_budget_ms` | `45000` | how long one cron tick advances runs | `examples/app/app/api/cron/sim/route.ts` |
+| `sim.burst_gap_ms` | `100` | gap between the lines of a burst beat | `examples/app/lib/sim/beats.ts` |
+| `sim.demo_gap_ms` | `8000` | pause before each fan message in demo mode | `examples/app/lib/sim/beats.ts` |
+| `sim.human_wait_ms` | `600000` | how long demo mode waits for a person at a human step | `examples/app/lib/sim/beats.ts` |
+| `sim.webhook_wait_ms` | `20000` | how long a sim top-up waits for the Stripe webhook | `examples/app/lib/sim/stripe.ts` |
+| `sim.topup_payment_method` | `"pm_card_visa"` | the Stripe test payment method sim top-ups use | `examples/app/lib/sim/stripe.ts` |
 
 How many messages a sim fan sends is not a config row: it is the number of message beats in its persona file
 (`data/sim/personas/<slug>.json`, documented in `docs/FAN-SIM.md` section 3).
@@ -158,22 +158,22 @@ How many messages a sim fan sends is not a config row: it is the number of messa
 
 | constant | value | what it does | file |
 |---|---|---|---|
-| `TYPING_AFTER_SEND_MS` | `500` | Juno's typing row waits this long after the fan sends | `lib/ui/typing-delay.ts` |
+| `TYPING_AFTER_SEND_MS` | `500` | Juno's typing row waits this long after the fan sends | `examples/app/lib/ui/typing-delay.ts` |
 | `RECENT_BUBBLES` | `8` | her last bubbles whose emoji the next reply avoids | `packages/engine/src/emoji.ts` |
-| `TYPING_WINDOW_SECONDS` | `3` | how long a fan typing ping counts as "still typing" | `lib/chat/typing-window.ts` |
-| `TYPING_PING_INTERVAL_MS` | `2000` | how often the fan's client sends a typing ping | `lib/chat/typing-window.ts` |
-| `CHANGES_OVERLAP_MS` | `5000` | how far before its cursor a thread change read looks again, for rows committed late | `lib/conversations/paging.ts` |
-| `AI_PENDING_WINDOW_MS` | `90_000` | how long an open turn counts as "she is replying" in the chat view | `lib/conversations/read.ts` |
-| `POLL_FALLBACK_MS` | `3000` | chat poll interval when realtime is down | `components/chat/live-thread.tsx` |
-| `POLL_WHILE_AI_MS` | `2500` | chat poll interval while a reply is due | `components/chat/live-thread.tsx` |
-| `READ_ONLY_POLL_MS` | `30_000` | poll interval for a read-only chat | `components/chat/live-thread.tsx` |
-| `DUE_SLACK_MS` | `500` | slack after a bubble's due time before the view re-checks | `components/chat/live-thread.tsx` |
-| `POLL_MS` | `5000` | refresh interval for pages that follow live events | `components/chat/refresh-on-event.tsx` |
-| `CLOSE_MS` | `160` | account menu close animation | `components/ui/chat/account-menu.tsx` |
-| `SIDEBAR_MIN` | `260` | narrowest the console sidebar can be dragged (px) | `lib/ui/sidebar-width.ts` |
-| `SIDEBAR_MAX` | `480` | widest the console sidebar can be dragged (px) | `lib/ui/sidebar-width.ts` |
-| `PAGE_SIZE` | `10` | rows per page in the analytics turn list (pages load in place, no navigation) | `lib/analytics/turns.ts` |
+| `TYPING_WINDOW_SECONDS` | `3` | how long a fan typing ping counts as "still typing" | `examples/app/lib/chat/typing-window.ts` |
+| `TYPING_PING_INTERVAL_MS` | `2000` | how often the fan's client sends a typing ping | `examples/app/lib/chat/typing-window.ts` |
+| `CHANGES_OVERLAP_MS` | `5000` | how far before its cursor a thread change read looks again, for rows committed late | `examples/app/lib/conversations/paging.ts` |
+| `AI_PENDING_WINDOW_MS` | `90_000` | how long an open turn counts as "she is replying" in the chat view | `examples/app/lib/conversations/read.ts` |
+| `POLL_FALLBACK_MS` | `3000` | chat poll interval when realtime is down | `examples/app/components/chat/live-thread.tsx` |
+| `POLL_WHILE_AI_MS` | `2500` | chat poll interval while a reply is due | `examples/app/components/chat/live-thread.tsx` |
+| `READ_ONLY_POLL_MS` | `30_000` | poll interval for a read-only chat | `examples/app/components/chat/live-thread.tsx` |
+| `DUE_SLACK_MS` | `500` | slack after a bubble's due time before the view re-checks | `examples/app/components/chat/live-thread.tsx` |
+| `POLL_MS` | `5000` | refresh interval for pages that follow live events | `examples/app/components/chat/refresh-on-event.tsx` |
+| `CLOSE_MS` | `160` | account menu close animation | `examples/app/components/ui/chat/account-menu.tsx` |
+| `SIDEBAR_MIN` | `260` | narrowest the console sidebar can be dragged (px) | `examples/app/lib/ui/sidebar-width.ts` |
+| `SIDEBAR_MAX` | `480` | widest the console sidebar can be dragged (px) | `examples/app/lib/ui/sidebar-width.ts` |
+| `PAGE_SIZE` | `10` | rows per page in the analytics turn list (pages load in place, no navigation) | `examples/app/lib/analytics/turns.ts` |
 | `SWEEP_START_BUDGET_MS` | `35_000` | the sweep starts no new conversation after this, inside its 60 s function | `packages/engine/src/sweep.ts` |
-| `DRIVE_MS` | `50_000` | how long a Spawn on /admin/sim drives its runs before the tick takes over | `app/admin/sim/actions.ts` |
-| `TICK_MS` | `15_000` | how long each /admin/sim page tick advances a live run | `app/admin/sim/actions.ts` |
-| `EVERY_MS` | `6_000` | gap between /admin/sim page ticks | `app/admin/sim/live-ticker.tsx` |
+| `DRIVE_MS` | `50_000` | how long a Spawn on /admin/sim drives its runs before the tick takes over | `examples/app/app/admin/sim/actions.ts` |
+| `TICK_MS` | `15_000` | how long each /admin/sim page tick advances a live run | `examples/app/app/admin/sim/actions.ts` |
+| `EVERY_MS` | `6_000` | gap between /admin/sim page ticks | `examples/app/app/admin/sim/live-ticker.tsx` |

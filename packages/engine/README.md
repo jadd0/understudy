@@ -68,7 +68,7 @@ The engine owns its tables (`conversations`, `messages`, `turns`, `offers`, `han
 schema and know host rows (users, creators, catalogue items) by id only: those columns carry no foreign key, so the
 package creates its tables on a database that has none of the host's.
 
-The package ships its own migrations in `drizzle/`, recorded in `drizzle.__understudy_engine_migrations`. A host
+The package ships its own migrations in `examples/app/drizzle/`, recorded in `drizzle.__understudy_engine_migrations`. A host
 applies them with `chatter.migrate()` (or `migrateEngine(db)` from `@understudy/engine/migrate`) before its own
 migrations, because the host's tables may point foreign keys at the engine's. Both calls take a session advisory lock
 and are safe to repeat. Maintainers regenerate them with `npx drizzle-kit generate` in the package folder.

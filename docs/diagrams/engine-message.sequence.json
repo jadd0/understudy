@@ -21,7 +21,7 @@
       "id": "action",
       "type": "backend",
       "label": "Chat actions",
-      "sublabel": "app/chat/actions.ts"
+      "sublabel": "examples/app/app/chat/actions.ts"
     },
     {
       "id": "db",

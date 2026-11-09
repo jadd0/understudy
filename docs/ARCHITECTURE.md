@@ -9,7 +9,7 @@ The prompts the engine sends are quoted under "Engine prompts", the config rows 
 per-minute sweep (`/api/cron/sweep`) calls the same function for anything left behind: it takes conversations by the
 age of their oldest unanswered fan message, oldest first (at most ten), and stops starting new ones once 35 s of the
 function's 60 s have passed (`SWEEP_START_BUDGET_MS`). `processConversation` runs `runTurn` until nothing unanswered is
-left (at most five turns per run). A tip or an unlock schedules the same call (`lib/chat/react.ts`); the turn reads it
+left (at most five turns per run). A tip or an unlock schedules the same call (`examples/app/lib/chat/react.ts`); the turn reads it
 as an **event** (`packages/engine/src/events.ts`) and she reacts in her own voice, see step 3.
 
 One turn (`packages/engine/src/turn.ts`):
@@ -80,7 +80,7 @@ One turn (`packages/engine/src/turn.ts`):
 | `Decider` (`packages/engine/src/ports/decider.ts`) | `packages/providers/src/typesafe/decider.ts` (Jev by REST) | `packages/engine/src/fake/decider.ts` |
 | `Generator` | `packages/providers/src/anthropic/generator.ts` (official SDK, Bearer token) | `packages/engine/src/fake/generator.ts` |
 | `Retriever` | `packages/providers/src/voyage/persona-retriever.ts`: the `retrieval.strategy` row picks `fts`, `vector` (Voyage `retrieval.voyage_model`) or `hybrid`; a Voyage error falls back to full-text for that turn | `packages/providers/src/pg/fts-retriever.ts`, on the test database |
-| `Events` | `providers/pusher/events.ts` (`defaultEvents()`; `packages/providers/src/noop/events.ts` when the Pusher keys are absent) | a recorder |
+| `Events` | `examples/app/providers/pusher/events.ts` (`defaultEvents()`; `packages/providers/src/noop/events.ts` when the Pusher keys are absent) | a recorder |
 | `Clock` | `systemClock` (sleep and elapsed ms only) | a sleep hook |
 
 ## Second host
@@ -134,7 +134,7 @@ waits on a second pooled connection can deadlock the pool.
 
 Debounce (250 ms after his last message, longer while he types), Jev call 1, retrieval, Haiku, Jev verify: about 6 to 9 s before the first bubble is due. The typing
 indicator covers it: `typing` is emitted with the time until the last bubble. The fan's chat holds the row
-back for `TYPING_AFTER_SEND_MS` (500 ms, `lib/ui/typing-delay.ts`) after each send, so it never appears the
+back for `TYPING_AFTER_SEND_MS` (500 ms, `examples/app/lib/ui/typing-delay.ts`) after each send, so it never appears the
 instant he hits Send; a second send restarts the hold.
 
 ## Measured latency and cost (live, 2026-11-03)
@@ -612,7 +612,7 @@ export const VERIFY_QUESTIONS_PAID: Question[] = VERIFY_QUESTIONS.map((q) =>
 **Scoring** (`packages/engine/src/verify.ts`), pass only when all hold: code checks pass first (no currency symbol (`$ € £ ¥ ₹ ₩`),
 currency word (including `cents` and `bux`) beside a number, no `\d%`, no price with two decimals (`9.99`), none of
 "on the house", "no charge", "for free", "gratis"; no never-list term (short terms such as "snapchat" or "cash app" in
-`persona_cards.never_list`, derived from the card's Never bullets by `neverTerms` in `scripts/persona/load.ts`, matched
+`persona_cards.never_list`, derived from the card's Never bullets by `neverTerms` in `examples/app/scripts/persona/load.ts`, matched
 case-insensitively on word boundaries, a plural counts); not empty; the model did not stop with `refusal`); then `on_persona` is `yes` (except on `ai_disclosure`),
 `explicitness` is not `explicit`, `offplatform_or_meetup` is `no`, `is_refusal` is `no`, `promises_price_or_free` is `no`,
 and `admits_ai` is `yes` on route `ai_disclosure` and `no` on every other route.
@@ -671,7 +671,7 @@ const REPEATS: Partial<Record<TemplateKey, string>> = {
 Every upper and lower bound the system enforces, in one place. A **floor** is a minimum (a confidence a
 classification must reach, or the smallest amount of money accepted); a **ceiling** is a maximum. Every value
 is a `config` row read through `getConfig`, so a missing row fails closed (`ConfigMissing`) and nothing falls
-back to a code default. Values are the seeded defaults (`db/seed.ts`); the founder can edit any row.
+back to a code default. Values are the seeded defaults (`examples/app/db/seed.ts`); the founder can edit any row.
 
 ### Confidence floors (Jev, inbound)
 
@@ -716,15 +716,15 @@ ceiling rules out.
 
 | row | value | floor or ceiling | enforced in |
 |---|---|---|---|
-| `wallet.topup_min_cents` | 500 ($5) | top-up floor | `lib/wallet/topup.ts` |
-| `wallet.topup_max_cents` | 50000 ($500) | top-up ceiling | `lib/wallet/topup.ts` |
-| `wallet.welcome_credit_cents` | 5000 ($50) | one-time grant at 18+ confirmation; must be a positive whole number of cents | `lib/wallet/grant.ts` |
-| `wallet.daily_cap_cents` | 20000 ($200) | platform spend ceiling per fan per day (unlocks and tips); a fan's own cap wins; at the cap the AI does not pitch | `lib/wallet/unlock.ts`, `tip.ts`, `route.ts` |
-| `wallet.cap_min_cents` | 500 ($5) | floor on the cap a fan may set | `lib/wallet/cap.ts` |
-| `cap.max_daily_cents` | 100000 ($1,000) | ceiling on the cap a fan may set | `lib/wallet/cap.ts` |
-| `wallet.cap_raise_delay_hours` | 24 | a raised cap only takes effect after this delay; a lowered cap is immediate | `lib/wallet/cap.ts` |
-| `fan.high_value_threshold_cents` | 10000 ($100) | at or above this decayed spend score, Juno gets a `high_value_alert` | `lib/wallet/score.ts` |
-| (no row) | 1 cent | tips and unlocks must be a positive whole number of cents; the balance can never go below 0 | `lib/wallet/tip.ts`, `unlock.ts` |
+| `wallet.topup_min_cents` | 500 ($5) | top-up floor | `examples/app/lib/wallet/topup.ts` |
+| `wallet.topup_max_cents` | 50000 ($500) | top-up ceiling | `examples/app/lib/wallet/topup.ts` |
+| `wallet.welcome_credit_cents` | 5000 ($50) | one-time grant at 18+ confirmation; must be a positive whole number of cents | `examples/app/lib/wallet/grant.ts` |
+| `wallet.daily_cap_cents` | 20000 ($200) | platform spend ceiling per fan per day (unlocks and tips); a fan's own cap wins; at the cap the AI does not pitch | `examples/app/lib/wallet/unlock.ts`, `tip.ts`, `route.ts` |
+| `wallet.cap_min_cents` | 500 ($5) | floor on the cap a fan may set | `examples/app/lib/wallet/cap.ts` |
+| `cap.max_daily_cents` | 100000 ($1,000) | ceiling on the cap a fan may set | `examples/app/lib/wallet/cap.ts` |
+| `wallet.cap_raise_delay_hours` | 24 | a raised cap only takes effect after this delay; a lowered cap is immediate | `examples/app/lib/wallet/cap.ts` |
+| `fan.high_value_threshold_cents` | 10000 ($100) | at or above this decayed spend score, Juno gets a `high_value_alert` | `examples/app/lib/wallet/score.ts` |
+| (no row) | 1 cent | tips and unlocks must be a positive whole number of cents; the balance can never go below 0 | `examples/app/lib/wallet/tip.ts`, `unlock.ts` |
 
 ### Engine ceilings
 
@@ -745,7 +745,7 @@ ceiling rules out.
 All are `config` rows (platform row, `creator_id` null; a creator's own row wins, except `floor.intent`, `floor.safety.*`
 and `platform.*`, which `loadEngineConfig` reads from platform rows only so a creator cannot loosen safety). There are no code defaults: a missing
 row throws `ConfigMissing`, which ends the turn as an `error` (no reply, `failed_turns` + 1; see the failure table).
-Defaults below are the seed values in `db/seed.ts` (`ENGINE_CONFIG`) and are starting points to tune on the evaluation bank.
+Defaults below are the seed values in `examples/app/db/seed.ts` (`ENGINE_CONFIG`) and are starting points to tune on the evaluation bank.
 
 | Key | Default | Meaning |
 |---|---|---|
