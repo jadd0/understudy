@@ -1,0 +1,46 @@
+{
+  "id": "convo-reask-answered",
+  "title": "He answers her question and asks it back; she must not ask it again",
+  "setup": {
+    "history": [
+      {
+        "from": "fan",
+        "text": "heyyy",
+        "minutes_ago": 4
+      },
+      {
+        "from": "her",
+        "text": "HEYYYY 😏",
+        "minutes_ago": 3.9
+      },
+      {
+        "from": "her",
+        "text": "hi again babygirl",
+        "minutes_ago": 3.8
+      },
+      {
+        "from": "her",
+        "text": "u been quiet all day, what u been up to",
+        "minutes_ago": 3.7
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": [
+        "not much, yourself?"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "offer": "no",
+        "thread": "answers_her",
+        "must_not": [
+          "\\bwbu\\b",
+          "what\\s*(are\\s*)?(u|you)\\s*(been\\s*)?(up\\s*to|doing)",
+          "\\bwyd\\b"
+        ]
+      }
+    }
+  ]
+}

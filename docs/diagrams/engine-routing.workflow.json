@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": { "title": "Engine Routing Decision", "quality_profile": "standard" },
+  "lanes": [
+    { "id": "human", "label": "Human owns it", "variant": "exception" },
+    { "id": "checks", "label": "route() checks, in order" },
+    { "id": "ai", "label": "AI answers" },
+    { "id": "plain", "label": "Plain reply" }
+  ],
+  "mainPath": ["jev", "stops", "floor", "intents", "fixed", "pitch", "offer"],
+  "nodes": [
+    { "id": "jev", "lane": "checks", "col": 0, "type": "cloud", "label": "Jev answers", "sublabel": "intent, p(yes) x6", "tag": "parseInbound", "width": 132 },
+    { "id": "stops", "lane": "checks", "col": 1, "type": "security", "label": "Hard stops", "sublabel": "first that fires", "tag": "hardStopOf", "width": 132 },
+    { "id": "tsq", "lane": "human", "col": 1, "type": "security", "label": "T&S handoff", "sublabel": "handoff_ts + template", "tag": "", "width": 132 },
+    { "id": "floor", "lane": "checks", "col": 2, "type": "backend", "label": "Intent floor", "sublabel": "intentP < 0.5?", "tag": "floor.intent", "width": 132 },
+    { "id": "unsurebuy", "lane": "ai", "col": 2, "type": "backend", "label": "Unsure buy", "sublabel": "offer if canPitch", "tag": "", "width": 132 },
+    { "id": "intents", "lane": "checks", "col": 3, "type": "backend", "label": "Juno intents", "sublabel": "live_chat, custom", "tag": "", "width": 132 },
+    { "id": "hold", "lane": "human", "col": 3, "type": "external", "label": "Hold for Juno", "sublabel": "handoff_creator", "tag": "no reply", "width": 132 },
+    { "id": "fixed", "lane": "checks", "col": 4, "type": "backend", "label": "Fixed routes", "sublabel": "ai_q, manipulation", "tag": "no pitch", "width": 132 },
+    { "id": "disclose", "lane": "ai", "col": 4, "type": "frontend", "label": "Disclose / deflect", "sublabel": "honest, playful", "tag": "prompt.ts", "width": 132 },
+    { "id": "pitch", "lane": "checks", "col": 5, "type": "security", "label": "Pitch gate", "sublabel": "canPitch, no hardship", "tag": "pacing.ts", "width": 132 },
+    { "id": "offer", "lane": "ai", "col": 5, "type": "messagebus", "label": "Offer", "sublabel": "ppv or bundle", "tag": "", "width": 132 },
+    { "id": "reply", "lane": "plain", "col": 5, "type": "frontend", "label": "Reply", "sublabel": "or deflect if explicit", "tag": "fallback", "width": 132 }
+  ],
+  "edges": [
+    { "id": "r-jev", "from": "jev", "to": "stops", "variant": "emphasis" },
+    { "id": "r-stop", "from": "stops", "to": "tsq", "label": "p >= floor", "variant": "security", "role": "error" },
+    { "id": "r-none", "from": "stops", "to": "floor", "variant": "emphasis" },
+    { "id": "r-unsurebuy", "from": "floor", "to": "unsurebuy", "label": "buy guess", "variant": "default", "role": "branch" },
+    { "id": "r-unsure", "from": "floor", "to": "hold", "label": "unsure", "variant": "security", "role": "branch" },
+    { "id": "r-sure", "from": "floor", "to": "intents", "variant": "emphasis" },
+    { "id": "r-juno", "from": "intents", "to": "hold", "label": "hold", "variant": "security", "role": "branch" },
+    { "id": "r-fixed", "from": "intents", "to": "fixed", "variant": "emphasis" },
+    { "id": "r-disclose", "from": "fixed", "to": "disclose", "variant": "default", "role": "branch" },
+    { "id": "r-pitch", "from": "fixed", "to": "pitch", "variant": "emphasis" },
+    { "id": "r-offer", "from": "pitch", "to": "offer", "label": "allowed", "variant": "emphasis" },
+    { "id": "r-reply", "from": "pitch", "to": "reply", "label": "blocked / no fit", "variant": "dashed", "role": "branch" }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "creator": "junovale",
+  "handles": [
+    "junofilm",
+    "junovale"
+  ],
+  "counts": {
+    "posts_in": 244,
+    "posts_kept": 234,
+    "skipped_no_caption_no_replies": 10,
+    "captions_voice": 220,
+    "captions_not_voice": 14,
+    "collab_captions": 9,
+    "replies": 757,
+    "replies_text": 734,
+    "replies_non_text": 23,
+    "replies_exact": 330,
+    "replies_thread_first": 412,
+    "top_level_comments": 15
+  }
+}

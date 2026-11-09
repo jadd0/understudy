@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "A Fan Message End to End",
+    "quality_profile": "standard",
+    "column_fit": "spread",
+    "viewBox": [
+      1180,
+      752
+    ]
+  },
+  "participants": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Fan browser",
+      "sublabel": "live-thread.tsx"
+    },
+    {
+      "id": "action",
+      "type": "backend",
+      "label": "Chat actions",
+      "sublabel": "app/chat/actions.ts"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "Postgres",
+      "sublabel": "Neon, db clock"
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "Engine turn",
+      "sublabel": "runTurn"
+    },
+    {
+      "id": "jev",
+      "type": "external",
+      "label": "Jev",
+      "sublabel": "TypeSafe REST"
+    },
+    {
+      "id": "claude",
+      "type": "external",
+      "label": "Claude",
+      "sublabel": "Haiku, thinking off"
+    },
+    {
+      "id": "pusher",
+      "type": "messagebus",
+      "label": "Pusher",
+      "sublabel": "conversation channel"
+    }
+  ],
+  "segments": [
+    {
+      "from": 148,
+      "to": 312,
+      "label": "Send"
+    },
+    {
+      "from": 316,
+      "to": 536,
+      "label": "Turn"
+    },
+    {
+      "from": 540,
+      "to": 680,
+      "label": "Deliver"
+    }
+  ],
+  "messages": [
+    {
+      "id": "ping",
+      "from": "browser",
+      "to": "action",
+      "y": 160,
+      "label": "typing ping every 2 s",
+      "variant": "dashed"
+    },
+    {
+      "id": "typing",
+      "from": "action",
+      "to": "db",
+      "y": 188,
+      "label": "fan_typing_until = now + 3 s",
+      "variant": "dashed"
+    },
+    {
+      "id": "send",
+      "from": "browser",
+      "to": "action",
+      "y": 216,
+      "label": "send(text, clientMsgId)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "insert",
+      "from": "action",
+      "to": "db",
+      "y": 244,
+      "label": "insert fan row, clear typing",
+      "variant": "emphasis"
+    },
+    {
+      "id": "after",
+      "from": "action",
+      "to": "engine",
+      "y": 272,
+      "label": "after(): processConversation",
+      "variant": "emphasis"
+    },
+    {
+      "id": "saved",
+      "from": "action",
+      "to": "browser",
+      "y": 300,
+      "label": "saved; typing row held 500 ms",
+      "variant": "return"
+    },
+    {
+      "id": "lease",
+      "from": "engine",
+      "to": "db",
+      "y": 328,
+      "label": "lease, wait 250 ms, reload",
+      "variant": "default"
+    },
+    {
+      "id": "jevin",
+      "from": "engine",
+      "to": "jev",
+      "y": 356,
+      "label": "inbound questions",
+      "variant": "emphasis"
+    },
+    {
+      "id": "jevans",
+      "from": "jev",
+      "to": "engine",
+      "y": 384,
+      "label": "intent, p(yes), thread",
+      "variant": "return"
+    },
+    {
+      "id": "draft",
+      "from": "engine",
+      "to": "claude",
+      "y": 412,
+      "label": "draft: cached card + turn",
+      "variant": "emphasis"
+    },
+    {
+      "id": "text",
+      "from": "claude",
+      "to": "engine",
+      "y": 440,
+      "label": "draft text",
+      "variant": "return"
+    },
+    {
+      "id": "verify",
+      "from": "engine",
+      "to": "jev",
+      "y": 468,
+      "label": "verify draft",
+      "variant": "security"
+    },
+    {
+      "id": "verdict",
+      "from": "jev",
+      "to": "engine",
+      "y": 496,
+      "label": "pass / fail",
+      "variant": "return"
+    },
+    {
+      "id": "commit",
+      "from": "engine",
+      "to": "db",
+      "y": 524,
+      "label": "commit CAS, deliver_at per bubble",
+      "variant": "emphasis"
+    },
+    {
+      "id": "emit",
+      "from": "engine",
+      "to": "pusher",
+      "y": 552,
+      "label": "typing + message.created",
+      "variant": "dashed"
+    },
+    {
+      "id": "event",
+      "from": "pusher",
+      "to": "browser",
+      "y": 580,
+      "label": "event (ids only)",
+      "variant": "dashed"
+    },
+    {
+      "id": "refresh",
+      "from": "browser",
+      "to": "action",
+      "y": 608,
+      "label": "refresh()",
+      "variant": "default"
+    },
+    {
+      "id": "rows",
+      "from": "action",
+      "to": "browser",
+      "y": 636,
+      "label": "rows due by deliver_at",
+      "variant": "return"
+    },
+    {
+      "id": "memory",
+      "from": "engine",
+      "to": "claude",
+      "y": 664,
+      "label": "memory extract (after commit)",
+      "variant": "dashed"
+    }
+  ]
+}

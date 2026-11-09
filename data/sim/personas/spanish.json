@@ -1,0 +1,94 @@
+{
+  "slug": "spanish",
+  "name": "Lucía",
+  "lang": "es",
+  "weight": 5,
+  "spend_cents": 0,
+  "free_play": true,
+  "voice": "Spanish only, warm, uses emojis",
+  "goal": "chat in Spanish",
+  "variants": [
+    {
+      "name": "Lucía",
+      "age": 28,
+      "city": "Miami"
+    },
+    {
+      "name": "Camila",
+      "age": 25,
+      "city": "San Juan"
+    },
+    {
+      "name": "Sofía",
+      "age": 31,
+      "city": "Houston"
+    }
+  ],
+  "exercises": [
+    "route_reply",
+    "floor_intent",
+    "non_english",
+    "handoff_unsure",
+    "route_hold_creator"
+  ],
+  "goals": [
+    "chat only in Spanish"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "greet her in Spanish and ask how she is",
+      "example": "hola guapa, cómo estás?",
+      "expect": {
+        "queue": "any",
+        "route": [
+          "reply",
+          "offer",
+          "hold_creator"
+        ]
+      },
+      "row": "smalltalk",
+      "range": true
+    },
+    {
+      "kind": "free",
+      "topic": "keep talking in Spanish about your day",
+      "expect": {
+        "queue": "any",
+        "route": [
+          "reply",
+          "offer",
+          "hold_creator"
+        ]
+      },
+      "range": true
+    },
+    {
+      "kind": "free",
+      "topic": "talk in Spanish about music",
+      "expect": {
+        "queue": "any",
+        "route": [
+          "reply",
+          "offer",
+          "hold_creator"
+        ]
+      },
+      "range": true
+    },
+    {
+      "kind": "free",
+      "topic": "talk in Spanish about the weekend",
+      "expect": {
+        "queue": "any",
+        "route": [
+          "reply",
+          "offer",
+          "hold_creator"
+        ]
+      },
+      "range": true
+    }
+  ],
+  "brief": "spanish.brief.md"
+}

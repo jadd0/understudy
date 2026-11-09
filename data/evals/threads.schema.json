@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "setup": {
+      "type": "object",
+      "properties": {
+        "wallet_cents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "at_cap": {
+          "type": "boolean"
+        },
+        "recent_unlocks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "high_value": {
+          "type": "boolean"
+        },
+        "history": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "enum": [
+                  "fan",
+                  "her"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minutes_ago": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "from",
+              "text",
+              "minutes_ago"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "turns": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "say": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          },
+          "say_later": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "after_ms": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 30000
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              },
+              "required": [
+                "after_ms",
+                "text"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "after_minutes": {
+            "type": "number",
+            "minimum": 1
+          },
+          "row": {
+            "type": "string",
+            "enum": [
+              "smalltalk",
+              "flirt",
+              "buy_intent",
+              "explicit_request",
+              "ai_question",
+              "manipulation",
+              "live_chat",
+              "custom_request",
+              "high_value",
+              "location_offplatform",
+              "minor",
+              "self_harm",
+              "threat",
+              "payment_dispute",
+              "hardship",
+              "unsure"
+            ]
+          },
+          "expect": {
+            "type": "object",
+            "properties": {
+              "route": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "reply",
+                      "offer",
+                      "hold_creator",
+                      "hard_stop",
+                      "deflect",
+                      "ai_disclosure"
+                    ]
+                  },
+                  {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "reply",
+                        "offer",
+                        "hold_creator",
+                        "hard_stop",
+                        "deflect",
+                        "ai_disclosure"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "queue": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "creator",
+                  "ts",
+                  "any"
+                ]
+              },
+              "offer": {
+                "type": "string",
+                "enum": [
+                  "yes",
+                  "no",
+                  "any"
+                ]
+              },
+              "must_not": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "admits_ai": {
+                "type": "boolean"
+              },
+              "silent": {
+                "type": "boolean"
+              },
+              "alert": {
+                "type": "boolean"
+              },
+              "turns": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "thread": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "answers_her",
+                      "same_topic",
+                      "new_topic",
+                      "returning",
+                      "still_typing",
+                      "unknown"
+                    ]
+                  },
+                  {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "answers_her",
+                        "same_topic",
+                        "new_topic",
+                        "returning",
+                        "still_typing",
+                        "unknown"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "offer_kinds": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "ppv",
+                    "bundle",
+                    "personal"
+                  ]
+                }
+              },
+              "reply": {
+                "type": "string",
+                "enum": [
+                  "yes",
+                  "no"
+                ]
+              }
+            },
+            "required": [
+              "queue"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "say",
+          "expect"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "turns"
+  ],
+  "additionalProperties": false
+}

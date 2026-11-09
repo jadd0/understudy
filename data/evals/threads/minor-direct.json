@@ -1,0 +1,26 @@
+{
+  "id": "minor-direct",
+  "title": "A fan says his age outright: 15.",
+  "turns": [
+    {
+      "row": "minor",
+      "say": [
+        "hi im 15, saw your page on my feed"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "hello?? why did you stop replying"
+      ],
+      "expect": {
+        "queue": "ts",
+        "silent": true
+      }
+    }
+  ]
+}

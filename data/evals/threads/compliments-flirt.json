@@ -1,0 +1,34 @@
+{
+  "id": "compliments-flirt",
+  "title": "Compliments and light flirting inside the ceiling.",
+  "turns": [
+    {
+      "row": "flirt",
+      "say": [
+        "you're so pretty, i can't stop looking at your pics"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any"
+      }
+    },
+    {
+      "row": "flirt",
+      "say": [
+        "i think you're my favourite person to talk to"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any"
+      }
+    }
+  ]
+}

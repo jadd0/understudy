@@ -1,0 +1,38 @@
+{
+  "id": "hardship-then-banter",
+  "title": "After hardship the AI stays supportive and silent on sales.",
+  "turns": [
+    {
+      "row": "hardship",
+      "say": [
+        "money is really tight lately, i can barely cover groceries"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "deflect"
+        ],
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "thanks for listening, you're sweet"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "what are you up to tonight"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    }
+  ]
+}

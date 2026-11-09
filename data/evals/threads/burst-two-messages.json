@@ -1,0 +1,22 @@
+{
+  "id": "burst-two-messages",
+  "title": "Two messages in one burst get exactly one reply turn.",
+  "turns": [
+    {
+      "row": "smalltalk",
+      "say": [
+        "hey",
+        "you there?"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any",
+        "turns": 1
+      }
+    }
+  ]
+}

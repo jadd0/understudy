@@ -1,0 +1,37 @@
+export interface GenerateMessage {
+  readonly role: "user" | "assistant";
+  readonly content: string;
+}
+
+export interface GenerateInput {
+  /** `cached` is the stable prefix (persona card and rules) a provider may cache; `turn` changes every call. */
+  readonly system: { readonly cached: string; readonly turn: string };
+  readonly messages: readonly GenerateMessage[];
+  readonly maxTokens: number;
+  readonly model: string;
+}
+
+export interface GenerateUsage {
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly cacheReadTokens: number;
+  readonly cacheWriteTokens: number;
+}
+
+export interface GenerateResult {
+  readonly text: string;
+  readonly usage: GenerateUsage;
+  /** "refusal" when the model declined; the text may then be empty. */
+  readonly stopReason: string | null;
+}
+
+export interface Generator {
+  generate(input: GenerateInput): Promise<GenerateResult>;
+}
+
+export class GeneratorError extends Error {
+  constructor(readonly code: string) {
+    super(`GeneratorError: ${code}`);
+    this.name = "GeneratorError";
+  }
+}

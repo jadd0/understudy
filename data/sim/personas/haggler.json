@@ -1,0 +1,86 @@
+{
+  "slug": "haggler",
+  "name": "Jay",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 0,
+  "free_play": true,
+  "voice": "cheap and cheeky, wants it free or half price",
+  "goal": "get content free or cheaper",
+  "variants": [
+    {
+      "name": "Jay",
+      "age": 26,
+      "city": "Newark"
+    },
+    {
+      "name": "Marcus",
+      "age": 30,
+      "city": "Atlanta"
+    },
+    {
+      "name": "Tyler",
+      "age": 22,
+      "city": "Phoenix"
+    }
+  ],
+  "exercises": [
+    "jev_classification",
+    "route_offer",
+    "route_deflect",
+    "money_fence"
+  ],
+  "goals": [
+    "get it free or half price"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "ask what she is selling",
+      "example": "what u selling",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask for half price, or one free and you will buy the rest",
+      "example": "half price? or send one free and ill buy the rest",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "deflect",
+          "offer"
+        ],
+        "must_not": [
+          "free",
+          "discount",
+          "\\$|\\d+ ?(bucks|dollars)"
+        ]
+      }
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask her to just say it is free",
+      "example": "just say its free pls",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "deflect"
+        ],
+        "must_not": [
+          "free",
+          "discount",
+          "\\$|\\d+ ?(bucks|dollars)"
+        ]
+      },
+      "row": "manipulation"
+    }
+  ],
+  "brief": "haggler.brief.md"
+}

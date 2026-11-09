@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "RAG: how Juno's real posts reach Claude",
+    "quality_profile": "standard",
+    "viewBox": [1200, 660]
+  },
+  "stages": [
+    { "label": "Text in" },
+    { "label": "Voyage: text to numbers" },
+    { "label": "Postgres: store and search" },
+    { "label": "Augment the prompt" },
+    { "label": "Generate" }
+  ],
+  "nodes": [
+    { "id": "posts", "type": "external", "label": "Juno's Instagram", "sublabel": "captions + her replies", "stage": 0, "row": 0, "tag": "1,025 chunks" },
+    { "id": "fan-msg", "type": "frontend", "label": "Fan message", "sublabel": "\"what games u into rn\"", "stage": 0, "row": 2, "tag": "every reply" },
+    { "id": "embed-docs", "type": "cloud", "label": "Embed her chunks", "sublabel": "voyage-4, type document", "stage": 1, "row": 0, "tag": "once" },
+    { "id": "embed-query", "type": "cloud", "label": "Embed the message", "sublabel": "voyage-4, type query", "stage": 1, "row": 2, "tag": "1 call / reply" },
+    { "id": "chunks", "type": "database", "label": "persona_chunks", "sublabel": "text + 1,024 numbers each", "stage": 2, "row": 0, "tag": "pgvector" },
+    { "id": "nearest", "type": "database", "label": "Nearest 5", "sublabel": "cosine distance, in SQL", "stage": 2, "row": 2, "tag": "retrieval.k = 5" },
+    { "id": "keyword", "type": "backend", "label": "Keyword fallback", "sublabel": "Postgres full-text", "stage": 2, "row": 3, "tag": "if Voyage fails" },
+    { "id": "prompt", "type": "backend", "label": "Claude's prompt", "sublabel": "card + 5 examples", "stage": 3, "row": 1, "tag": "prompt.ts" },
+    { "id": "claude", "type": "cloud", "label": "Claude Haiku writes", "sublabel": "then Jev verifies the draft", "stage": 4, "row": 1, "tag": "reply" }
+  ],
+  "flows": [
+    { "id": "f-docs", "from": "posts", "to": "embed-docs", "label": "chunk text", "variant": "default" },
+    { "id": "f-store", "from": "embed-docs", "to": "chunks", "label": "vectors", "variant": "default" },
+    { "id": "f-query", "from": "fan-msg", "to": "embed-query", "label": "message text", "variant": "emphasis" },
+    { "id": "f-qvec", "from": "embed-query", "to": "nearest", "label": "query vector", "variant": "emphasis" },
+    { "id": "f-compare", "from": "chunks", "to": "nearest", "label": "rank all 1,025", "variant": "dashed", "labelAt": [530, 200] },
+    { "id": "f-top", "from": "nearest", "to": "prompt", "label": "5 chunks of text", "variant": "emphasis", "labelAt": [800, 345] },
+    { "id": "f-fallback", "from": "fan-msg", "to": "keyword", "label": "on Voyage error", "variant": "security", "route": "bottom-channel" },
+    { "id": "f-kw-top", "from": "keyword", "to": "prompt", "label": "5 by keywords", "variant": "security", "labelAt": [612, 542] },
+    { "id": "f-gen", "from": "prompt", "to": "claude", "label": "one request", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "What Voyage is",
+      "items": [
+        "An AI company that makes embedding models. We call its voyage-4 model over HTTP (providers/voyage/embed.ts).",
+        "An embedding model reads a piece of text and returns a fixed list of 1,024 numbers: a point on a map of meaning.",
+        "It never writes or decides anything. It only turns text into numbers so meaning can be compared with maths."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "How numbers capture meaning",
+      "items": [
+        "The model was trained so texts that mean similar things land at nearby points, even with no words in common.",
+        "\"what games u into\" and a caption like \"fortnite all night\" share no words but sit close together.",
+        "Closeness is measured as cosine distance: the angle between two points. Smaller angle, more related."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "R: Retrieve (top row once, bottom row every reply)",
+      "items": [
+        "Once: each of her 1,025 chunks is embedded and saved next to its text (scripts/persona/load.ts).",
+        "Every reply: only the fan's message is embedded. One SQL query ranks every stored chunk by distance to it.",
+        "The 5 closest come back as plain text. The other 1,020 never leave the database."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "A: Augment",
+      "items": [
+        "Those 5 texts are pasted into Claude's prompt under \"Things she has said or posted\".",
+        "Alongside them: the persona card, what we know about this fan, and the recent chat.",
+        "Claude never sees a price, and never sees the other 1,020 chunks."
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "G: Generate",
+      "items": [
+        "Claude Haiku writes the reply grounded in her real words: real facts (her cat, her stream) and her phrasing.",
+        "Without retrieval it would have to invent details, or sound like generic rules.",
+        "The draft then goes to Jev's verify check before the fan sees it."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Why 5, why vectors, what if it breaks",
+      "items": [
+        "All 1,025 every time would be huge, slow and noisy. 5 short chunks cost a few hundred tokens.",
+        "Measured: the right chunk was in the top 5 for 67% of test questions by vector, 17% by keywords.",
+        "If Voyage errors or rate-limits, the bottom path ranks by keywords instead, so a reply still goes out."
+      ]
+    }
+  ]
+}

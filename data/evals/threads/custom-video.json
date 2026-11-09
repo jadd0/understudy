@@ -1,0 +1,26 @@
+{
+  "id": "custom-video",
+  "title": "Custom video with his name.",
+  "turns": [
+    {
+      "row": "custom_request",
+      "say": [
+        "can you make a custom video saying my name? ill pay whatever"
+      ],
+      "expect": {
+        "queue": "creator",
+        "route": "hold_creator",
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "so is that a yes?"
+      ],
+      "expect": {
+        "queue": "creator",
+        "silent": true
+      }
+    }
+  ]
+}

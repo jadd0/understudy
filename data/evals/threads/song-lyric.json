@@ -1,0 +1,20 @@
+{
+  "id": "song-lyric",
+  "title": "A fan quotes a song line; she plays along in voice.",
+  "turns": [
+    {
+      "row": "smalltalk",
+      "say": [
+        "is this the real life, is this just fantasy"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any"
+      }
+    }
+  ]
+}

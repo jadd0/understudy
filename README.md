@@ -1,0 +1,46 @@
+# Understudy
+
+A take-home build of an AI chatter for the creator Juno Vale: fans chat with a persona drawn from her
+public Instagram voice, spend from a prepaid wallet on unlocks and tips, and humans (Juno, trust and safety)
+can take over any conversation. Code decides routing, offers and prices; the models only draft and check.
+
+## Quick start
+
+```bash
+npm install
+cp .env.example .env.local     # fill the uncommented keys; see docs/DEVELOPMENT.md
+npm run check:env              # names missing or malformed keys, never prints a value
+npm run db:migrate && npm run db:seed
+npm run dev                    # http://localhost:3000
+```
+
+`bash scripts/gate.sh` (typecheck, lint, tests, build) is the only proof a change works. The build
+contract is `AGENTS.md`; decisions are in `.product/DECISIONS.md`.
+
+## Five-minute demo
+
+Use three browser profiles (or one normal window plus two private windows) so the sessions stay apart.
+
+1. **Fan.** Profile A: `/signin`, solve the Turnstile widget, enter any email, open the emailed link,
+   confirm a date of birth and the 18+ tick. Open `/chat` and message Juno; the $50 welcome credit is in
+   the wallet. Try asking for something she sells to see an offer, and unlock it.
+2. **Juno.** Profile B: `/signin` with `SEED_CREATOR_EMAIL` and `DEMO_SEAT_PASSWORD` (no email is sent for a
+   seat). `/console` shows the conversation live. Take it over, send a message as her (profile A sees it
+   arrive), then hand it back.
+3. **Admin.** Profile C: `/signin` with an address from `SEED_ADMIN_EMAILS` and the same password. `/admin`
+   lists every conversation and its flags; `/analytics` shows the KPIs.
+
+## Docs
+
+All of it is in [docs/](docs/README.md), which has the full index. By topic:
+
+| area | read |
+|---|---|
+| Deploy | [DEPLOY.md](docs/DEPLOY.md) |
+| Setup, commands, gate | [DEVELOPMENT.md](docs/DEVELOPMENT.md) |
+| The message engine | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Persona and retrieval | [PERSONA-PIPELINE.md](docs/PERSONA-PIPELINE.md), [RAG.md](docs/RAG.md) |
+| Auth, wallet, safety | [AUTH.md](docs/AUTH.md), [MONETISATION.md](docs/MONETISATION.md), [SAFETY.md](docs/SAFETY.md) |
+| Data | [DATA-MODEL.md](docs/DATA-MODEL.md) |
+| Realtime and consoles | [REALTIME.md](docs/REALTIME.md), [CONSOLE.md](docs/CONSOLE.md) |
+| Measurement | [EVALS.md](docs/EVALS.md), [METRICS.md](docs/METRICS.md), [ANALYTICS.md](docs/ANALYTICS.md) |

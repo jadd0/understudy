@@ -1,0 +1,127 @@
+// Checks an env file against the schema in lib/env and the extra shape rules below, and prints names only.
+//   npm run check:env -- [file] [--production]
+// file defaults to .env.local. --production also requires every key the deployed app needs at runtime
+// (the schema leaves provider keys optional so local work does not need them) and an https AUTH_URL.
+// Exit 0 when nothing is wrong, 1 otherwise. A value is never printed, only the key name and the rule it broke.
+import { readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
+import { pathToFileURL } from "node:url";
+
+/** Optional in the schema but required once deployed. CRON_SECRET is read by the cron route, outside the schema. */
+export const PRODUCTION_REQUIRED = [
+  "AUTH_URL",
+  "CLAUDE_SECRET_KEY",
+  "TYPESAFE_SECRET_KEY",
+  "VOYAGE_API_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "PUSHER_APP_ID",
+  "PUSHER_KEY",
+  "PUSHER_SECRET",
+  "PUSHER_CLUSTER",
+  "NEXT_PUBLIC_PUSHER_KEY",
+  "NEXT_PUBLIC_PUSHER_CLUSTER",
+  "CRON_SECRET",
+];
+
+function isUrl(value, protocols) {
+  try {
+    return protocols.includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}
+
+/** Shape rules for values that are present. Each returns the rule it broke, or null. */
+const SHAPES = {
+  DATABASE_URL: (v) => (/^postgres(ql)?:\/\/\S+$/.test(v) ? null : "must be a postgres:// connection string"),
+  AUTH_URL: (v) => (isUrl(v, ["http:", "https:"]) && !v.endsWith("/") ? null : "must be an http(s) URL with no trailing slash"),
+  EMAIL_FROM: (v) => (/^([^<>]+<)?[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+>?$/.test(v) ? null : "must be an address or Name <address>"),
+  RESEND_API_KEY: (v) => (v.startsWith("re_") ? null : "must start with re_"),
+  STRIPE_SECRET_KEY: (v) => (/^(sk|rk)_(test|live)_/.test(v) ? null : "must start with sk_test_, sk_live_, rk_test_ or rk_live_"),
+  STRIPE_WEBHOOK_SECRET: (v) => (v.startsWith("whsec_") ? null : "must start with whsec_"),
+  SEED_CREATOR_EMAIL: (v) => (/^[^\s@]+@[^\s@]+$/.test(v) ? null : "must be an email address"),
+  SEED_ADMIN_EMAILS: (v) => (v.split(",").every((e) => /^[^\s@]+@[^\s@]+$/.test(e.trim())) ? null : "must be comma-separated email addresses"),
+  PUSHER_CLUSTER: (v) => (/^[a-z0-9-]+$/.test(v) ? null : "must be a cluster id such as eu"),
+  NEXT_PUBLIC_PUSHER_CLUSTER: (v) => (/^[a-z0-9-]+$/.test(v) ? null : "must be a cluster id such as eu"),
+};
+
+/** Keys that must carry the same value as another key (the browser copy of a server key). */
+const MIRRORS = [
+  ["NEXT_PUBLIC_PUSHER_KEY", "PUSHER_KEY"],
+  ["NEXT_PUBLIC_PUSHER_CLUSTER", "PUSHER_CLUSTER"],
+];
+
+let loads = 0;
+
+/** Runs lib/env's own schema over `values` and returns the keys it rejects. */
+async function schemaFailures(values) {
+  const saved = process.env;
+  process.env = { ...values };
+  try {
+    const { getEnv } = await import(`../lib/env/index.ts?load=${loads++}`);
+    getEnv();
+    return [];
+  } catch (e) {
+    const names = String(e.message).split(": ").slice(1).join(": ");
+    return names ? names.split(", ") : ["(schema)"];
+  } finally {
+    process.env = saved;
+  }
+}
+
+/** Returns { problems: [{ key, rule }] } for a parsed env. Pure over `values`; reads no file. */
+export async function checkEnv(values, { production = false } = {}) {
+  const problems = [];
+  const failed = new Set(await schemaFailures(values));
+  for (const key of failed) {
+    problems.push({ key, rule: key in values ? "is empty: lib/env rejects an empty value, fill it or remove the line" : "is missing (required by lib/env)" });
+  }
+  if (production) {
+    for (const key of PRODUCTION_REQUIRED) {
+      if (!values[key] && !failed.has(key)) problems.push({ key, rule: "is missing (required in production)" });
+    }
+  }
+  for (const [key, shape] of Object.entries(SHAPES)) {
+    const value = values[key];
+    if (!value) continue;
+    const rule = shape(value);
+    if (rule) problems.push({ key, rule });
+  }
+  for (const [browser, server] of MIRRORS) {
+    if (values[browser] && values[server] && values[browser] !== values[server]) {
+      problems.push({ key: browser, rule: `must equal ${server}` });
+    }
+  }
+  if (production && values.AUTH_URL && isUrl(values.AUTH_URL, ["http:"])) {
+    problems.push({ key: "AUTH_URL", rule: "must be https in production" });
+  }
+  if (production && values.STRIPE_SECRET_KEY?.startsWith("sk_live_")) {
+    problems.push({ key: "STRIPE_SECRET_KEY", rule: "is a live key: use sk_test_ until the founder switches to live money" });
+  }
+  return problems;
+}
+
+async function main(argv) {
+  const production = argv.includes("--production");
+  const file = argv.find((a) => !a.startsWith("--")) ?? ".env.local";
+  let text;
+  try {
+    text = readFileSync(file, "utf8");
+  } catch {
+    console.error(`check-env: cannot read ${file}`);
+    return 1;
+  }
+  const problems = await checkEnv(parseEnv(text), { production });
+  if (problems.length === 0) {
+    console.log(`check-env: ${file} OK${production ? " (production)" : ""}`);
+    return 0;
+  }
+  for (const { key, rule } of problems) console.error(`check-env: ${key} ${rule}`);
+  console.error(`check-env: ${problems.length} problem(s) in ${file}`);
+  return 1;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exitCode = await main(process.argv.slice(2));
+}

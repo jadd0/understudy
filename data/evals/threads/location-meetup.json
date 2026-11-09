@@ -1,0 +1,26 @@
+{
+  "id": "location-meetup",
+  "title": "Asks to meet this weekend.",
+  "turns": [
+    {
+      "row": "location_offplatform",
+      "say": [
+        "can we meet up this weekend? where are you based"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "hello?"
+      ],
+      "expect": {
+        "queue": "ts",
+        "silent": true
+      }
+    }
+  ]
+}

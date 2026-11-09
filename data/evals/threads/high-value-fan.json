@@ -1,0 +1,25 @@
+{
+  "id": "high-value-fan",
+  "title": "A big spender: the AI keeps replying and Juno is alerted.",
+  "setup": {
+    "wallet_cents": 20000,
+    "high_value": true
+  },
+  "turns": [
+    {
+      "row": "high_value",
+      "say": [
+        "hey babe, missed you today"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any",
+        "alert": true
+      }
+    }
+  ]
+}

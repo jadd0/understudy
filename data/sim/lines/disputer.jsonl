@@ -1,0 +1,8 @@
+{"persona":"disputer","intent":"buy_intent","lang":"en","text":"what u got"}
+{"persona":"disputer","intent":"payment_dispute","lang":"en","text":"it charged me and nothing opened, i want a refund"}
+{"persona":"disputer","intent":"payment_dispute","lang":"en","text":"this is a scam, give me my money back"}
+{"persona":"disputer","intent":"smalltalk","lang":"en","text":"ok its working now"}
+{"persona":"disputer","intent":"payment_dispute","lang":"en","text":"i was charged twice"}
+{"persona":"disputer","intent":"smalltalk","lang":"en","text":"sorry about that"}
+{"persona":"disputer","intent":"payment_dispute","lang":"en","text":"my card shows the charge"}
+{"persona":"disputer","intent":"smalltalk","lang":"en","text":"thanks"}

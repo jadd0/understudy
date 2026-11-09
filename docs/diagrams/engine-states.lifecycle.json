@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Conversation Modes",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Conversation mode"
+    },
+    {
+      "id": "events",
+      "label": "What moves a chat without a hard stop"
+    },
+    {
+      "id": "terminal",
+      "label": "Account outcomes"
+    }
+  ],
+  "states": [
+    {
+      "id": "ai",
+      "type": "start",
+      "label": "ai",
+      "sublabel": "engine may lease",
+      "lane": "main",
+      "col": 0,
+      "tag": "alerts keep it ai"
+    },
+    {
+      "id": "hcreator",
+      "type": "waiting",
+      "label": "handoff_creator",
+      "sublabel": "queued for Juno",
+      "lane": "main",
+      "col": 1,
+      "tag": "no AI"
+    },
+    {
+      "id": "mcreator",
+      "type": "external",
+      "label": "human_creator",
+      "sublabel": "Juno typing",
+      "lane": "main",
+      "col": 2,
+      "tag": "takeover"
+    },
+    {
+      "id": "hts",
+      "type": "failure",
+      "label": "handoff_ts",
+      "sublabel": "queued for T&S",
+      "lane": "main",
+      "col": 3,
+      "tag": "hard stop"
+    },
+    {
+      "id": "mts",
+      "type": "external",
+      "label": "human_ts",
+      "sublabel": "admin typing",
+      "lane": "main",
+      "col": 4,
+      "tag": ""
+    },
+    {
+      "id": "nosafe",
+      "type": "failure",
+      "label": "no safe draft",
+      "sublabel": "or 3 failed turns",
+      "lane": "events",
+      "col": 0,
+      "tag": "verify_failed, engine_error"
+    },
+    {
+      "id": "flagged",
+      "type": "failure",
+      "label": "flagged",
+      "sublabel": "minor read-only",
+      "lane": "terminal",
+      "col": 1,
+      "tag": "threat: /blocked"
+    },
+    {
+      "id": "banned",
+      "type": "failure",
+      "label": "banned",
+      "sublabel": "flag + sessions deleted",
+      "lane": "terminal",
+      "col": 2,
+      "tag": "admin"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-hold",
+      "from": "ai",
+      "to": "hcreator",
+      "label": "hold",
+      "variant": "default"
+    },
+    {
+      "id": "t-claim",
+      "from": "hcreator",
+      "to": "mcreator",
+      "label": "takeover",
+      "variant": "emphasis",
+      "labelAt": [
+        325,
+        112
+      ]
+    },
+    {
+      "id": "t-back",
+      "from": "mcreator",
+      "to": "ai",
+      "label": "hand back",
+      "variant": "emphasis",
+      "route": "top-channel",
+      "fromSide": "top",
+      "toSide": "top"
+    },
+    {
+      "id": "t-stop",
+      "from": "ai",
+      "to": "hts",
+      "label": "hard stop",
+      "variant": "security",
+      "route": "bottom-channel",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "id": "t-ts",
+      "from": "hts",
+      "to": "mts",
+      "label": "admin",
+      "variant": "security"
+    },
+    {
+      "id": "t-release",
+      "from": "mts",
+      "to": "ai",
+      "label": "release",
+      "variant": "emphasis",
+      "route": "top-channel",
+      "fromSide": "top",
+      "toSide": "top"
+    },
+    {
+      "id": "t-nosafe",
+      "from": "nosafe",
+      "to": "hcreator",
+      "label": "held",
+      "variant": "security",
+      "labelDy": 40
+    },
+    {
+      "id": "t-flag",
+      "from": "hts",
+      "to": "flagged",
+      "label": "minor, threat",
+      "variant": "security",
+      "labelAt": [
+        556,
+        214
+      ]
+    },
+    {
+      "id": "t-ban",
+      "from": "mts",
+      "to": "banned",
+      "label": "ban",
+      "variant": "security",
+      "labelAt": [
+        710,
+        214
+      ]
+    }
+  ]
+}

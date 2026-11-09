@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Persona Data Pipeline",
+    "quality_profile": "standard",
+    "viewBox": [
+      1100,
+      640
+    ]
+  },
+  "stages": [
+    {
+      "label": "Source"
+    },
+    {
+      "label": "Clean"
+    },
+    {
+      "label": "Split"
+    },
+    {
+      "label": "Derive"
+    },
+    {
+      "label": "Card and eval"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "raw",
+      "type": "external",
+      "label": "Raw scrape",
+      "sublabel": "2 handles, gitignored",
+      "stage": 0,
+      "row": 1,
+      "tag": ""
+    },
+    {
+      "id": "normalise",
+      "type": "security",
+      "label": "Normalise",
+      "sublabel": "anonymise handles",
+      "stage": 1,
+      "row": 1,
+      "tag": "bank/"
+    },
+    {
+      "id": "split",
+      "type": "backend",
+      "label": "Split",
+      "sublabel": "60/20/20 by post",
+      "stage": 2,
+      "row": 1,
+      "tag": ""
+    },
+    {
+      "id": "style",
+      "type": "backend",
+      "label": "Style",
+      "sublabel": "measured figures",
+      "stage": 3,
+      "row": 0,
+      "tag": "style.json"
+    },
+    {
+      "id": "chunks",
+      "type": "database",
+      "label": "Chunks",
+      "sublabel": "retrieval corpus",
+      "stage": 3,
+      "row": 2,
+      "tag": "1025"
+    },
+    {
+      "id": "card",
+      "type": "cloud",
+      "label": "Draft card",
+      "sublabel": "Claude, train pairs",
+      "stage": 4,
+      "row": 0,
+      "tag": "v1.md"
+    },
+    {
+      "id": "eval",
+      "type": "cloud",
+      "label": "Rapid eval",
+      "sublabel": "Jev, validation",
+      "stage": 4,
+      "row": 1,
+      "tag": "0.9692"
+    },
+    {
+      "id": "queries",
+      "type": "backend",
+      "label": "Query set",
+      "sublabel": "30 labelled",
+      "stage": 4,
+      "row": 2,
+      "tag": ""
+    },
+    {
+      "id": "persona-eval",
+      "type": "cloud",
+      "label": "Persona eval",
+      "sublabel": "Claude judge, test split",
+      "stage": 4,
+      "row": 3,
+      "tag": "persona.json"
+    }
+  ],
+  "flows": [
+    {
+      "id": "f-raw",
+      "from": "raw",
+      "to": "normalise",
+      "label": "posts, replies",
+      "variant": "security"
+    },
+    {
+      "id": "f-norm",
+      "from": "normalise",
+      "to": "split",
+      "label": "replies.jsonl",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f-style",
+      "from": "split",
+      "to": "style",
+      "label": "train + style_only",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f-chunks",
+      "from": "split",
+      "to": "chunks",
+      "label": "no val/test",
+      "variant": "default"
+    },
+    {
+      "id": "f-card",
+      "from": "style",
+      "to": "card",
+      "label": "figures",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f-eval",
+      "from": "card",
+      "to": "eval",
+      "label": "card v1",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelAt": [
+        1000,
+        200
+      ]
+    },
+    {
+      "id": "f-queries",
+      "from": "chunks",
+      "to": "queries",
+      "label": "topics",
+      "variant": "dashed"
+    },
+    {
+      "id": "f-test",
+      "from": "split",
+      "to": "persona-eval",
+      "label": "test pairs only",
+      "variant": "security",
+      "route": "bottom-channel"
+    }
+  ]
+}

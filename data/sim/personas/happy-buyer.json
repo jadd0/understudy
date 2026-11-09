@@ -1,0 +1,109 @@
+{
+  "slug": "happy-buyer",
+  "name": "Sam",
+  "lang": "en",
+  "weight": 5,
+  "spend_cents": 1000,
+  "free_play": true,
+  "voice": "31, polite, normal pace, likes her content and tips",
+  "goal": "see something new, say thanks",
+  "variants": [
+    {
+      "name": "Sam",
+      "age": 31,
+      "city": "Boston"
+    },
+    {
+      "name": "Chris",
+      "age": 35,
+      "city": "Raleigh"
+    },
+    {
+      "name": "Alex",
+      "age": 29,
+      "city": "Madison"
+    }
+  ],
+  "exercises": [
+    "jev_classification",
+    "route_reply",
+    "route_offer",
+    "pacing_buy_intent",
+    "topup_stripe",
+    "unlock_wallet",
+    "tip_stripe",
+    "offer_accept"
+  ],
+  "goals": [
+    "ask for something new",
+    "buy it",
+    "thank her with a tip"
+  ],
+  "beats": [
+    {
+      "kind": "free",
+      "topic": "small talk about your week",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "small talk about weekend plans",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "small talk about music",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask whether she has anything new",
+      "example": "got anything new?",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "topup",
+      "cents": 1000
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked"
+    },
+    {
+      "kind": "free",
+      "topic": "say that was cute",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "tip",
+      "cents": 300
+    },
+    {
+      "kind": "free",
+      "topic": "say thank you for the chat",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    }
+  ],
+  "brief": "happy-buyer.brief.md"
+}

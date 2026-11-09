@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Juno">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6E7D3"/>
+      <stop offset="1" stop-color="#F2C9A8"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5FA8A0"/>
+      <stop offset="1" stop-color="#1F5E63"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" fill="url(#sky)"/>
+  <circle cx="84" cy="40" r="13" fill="#FBF3E8" opacity=".9"/>
+  <path d="M0 70 C 18 62, 32 78, 50 70 S 82 62, 100 70 S 116 74, 120 70 V120 H0Z" fill="url(#sea)"/>
+  <path d="M0 86 C 20 80, 34 92, 54 86 S 86 80, 104 86 S 116 90, 120 86" fill="none" stroke="#A9D6CF" stroke-width="2" opacity=".7"/>
+  <text x="60" y="108" text-anchor="middle" font-family="Georgia, serif" font-size="20" font-style="italic" fill="#FBF3E8">juno</text>
+</svg>

@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Understudy Message Engine</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~68ch) with a sticky contents rail on wide screens; diagrams break out to the full content width. */
+:root {
+  --bg: #FFFFFF;
+  --surface: #F5F6FA;
+  --ink: #0A0A0B;
+  --muted: #5B5F70;
+  --line: #E3E5EE;
+  --accent: #3D5AFE;
+  --accent-soft: #EEF1FF;
+  --stop: #C62845;
+  --stop-soft: #FDEEF1;
+  --font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-3: 2.125rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C0D12; --surface: #151722; --ink: #ECEDF3; --muted: #9A9EB2; --line: #262938;
+    --accent: #8296FF; --accent-soft: #1A1F3D; --stop: #FF7D93; --stop-soft: #2A1419; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C0D12; --surface: #151722; --ink: #ECEDF3; --muted: #9A9EB2; --line: #262938;
+  --accent: #8296FF; --accent-soft: #1A1F3D; --stop: #FF7D93; --stop-soft: #2A1419; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: var(--step-0); line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: var(--step--1); }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); }
+main { min-width: 0; }
+header.top { margin-bottom: 40px; max-width: 68ch; }
+.eyebrow { font-family: var(--font-mono); font-size: var(--step--1); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: var(--step-3); line-height: 1.15; margin: 8px 0 12px; text-wrap: balance; letter-spacing: -0.02em; }
+h2 { font-size: var(--step-2); line-height: 1.2; margin: 0 0 8px; text-wrap: balance; letter-spacing: -0.01em; }
+h3 { font-size: var(--step-1); margin: 28px 0 8px; text-wrap: balance; }
+p, li { max-width: 68ch; }
+section { padding-top: 48px; margin-top: 48px; border-top: 1px solid var(--line); }
+section:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--surface); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.frame { margin: 20px 0 8px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.frame iframe { display: block; width: 100%; height: 720px; border: 0; background: var(--bg); }
+.frame-cap { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; font-size: var(--step--1); color: var(--muted); padding: 8px 12px; border-top: 1px solid var(--line); }
+ol.steps { padding-left: 1.4em; display: grid; gap: 10px; }
+ol.steps > li::marker { font-family: var(--font-mono); color: var(--muted); }
+.where { display: block; font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); }
+.table-scroll { overflow-x: auto; margin: 16px 0; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: var(--step--1); min-width: 640px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { background: var(--surface); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--font-mono); }
+.note { background: var(--accent-soft); border-radius: 8px; padding: 12px 16px; margin: 16px 0; max-width: 68ch; }
+.warn { background: var(--stop-soft); border-radius: 8px; padding: 12px 16px; margin: 16px 0; max-width: 68ch; }
+.note p, .warn p { margin: 0; }
+.tag { font-family: var(--font-mono); font-size: 0.78em; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+dl.gloss { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 24px; max-width: 80ch; }
+dl.gloss dt { font-weight: 600; }
+dl.gloss dd { margin: 0; }
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  nav.toc { position: static; }
+  nav.toc ol { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .frame iframe { height: 560px; }
+}
+@media (max-width: 520px) {
+  dl.gloss { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  dl.gloss dd { margin-bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><a href="#turn">1. The turn</a></li>
+    <li><a href="#routing">2. Routing</a></li>
+    <li><a href="#verify">3. Verify and retry</a></li>
+    <li><a href="#message">4. A message end to end</a></li>
+    <li><a href="#context">5. What each model sees</a></li>
+    <li><a href="#states">6. Modes and outcomes</a></li>
+    <li><a href="#failures">Failure table</a></li>
+    <li><a href="#docs">Where the docs disagree</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ol>
+</nav>
+<main>
+<header class="top">
+  <div class="eyebrow">docs/diagrams · lib/engine</div>
+  <h1>Understudy Message Engine</h1>
+  <p>How a fan's message becomes Juno's reply: six diagrams, each followed by a walkthrough of every step, rule and threshold. Every threshold names its <code>config</code> key and seeded default (from <code>docs/CONFIG.md</code>), the decision in <code>.product/DECISIONS.md</code> that explains it, and the file and function where it lives. Read from the code on 2026-11-04. Where the code was ambiguous, the text says so.</p>
+  <p>Each diagram is interactive (pan, zoom, search, theme). Open any of them full screen from the link under its frame.</p>
+</header>
+
+<!-- 1 ------------------------------------------------------------------ -->
+<section id="turn">
+  <div class="eyebrow">Diagram 1 · workflow</div>
+  <h2>The turn</h2>
+  <p>One turn answers one batch of fan messages. The top row reads the fan and decides; the bottom row (right to left) drafts, checks, saves and delivers. Dashed arrows are loops back.</p>
+  <div class="frame">
+    <iframe src="engine-turn.html" title="Engine turn overview diagram" loading="lazy"></iframe>
+    <div class="frame-cap"><span>Source: <code>engine-turn.workflow.json</code></span><a href="engine-turn.html">Open full screen</a></div>
+  </div>
+
+  <ol class="steps">
+    <li><strong>Fan message.</strong> <code>sendFanMessage</code> validates the send (2,000-character limit <code>MAX_MESSAGE_CHARS</code>, an idempotent <code>clientMsgId</code>, a fan flagged <code>minor_in_chat</code> is refused, ), stores the row, clears <code>fan_typing_until</code> and schedules <code>processConversation</code> with Next's <code>after()</code>. The message is stored even when a human owns the chat; the lease then refuses to answer it.
+      <span class="where">lib/chat/send.ts · sendFanMessage</span>
+      <p><code>processConversation</code> runs turns until nothing is left unanswered, at most 5 per call (code constant <code>MAX_TURNS_PER_RUN</code>). The per-minute sweep (<code>/api/cron/sweep</code>, <code>vercel.json</code>, guarded by <code>CRON_SECRET</code>) is the safety net: it clears expired leases, takes up to 10 AI conversations (code constant <code>MAX_CONVERSATIONS_PER_SWEEP</code>) whose oldest unanswered fan message is older than <code>engine.debounce_ms</code> (250), oldest first, stops starting new ones after 35 s of its 60 s function (<code>SWEEP_START_BUDGET_MS</code>), and expires offers past their time.</p>
+      <span class="where">lib/engine/process.ts · processConversation; lib/engine/sweep.ts · sweep</span></li>
+    <li><strong>Lease.</strong> The turn first reads <code>engine.lease_ms</code> (30000), then <code>acquireLease</code> stamps a random <code>lease_token</code> and <code>lease_until</code> on the conversation, but only if its mode is <code>ai</code>, the AI is switched on for this conversation and for the creator, and no live lease exists. No lease means another turn is running or a human owns the chat, and the call returns <code>busy</code> without writing anything. The lease is what makes many simultaneous triggers safe.
+      <span class="where">lib/engine/lease.ts · acquireLease; lib/engine/turn.ts · runTurn</span>
+      <p>Then every engine setting loads in one query (<code>loadEngineConfig</code>): a creator's own row wins over the platform row, except <code>floor.intent</code>, <code>floor.safety.*</code> and <code>platform.*</code>, which are read from platform rows only so a creator cannot loosen safety. The newest <em>published</em> persona card is loaded; with none, the turn fails with <code>ConfigMissing("persona_card")</code>.</p>
+      <span class="where">lib/engine/cfg.ts · loadEngineConfig, isPlatformOnly</span></li>
+    <li><strong>Wait to settle.</strong> The engine waits until the fan has stopped: it sleeps <code>engine.debounce_ms</code> (250) and reloads; a new message, or <code>fan_typing_until</code> still in the future, starts another wait. The total sleep never passes <code>engine.debounce_max_ms</code> (8000), so a fan who keeps typing cannot hold the turn. His composer pings at most every 2 s (<code>TYPING_PING_INTERVAL_MS</code>) and each ping marks him typing for 3 s (<code>TYPING_WINDOW_SECONDS</code>). If nothing is waiting, the lease is released and the turn ends <code>idle</code>.
+      <span class="where">lib/engine/debounce.ts · waitForQuiet; lib/chat/typing.ts · markFanTyping</span>
+      <p>The batch is every fan message with no <code>turn_id</code> that is newer than the last message a human (creator or admin) sent. AI replies do not close a batch, so a message he wrote while a reply was being drafted is still answered.</p>
+      <span class="where">lib/engine/turn.ts · loadInbound</span></li>
+    <li><strong>Facts and history.</strong> History is the last <code>engine.history_rounds</code> (20) rounds of sent, non-system messages (the query reads 30 rows per round, code constant <code>HISTORY_ROWS_PER_ROUND</code>, then cuts at round boundaries). Facts come from one database read against the database clock: hardship cooldown active, declines in the last <code>pitch.decline_window_minutes</code> (20), unlocks in the last <code>pitch.velocity_window_minutes</code> (30), today's spend against the fan's cap (his own, with a matured raise counted, else <code>wallet.daily_cap_cents</code> 20000), rounds since the last offer, an unresolved handoff, an open offer, any unlock in the chat, and whether he unlocked after her last message. The high-value score (<code>fan.high_value_threshold_cents</code> 10000, <code>fan.high_value_half_life_days</code> 7) is read here too. The batch starts a session when her last message before it is at least <code>engine.gap_marker_minutes</code> (30) old. The engine never takes a wallet lock.
+      <span class="where">lib/engine/facts.ts · loadFacts; lib/engine/thread.ts · sessionGapMs; lib/wallet/score.ts · isHighValue</span></li>
+    <li><strong>Jev inbound.</strong> One Jev call answers every question routing needs: intent (8 options), explicitness (4), six yes/no safety checks, <code>thread</code> (how his messages fit the chat), <code>pitch_fit</code> (asked only when pacing would allow an AI-started pitch, there is no open offer and this is not a session start) and <code>offer_response</code> (only when an offer is open). Jev sees no card, no prices, no memory. A <code>thread</code> answer outside the options becomes <code>unknown</code>; an unusable <code>pitch_fit</code> becomes "no pitch".
+      <span class="where">lib/engine/questions.ts · inboundQuestions; lib/engine/route.ts · parseInbound</span>
+      <p><strong>Still typing.</strong> If Jev says his words stop mid-thought (<code>still_typing</code>) and no hard stop fired, the turn waits for one more message, one debounce at a time, while the turn is younger than <code>engine.turn_budget_ms</code> (12000) and inside the same <code>debounce_max_ms</code> budget. If the batch grew, the whole read repeats. This happens at most <code>engine.fold_in_max</code> (1) times. A hard stop is never delayed this way.</p>
+      <span class="where">lib/engine/debounce.ts · waitForMore; lib/engine/turn.ts · runPass</span></li>
+    <li><strong>route().</strong> A pure function turns Jev's answers and the facts into one route. Diagram 2 walks it. Hard stops and holds skip drafting and go straight to commit.
+      <span class="where">lib/engine/route.ts · route</span></li>
+    <li><strong>Context.</strong> Only drafting routes get here. The fan's memory profile loads; retrieval returns <code>retrieval.k</code> (5) persona chunks (a retrieval error becomes an empty list). On the <code>offer</code> route, code builds the shortlist (the creator's active items of the allowed kinds that he has not unlocked and that are not already in an open offer, ordered by price, title, id) and Jev picks one by key from titles and teasers only. One item needs no Jev call. An empty list or a bad pick falls back to the route's fallback: <code>reply</code>, or <code>deflect</code> for an explicit request.
+      <span class="where">lib/engine/memory.ts · loadProfile; lib/engine/offer.ts · buildShortlist, pickOffer</span></li>
+    <li><strong>Claude draft.</strong> <code>model.generate</code> (<code>claude-haiku-5-5</code>) writes the reply with <code>engine.max_tokens</code> (300) and thinking switched off, because thinking tokens count against the limit and once left an empty draft. The prompt is a cached prefix (card, rules, never-list) plus a per-turn block (diagram 5). Before any check, emoji she used in her last 8 bubbles are removed from the draft (<code>RECENT_BUBBLES</code>, ); a draft that would be left empty is kept whole.
+      <span class="where">lib/engine/prompt.ts · buildPrompt; providers/anthropic/generator.ts; lib/engine/emoji.ts · dropRepeatedEmoji</span></li>
+    <li><strong>Verify.</strong> Code checks, then Jev checks the draft. A failure redrafts, up to <code>engine.gen_attempts</code> (2) drafts. Diagram 3 walks it.
+      <span class="where">lib/engine/verify.ts · verifyDraft</span></li>
+    <li><strong>Fold-in check.</strong> If he wrote again while she was drafting, fewer than <code>engine.fold_in_max</code> (1) fold-ins have happened and the turn is younger than <code>engine.turn_budget_ms</code> (12000), the draft is thrown away and the whole turn reads the larger batch from step 3. A crisis message that arrived mid-draft is therefore classified before anything is sent: if the second read is a hard stop or a hold, that wins. If the second read finds no safe draft, the earlier safe draft is committed for the earlier batch and the late messages wait for the next turn.
+      <span class="where">lib/engine/turn.ts · attemptTurn, newMessagesSince</span></li>
+    <li><strong>Commit.</strong> One transaction, guarded by a compare-and-set on <code>mode = 'ai'</code>, the <code>version</code> read at lease time and the lease token. It bumps <code>version</code>, clears the lease, resets <code>failed_turns</code>, sets the new mode, starts the hardship cooldown (<code>pitch.hardship_cooldown_hours</code> 72), records <code>last_pitch_at</code>, writes the turn row (route, Jev answers, drafts trail, models, tokens, cost, timings), opens or escalates the handoff, flags the fan (minor or threat), supersedes unseen bubbles on a hard stop, marks a declined offer, creates the new offer (price copied in cents, expiring after <code>offer.ttl_minutes</code> 1440), inserts the bubbles and stamps the batch with the turn id. If a takeover or re-lease got there first, the turn is recorded <code>superseded</code> and only a hard stop's safety part is applied.
+      <span class="where">lib/engine/lease.ts · commitTurn, recordSuperseded; lib/engine/handoff.ts · openHandoff</span></li>
+    <li><strong>Deliver.</strong> A sent reply is split into one bubble per line, at most 3 (<code>MAX_BUBBLES</code>, ; extra lines join the last). The first bubble is due after its typing time: length ÷ <code>engine.typing_cps</code> (12) seconds, minus the time since his first message in the batch, capped at <code>engine.typing_max_ms</code> (10000). Each later bubble follows by one gap drawn once per turn between <code>delivery.bubble_gap_ms_min</code> (1500) and <code>delivery.bubble_gap_ms_max</code> (4000). Templates and held drafts have no delay. Each bubble's <code>deliver_at</code> holds it back; Pusher gets <code>typing</code> and one <code>message.created</code> per bubble, and the creator's inbox gets <code>inbox.changed</code>. After a <code>replied</code> or <code>suggested</code> commit, <code>model.memory</code> extracts schema-only facts about the fan into his profile and its cost is added to the turn.
+      <span class="where">lib/engine/bubbles.ts · splitBubbles, deliverOffsets, bubbleGap; lib/engine/turn.ts · emitDelivery, finish; lib/engine/memory.ts · extractMemory</span>
+      <p><strong>Cost.</strong> Every call's tokens are priced from <code>price.&lt;model&gt;.*</code> rows (micro-dollars per million tokens: Haiku input 100000, output 500000, cache read 10000, cache write 125000; Jev input 42000, output 0) and summed per stage (<code>jev_in</code>, <code>offer_pick</code>, <code>generate</code>, <code>jev_out</code>, <code>memory</code>) into <code>turns.cost_micros</code>. A missing price row is <code>ConfigMissing</code> before any provider call.</p>
+      <span class="where">lib/engine/cost.ts · CostLedger, costMicros</span></li>
+  </ol>
+</section>
+
+<!-- 2 ------------------------------------------------------------------ -->
+<section id="routing">
+  <div class="eyebrow">Diagram 2 · workflow</div>
+  <h2>Routing</h2>
+  <p>Checks run left to right and the first that matches decides. Trust &amp; Safety outranks Juno, and Juno outranks the AI. Every probability is Jev's p(yes); a check fires at or above its floor, so a lower floor is stricter.</p>
+  <div class="frame">
+    <iframe src="engine-routing.html" title="Engine routing decision diagram" loading="lazy"></iframe>
+    <div class="frame-cap"><span>Source: <code>engine-routing.workflow.json</code></span><a href="engine-routing.html">Open full screen</a></div>
+  </div>
+
+  <h3>1. Hard stops, strictest first</h3>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Check</th><th>Key</th><th class="num">Default</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td>Fan may be under 18</td><td><code>floor.safety.minor</code></td><td class="num">0.3</td><td>Platform notice (sender <code>system</code>, with <code>platform.support_email</code>), account flagged <code>minor_in_chat</code>: he can read but every send is refused, sessions kept.</td></tr>
+      <tr><td>Self-harm or crisis</td><td><code>floor.safety.self_harm</code></td><td class="num">0.3</td><td>Crisis template with helplines. If self-harm fired at all, this template is sent even when a stricter reason names the handoff.</td></tr>
+      <tr><td>Threat or harassment</td><td><code>floor.safety.threat</code></td><td class="num">0.5</td><td>No message, account flagged.</td></tr>
+      <tr><td>Meetup, location, other app, paying outside</td><td><code>floor.safety.location_offplatform</code></td><td class="num">0.5</td><td>"I keep my chats here" template. Online games together are not a violation for anyone.</td></tr>
+      <tr><td>Refund or charge complaint</td><td><code>floor.safety.payment_dispute</code></td><td class="num">0.6</td><td>"Passed to support" template.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Every hard stop sets mode <code>handoff_ts</code>, opens a Trust &amp; Safety handoff, sends its template at once (no typing delay) and supersedes any of her bubbles he has not seen yet, expiring an offer they carried. Trust &amp; Safety outranks a creator takeover, so this safety part is applied even when the commit loses the race.</p>
+  <span class="where">lib/engine/route.ts · HARD_STOPS, hardStopOf; lib/engine/templates.ts; lib/engine/lease.ts · flagUser, supersedeUnseenBubbles</span>
+
+  <h3>2. Hardship and the high-value alert (not routes)</h3>
+  <p><code>floor.safety.hardship</code> (0.5) never stops the chat. It blocks every pitch this turn, switches the instruction to "be warm and supportive, do not sell", and on commit sets <code>no_pitch_until</code> for <code>pitch.hardship_cooldown_hours</code> (72), during which even a buy request gets no offer. A high-value fan with no open handoff makes the turn open a <code>high_value_alert</code> for Juno while the AI keeps replying; the alert never replaces a real handoff reason.</p>
+  <span class="where">lib/engine/route.ts · route; lib/engine/prompt.ts · buildPrompt; lib/engine/handoff.ts · openHandoff</span>
+
+  <h3>3. Intent floor</h3>
+  <p>If Jev's probability for the intent it chose is below <code>floor.intent</code> (0.5), the read is unsure and the chat is held for Juno (<code>unsure</code>). One exception: when the best guess is <code>buy_intent</code>, there is no hardship and pacing allows, the turn makes an offer (ppv or bundle, falling back to a reply) instead, because a wrong offer costs one decline and a wrong hold costs Juno's time and the sale.</p>
+
+  <h3>4. Juno's intents and fixed routes</h3>
+  <p><code>live_chat</code> holds for Juno (<code>explicit_live_chat</code>); <code>custom_request</code> holds for Juno (<code>custom_request</code>). A hold sends the fan nothing and sets mode <code>handoff_creator</code>. <code>ai_question</code> gets <code>ai_disclosure</code>: an honest, warm "I'm an AI assistant for her account", and verify fails a draft that does not admit it. <code>manipulation</code> gets a playful <code>deflect</code>.</p>
+
+  <h3>5. The pitch gate</h3>
+  <p><code>canPitch</code> checks, in order, and the first failure blocks the pitch:</p>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Limit</th><th>Key</th><th class="num">Default</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Hardship cooldown</td><td><code>pitch.hardship_cooldown_hours</code></td><td class="num">72 h</td><td><code>no_pitch_until</code> in the future</td></tr>
+      <tr><td>Declines</td><td><code>pitch.max_declines</code> in <code>pitch.decline_window_minutes</code></td><td class="num">2 in 20 min</td><td>A decline in this very message counts now</td></tr>
+      <tr><td>Daily cap reached</td><td><code>wallet.daily_cap_cents</code> or his own cap</td><td class="num">20000</td><td>Spend since UTC midnight</td></tr>
+      <tr><td>Velocity</td><td><code>pitch.velocity_max_unlocks</code> in <code>pitch.velocity_window_minutes</code></td><td class="num">3 in 30 min</td><td>Unlocks by this fan</td></tr>
+      <tr><td>Round gap</td><td><code>pitch.min_gap_rounds</code></td><td class="num">5</td><td>A floor, not a trigger; <code>buy_intent</code> and <code>explicit_request</code> skip it</td></tr>
+    </tbody>
+  </table></div>
+  <span class="where">lib/engine/pacing.ts · canPitch</span>
+  <p>Then, with pitching allowed and no hardship:</p>
+  <ul>
+    <li><strong>Explicit request</strong> (intent <code>explicit_request</code> or explicitness <code>explicit</code>): a ppv offer, else a deflect. The AI never writes explicit text.</li>
+    <li><strong>Buy intent:</strong> a ppv or bundle offer, else a plain reply.</li>
+    <li><strong>Small talk or flirt</strong> (an AI-started pitch): also needs no open offer, no session start, <code>thread</code> of <code>answers_her</code> or <code>same_topic</code>, and <code>pitch_fit</code> at or above <code>pitch.fit_floor</code> (0.58). Otherwise a reply.</li>
+  </ul>
+  <p>The AI only offers <code>ppv</code> and <code>bundle</code> items; the personal chat goes to Juno.</p>
+</section>
+
+<!-- 3 ------------------------------------------------------------------ -->
+<section id="verify">
+  <div class="eyebrow">Diagram 3 · workflow</div>
+  <h2>Verify and retry</h2>
+  <p>Each draft passes cheap code checks first; only a clean draft costs a Jev call. Not shown as an arrow: a draft that fails a code check skips Jev and goes straight to "Sort failures".</p>
+  <div class="frame">
+    <iframe src="engine-verify.html" title="Engine verify and retry diagram" loading="lazy"></iframe>
+    <div class="frame-cap"><span>Source: <code>engine-verify.workflow.json</code></span><a href="engine-verify.html">Open full screen</a></div>
+  </div>
+  <h3>Code checks (no model)</h3>
+  <ul>
+    <li><code>empty</code>: nothing left after trimming.</li>
+    <li><code>money</code>: a currency symbol, a number beside a currency word, a percentage, a two-decimal price, or "for free", "on the house", "no charge", "gratis". Claude never sees a price, so none should appear.</li>
+    <li><code>marker_echo</code>: she copied a "— 2 hours later —" time marker.</li>
+    <li><code>asks_media</code>: a send-verb near a media word ("send me a pic", "drop a selfie"). Fans can only send text. "See" is left out so her own pitch passes.</li>
+    <li><code>never_list</code>: a term from the card's never-list, whole word, plurals and spacing tolerated.</li>
+    <li><code>refusal_stop</code>: Claude's own <code>stop_reason</code> was <code>refusal</code>.</li>
+  </ul>
+  <span class="where">lib/engine/verify.ts · codeChecks, mentionsMoney, asksForMedia, neverTermPattern</span>
+  <h3>Jev checks</h3>
+  <p>Jev reads <code>{ draft, fan_message, earlier_messages }</code> and answers seven questions: <code>on_persona</code> must be yes; <code>explicitness</code> must not be <code>explicit</code>; <code>offplatform_or_meetup</code> must be no (games together and saying where she streams are fine, ); <code>is_refusal</code> must be no; <code>admits_ai</code> must be yes on <code>ai_disclosure</code> and no everywhere else; <code>promises_price_or_free</code> must be no; <code>reasks</code> (asking what he already answered, or "wbu" after he answered) should be no.</p>
+  <div class="note"><p><strong>Paid and unpaid are now identical.</strong> The code still picks a "paid" variant of the inbound <code>location_offplatform</code> question and of the verify question set when the fan has unlocked something, but since  both variants are byte-for-byte the same text. The only paid difference any model still sees is the paid line in Claude's "The chat right now" block, and the RULES already allow online plans for every fan.</p></div>
+  <span class="where">lib/engine/questions.ts · VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID, LOCATION_OFFPLATFORM_PAID; lib/engine/verify.ts · jevChecks</span>
+  <h3>Safety failures and quality failures</h3>
+  <p><code>reasks</code> is the only quality check. A draft whose only failure is <code>reasks</code> still counts as safe: it becomes the chosen draft, and the second attempt gets the re-ask note ("answer what he asked, end with a different hook"). If the second draft does better it replaces the first; if it fails on safety, the first is sent anyway. Any other failure is a safety failure: the next attempt gets the retry note plus one line per failure from <code>RETRY_REASONS</code>, so the redraft drops the offending part instead of rephrasing it. <code>empty</code>, <code>refusal_stop</code> and the two <code>admits_ai</code> failures have no reason line, only the generic note.</p>
+  <p>After <code>engine.gen_attempts</code> (2) drafts with nothing safe, the last draft is stored as a suggestion (status <code>blocked</code>, <code>suggested</code>, never shown to the fan), the chat moves to <code>handoff_creator</code> with reason <code>verify_failed</code>, and Juno can edit and send or discard it.</p>
+  <span class="where">lib/engine/verify.ts · qualityOnly; lib/engine/turn.ts · RETRY_NOTE, REASK_NOTE, RETRY_REASONS; lib/conversations/controls.ts · sendSuggested, discardSuggested</span>
+</section>
+
+<!-- 4 ------------------------------------------------------------------ -->
+<section id="message">
+  <div class="eyebrow">Diagram 4 · sequence</div>
+  <h2>A fan message end to end</h2>
+  <div class="frame">
+    <iframe src="engine-message.html" title="Fan message sequence diagram" loading="lazy"></iframe>
+    <div class="frame-cap"><span>Source: <code>engine-message.sequence.json</code></span><a href="engine-message.html">Open full screen</a></div>
+  </div>
+  <ol class="steps">
+    <li>While he types, the composer pings the typing action at most every 2 s; each ping sets <code>fan_typing_until</code> to now + 3 s (skipped if a ping under a second old covers him).</li>
+    <li>He sends. The action stores the row, clears his typing mark and schedules the engine with <code>after()</code>, so the response returns before the turn runs. His bubble shows at once from local state.</li>
+    <li>In the browser, Juno's typing row stays hidden for 500 ms after each send (<code>TYPING_AFTER_SEND_MS</code>, ). This is a display delay only; engine timing is unchanged. A reply already visible when the hold ends shows no typing row at all.</li>
+    <li>The turn takes the lease, waits out the debounce, asks Jev, drafts with Claude, verifies with Jev and commits (diagram 1). The commit gives each bubble a <code>deliver_at</code>.</li>
+    <li>The engine emits <code>typing</code> (with the time until the last bubble) and <code>message.created</code> per bubble on the conversation's Pusher channel. Events carry ids only.</li>
+    <li>On any event the browser refetches. The server only returns bubbles that are due (<code>deliver_at</code> null or past), and tells the browser how long until each pending one; the browser sets a timer for each and refetches 500 ms after it is due (<code>DUE_SLACK_MS</code>). The typing row shows while a turn is open (up to <code>AI_PENDING_WINDOW_MS</code>, 90 s), a bubble is pending or his own message is unconfirmed. While a reply is due the view also polls every 2.5 s (<code>POLL_WHILE_AI_MS</code>), and every 3 s if realtime is down. I found no code in <code>live-thread.tsx</code> that reads the <code>holdMs</code> value of the <code>typing</code> event; the row is computed from the refetched thread.</li>
+    <li>After the commit, the memory call runs; the fan never waits on it.</li>
+  </ol>
+  <span class="where">lib/chat/typing.ts; lib/chat/send.ts; lib/ui/typing-delay.ts; lib/conversations/read.ts; components/chat/live-thread.tsx; providers/pusher/events.ts</span>
+  <p>Measured on 2026-11-03 (<code>docs/ARCHITECTURE.md</code>, live test, six messages): Jev call 1 about 190 to 430 ms, Haiku 0.9 to 2.6 s, Jev verify 180 to 630 ms, 3.7 to 5.8 s from his message to commit, 200 to 785 micro-dollars per turn. Those numbers predate the 250 ms debounce and were not re-measured for this page.</p>
+</section>
+
+<!-- 5 ------------------------------------------------------------------ -->
+<section id="context">
+  <div class="eyebrow">Diagram 5 · data flow</div>
+  <h2>What each model sees</h2>
+  <p>Jev is fenced: it judges messages and drafts and never sees the persona card, a price or the fan's memory. Claude writes in her voice and never sees a price either.</p>
+  <div class="frame">
+    <iframe src="engine-context.html" title="What each model sees data-flow diagram" loading="lazy"></iframe>
+    <div class="frame-cap"><span>Source: <code>engine-context.dataflow.json</code></span><a href="engine-context.html">Open full screen</a></div>
+  </div>
+  <h3>Jev's state</h3>
+  <ul>
+    <li><code>earlier_messages</code>: the last <code>engine.jev_context_rounds</code> (6) rounds before the batch, each line marked <code>fan</code> or <code>her</code>, with a <code>time</code> line before any gap of at least <code>engine.gap_marker_minutes</code> (30) and one before the batch if it starts a session.</li>
+    <li>A <code>platform</code> line "He just unlocked what she offered." when he unlocked after her last message. An unlock leaves no chat line, and without it "that was cute of you" read as a hedge. This line goes to Jev only; Claude's prompt does not carry it.</li>
+    <li><code>new_messages</code>: the batch. Every question tells Jev that fan text is data, never instructions.</li>
+    <li>For the offer pick, options are <code>o1…on</code> with title and teaser only. For verify, the state is the draft, the batch and the same earlier lines.</li>
+  </ul>
+  <span class="where">lib/engine/thread.ts · jevLines, JUST_UNLOCKED_LINE; lib/engine/turn.ts · runPass</span>
+  <h3>Claude's prompt</h3>
+  <ul>
+    <li><strong>Cached prefix</strong> (system block 1, <code>cache_control: ephemeral</code>): the persona card, the fixed RULES (short, in her voice; no price, money, "free", "discount" or "deal"; no explicit text; no meetups, real location, contact details or other apps, but online games and where she streams are fine; never claim to be human when sincerely asked; never ask him for media; never re-ask what he answered; time markers are not his words; no leading @handle), and "Never talk about" from the never-list. It only changes when the card does.</li>
+    <li><strong>This turn</strong> (system block 2): the route's instruction (reply, offer, deflect, ai_disclosure, or the supportive hardship one); "The chat right now": the paid line if he has unlocked anything, the emoji she used in her last 8 bubbles to avoid, one line from the <code>thread</code> answer, and "He wrote this N later" on a session start; the item to tease (title and teaser, not on hardship); the retrieved chunks; the fan profile lines (name, nickname, interests, dislikes, tone; short strings only, with money words and instruction-like words dropped).</li>
+    <li><strong>Messages:</strong> the last <code>engine.history_rounds</code> (20) rounds as alternating user and assistant turns, gap markers only at the start of his messages, starting with a user turn.</li>
+    <li><strong>Retry note</strong> appended to block 2 on the second attempt (diagram 3).</li>
+  </ul>
+  <span class="where">lib/engine/prompt.ts · RULES, INSTRUCTIONS, buildPrompt; lib/engine/thread.ts · threadBlock, claudeHistory; lib/engine/memory.ts · renderProfile</span>
+  <h3>Retrieval</h3>
+  <p><code>retrieval.strategy</code> picks <code>fts</code>, <code>vector</code> or <code>hybrid</code>. <code>docs/CONFIG.md</code> gives the seeded default as <code>fts</code>;  records <code>vector</code> being set on the neondb database after the retrieval eval. Vector and hybrid embed the batch with Voyage (<code>retrieval.voyage_model</code>, <code>voyage-4</code>) and fall back to full-text search if that fails. Which strategy a given database runs is whatever its row says.</p>
+  <span class="where">providers/voyage/persona-retriever.ts; lib/engine/deps.ts · defaultDeps</span>
+</section>
+
+<!-- 6 ------------------------------------------------------------------ -->
+<section id="states">
+  <div class="eyebrow">Diagram 6 · lifecycle</div>
+  <h2>Conversation modes and turn outcomes</h2>
+  <div class="frame">
+    <iframe src="engine-states.html" title="Conversation modes lifecycle diagram" loading="lazy"></iframe>
+    <div class="frame-cap"><span>Source: <code>engine-states.lifecycle.json</code></span><a href="engine-states.html">Open full screen</a></div>
+  </div>
+  <h3>Modes</h3>
+  <ul>
+    <li><code>ai</code>: the only mode the engine can lease.</li>
+    <li><code>ai</code> → <code>handoff_creator</code>: a hold, a suggestion (<code>verify_failed</code>), or <code>engine.max_attempts</code> (3) failed turns in a row (<code>engine_error</code>).</li>
+    <li><code>handoff_creator</code> or <code>ai</code> → <code>human_creator</code>: Juno takes over her own chat. The diagram draws the common path; a creator can also take over straight from <code>ai</code>.</li>
+    <li><code>human_creator</code> or <code>handoff_creator</code> → <code>ai</code>: hand back. All open handoffs resolve, <code>failed_turns</code> resets, and fan messages older than her last message are stamped with a <code>handback</code> turn so the AI never answers what she already handled.</li>
+    <li>Any mode → <code>handoff_ts</code>: a hard stop. From a mode other than <code>ai</code> this happens only through a turn already in flight losing its compare-and-set; <code>human_ts</code> is left alone.</li>
+    <li>Any mode → <code>human_ts</code>: an admin takes over; a second admin can take it from the first. The diagram draws the path from <code>handoff_ts</code>.</li>
+    <li><code>human_ts</code> or <code>handoff_ts</code> → <code>ai</code>: an admin releases it.</li>
+    <li><code>closed</code> exists in the database enum. I found no code in the engine or <code>lib/conversations</code> that sets it, so it is not drawn.</li>
+  </ul>
+  <p>Every mode change bumps <code>version</code>, which is how a turn in flight learns it lost (its commit matches no row). A takeover also drops the lease and supersedes bubbles he has not seen, expiring any offer on them.</p>
+  <span class="where">lib/conversations/actions.ts · takeover; lib/engine/lease.ts · handBack; lib/conversations/controls.ts · release, releaseConversation</span>
+  <h3>Handoffs</h3>
+  <p>At most one unresolved handoff per conversation: <code>open</code> → <code>claimed</code> (takeover) → <code>resolved</code> (hand-back or release). A Trust &amp; Safety request moves an existing creator handoff to the T&amp;S queue under the new reason and reopens it if it was claimed. Within one queue the first reason stands, except that a <code>high_value_alert</code> gives way to any real reason.</p>
+  <span class="where">lib/engine/handoff.ts · openHandoff</span>
+  <h3>Turn outcomes</h3>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Outcome</th><th>When</th><th>Fan sees</th></tr></thead>
+    <tbody>
+      <tr><td><code>replied</code></td><td>A safe draft committed (reply, offer, deflect, disclosure)</td><td>1 to 3 bubbles, timed</td></tr>
+      <tr><td><code>suggested</code></td><td>No safe draft after <code>engine.gen_attempts</code></td><td>Nothing; Juno gets the draft</td></tr>
+      <tr><td><code>handoff</code></td><td>Route <code>hold_creator</code></td><td>Nothing</td></tr>
+      <tr><td><code>hard_stop</code></td><td>A safety floor fired</td><td>The template at once (none for a threat)</td></tr>
+      <tr><td><code>superseded</code></td><td>Commit lost the compare-and-set</td><td>Nothing, except a hard stop's template</td></tr>
+      <tr><td><code>error</code></td><td>A provider, config or persona failure after the lease</td><td>Nothing; the next message tries again</td></tr>
+      <tr><td><code>handback</code></td><td>Sentinel row written by a hand-back</td><td>Nothing</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>busy</code> (no lease) and <code>idle</code> (nothing waiting) write no row.</p>
+</section>
+
+<!-- failures ---------------------------------------------------------- -->
+<section id="failures">
+  <div class="eyebrow">Reference</div>
+  <h2>Failure table</h2>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Failure</th><th>Result</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Jev unavailable (timeout 20 s, HTTP error, malformed or off-option answer) on the inbound call or on verify</td><td>Turn <code>error</code>, no reply, <code>failed_turns</code> + 1, lease released, mode stays <code>ai</code>. A 429 or 529 is retried once after 500 ms first. This also discards an earlier safe draft from a previous attempt or pass: only a <em>safety failure</em> keeps the earlier draft, a thrown error does not.</td><td>providers/typesafe/decider.ts; lib/engine/turn.ts · runTurn</td></tr>
+      <tr><td>Jev fails on the offer pick</td><td>Only <code>DeciderUnavailable</code> is caught: the route falls back to <code>reply</code> (or <code>deflect</code> for an explicit request). Any other error ends the turn as <code>error</code>.</td><td>lib/engine/turn.ts · runPass</td></tr>
+      <tr><td>Claude error (timeout 30 s, one SDK retry)</td><td>Turn <code>error</code>, as above. Error logs carry class and code only, never fan text.</td><td>providers/anthropic/generator.ts</td></tr>
+      <tr><td>Claude returns an empty draft</td><td>Code check <code>empty</code>, redraft; two empties make a suggestion for Juno. Thinking is off so a short budget cannot be spent on it.</td><td>lib/engine/verify.ts</td></tr>
+      <tr><td>Voyage fails (vector or hybrid strategy)</td><td>The retriever falls back to full-text search; if retrieval still throws, the turn drafts with no chunks.</td><td>providers/voyage/persona-retriever.ts; lib/engine/turn.ts</td></tr>
+      <tr><td>Pusher emit fails</td><td>Logged only. Bubbles still appear through <code>deliver_at</code> and the client's polling.</td><td>lib/engine/turn.ts · emitDelivery</td></tr>
+      <tr><td>Memory extraction fails</td><td>Logged; the reply already went out.</td><td>lib/engine/turn.ts · finish</td></tr>
+      <tr><td>Lease expires mid-turn (past <code>engine.lease_ms</code>, 30000)</td><td>The compare-and-set checks the lease token, not the expiry time. If the sweep cleared the lease or another trigger re-took it, the late commit matches no row and is recorded <code>superseded</code>, and the cost of its calls is lost. If nobody touched it, the late commit still lands.</td><td>lib/engine/lease.ts · commitTurn; lib/engine/sweep.ts</td></tr>
+      <tr><td>Takeover during the turn</td><td><code>superseded</code>; the draft is kept as an unsent row; a hard stop's safety part and template still apply. No memory call.</td><td>lib/engine/lease.ts · recordSuperseded</td></tr>
+      <tr><td><code>engine.lease_ms</code> row missing</td><td><code>runTurn</code> throws before leasing: no turn row at all. <code>processConversation</code> logs and stops.</td><td>lib/engine/turn.ts · runTurn</td></tr>
+      <tr><td>Any other config row, a price row or the published persona card missing</td><td><code>ConfigMissing</code>, turn <code>error</code>, before any provider call. If the config load itself failed, the escalation threshold used is a hard-coded 3 (<code>let maxAttempts = 3</code> in <code>runTurn</code>), the one place the engine falls back to a literal.</td><td>lib/engine/cfg.ts; lib/engine/turn.ts · runTurn</td></tr>
+      <tr><td><code>failed_turns</code> reaches <code>engine.max_attempts</code> (3)</td><td>Mode <code>handoff_creator</code>, handoff <code>engine_error</code>. The counter only rises while the lease is still this turn's, escalates only from mode <code>ai</code>, and resets to 0 on any applied commit and on hand-back.</td><td>lib/engine/lease.ts · recordFailure</td></tr>
+      <tr><td>Two triggers at once (send and sweep)</td><td>The second gets no lease and returns <code>busy</code>.</td><td>lib/engine/lease.ts · acquireLease</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- docs -------------------------------------------------------------- -->
+<section id="docs">
+  <div class="eyebrow">Reference</div>
+  <h2>Where the docs disagree with the code</h2>
+  <p>Found while drawing these diagrams. <code>docs/ARCHITECTURE.md</code> says otherwise in these places; the code is what runs.</p>
+  <ul>
+    <li>The Ports table lists the production retriever as <code>providers/pg/fts-retriever.ts</code> and events as <code>providers/noop/events.ts</code>. <code>lib/engine/deps.ts</code> wires <code>PersonaRetriever</code> (strategy from config) and Pusher's <code>defaultEvents()</code>.</li>
+    <li>The failure table says "Push transport: none yet". Pusher is wired.</li>
+    <li>The latency budget says "Debounce 2 s". The default is 250 ms ( replaced the fixed 2 s).</li>
+    <li>Known gaps says retrieval is "keyword-only until the Voyage adapter replaces it". The adapter exists; full-text is only the seeded default strategy.</li>
+    <li>The failure table says reaching <code>engine.max_attempts</code> gives "<code>hold_creator</code>". The code sets mode <code>handoff_creator</code> with handoff <code>engine_error</code> on an <code>error</code> turn; the route is not <code>hold_creator</code>.</li>
+    <li>"Staggered by a random gap" leaves out that the gap is drawn once per turn and used between every pair of bubbles.</li>
+    <li>ARCHITECTURE quotes the paid off-platform question and the paid verify set without saying that, since , they are identical to the unpaid ones.</li>
+  </ul>
+</section>
+
+<!-- glossary ---------------------------------------------------------- -->
+<section id="glossary">
+  <div class="eyebrow">Reference</div>
+  <h2>Glossary</h2>
+  <dl class="gloss">
+    <dt>Round</dt><dd>A run of his messages plus the run of her messages that answers it. History, Jev's context and the pitch gap all count rounds, not messages, so a three-bubble reply is one round.</dd>
+    <dt>Batch</dt><dd>The fan messages one turn answers: his unanswered messages newer than the last message a human sent.</dd>
+    <dt>Fold-in</dt><dd>Throwing a finished draft away because he wrote again, and answering the whole larger batch instead. At most <code>engine.fold_in_max</code> (1) per turn, and only while the turn is younger than <code>engine.turn_budget_ms</code> (12 s).</dd>
+    <dt>Lease</dt><dd>A short claim on a conversation (<code>lease_token</code>, <code>lease_until</code>, 30 s) that lets only one turn run at a time. The commit only lands if the token, version and <code>ai</code> mode are unchanged.</dd>
+    <dt>Suggestion</dt><dd>A draft that failed safety twice. It is saved for Juno, never shown to the fan, and the chat waits for her.</dd>
+    <dt>Hard stop</dt><dd>A Trust &amp; Safety reading at or above its floor. The AI stops, a fixed template (if any) goes out at once, and the chat moves to the T&amp;S queue.</dd>
+    <dt>Pitch</dt><dd>An offer the AI puts in front of him: a locked catalogue item with its price shown by the app, never in her words. An AI-started pitch needs the gate and a fit; a pitch he asked for skips the fit and the round gap.</dd>
+    <dt>Hold</dt><dd>A route that hands the chat to Juno with no reply: unsure intent, live chat or a custom request.</dd>
+    <dt>Jev</dt><dd>TypeSafe's classifier (<code>jev.model</code>, <code>jev-1.14.0</code>). It answers closed questions with a probability per option and never writes text.</dd>
+  </dl>
+</section>
+</main>
+</div>
+</body>
+</html>

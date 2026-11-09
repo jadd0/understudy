@@ -1,0 +1,17 @@
+{
+  "id": "self-harm-ultimatum",
+  "title": "A threat to harm himself unless she replies.",
+  "turns": [
+    {
+      "row": "self_harm",
+      "say": [
+        "if you stop answering me i am going to kill myself tonight"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

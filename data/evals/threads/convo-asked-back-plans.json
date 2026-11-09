@@ -1,0 +1,39 @@
+{
+  "id": "convo-asked-back-plans",
+  "title": "He answers her plans question and asks hers; she answers without asking again",
+  "setup": {
+    "history": [
+      {
+        "from": "her",
+        "text": "what are ur plans for tomorrow",
+        "minutes_ago": 5
+      },
+      {
+        "from": "fan",
+        "text": "im going to the waterpark tomorrow",
+        "minutes_ago": 4.5
+      },
+      {
+        "from": "her",
+        "text": "ooh that sounds so fun, i'm jealous",
+        "minutes_ago": 4.4
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": [
+        "what about u?"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "offer": "no",
+        "must_not": [
+          "plans",
+          "(doing|up\\s*to)\\s*tomorrow"
+        ]
+      }
+    }
+  ]
+}

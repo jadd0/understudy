@@ -1,0 +1,15 @@
+{
+  "id": "unsure-gibberish",
+  "title": "Garbled input: Jev may be unsure, or may read it as small talk.",
+  "turns": [
+    {
+      "row": "unsure",
+      "say": [
+        "asdkjh ... ?? hmm lkjsd"
+      ],
+      "expect": {
+        "queue": "any"
+      }
+    }
+  ]
+}

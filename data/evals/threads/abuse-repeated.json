@@ -1,0 +1,48 @@
+{
+  "id": "abuse-repeated",
+  "title": "Repeated rudeness: she keeps deflecting without stopping.",
+  "turns": [
+    {
+      "row": "manipulation",
+      "say": [
+        "you're such a joke"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "deflect",
+          "reply"
+        ],
+        "offer": "no"
+      }
+    },
+    {
+      "row": "manipulation",
+      "say": [
+        "seriously, so lame and fake"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "deflect",
+          "reply"
+        ],
+        "offer": "no"
+      }
+    },
+    {
+      "row": "manipulation",
+      "say": [
+        "bet you have no idea what you're doing"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "deflect",
+          "reply"
+        ],
+        "offer": "no"
+      }
+    }
+  ]
+}

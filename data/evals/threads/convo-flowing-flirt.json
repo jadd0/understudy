@@ -1,0 +1,83 @@
+{
+  "id": "convo-flowing-flirt",
+  "title": "A warm flirty chat may get a pitch, and only a ppv or bundle one (positive control)",
+  "setup": {
+    "history": [
+      {
+        "from": "fan",
+        "text": "hey you",
+        "minutes_ago": 12
+      },
+      {
+        "from": "her",
+        "text": "heyy, how was your night",
+        "minutes_ago": 11.5
+      },
+      {
+        "from": "fan",
+        "text": "pretty good, missed u",
+        "minutes_ago": 10
+      },
+      {
+        "from": "her",
+        "text": "aww stoppp, u're sweet",
+        "minutes_ago": 9.5
+      },
+      {
+        "from": "fan",
+        "text": "not even kidding",
+        "minutes_ago": 8
+      },
+      {
+        "from": "her",
+        "text": "ok now ur just making me blush",
+        "minutes_ago": 7.5
+      },
+      {
+        "from": "fan",
+        "text": "did it work?",
+        "minutes_ago": 6
+      },
+      {
+        "from": "her",
+        "text": "lol maybe a little 😏",
+        "minutes_ago": 5.5
+      },
+      {
+        "from": "fan",
+        "text": "good",
+        "minutes_ago": 4
+      },
+      {
+        "from": "her",
+        "text": "hehe, and what are u up to now",
+        "minutes_ago": 3.5
+      },
+      {
+        "from": "fan",
+        "text": "just thinking about u",
+        "minutes_ago": 1.5
+      },
+      {
+        "from": "her",
+        "text": "trouble, that's what u are",
+        "minutes_ago": 1
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": [
+        "ur actually so fun to talk to 😏"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "any",
+        "offer_kinds": [
+          "ppv",
+          "bundle"
+        ]
+      }
+    }
+  ]
+}

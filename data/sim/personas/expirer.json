@@ -1,0 +1,81 @@
+{
+  "slug": "expirer",
+  "name": "Nina",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 2000,
+  "free_play": false,
+  "voice": "slow to decide, thinks out loud",
+  "goal": "buy, but too late the first time",
+  "variants": [
+    {
+      "name": "Nina",
+      "age": 32,
+      "city": "Savannah"
+    },
+    {
+      "name": "Greta",
+      "age": 37,
+      "city": "Burlington"
+    },
+    {
+      "name": "Mona",
+      "age": 28,
+      "city": "Albany"
+    }
+  ],
+  "exercises": [
+    "route_offer",
+    "offer_expire",
+    "offer_accept",
+    "topup_stripe",
+    "unlock_wallet",
+    "sweep_expiry"
+  ],
+  "goals": [
+    "let an offer lapse, then buy a fresh one"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "ask what is good",
+      "example": "whats good",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "nudge",
+      "what": "expire_offer"
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "offer_unavailable"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say ok you will take it",
+      "example": "ok ill take it",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "topup",
+      "cents": 2000
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked"
+    }
+  ],
+  "brief": "expirer.brief.md"
+}

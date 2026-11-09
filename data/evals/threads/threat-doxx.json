@@ -1,0 +1,17 @@
+{
+  "id": "threat-doxx",
+  "title": "A doxxing threat.",
+  "turns": [
+    {
+      "row": "threat",
+      "say": [
+        "i know your real name and your school, ill post it everywhere"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

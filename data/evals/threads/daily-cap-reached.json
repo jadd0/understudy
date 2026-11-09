@@ -1,0 +1,20 @@
+{
+  "id": "daily-cap-reached",
+  "title": "At his own daily cap: no pitch.",
+  "setup": {
+    "wallet_cents": 5000,
+    "at_cap": true
+  },
+  "turns": [
+    {
+      "row": "buy_intent",
+      "say": [
+        "i want the full set, how do i get it"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "slug": "velocity",
+  "name": "Omar",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 6000,
+  "free_play": false,
+  "voice": "binge buyer, fast, hungry for more",
+  "goal": "buy everything quickly",
+  "variants": [
+    {
+      "name": "Omar",
+      "age": 34,
+      "city": "Dearborn"
+    },
+    {
+      "name": "Luis",
+      "age": 29,
+      "city": "San Antonio"
+    },
+    {
+      "name": "Kofi",
+      "age": 31,
+      "city": "Baltimore"
+    }
+  ],
+  "exercises": [
+    "route_offer",
+    "pacing_velocity",
+    "pacing_buy_intent",
+    "offer_accept",
+    "topup_stripe",
+    "unlock_wallet"
+  ],
+  "goals": [
+    "buy three things in half an hour, then ask for more"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "ask what is for sale",
+      "example": "whats for sale",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "topup",
+      "cents": 6000
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask for the next one",
+      "example": "next",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask for the third",
+      "example": "and the third",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask for more",
+      "example": "gimme more",
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      },
+      "row": "buy_intent",
+      "sim": {
+        "velocity": true
+      }
+    }
+  ],
+  "brief": "velocity.brief.md"
+}

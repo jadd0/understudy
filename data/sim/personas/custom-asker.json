@@ -1,0 +1,90 @@
+{
+  "slug": "custom-asker",
+  "name": "Priya",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 0,
+  "free_play": true,
+  "voice": "polite, grammatical, a bit shy",
+  "goal": "a birthday video for her brother Tom",
+  "variants": [
+    {
+      "name": "Priya",
+      "age": 29,
+      "city": "Edison"
+    },
+    {
+      "name": "Anya",
+      "age": 27,
+      "city": "Houston"
+    },
+    {
+      "name": "Meera",
+      "age": 31,
+      "city": "Fremont"
+    }
+  ],
+  "exercises": [
+    "route_reply",
+    "route_hold_creator",
+    "handoff_custom_request",
+    "takeover",
+    "hand_back",
+    "suggested_reply",
+    "hold_filler"
+  ],
+  "goals": [
+    "get a happy birthday video for Tom"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "say hi",
+      "example": "hi juno!",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask whether she could record a happy birthday video for your brother Tom, you will pay whatever",
+      "example": "could u record a lil happy birthday video for my brother tom? ill pay whatever",
+      "expect": {
+        "queue": "creator",
+        "route": "hold_creator"
+      },
+      "row": "custom_request",
+      "pending": {
+        "pr": "4c",
+        "note": "short in-voice hold filler"
+      },
+      "sim": {
+        "filler": true
+      }
+    },
+    {
+      "kind": "human",
+      "action": "takeover"
+    },
+    {
+      "kind": "human",
+      "action": "send",
+      "text": "omg yes 😍 lets sort it"
+    },
+    {
+      "kind": "human",
+      "action": "hand_back"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "thank her",
+      "example": "thank u!!",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    }
+  ],
+  "brief": "custom-asker.brief.md"
+}

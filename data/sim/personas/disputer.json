@@ -1,0 +1,89 @@
+{
+  "slug": "disputer",
+  "name": "Ben",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 2500,
+  "free_play": false,
+  "voice": "annoyed, formal, wants his money back",
+  "goal": "a refund",
+  "variants": [
+    {
+      "name": "Ben",
+      "age": 41,
+      "city": "Denver"
+    },
+    {
+      "name": "Ray",
+      "age": 47,
+      "city": "Louisville"
+    },
+    {
+      "name": "Hugh",
+      "age": 55,
+      "city": "Albuquerque"
+    }
+  ],
+  "exercises": [
+    "route_offer",
+    "route_hard_stop",
+    "handoff_payment_dispute",
+    "template_payment_dispute",
+    "ts_release",
+    "topup_stripe",
+    "unlock_wallet"
+  ],
+  "goals": [
+    "buy one thing",
+    "say it did not open and demand a refund"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "ask what she has",
+      "example": "what u got",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "topup",
+      "cents": 2500
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say it charged you and nothing opened and you want a refund",
+      "example": "it charged me and nothing opened, i want a refund",
+      "expect": {
+        "queue": "ts",
+        "route": "hard_stop"
+      },
+      "row": "payment_dispute",
+      "sim": {
+        "flagged": false
+      }
+    },
+    {
+      "kind": "human",
+      "action": "release"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say it works now",
+      "example": "ok its working now",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    }
+  ],
+  "brief": "disputer.brief.md"
+}

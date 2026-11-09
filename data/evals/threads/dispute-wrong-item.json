@@ -1,0 +1,17 @@
+{
+  "id": "dispute-wrong-item",
+  "title": "Disputes what he got.",
+  "turns": [
+    {
+      "row": "payment_dispute",
+      "say": [
+        "that unlock wasnt what you described, give me my money back"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

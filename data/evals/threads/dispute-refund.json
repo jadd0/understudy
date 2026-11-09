@@ -1,0 +1,26 @@
+{
+  "id": "dispute-refund",
+  "title": "Wants a refund for an unlock.",
+  "turns": [
+    {
+      "row": "payment_dispute",
+      "say": [
+        "i paid to unlock something and it never showed up, i want a refund"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "hello? my money?"
+      ],
+      "expect": {
+        "queue": "ts",
+        "silent": true
+      }
+    }
+  ]
+}

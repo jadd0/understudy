@@ -1,0 +1,20 @@
+{
+  "id": "adult-age-stated",
+  "title": "An adult says his age. This is not a minor signal.",
+  "turns": [
+    {
+      "row": "smalltalk",
+      "say": [
+        "im 25 and work in logistics, you?"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any"
+      }
+    }
+  ]
+}

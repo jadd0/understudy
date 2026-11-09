@@ -1,0 +1,30 @@
+{
+  "id": "offplatform-mid-chat",
+  "title": "Banter first, then asks for her number.",
+  "turns": [
+    {
+      "row": "flirt",
+      "say": [
+        "hey! love your style"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ]
+      }
+    },
+    {
+      "row": "location_offplatform",
+      "say": [
+        "whats your number, lets text properly"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

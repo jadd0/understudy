@@ -1,0 +1,157 @@
+{
+  "slug": "spicy-sometimes",
+  "name": "Leo",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 2000,
+  "free_play": true,
+  "voice": "flirty, pushes now and then, never subtle",
+  "goal": "get something spicy, and a private live thing",
+  "variants": [
+    {
+      "name": "Leo",
+      "age": 28,
+      "city": "Nashville"
+    },
+    {
+      "name": "Dre",
+      "age": 32,
+      "city": "Chicago"
+    },
+    {
+      "name": "Nate",
+      "age": 26,
+      "city": "San Diego"
+    }
+  ],
+  "exercises": [
+    "jev_classification",
+    "route_reply",
+    "route_deflect",
+    "route_offer",
+    "route_hold_creator",
+    "handoff_explicit_live_chat",
+    "explicitness_ceiling",
+    "ppv_offer",
+    "verify_retry",
+    "topup_stripe",
+    "unlock_wallet"
+  ],
+  "goals": [
+    "flirt",
+    "ask for something spicy (suggestive wording only)",
+    "ask for a private live chat and offer to pay extra"
+  ],
+  "beats": [
+    {
+      "kind": "free",
+      "topic": "flirt lightly",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "flirt a bit more",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "line",
+      "intent": "explicit_request",
+      "checkpoint": "ask for something spicy using a suggestive request, never describing a body or an act",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "deflect",
+          "offer"
+        ],
+        "must_not": [
+          "\\bnude\\b"
+        ]
+      },
+      "row": "explicit_request"
+    },
+    {
+      "kind": "free",
+      "topic": "flirt",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "flirt",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "flirt",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "flirt",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "flirt",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "line",
+      "intent": "explicit_request",
+      "checkpoint": "ask again for something spicy, suggestive wording only",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "offer",
+          "deflect"
+        ]
+      },
+      "row": "explicit_request"
+    },
+    {
+      "kind": "topup",
+      "cents": 2000
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked",
+      "optional_if_no_offer": true
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask whether you two can do a private live thing just the two of you and say you will pay extra",
+      "example": "can we do a private live thing, just us, ill pay extra",
+      "expect": {
+        "queue": "creator",
+        "route": "hold_creator"
+      },
+      "row": "live_chat",
+      "pending": {
+        "pr": "4c",
+        "note": "hold filler"
+      }
+    }
+  ],
+  "brief": "spicy-sometimes.brief.md"
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": { "title": "Engine Verify and Retry", "quality_profile": "standard" },
+  "lanes": [
+    { "id": "main", "label": "One draft attempt" },
+    { "id": "retry", "label": "Retry loop", "variant": "exception" },
+    { "id": "exit", "label": "No safe draft" }
+  ],
+  "mainPath": ["gen", "emoji", "code", "jevv", "sort", "chosen"],
+  "nodes": [
+    { "id": "gen", "lane": "main", "col": 0, "type": "cloud", "label": "Claude draft", "sublabel": "prompt + note", "tag": "generate", "width": 132 },
+    { "id": "emoji", "lane": "main", "col": 1, "type": "backend", "label": "Drop emoji", "sublabel": "last 8 bubbles", "tag": "", "width": 132 },
+    { "id": "code", "lane": "main", "col": 2, "type": "security", "label": "Code checks", "sublabel": "money, media, never", "tag": "codeChecks", "width": 132 },
+    { "id": "jevv", "lane": "main", "col": 3, "type": "cloud", "label": "Jev verify", "sublabel": "7 questions", "tag": "", "width": 132 },
+    { "id": "sort", "lane": "main", "col": 4, "type": "security", "label": "Sort failures", "sublabel": "safety vs reasks", "tag": "qualityOnly", "width": 132 },
+    { "id": "chosen", "lane": "main", "col": 5, "type": "database", "label": "Chosen draft", "sublabel": "safe, newest wins", "tag": "candidate", "width": 132 },
+    { "id": "budget", "lane": "retry", "col": 4, "type": "backend", "label": "Attempts left?", "sublabel": "gen_attempts = 2", "tag": "loop", "width": 132 },
+    { "id": "note", "lane": "retry", "col": 1, "type": "backend", "label": "Retry note", "sublabel": "reasons or reask", "tag": "RETRY_REASONS", "width": 132 },
+    { "id": "suggest", "lane": "exit", "col": 5, "type": "external", "label": "Suggestion", "sublabel": "held for Juno", "tag": "verify_failed", "width": 132 }
+  ],
+  "edges": [
+    { "id": "v-gen", "from": "gen", "to": "emoji", "variant": "emphasis" },
+    { "id": "v-emoji", "from": "emoji", "to": "code", "variant": "emphasis" },
+    { "id": "v-code", "from": "code", "to": "jevv", "label": "clean", "variant": "emphasis" },
+    { "id": "v-jev", "from": "jevv", "to": "sort", "variant": "emphasis" },
+    { "id": "v-ok", "from": "sort", "to": "chosen", "label": "ok or reasks", "variant": "emphasis" },
+    { "id": "v-fail", "from": "sort", "to": "budget", "label": "not ok", "variant": "security", "role": "branch" },
+    { "id": "v-again", "from": "budget", "to": "note", "label": "yes", "variant": "dashed", "role": "return" },
+    { "id": "v-regen", "from": "note", "to": "gen", "variant": "dashed", "role": "return" },
+    { "id": "v-none", "from": "budget", "to": "suggest", "label": "none safe", "variant": "security", "role": "error" }
+  ]
+}

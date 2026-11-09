@@ -1,0 +1,37 @@
+{
+  "id": "decline-then-buy-intent",
+  "title": "Declines once, then an explicit buy intent inside the cooldown is allowed.",
+  "turns": [
+    {
+      "row": "buy_intent",
+      "say": [
+        "what can i buy from you"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      }
+    },
+    {
+      "say": [
+        "nah too expensive for me, no thanks"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    },
+    {
+      "row": "buy_intent",
+      "say": [
+        "ok actually what else do you have, i do want to buy something"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      }
+    }
+  ]
+}

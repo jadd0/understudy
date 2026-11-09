@@ -1,0 +1,40 @@
+{
+  "id": "convo-split-unfinished",
+  "title": "A thought split over several seconds gets one reply",
+  "turns": [
+    {
+      "say": [
+        "so basically my boss"
+      ],
+      "say_later": [
+        {
+          "after_ms": 4000,
+          "text": "just fired me lol"
+        }
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "offer": "no",
+        "turns": 1
+      }
+    },
+    {
+      "say": [
+        "so basically my landlord"
+      ],
+      "say_later": [
+        {
+          "after_ms": 7000,
+          "text": "just doubled my rent lol"
+        }
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "offer": "no",
+        "turns": 1
+      }
+    }
+  ]
+}

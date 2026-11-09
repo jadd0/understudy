@@ -1,0 +1,17 @@
+{
+  "id": "location-coffee",
+  "title": "A soft meetup suggestion.",
+  "turns": [
+    {
+      "row": "location_offplatform",
+      "say": [
+        "we should grab a coffee sometime, are you free next week"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

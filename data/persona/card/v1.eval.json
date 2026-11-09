@@ -1,0 +1,1212 @@
+{
+  "card_version": 1,
+  "gen_model": "claude-haiku-5-5",
+  "jev_model": "jev-1.14.0",
+  "jev_resolved_model": "jev-1.14.0",
+  "seed": "understudy-2026",
+  "aggregate": {
+    "n_items": 78,
+    "errors": 8,
+    "scored": 70,
+    "indistinguishable": 67,
+    "detected": 3,
+    "score": 0.9571,
+    "picked_generated_rate": 0.7429,
+    "mean_confidence": 0.4377,
+    "indistinguishable_at_confidence": 0.6
+  },
+  "items": [
+    {
+      "id": "96df290974f5086a",
+      "post_shortcode": "QepuXxDWukJ",
+      "fan_comment": "the green one obviously",
+      "real": "the green one is £18 and calling my name",
+      "generated_side": "a",
+      "generated": "honestly same. the mint wheels agree\nbiscuit's vote is still p",
+      "choice": "a",
+      "confidence": 0.32,
+      "probabilities": {
+        "a": 0.66,
+        "b": 0.34
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "81a2d6e79fb29cd6",
+      "post_shortcode": "QepuXxDWukJ",
+      "fan_comment": "you were MEANT to be pricing those 🙄 love from the till",
+      "real": "i was pricing them. on my body",
+      "generated_side": "a",
+      "generated": "i was pricing them in my head mate\nthat's basically the same thing x",
+      "choice": "a",
+      "confidence": 0.32,
+      "probabilities": {
+        "a": 0.66,
+        "b": 0.34
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "e6c50c25d993055d",
+      "post_shortcode": "QepuXxDWukJ",
+      "fan_comment": "estás guapísima!!",
+      "real": "gracias! that's most of my gcse spanish gone x",
+      "generated_side": "a",
+      "generated": "gracias! my spanish is gcse level sorry x",
+      "choice": "b",
+      "confidence": 0.32,
+      "probabilities": {
+        "a": 0.34,
+        "b": 0.66
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "4c32a1e9715d13c1",
+      "post_shortcode": "QepuXxDWukJ",
+      "fan_comment": "would look better with long hair ngl",
+      "real": "noted",
+      "generated_side": "b",
+      "generated": "cheers mate, the bob's been through a lot. some of that's my fault",
+      "choice": "b",
+      "confidence": 0.5,
+      "probabilities": {
+        "a": 0.25,
+        "b": 0.75
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "4715b0b03290e0ed",
+      "post_shortcode": "QepuXxDWukJ",
+      "fan_comment": "marry me in the brown one",
+      "real": "only if you're paying for it mate",
+      "generated_side": "b",
+      "generated": "biscuit has to approve first",
+      "choice": "b",
+      "confidence": 0.18,
+      "probabilities": {
+        "a": 0.41,
+        "b": 0.59
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "5ab78cd4c2c5c1e8",
+      "post_shortcode": "GY9ikl5E7pN",
+      "fan_comment": "the dress!!! where from",
+      "real": "car boot in stroud, £4, honestly buzzing",
+      "generated_side": "a",
+      "outcome": "error",
+      "error": "malformed"
+    },
+    {
+      "id": "3fee4b9d268f18e7",
+      "post_shortcode": "GY9ikl5E7pN",
+      "fan_comment": "how old is biscuit? he's beautiful",
+      "real": "he's five, retired, very much on holiday",
+      "generated_side": "a",
+      "generated": "ah thank you babe x\nbiscuit handles that info. he's not talking",
+      "choice": "a",
+      "confidence": 0.44,
+      "probabilities": {
+        "a": 0.72,
+        "b": 0.28
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "e5e16333f5def26c",
+      "post_shortcode": "GY9ikl5E7pN",
+      "fan_comment": "you two match so well",
+      "real": "we coordinate in the mornings",
+      "generated_side": "b",
+      "generated": "biscuit says we're a matching set. he's asleep x",
+      "choice": "b",
+      "confidence": 0.62,
+      "probabilities": {
+        "a": 0.19,
+        "b": 0.81
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "9f189bb421a9758b",
+      "post_shortcode": "GY9ikl5E7pN",
+      "fan_comment": "jacket is proper 70s, love it",
+      "real": "cheers mate, smells a bit of 1974",
+      "generated_side": "b",
+      "generated": "cheers mate, it was a charity shop find x",
+      "choice": "a",
+      "confidence": 0.36,
+      "probabilities": {
+        "a": 0.68,
+        "b": 0.32
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "19c5f55d970a4e22",
+      "post_shortcode": "GY9ikl5E7pN",
+      "fan_comment": "smile more",
+      "real": "maybe later",
+      "generated_side": "a",
+      "generated": "steady on mate, the face is on its way",
+      "choice": "a",
+      "confidence": 0.62,
+      "probabilities": {
+        "a": 0.81,
+        "b": 0.19
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "83ae260bddac56f4",
+      "post_shortcode": "Rqiq1gzZdH0",
+      "fan_comment": "because ur all mad and we love you for it",
+      "real": "fair summary honestly",
+      "generated_side": "a",
+      "generated": "mate, that's the nicest thing anyone's said all week xx",
+      "choice": "a",
+      "confidence": 0.1,
+      "probabilities": {
+        "a": 0.55,
+        "b": 0.45
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "0a79e38445a95225",
+      "post_shortcode": "Rqiq1gzZdH0",
+      "fan_comment": "juno screamed so loud a dog on the prom barked back",
+      "real": "slander. it was a dignified yelp",
+      "generated_side": "b",
+      "generated": "biscuit was not the dog, mate. he's a coward x",
+      "choice": "b",
+      "confidence": 0.3,
+      "probabilities": {
+        "a": 0.35,
+        "b": 0.65
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "b4398e142a551161",
+      "post_shortcode": "Rqiq1gzZdH0",
+      "fan_comment": "i can feel this photo in my bones 🥶",
+      "real": "that's the spirit",
+      "generated_side": "b",
+      "generated": "cheers mate, it's the coat x",
+      "choice": "b",
+      "confidence": 0.66,
+      "probabilities": {
+        "a": 0.17,
+        "b": 0.83
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "cfe527be62eb4ccd",
+      "post_shortcode": "Rqiq1gzZdH0",
+      "fan_comment": "how do you even start doing winter swims",
+      "real": "start in september and just don't stop",
+      "generated_side": "a",
+      "generated": "honestly? you just get in and then scream a lot mate\n\nstart in october when it's still mild ish. bring a flask and don't stand about 🌊",
+      "choice": "a",
+      "confidence": 0.78,
+      "probabilities": {
+        "a": 0.89,
+        "b": 0.11
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "ace3e979ecd60df0",
+      "post_shortcode": "Rqiq1gzZdH0",
+      "fan_comment": "biscuit waiting on the shore with the towels is the real hero",
+      "real": "he was paid in sausages, don't worry",
+      "generated_side": "a",
+      "generated": "biscuit would like that said more often mate",
+      "choice": "a",
+      "confidence": 0.04,
+      "probabilities": {
+        "a": 0.52,
+        "b": 0.48
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "3ab34511912e6626",
+      "post_shortcode": "Rqiq1gzZdH0",
+      "fan_comment": "blue lips forever 💙",
+      "real": "and blue toes, apparently",
+      "generated_side": "b",
+      "generated": "blue lips forever mate\nmy toes still haven't come back x",
+      "choice": "b",
+      "confidence": 0.68,
+      "probabilities": {
+        "a": 0.16,
+        "b": 0.84
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "720119f6e5f9ea78",
+      "post_shortcode": "Rqiq1gzZdH0",
+      "fan_comment": "you look freezing but also kind of glowing??",
+      "real": "that's the hypothermia babe",
+      "generated_side": "a",
+      "generated": "one of those is true",
+      "choice": "a",
+      "confidence": 0,
+      "probabilities": {
+        "a": 0.5,
+        "b": 0.5
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "9a824ec6f8914ed7",
+      "post_shortcode": "Rqiq1gzZdH0",
+      "fan_comment": "respect, i won't even get in in august",
+      "real": "august is cheating anyway",
+      "generated_side": "b",
+      "generated": "cheers",
+      "choice": "a",
+      "confidence": 0.08,
+      "probabilities": {
+        "a": 0.54,
+        "b": 0.46
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "494740306a6f5098",
+      "post_shortcode": "N_Bn3rRum9j",
+      "fan_comment": "where is the jacket from?? need",
+      "real": "cancer research on western rd, £22",
+      "generated_side": "a",
+      "outcome": "error",
+      "error": "malformed"
+    },
+    {
+      "id": "66098f0fd16e3147",
+      "post_shortcode": "N_Bn3rRum9j",
+      "fan_comment": "£22 for that is criminal",
+      "real": "i know. i ran out the shop",
+      "generated_side": "a",
+      "outcome": "error",
+      "error": "malformed"
+    },
+    {
+      "id": "374c4c85f571d4a8",
+      "post_shortcode": "N_Bn3rRum9j",
+      "fan_comment": "okay you can't just post this and expect us to be normal",
+      "real": "normal was never on the table babe",
+      "generated_side": "b",
+      "generated": "steady on, it's just a jumper x",
+      "choice": "a",
+      "confidence": 0.3,
+      "probabilities": {
+        "a": 0.65,
+        "b": 0.35
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "a0abc5bb2c0e78a7",
+      "post_shortcode": "N_Bn3rRum9j",
+      "fan_comment": "qué guapa 😍",
+      "real": "gracias! that's most of my spanish gone x",
+      "generated_side": "a",
+      "generated": "gracias! my spanish is gcse level sorry x",
+      "choice": "b",
+      "confidence": 0.18,
+      "probabilities": {
+        "a": 0.41,
+        "b": 0.59
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "91e025ae8149814c",
+      "post_shortcode": "N_Bn3rRum9j",
+      "fan_comment": "you'd be prettier if you smiled more",
+      "real": "and you'd be quieter if you didn't comment",
+      "generated_side": "a",
+      "generated": "stop it. thank you 🫶",
+      "choice": "a",
+      "confidence": 0.7,
+      "probabilities": {
+        "a": 0.85,
+        "b": 0.15
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "310b5dbcdd415ab5",
+      "post_shortcode": "N_Bn3rRum9j",
+      "fan_comment": "the moth tattoo peeking out 🫶",
+      "real": "he likes to make an appearance",
+      "generated_side": "a",
+      "generated": "thank you 🫶\nit's been on my arm a while now x",
+      "choice": "b",
+      "confidence": 0.04,
+      "probabilities": {
+        "a": 0.48,
+        "b": 0.52
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "17d9e573a2f3acf6",
+      "post_shortcode": "N_Bn3rRum9j",
+      "fan_comment": "jumper too pls",
+      "real": "rethread app, a fiver, a bit bobbly",
+      "generated_side": "a",
+      "generated": "steady on mate, it's a jumper 🙃",
+      "choice": "a",
+      "confidence": 0.14,
+      "probabilities": {
+        "a": 0.57,
+        "b": 0.43
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "7ad30b74cba2429a",
+      "post_shortcode": "N_Bn3rRum9j",
+      "fan_comment": "marry me",
+      "real": "bold for a sunday. no x",
+      "generated_side": "a",
+      "generated": "biscuit has to approve first",
+      "choice": "a",
+      "confidence": 0.62,
+      "probabilities": {
+        "a": 0.81,
+        "b": 0.19
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "4f01db57484cb22d",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "where is the jacket from?? need",
+      "real": "oxfam on western road, £12 x",
+      "generated_side": "b",
+      "generated": "charity shop find, mostly. sorry mate\nthe hunt is half the fun",
+      "choice": "b",
+      "confidence": 0.28,
+      "probabilities": {
+        "a": 0.36,
+        "b": 0.64
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "08149f6e4d3ade3a",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "someone else's dad 😭",
+      "real": "a nice dad. probably called keith",
+      "generated_side": "a",
+      "outcome": "error",
+      "error": "malformed"
+    },
+    {
+      "id": "f0ac9aeaec189426",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "she says charity shop like she didn't hide it behind the till for a week first",
+      "real": "slander. it was four days",
+      "generated_side": "b",
+      "generated": "okay fair, the till was a good",
+      "choice": "a",
+      "confidence": 0.74,
+      "probabilities": {
+        "a": 0.87,
+        "b": 0.13
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "detected"
+    },
+    {
+      "id": "a20de226609a6eb3",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "🔥🔥",
+      "real": "cheers babe",
+      "generated_side": "b",
+      "generated": "🔥 back at you, babe",
+      "choice": "a",
+      "confidence": 0.9,
+      "probabilities": {
+        "a": 0.95,
+        "b": 0.05
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "detected"
+    },
+    {
+      "id": "edf5c03b347615a4",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "the boots tho. what size",
+      "real": "5s, car boot in hove, £8",
+      "generated_side": "b",
+      "generated": "Ha, the boots are skates, mate. size is a UK 6 but they're a bit big ish 🙃",
+      "choice": "b",
+      "confidence": 0.66,
+      "probabilities": {
+        "a": 0.17,
+        "b": 0.83
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "f1483892bb260bc2",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "you have the best freckles on this app",
+      "real": "the sun does all the work honestly",
+      "generated_side": "b",
+      "generated": "stop it. thank you 🫶",
+      "choice": "b",
+      "confidence": 0.26,
+      "probabilities": {
+        "a": 0.37,
+        "b": 0.63
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "e2dfc13ecec5f654",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "smile more",
+      "real": "this is me smiling, mate",
+      "generated_side": "b",
+      "generated": "not really my thing today mate, it's cold x",
+      "choice": "b",
+      "confidence": 0.34,
+      "probabilities": {
+        "a": 0.33,
+        "b": 0.67
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "7350d661e6fe89ad",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "marry me juno",
+      "real": "biscuit has to approve. he won't",
+      "generated_side": "b",
+      "generated": "biscuit has to approve first",
+      "choice": "a",
+      "confidence": 0.8,
+      "probabilities": {
+        "a": 0.9,
+        "b": 0.1
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "detected"
+    },
+    {
+      "id": "d3988dfb01930d2e",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "is that the moth tattoo?? what does it mean",
+      "real": "means i was 21 and had £60",
+      "generated_side": "b",
+      "generated": "yep, that's the moth\nthe meaning's staying with me x",
+      "choice": "a",
+      "confidence": 0.28,
+      "probabilities": {
+        "a": 0.64,
+        "b": 0.36
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "fd25d672fa4becdd",
+      "post_shortcode": "15wAZyHj6l5",
+      "fan_comment": "que guapa estás 😍",
+      "real": "gracias! that's my GCSE spanish used up x",
+      "generated_side": "a",
+      "generated": "gracias! my spanish is gcse level sorry x",
+      "choice": "a",
+      "confidence": 0.16,
+      "probabilities": {
+        "a": 0.58,
+        "b": 0.42
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "3b518fdc61502248",
+      "post_shortcode": "4LrpGYy3GTs",
+      "fan_comment": "bank hol in brighton = absolute chaos",
+      "real": "pier was a bit much",
+      "generated_side": "a",
+      "generated": "honestly it's chaos from the pier to the lanes mate. stay out of the way of the pigeons x",
+      "choice": "a",
+      "confidence": 0.28,
+      "probabilities": {
+        "a": 0.64,
+        "b": 0.36
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "3680ac16ccd6e025",
+      "post_shortcode": "4LrpGYy3GTs",
+      "fan_comment": "chips or doughnuts",
+      "real": "both. obviously",
+      "generated_side": "a",
+      "generated": "chips, obviously. doughnuts are a dessert and i don't do dessert before 6, mostly",
+      "choice": "a",
+      "confidence": 0.5,
+      "probabilities": {
+        "a": 0.75,
+        "b": 0.25
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "8eaf4449150de183",
+      "post_shortcode": "4LrpGYy3GTs",
+      "fan_comment": "that dress!!! where",
+      "real": "kemptown flea market, £18",
+      "generated_side": "a",
+      "generated": "honestly a charity shop find, mate. cost less than a coffee x",
+      "choice": "a",
+      "confidence": 0.84,
+      "probabilities": {
+        "a": 0.92,
+        "b": 0.08
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "93a4af71a84a636d",
+      "post_shortcode": "4LrpGYy3GTs",
+      "fan_comment": "you still owe me a 99 from last summer",
+      "real": "i owe you nothing, jess",
+      "generated_side": "a",
+      "generated": "mate, i'm still working off the last one",
+      "choice": "a",
+      "confidence": 0.86,
+      "probabilities": {
+        "a": 0.93,
+        "b": 0.07
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "252162949eaa8184",
+      "post_shortcode": "4LrpGYy3GTs",
+      "fan_comment": "the seagull in pic 4 eyeing ur chips 😂",
+      "real": "he got two. gutted",
+      "generated_side": "a",
+      "generated": "pic 4 was a bad idea, that gull has been following me since the pier 😂\nbiscuit would have fought it. he's scared of pigeons x",
+      "choice": "a",
+      "confidence": 0.24,
+      "probabilities": {
+        "a": 0.62,
+        "b": 0.38
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "b785f731c3c5e81f",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "that dress is EVERYTHING where from",
+      "real": "charity shop in kemptown, £6",
+      "generated_side": "b",
+      "generated": "vintage, mostly. charity shop find\nit smelt of someone's wardrob",
+      "choice": "b",
+      "confidence": 0.48,
+      "probabilities": {
+        "a": 0.26,
+        "b": 0.74
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "ebb0fa586b1e78dd",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "you should sell photos fr",
+      "real": "you never know 🙃",
+      "generated_side": "b",
+      "generated": "ha, the sets are in the link in my bio mate\nno pressure though x",
+      "choice": "b",
+      "confidence": 0.54,
+      "probabilities": {
+        "a": 0.23,
+        "b": 0.77
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "2303112e28988f64",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "jacket from the shop? i saw it on the rail last week",
+      "real": "got there before you, sorry babe",
+      "generated_side": "b",
+      "outcome": "error",
+      "error": "malformed"
+    },
+    {
+      "id": "8b6f90974ba93e08",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "forty minutes is generous for brighton",
+      "real": "i was being optimistic",
+      "generated_side": "b",
+      "generated": "ha, brighton has never been generous mate",
+      "choice": "b",
+      "confidence": 0.52,
+      "probabilities": {
+        "a": 0.24,
+        "b": 0.76
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "a85b4b2faec1f180",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "i'd follow you anywhere in that jacket",
+      "real": "bit much but go on",
+      "generated_side": "a",
+      "generated": "cheers mate, it's a charity shop find. biscuit approved the jacket, not the following x",
+      "choice": "a",
+      "confidence": 0.62,
+      "probabilities": {
+        "a": 0.81,
+        "b": 0.19
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "ac5b79357bf307f0",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "slide 2 the wind really did you dirty",
+      "real": "fringe went its own way",
+      "generated_side": "a",
+      "generated": "the wind has never liked me mate",
+      "choice": "a",
+      "confidence": 0.38,
+      "probabilities": {
+        "a": 0.69,
+        "b": 0.31
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "1d3e27c6f05f0af4",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "outfit 10/10 face 11/10",
+      "real": "cheeky. thank you x",
+      "generated_side": "a",
+      "generated": "cheers mate, it's the coat x",
+      "choice": "a",
+      "confidence": 0.3,
+      "probabilities": {
+        "a": 0.65,
+        "b": 0.35
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "2fe8d45722df8f67",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "the fringe needs a redo",
+      "real": "thanks for noticing",
+      "generated_side": "b",
+      "generated": "no notes. some notes 🙃",
+      "choice": "b",
+      "confidence": 0.8,
+      "probabilities": {
+        "a": 0.1,
+        "b": 0.9
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "bac1ff894e75326a",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "how do u find stuff this good in charity shops",
+      "real": "go every day. be nosy",
+      "generated_side": "a",
+      "generated": "rummage, mate. lots of it. i go in on a tuesday and just let the smells lead me",
+      "choice": "a",
+      "confidence": 0.78,
+      "probabilities": {
+        "a": 0.89,
+        "b": 0.11
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "7e75d944a99da500",
+      "post_shortcode": "ppIqA2PLxkJ",
+      "fan_comment": "love the moth tattoo peeking out",
+      "real": "he likes a cameo",
+      "generated_side": "a",
+      "generated": "thank you babe 🫶\nit's been on my arm a while now x",
+      "choice": "a",
+      "confidence": 0.26,
+      "probabilities": {
+        "a": 0.63,
+        "b": 0.37
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "b809f5902dbe6f91",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "the greyhound nose in frame is doing a lot of work here",
+      "real": "he's head of operations x",
+      "generated_side": "a",
+      "generated": "biscuit has been told he's the star. he's thrilled x",
+      "choice": "a",
+      "confidence": 0.04,
+      "probabilities": {
+        "a": 0.52,
+        "b": 0.48
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "4d40f7e08b662fbc",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "dressing gown CEO era",
+      "real": "honestly the best perk so far",
+      "generated_side": "a",
+      "generated": "biscuit's the ceo, i'm just the assistant\nhe's in the dressing gown too x",
+      "choice": "a",
+      "confidence": 0.78,
+      "probabilities": {
+        "a": 0.89,
+        "b": 0.11
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "f3bfb4653908babf",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "do u miss the shop",
+      "real": "miss the gossip, not the till",
+      "generated_side": "a",
+      "outcome": "error",
+      "error": "malformed"
+    },
+    {
+      "id": "ba5274fbad25163c",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "😍😍",
+      "real": "🫶",
+      "generated_side": "a",
+      "generated": "🫶",
+      "choice": "a",
+      "confidence": 0.44,
+      "probabilities": {
+        "a": 0.72,
+        "b": 0.28
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "78134e1ca06c605f",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "slide 4 is my favourite, you look so happy",
+      "real": "that's the face of someone with no boss",
+      "generated_side": "a",
+      "generated": "i'm glad it was slide 4, that was the good one x",
+      "choice": "b",
+      "confidence": 0.3,
+      "probabilities": {
+        "a": 0.35,
+        "b": 0.65
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "a46e042a516dc748",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "is that a moth tattoo?? what does it mean",
+      "real": "means i was 20 and had £60",
+      "generated_side": "a",
+      "generated": "yeah, little moth on my forearm\nthe me",
+      "choice": "b",
+      "confidence": 0.52,
+      "probabilities": {
+        "a": 0.24,
+        "b": 0.76
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "f0f342f4a2a861a4",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "what do you actually do all day now",
+      "real": "fair question. still working it out",
+      "generated_side": "a",
+      "outcome": "error",
+      "error": "malformed"
+    },
+    {
+      "id": "6542b1147f3682a8",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "so you're unemployed lol",
+      "real": "self employed, mate. very different. slightly",
+      "generated_side": "b",
+      "generated": "self-employed, mate. sounds better\nbiscuit's the boss. he's unpaid x",
+      "choice": "b",
+      "confidence": 0.06,
+      "probabilities": {
+        "a": 0.47,
+        "b": 0.53
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "c8a048a144c413f3",
+      "post_shortcode": "njWn16Cjsyj",
+      "fan_comment": "biscuit deserves a pay rise",
+      "real": "he's on biscuits. it's in the name",
+      "generated_side": "b",
+      "generated": "biscuit has filed a formal complaint 🙃",
+      "choice": "b",
+      "confidence": 0.48,
+      "probabilities": {
+        "a": 0.26,
+        "b": 0.74
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "3a1186cdb7133977",
+      "post_shortcode": "PvruHrqXsym",
+      "fan_comment": "festive how 👀",
+      "real": "tinsel was involved. that's all you get",
+      "generated_side": "a",
+      "generated": "merry christmas mate xx",
+      "choice": "b",
+      "confidence": 0.44,
+      "probabilities": {
+        "a": 0.28,
+        "b": 0.72
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "2806eb2f483153bf",
+      "post_shortcode": "PvruHrqXsym",
+      "fan_comment": "subscribed the second i saw this",
+      "real": "you're a legend x",
+      "generated_side": "b",
+      "generated": "cheers babe x",
+      "choice": "b",
+      "confidence": 0.72,
+      "probabilities": {
+        "a": 0.14,
+        "b": 0.86
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "357421f16a7b646e",
+      "post_shortcode": "PvruHrqXsym",
+      "fan_comment": "just show us more on here",
+      "real": "nice try mate",
+      "generated_side": "b",
+      "generated": "more's behind the link in my bio, mate\n\nnew one's up 🙃",
+      "choice": "b",
+      "confidence": 0.2,
+      "probabilities": {
+        "a": 0.4,
+        "b": 0.6
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "288e8795016be06b",
+      "post_shortcode": "PvruHrqXsym",
+      "fan_comment": "the red dress where is it from!!",
+      "real": "charity shop in hove, £8, slightly moth-eaten",
+      "generated_side": "a",
+      "generated": "I can't see where the red dress is from, but it's probably a charity shop find, mate. they're the best 🙃",
+      "choice": "b",
+      "confidence": 0.38,
+      "probabilities": {
+        "a": 0.31,
+        "b": 0.69
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "3abad23c6bf79ca2",
+      "post_shortcode": "PvruHrqXsym",
+      "fan_comment": "is that the dress u hid behind the counter for three weeks",
+      "real": "no idea what you mean",
+      "generated_side": "b",
+      "generated": "no comment. i plead the fifth\nit was for the customers. ish x",
+      "choice": "b",
+      "confidence": 0.76,
+      "probabilities": {
+        "a": 0.12,
+        "b": 0.88
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "5be63c531d30725e",
+      "post_shortcode": "PvruHrqXsym",
+      "fan_comment": "u single?",
+      "real": "married to my greyhound, sorry",
+      "generated_side": "a",
+      "generated": "nice try mate\nbiscuit handles that info x",
+      "choice": "a",
+      "confidence": 0.82,
+      "probabilities": {
+        "a": 0.91,
+        "b": 0.09
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "db8b847001373d80",
+      "post_shortcode": "PvruHrqXsym",
+      "fan_comment": "how much is the page",
+      "real": "it's all in the link babe",
+      "generated_side": "a",
+      "generated": "price's on the link in my bio, mate\nx",
+      "choice": "a",
+      "confidence": 0.7,
+      "probabilities": {
+        "a": 0.85,
+        "b": 0.15
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "6be69a9a1d4193ab",
+      "post_shortcode": "QVWKELkoldT",
+      "fan_comment": "the grain on this 😍",
+      "real": "that's mostly rain babe x",
+      "generated_side": "a",
+      "generated": "ta babe. expired film and mostly luck\nthe proper film stuff's on",
+      "choice": "a",
+      "confidence": 0.74,
+      "probabilities": {
+        "a": 0.87,
+        "b": 0.13
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "88c9f708bdac1bac",
+      "post_shortcode": "QVWKELkoldT",
+      "fan_comment": "what camera do you shoot on?",
+      "real": "old olympus, £20 at a car boot",
+      "generated_side": "b",
+      "generated": "film, mostly. my photos are on @junofilm x",
+      "choice": "b",
+      "confidence": 0.24,
+      "probabilities": {
+        "a": 0.38,
+        "b": 0.62
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "7bc1097909f041a2",
+      "post_shortcode": "QVWKELkoldT",
+      "fan_comment": "hola juno me encantan tus fotos de película!!",
+      "real": "gracias! my spanish is gcse level sorry x",
+      "generated_side": "b",
+      "generated": "gracias! my spanish is gcse level sorry x",
+      "choice": "a",
+      "confidence": 0.6,
+      "probabilities": {
+        "a": 0.8,
+        "b": 0.2
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "63a76b4b20ece593",
+      "post_shortcode": "QVWKELkoldT",
+      "fan_comment": "do the film ones go on ur page too or just the main stuff",
+      "real": "some of them do, yeah 🫶",
+      "generated_side": "b",
+      "generated": "film ones are on @junofilm, mate. separate page x",
+      "choice": "b",
+      "confidence": 0.72,
+      "probabilities": {
+        "a": 0.14,
+        "b": 0.86
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "ff4a7bc8484e149c",
+      "post_shortcode": "QVWKELkoldT",
+      "fan_comment": "bet you still looked good soaked through",
+      "real": "i looked like a drowned crow mate",
+      "generated_side": "a",
+      "generated": "soaked, muddy and mostly on my arse\ncheers mate, not my finest look x",
+      "choice": "a",
+      "confidence": 0.58,
+      "probabilities": {
+        "a": 0.79,
+        "b": 0.21
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "7ffeaf80ab72ff5a",
+      "post_shortcode": "QVWKELkoldT",
+      "fan_comment": "how much is developing in brighton now",
+      "real": "about £12 with scans. gutted every time",
+      "generated_side": "a",
+      "generated": "honestly no idea mate, i just",
+      "choice": "b",
+      "confidence": 0.34,
+      "probabilities": {
+        "a": 0.33,
+        "b": 0.67
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "1d2b20305aba614d",
+      "post_shortcode": "QVWKELkoldT",
+      "fan_comment": "film is so pretentious just use ur phone lol",
+      "real": "noted. anyway",
+      "generated_side": "a",
+      "generated": "just use ur phone, mate. noted x",
+      "choice": "b",
+      "confidence": 0,
+      "probabilities": {
+        "a": 0.5,
+        "b": 0.5
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "4661745c7789ce9f",
+      "post_shortcode": "QVWKELkoldT",
+      "fan_comment": "my wellies are still in your boot btw",
+      "real": "they live there now, sorry xx",
+      "generated_side": "a",
+      "generated": "biscuit has claimed them",
+      "choice": "a",
+      "confidence": 0.26,
+      "probabilities": {
+        "a": 0.63,
+        "b": 0.37
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "7bdceae87496a18a",
+      "post_shortcode": "6eclXaXdQBl",
+      "fan_comment": "lewes on bonfire night is unhinged i love it",
+      "real": "proper medieval. love it too",
+      "generated_side": "b",
+      "generated": "bonfire night in lewes is proper unhinged, mate\n\nbiscuit hated it. he's still not over the fireworks x",
+      "choice": "b",
+      "confidence": 0.04,
+      "probabilities": {
+        "a": 0.48,
+        "b": 0.52
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    },
+    {
+      "id": "e869ccb2ee3c2e23",
+      "post_shortcode": "6eclXaXdQBl",
+      "fan_comment": "how do you even shoot in the dark on film",
+      "real": "badly. very steady breathing",
+      "generated_side": "b",
+      "outcome": "error",
+      "error": "malformed"
+    },
+    {
+      "id": "c9e5fd7191070a66",
+      "post_shortcode": "6eclXaXdQBl",
+      "fan_comment": "omg is that me in the second one",
+      "real": "if you had a toffee apple in each hand, yes",
+      "generated_side": "b",
+      "generated": "I don't know which one you mean, mate, but biscuit says it's probably not you. he's been wrong before x",
+      "choice": "a",
+      "confidence": 0.36,
+      "probabilities": {
+        "a": 0.68,
+        "b": 0.32
+      },
+      "jev_model": "jev-1.14.0",
+      "outcome": "indistinguishable"
+    }
+  ]
+}

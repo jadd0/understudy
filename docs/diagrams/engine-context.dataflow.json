@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "What Each Model Sees",
+    "quality_profile": "standard",
+    "viewBox": [
+      880,
+      760
+    ]
+  },
+  "stages": [
+    {
+      "label": "Stored"
+    },
+    {
+      "label": "Assembled"
+    },
+    {
+      "label": "Model"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "history",
+      "type": "database",
+      "label": "Chat history",
+      "sublabel": "sent, not system",
+      "stage": 0,
+      "row": 0,
+      "tag": "messages"
+    },
+    {
+      "id": "facts",
+      "type": "database",
+      "label": "Facts",
+      "sublabel": "unlocks, gaps",
+      "stage": 0,
+      "row": 2,
+      "tag": "loadFacts"
+    },
+    {
+      "id": "card",
+      "type": "database",
+      "label": "Persona card",
+      "sublabel": "published + never-list",
+      "stage": 0,
+      "row": 1,
+      "tag": "persona_cards"
+    },
+    {
+      "id": "chunks",
+      "type": "database",
+      "label": "Chunks + memory",
+      "sublabel": "k = 5, fan profile",
+      "stage": 0,
+      "row": 3,
+      "tag": "retrieval"
+    },
+    {
+      "id": "catalogue",
+      "type": "database",
+      "label": "Picked item",
+      "sublabel": "title + teaser",
+      "stage": 0,
+      "row": 4,
+      "tag": "no price"
+    },
+    {
+      "id": "jevstate",
+      "type": "security",
+      "label": "Jev state",
+      "sublabel": "msgs + unlocked line",
+      "stage": 1,
+      "row": 0,
+      "tag": "fenced"
+    },
+    {
+      "id": "cached",
+      "type": "backend",
+      "label": "Cached prefix",
+      "sublabel": "card, RULES, never",
+      "stage": 1,
+      "row": 2,
+      "tag": "ephemeral"
+    },
+    {
+      "id": "turnblock",
+      "type": "backend",
+      "label": "This-turn block",
+      "sublabel": "instruction, chat now",
+      "stage": 1,
+      "row": 3,
+      "tag": "per turn"
+    },
+    {
+      "id": "claudehist",
+      "type": "backend",
+      "label": "Claude messages",
+      "sublabel": "user / assistant",
+      "stage": 1,
+      "row": 1,
+      "tag": "20 rounds"
+    },
+    {
+      "id": "jev",
+      "type": "cloud",
+      "label": "Jev",
+      "sublabel": "classify, verify",
+      "stage": 2,
+      "row": 0,
+      "tag": "jev-1.14.0"
+    },
+    {
+      "id": "claude",
+      "type": "cloud",
+      "label": "Claude",
+      "sublabel": "writes the reply",
+      "stage": 2,
+      "row": 2,
+      "tag": "haiku-5-5"
+    }
+  ],
+  "flows": [
+    {
+      "id": "d-hj",
+      "from": "history",
+      "to": "jevstate",
+      "label": "6 rounds + time",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d-cc",
+      "from": "card",
+      "to": "cached",
+      "label": "card + never-list",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d-ft",
+      "from": "facts",
+      "to": "turnblock",
+      "label": "paid, session gap",
+      "variant": "default"
+    },
+    {
+      "id": "d-ct",
+      "from": "chunks",
+      "to": "turnblock",
+      "label": "chunks, profile",
+      "variant": "default"
+    },
+    {
+      "id": "d-it",
+      "from": "catalogue",
+      "to": "turnblock",
+      "label": "item to tease",
+      "variant": "default"
+    },
+    {
+      "id": "d-hc",
+      "from": "history",
+      "to": "claudehist",
+      "label": "20 rounds",
+      "variant": "default"
+    },
+    {
+      "id": "d-jj",
+      "from": "jevstate",
+      "to": "jev",
+      "label": "state JSON",
+      "variant": "security"
+    },
+    {
+      "id": "d-cl",
+      "from": "cached",
+      "to": "claude",
+      "label": "system block 1",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d-tl",
+      "from": "turnblock",
+      "to": "claude",
+      "label": "system block 2",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d-hl",
+      "from": "claudehist",
+      "to": "claude",
+      "label": "messages",
+      "variant": "default"
+    }
+  ]
+}

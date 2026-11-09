@@ -1,0 +1,48 @@
+{
+  "id": "greeting-banter",
+  "title": "Plain hello and banter.",
+  "turns": [
+    {
+      "row": "smalltalk",
+      "say": [
+        "hey!"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any"
+      }
+    },
+    {
+      "row": "smalltalk",
+      "say": [
+        "how's your day going"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any"
+      }
+    },
+    {
+      "row": "smalltalk",
+      "say": [
+        "what are you up to tonight"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any"
+      }
+    }
+  ]
+}

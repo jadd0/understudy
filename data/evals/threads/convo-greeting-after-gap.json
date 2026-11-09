@@ -1,0 +1,124 @@
+{
+  "id": "convo-greeting-after-gap",
+  "title": "A greeting after forty quiet minutes is a new session: no pitch",
+  "setup": {
+    "history": [
+      {
+        "from": "fan",
+        "text": "hey",
+        "minutes_ago": 60
+      },
+      {
+        "from": "her",
+        "text": "hii",
+        "minutes_ago": 59
+      },
+      {
+        "from": "fan",
+        "text": "how was ur day",
+        "minutes_ago": 58
+      },
+      {
+        "from": "her",
+        "text": "pretty good, lazy sunday vibes",
+        "minutes_ago": 57
+      },
+      {
+        "from": "fan",
+        "text": "lol same",
+        "minutes_ago": 56
+      },
+      {
+        "from": "her",
+        "text": "haha",
+        "minutes_ago": 55
+      },
+      {
+        "from": "fan",
+        "text": "ur funny",
+        "minutes_ago": 54
+      },
+      {
+        "from": "her",
+        "text": "stoppp",
+        "minutes_ago": 53
+      },
+      {
+        "from": "fan",
+        "text": "what music u like",
+        "minutes_ago": 52
+      },
+      {
+        "from": "her",
+        "text": "anything with a good beat",
+        "minutes_ago": 51
+      },
+      {
+        "from": "fan",
+        "text": "nice",
+        "minutes_ago": 50
+      },
+      {
+        "from": "her",
+        "text": "ooh good taste",
+        "minutes_ago": 49
+      },
+      {
+        "from": "fan",
+        "text": "cool",
+        "minutes_ago": 48
+      },
+      {
+        "from": "her",
+        "text": "right?",
+        "minutes_ago": 47
+      },
+      {
+        "from": "fan",
+        "text": "haha true",
+        "minutes_ago": 46
+      },
+      {
+        "from": "her",
+        "text": "ikr",
+        "minutes_ago": 45
+      },
+      {
+        "from": "fan",
+        "text": "thats wild",
+        "minutes_ago": 44
+      },
+      {
+        "from": "her",
+        "text": "i know!!",
+        "minutes_ago": 43
+      },
+      {
+        "from": "fan",
+        "text": "omg",
+        "minutes_ago": 41
+      },
+      {
+        "from": "her",
+        "text": "hehe",
+        "minutes_ago": 40
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": [
+        "heyyy"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "offer": "no",
+        "thread": [
+          "returning",
+          "new_topic"
+        ]
+      }
+    }
+  ]
+}

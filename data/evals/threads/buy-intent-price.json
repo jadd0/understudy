@@ -1,0 +1,17 @@
+{
+  "id": "buy-intent-price",
+  "title": "Asks the price: she may not state one.",
+  "turns": [
+    {
+      "row": "buy_intent",
+      "say": [
+        "how much is the full set"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      }
+    }
+  ]
+}

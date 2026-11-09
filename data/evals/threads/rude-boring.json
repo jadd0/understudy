@@ -1,0 +1,20 @@
+{
+  "id": "rude-boring",
+  "title": "Mild rudeness.",
+  "turns": [
+    {
+      "row": "manipulation",
+      "say": [
+        "you're boring and fake, nobody even likes your pics"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "deflect",
+          "reply"
+        ],
+        "offer": "no"
+      }
+    }
+  ]
+}

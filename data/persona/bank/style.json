@@ -1,0 +1,416 @@
+{
+  "method": "Figures are measured with mentions and urls removed. Replies exclude the validation and test splits. Rates are shares of texts, rounded to 4 places; length is characters, nearest-rank percentiles.",
+  "captions": {
+    "n": 220,
+    "lowercase_only_rate": 0.9818,
+    "length_chars": {
+      "p50": 56,
+      "p90": 82
+    },
+    "top_emoji": [
+      {
+        "emoji": "🌊",
+        "count": 11
+      },
+      {
+        "emoji": "🛼",
+        "count": 11
+      },
+      {
+        "emoji": "🐕",
+        "count": 8
+      },
+      {
+        "emoji": "🙃",
+        "count": 5
+      },
+      {
+        "emoji": "🫶",
+        "count": 1
+      }
+    ],
+    "emoticons": {
+      ":3": 0,
+      ">.<": 0,
+      ":)": 0,
+      "xD": 0,
+      "rawr": 0
+    },
+    "top_tokens": [
+      {
+        "token": "biscuit",
+        "count": 33
+      },
+      {
+        "token": "sea",
+        "count": 20
+      },
+      {
+        "token": "blue",
+        "count": 17
+      },
+      {
+        "token": "lips",
+        "count": 17
+      },
+      {
+        "token": "day",
+        "count": 16
+      },
+      {
+        "token": "new",
+        "count": 16
+      },
+      {
+        "token": "first",
+        "count": 13
+      },
+      {
+        "token": "fringe",
+        "count": 13
+      },
+      {
+        "token": "shop",
+        "count": 12
+      },
+      {
+        "token": "back",
+        "count": 10
+      },
+      {
+        "token": "bit",
+        "count": 10
+      },
+      {
+        "token": "week",
+        "count": 10
+      },
+      {
+        "token": "mostly",
+        "count": 9
+      },
+      {
+        "token": "over",
+        "count": 9
+      },
+      {
+        "token": "came",
+        "count": 8
+      },
+      {
+        "token": "degrees",
+        "count": 8
+      },
+      {
+        "token": "disco",
+        "count": 8
+      },
+      {
+        "token": "dump",
+        "count": 8
+      },
+      {
+        "token": "good",
+        "count": 8
+      },
+      {
+        "token": "hoover",
+        "count": 8
+      },
+      {
+        "token": "last",
+        "count": 8
+      },
+      {
+        "token": "now",
+        "count": 8
+      },
+      {
+        "token": "roll",
+        "count": 8
+      },
+      {
+        "token": "spin",
+        "count": 8
+      },
+      {
+        "token": "still",
+        "count": 8
+      },
+      {
+        "token": "swim",
+        "count": 8
+      },
+      {
+        "token": "year",
+        "count": 8
+      },
+      {
+        "token": "bath",
+        "count": 7
+      },
+      {
+        "token": "dress",
+        "count": 7
+      },
+      {
+        "token": "fell",
+        "count": 7
+      },
+      {
+        "token": "four",
+        "count": 7
+      },
+      {
+        "token": "honestly",
+        "count": 7
+      },
+      {
+        "token": "jacket",
+        "count": 7
+      },
+      {
+        "token": "january",
+        "count": 7
+      },
+      {
+        "token": "like",
+        "count": 7
+      },
+      {
+        "token": "once",
+        "count": 7
+      },
+      {
+        "token": "pigeon",
+        "count": 7
+      },
+      {
+        "token": "redid",
+        "count": 7
+      },
+      {
+        "token": "seafront",
+        "count": 7
+      },
+      {
+        "token": "skates",
+        "count": 7
+      }
+    ],
+    "spanish_token_rate": 0,
+    "question_rate": 0.0045,
+    "exclamation_rate": 0,
+    "with_emoji_rate": 0.1636,
+    "leading_mention_rate": 0
+  },
+  "replies": {
+    "n": 606,
+    "lowercase_only_rate": 0.9898,
+    "length_chars": {
+      "p50": 30,
+      "p90": 42
+    },
+    "top_emoji": [
+      {
+        "emoji": "🫶",
+        "count": 13
+      },
+      {
+        "emoji": "🙃",
+        "count": 10
+      },
+      {
+        "emoji": "🌊",
+        "count": 4
+      },
+      {
+        "emoji": "🐕",
+        "count": 3
+      },
+      {
+        "emoji": "🛼",
+        "count": 2
+      }
+    ],
+    "emoticons": {
+      ":3": 0,
+      ">.<": 0,
+      ":)": 0,
+      "xD": 0,
+      "rawr": 0
+    },
+    "top_tokens": [
+      {
+        "token": "mate",
+        "count": 40
+      },
+      {
+        "token": "babe",
+        "count": 30
+      },
+      {
+        "token": "he's",
+        "count": 23
+      },
+      {
+        "token": "honestly",
+        "count": 23
+      },
+      {
+        "token": "thank",
+        "count": 21
+      },
+      {
+        "token": "biscuit",
+        "count": 20
+      },
+      {
+        "token": "shop",
+        "count": 17
+      },
+      {
+        "token": "accurate",
+        "count": 16
+      },
+      {
+        "token": "bit",
+        "count": 15
+      },
+      {
+        "token": "gcse",
+        "count": 14
+      },
+      {
+        "token": "spanish",
+        "count": 14
+      },
+      {
+        "token": "now",
+        "count": 13
+      },
+      {
+        "token": "proper",
+        "count": 13
+      },
+      {
+        "token": "sorry",
+        "count": 12
+      },
+      {
+        "token": "bio",
+        "count": 11
+      },
+      {
+        "token": "gracias",
+        "count": 11
+      },
+      {
+        "token": "off",
+        "count": 11
+      },
+      {
+        "token": "rethread",
+        "count": 11
+      },
+      {
+        "token": "yes",
+        "count": 11
+      },
+      {
+        "token": "charity",
+        "count": 10
+      },
+      {
+        "token": "i'll",
+        "count": 10
+      },
+      {
+        "token": "mostly",
+        "count": 10
+      },
+      {
+        "token": "still",
+        "count": 10
+      },
+      {
+        "token": "blue",
+        "count": 9
+      },
+      {
+        "token": "boot",
+        "count": 9
+      },
+      {
+        "token": "car",
+        "count": 9
+      },
+      {
+        "token": "first",
+        "count": 9
+      },
+      {
+        "token": "two",
+        "count": 9
+      },
+      {
+        "token": "cheers",
+        "count": 8
+      },
+      {
+        "token": "felt",
+        "count": 8
+      },
+      {
+        "token": "fine",
+        "count": 8
+      },
+      {
+        "token": "know",
+        "count": 8
+      },
+      {
+        "token": "like",
+        "count": 8
+      },
+      {
+        "token": "lips",
+        "count": 8
+      },
+      {
+        "token": "never",
+        "count": 8
+      },
+      {
+        "token": "noted",
+        "count": 8
+      },
+      {
+        "token": "page",
+        "count": 8
+      },
+      {
+        "token": "says",
+        "count": 8
+      },
+      {
+        "token": "slightly",
+        "count": 8
+      },
+      {
+        "token": "thanks",
+        "count": 8
+      }
+    ],
+    "spanish_token_rate": 0.0039,
+    "question_rate": 0.0083,
+    "exclamation_rate": 0.0264,
+    "with_emoji_rate": 0.0528,
+    "leading_mention_rate": 0.9752,
+    "counts": {
+      "text_used": 606,
+      "non_text": 23,
+      "text_held_out": 128
+    }
+  }
+}

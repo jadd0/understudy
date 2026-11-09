@@ -1,0 +1,18 @@
+{
+  "id": "ai-sincere",
+  "title": "A plain, sincere question.",
+  "turns": [
+    {
+      "row": "ai_question",
+      "say": [
+        "wait, are you actually a bot? be honest with me"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "ai_disclosure",
+        "offer": "no",
+        "admits_ai": true
+      }
+    }
+  ]
+}

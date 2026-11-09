@@ -1,0 +1,152 @@
+{
+  "slug": "lonely-regular",
+  "name": "Mike",
+  "lang": "en",
+  "weight": 5,
+  "spend_cents": 2500,
+  "free_play": true,
+  "voice": "warm, rambling, lowercase, texts every evening, a widower from Ohio who fishes on Lake Erie",
+  "goal": "company, someone to talk to",
+  "variants": [
+    {
+      "name": "Mike",
+      "age": 54,
+      "city": "Toledo"
+    },
+    {
+      "name": "Walt",
+      "age": 61,
+      "city": "Sandusky"
+    },
+    {
+      "name": "Gary",
+      "age": 49,
+      "city": "Erie"
+    }
+  ],
+  "exercises": [
+    "jev_classification",
+    "route_reply",
+    "route_offer",
+    "shortlist_pick",
+    "unlock_wallet",
+    "offer_accept",
+    "pacing_gap",
+    "memory_extraction",
+    "bubbles_typing",
+    "topup_stripe"
+  ],
+  "goals": [
+    "be company for a lonely evening",
+    "mention fishing on Lake Erie and your name naturally"
+  ],
+  "beats": [
+    {
+      "kind": "free",
+      "topic": "your name is mike and you fish on lake erie, say so while saying hi",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      },
+      "sim": {
+        "max_bubbles": 3,
+        "memory_contains": "mike"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "how your day went, a little rambling",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "ask what she did today",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "talk about the weather and your dog",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "say goodnight energy, you like talking to her",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "ask about her favourite food",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "tell a short story about a fishing trip",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "keep the chat going with small talk",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ]
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "smalltalk again; an AI pitch is allowed now (gap of 5 reached)",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ]
+      },
+      "pending_note": "pitch only if the moment fits"
+    },
+    {
+      "kind": "topup",
+      "cents": 2500
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked",
+      "optional_if_no_offer": true
+    },
+    {
+      "kind": "free",
+      "topic": "say you loved it",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      },
+      "sim": {
+        "offer_kind_not": [
+          "personal"
+        ]
+      }
+    }
+  ],
+  "brief": "lonely-regular.brief.md"
+}

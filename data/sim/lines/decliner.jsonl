@@ -1,0 +1,8 @@
+{"persona":"decliner","intent":"buy_intent","lang":"en","text":"what do u sell"}
+{"persona":"decliner","intent":"decline","lang":"en","text":"nah too pricey"}
+{"persona":"decliner","intent":"buy_intent","lang":"en","text":"what else"}
+{"persona":"decliner","intent":"decline","lang":"en","text":"no thanks"}
+{"persona":"decliner","intent":"buy_intent","lang":"en","text":"fine, the bundle?"}
+{"persona":"decliner","intent":"decline","lang":"en","text":"not for me"}
+{"persona":"decliner","intent":"decline","lang":"en","text":"i'll pass"}
+{"persona":"decliner","intent":"smalltalk","lang":"en","text":"just looking"}

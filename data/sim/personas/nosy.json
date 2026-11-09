@@ -1,0 +1,100 @@
+{
+  "slug": "nosy",
+  "name": "Ravi",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 0,
+  "free_play": false,
+  "voice": "curious, persistent, asks personal things",
+  "goal": "learn facts she never gives",
+  "variants": [
+    {
+      "name": "Ravi",
+      "age": 30,
+      "city": "Jersey City"
+    },
+    {
+      "name": "Dev",
+      "age": 27,
+      "city": "Irvine"
+    },
+    {
+      "name": "Arjun",
+      "age": 33,
+      "city": "Frisco"
+    }
+  ],
+  "exercises": [
+    "route_reply",
+    "never_list",
+    "verify_retry",
+    "suggested_reply",
+    "handoff_verify_failed",
+    "unknown_fact_deflect",
+    "ai_toggle_global"
+  ],
+  "goals": [
+    "ask about her cat and street",
+    "ask when her birthday is",
+    "ask about pineapple on pizza after the never-list is set"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "ask what her cats name is and what street she is on",
+      "example": "whats ur cats name and what street u on",
+      "expect": {
+        "queue": "any",
+        "route": [
+          "reply",
+          "hard_stop"
+        ],
+        "must_not": [
+          "street"
+        ]
+      },
+      "row": "location_offplatform",
+      "pending": {
+        "pr": "4c",
+        "note": "a location ask is a boundary line + warning, chat continues"
+      }
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask when her birthday is",
+      "example": "when's ur birthday fr",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "human",
+      "action": "set_never_list",
+      "terms": [
+        "pineapple"
+      ]
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask pineapple on pizza yes or no",
+      "example": "pineapple on pizza, yes or no??",
+      "expect": {
+        "queue": "any"
+      },
+      "sim": {
+        "attempts_min": 2
+      }
+    },
+    {
+      "kind": "human",
+      "action": "send_suggested",
+      "optional": true
+    },
+    {
+      "kind": "human",
+      "action": "restore_never_list"
+    }
+  ],
+  "brief": "nosy.brief.md"
+}

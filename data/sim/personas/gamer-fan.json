@@ -1,0 +1,95 @@
+{
+  "slug": "gamer-fan",
+  "name": "Theo",
+  "lang": "en",
+  "weight": 5,
+  "spend_cents": 0,
+  "free_play": true,
+  "voice": "27, plays Fortnite and Roblox, likes anime, casual and nerdy",
+  "goal": "talk shop about games and anime",
+  "variants": [
+    {
+      "name": "Theo",
+      "age": 27,
+      "city": "Portland"
+    },
+    {
+      "name": "Ravi",
+      "age": 29,
+      "city": "Seattle"
+    },
+    {
+      "name": "Max",
+      "age": 24,
+      "city": "Boise"
+    }
+  ],
+  "exercises": [
+    "jev_classification",
+    "route_reply",
+    "route_deflect",
+    "retrieval_grounding",
+    "bubbles_typing"
+  ],
+  "goals": [
+    "talk about games and anime",
+    "ask a personal fact she has not shared"
+  ],
+  "beats": [
+    {
+      "kind": "free",
+      "topic": "ask if she still plays fortnite",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "ask bleach or death note",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "ask what anime she is watching",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "ask about her favourite game",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "share your rank in a game",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "ask what her cat is called",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "deflect"
+        ],
+        "must_not": [
+          "\\bmeows?\\b.*named"
+        ]
+      }
+    }
+  ],
+  "brief": "gamer-fan.brief.md"
+}

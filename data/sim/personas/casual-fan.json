@@ -1,0 +1,113 @@
+{
+  "slug": "casual-fan",
+  "name": "Dani",
+  "lang": "en",
+  "weight": 5,
+  "spend_cents": 0,
+  "free_play": true,
+  "voice": "short hype texts, emoji-heavy, 23, follows for the hair and outfits",
+  "goal": "a reply from her, never buys",
+  "variants": [
+    {
+      "name": "Dani",
+      "age": 23,
+      "city": "Austin"
+    },
+    {
+      "name": "Kayla",
+      "age": 21,
+      "city": "Denver"
+    },
+    {
+      "name": "Jess",
+      "age": 25,
+      "city": "Tampa"
+    }
+  ],
+  "exercises": [
+    "jev_classification",
+    "route_reply",
+    "pacing_gap",
+    "offer_decline",
+    "bubbles_typing"
+  ],
+  "goals": [
+    "get a reply from her",
+    "never spend money"
+  ],
+  "beats": [
+    {
+      "kind": "free",
+      "topic": "compliment her hair",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "ask what colour next",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "react to her outfit",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "hype her latest post",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "ask where she got her top",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "say you cant wait for the next one",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "keep chatting; if an offer shows, say haha maybe later",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ]
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "say haha maybe later",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      },
+      "sim": {
+        "offer_kind_not": [
+          "personal"
+        ]
+      }
+    }
+  ],
+  "brief": "casual-fan.brief.md"
+}

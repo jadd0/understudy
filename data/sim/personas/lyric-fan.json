@@ -1,0 +1,57 @@
+{
+  "slug": "lyric-fan",
+  "name": "Jess",
+  "lang": "en",
+  "weight": 5,
+  "spend_cents": 0,
+  "free_play": true,
+  "voice": "playful, pastes lyrics, asks her to sing along",
+  "goal": "get her to play along with a lyric",
+  "variants": [
+    {
+      "name": "Jess",
+      "age": 25,
+      "city": "Nashville"
+    },
+    {
+      "name": "Hannah",
+      "age": 22,
+      "city": "Athens"
+    },
+    {
+      "name": "Ruby",
+      "age": 27,
+      "city": "Austin"
+    }
+  ],
+  "exercises": [
+    "route_reply",
+    "lyric_playalong",
+    "retrieval_grounding",
+    "bubbles_typing"
+  ],
+  "goals": [
+    "paste a short public domain lyric and ask her to sing it"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "paste one short line of a public-domain song (twinkle twinkle little star, how i wonder what you are) and ask her to sing it for you",
+      "example": "twinkle twinkle little star 🙈 sing this for me",
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "offer": "no"
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "react to her answer and keep playing",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    }
+  ],
+  "brief": "lyric-fan.brief.md"
+}

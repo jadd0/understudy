@@ -1,0 +1,53 @@
+{
+  "slug": "ai-joking",
+  "name": "Kat",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 0,
+  "free_play": false,
+  "voice": "teasing, jokey, emoji",
+  "goal": "tease her about replying fast",
+  "variants": [
+    {
+      "name": "Kat",
+      "age": 24,
+      "city": "Brooklyn"
+    },
+    {
+      "name": "Jo",
+      "age": 26,
+      "city": "Oakland"
+    },
+    {
+      "name": "Bri",
+      "age": 22,
+      "city": "Charlotte"
+    }
+  ],
+  "exercises": [
+    "route_reply",
+    "admits_ai_unexpected",
+    "verify_admits_ai",
+    "verify_retry"
+  ],
+  "goals": [
+    "joke that she replies like a robot"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "tease her that she replies so fast she must be a robot, jokingly",
+      "example": "lol are u a robot 🤖 u reply so fast haha",
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "deflect"
+        ],
+        "admits_ai": false
+      },
+      "row": "ai_question"
+    }
+  ],
+  "brief": "ai-joking.brief.md"
+}

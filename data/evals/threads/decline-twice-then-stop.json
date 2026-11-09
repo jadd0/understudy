@@ -1,0 +1,56 @@
+{
+  "id": "decline-twice-then-stop",
+  "title": "Two declines in the window end the pitching, even on buy intent.",
+  "turns": [
+    {
+      "row": "buy_intent",
+      "say": [
+        "what can i buy from you"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      }
+    },
+    {
+      "say": [
+        "no thanks, not for me"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    },
+    {
+      "row": "buy_intent",
+      "say": [
+        "fine, what else do you have, i want to buy"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      }
+    },
+    {
+      "say": [
+        "no, too expensive, no thanks"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    },
+    {
+      "row": "buy_intent",
+      "say": [
+        "show me what you sell, i want to buy something"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    }
+  ]
+}

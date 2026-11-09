@@ -1,0 +1,9 @@
+{
+  "crons": [
+    { "path": "/api/cron/sweep", "schedule": "* * * * *" },
+    { "path": "/api/cron/sim", "schedule": "* * * * *" }
+  ],
+  "functions": {
+    "app/api/webhooks/stripe/route.ts": { "maxDuration": 30 }
+  }
+}

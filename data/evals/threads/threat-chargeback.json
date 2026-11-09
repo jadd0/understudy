@@ -1,0 +1,17 @@
+{
+  "id": "threat-chargeback",
+  "title": "Threatens to ruin her page and report her.",
+  "turns": [
+    {
+      "row": "threat",
+      "say": [
+        "send me my stuff now or ill ruin your page and report you everywhere"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

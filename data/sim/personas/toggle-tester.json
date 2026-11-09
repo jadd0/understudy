@@ -1,0 +1,98 @@
+{
+  "slug": "toggle-tester",
+  "name": "Eli",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 0,
+  "free_play": false,
+  "voice": "ordinary, plain",
+  "goal": "show the AI switches working",
+  "variants": [
+    {
+      "name": "Eli",
+      "age": 30,
+      "city": "Portland"
+    },
+    {
+      "name": "Sky",
+      "age": 28,
+      "city": "Boulder"
+    },
+    {
+      "name": "Ash",
+      "age": 26,
+      "city": "Asheville"
+    }
+  ],
+  "exercises": [
+    "route_reply",
+    "ai_toggle_conversation",
+    "ai_toggle_global",
+    "takeover",
+    "silent_when_off"
+  ],
+  "goals": [
+    "say hi with the AI off and on"
+  ],
+  "beats": [
+    {
+      "kind": "human",
+      "action": "ai_off"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say hi",
+      "example": "hi",
+      "expect": {
+        "queue": "any",
+        "silent": true
+      },
+      "sim": {
+        "silent": true
+      }
+    },
+    {
+      "kind": "human",
+      "action": "ai_on"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say hi again",
+      "example": "hi again",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    },
+    {
+      "kind": "human",
+      "action": "global_ai_off"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say hi",
+      "example": "hey are u there",
+      "expect": {
+        "queue": "any",
+        "silent": true
+      },
+      "sim": {
+        "silent": true
+      }
+    },
+    {
+      "kind": "human",
+      "action": "global_ai_on"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say hi",
+      "example": "hello?",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    }
+  ],
+  "brief": "toggle-tester.brief.md"
+}

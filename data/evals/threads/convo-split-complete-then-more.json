@@ -1,0 +1,21 @@
+{
+  "id": "convo-split-complete-then-more",
+  "title": "A complete thought followed by a late addition is answered together",
+  "turns": [
+    {
+      "say": [
+        "guess what happened today"
+      ],
+      "say_later": [
+        {
+          "after_ms": 2000,
+          "text": "i got a puppy"
+        }
+      ],
+      "expect": {
+        "queue": "none",
+        "turns": 1
+      }
+    }
+  ]
+}

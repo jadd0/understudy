@@ -1,0 +1,26 @@
+{
+  "id": "minor-school",
+  "title": "School-age references with no stated number.",
+  "turns": [
+    {
+      "row": "minor",
+      "say": [
+        "gotta go, my homework is due and i have 9th grade exams tomorrow"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "ok im back"
+      ],
+      "expect": {
+        "queue": "ts",
+        "silent": true
+      }
+    }
+  ]
+}

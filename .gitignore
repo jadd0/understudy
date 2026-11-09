@@ -1,0 +1,16 @@
+gate-logs/
+/.codemap/
+.claude/worktrees/
+.claude/settings.local.json
+node_modules/
+.env*.local
+.next/
+*.tsbuildinfo
+# Raw scrapes stay local. Only the synthetic creator is committed.
+data/persona/raw/*
+!data/persona/raw/junovale/
+!data/persona/raw/junofilm/
+data/persona/raw/.synth-cache/
+data/persona/eval/cache/
+.vercel
+.env*

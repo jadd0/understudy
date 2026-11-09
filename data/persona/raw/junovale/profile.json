@@ -1,0 +1,18 @@
+{
+  "handle": "junovale",
+  "display_name": "juno",
+  "category": "Artist",
+  "bio": "brighton 🌊 skates, swims, sets\n@junofilm for the film ones\nbiscuit's assistant",
+  "links": [
+    {
+      "text": "my page",
+      "url": "https://example.com/junovale"
+    }
+  ],
+  "followers": 84213,
+  "following": 512,
+  "url": "https://www.instagram.com/junovale/",
+  "posts": 230,
+  "captured_at": "2026-11-05",
+  "synthetic": true
+}

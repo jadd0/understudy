@@ -1,0 +1,245 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Engine Turn Overview",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    {
+      "id": "read",
+      "label": "Read the fan"
+    },
+    {
+      "id": "answer",
+      "label": "Draft, commit, deliver"
+    }
+  ],
+  "mainPath": [
+    "trigger",
+    "lease",
+    "settle",
+    "facts",
+    "jevin",
+    "route",
+    "context"
+  ],
+  "nodes": [
+    {
+      "id": "trigger",
+      "lane": "read",
+      "col": 0,
+      "type": "frontend",
+      "label": "Fan message",
+      "sublabel": "after() or sweep",
+      "tag": "process.ts",
+      "width": 128
+    },
+    {
+      "id": "lease",
+      "lane": "read",
+      "col": 1,
+      "type": "security",
+      "label": "Lease",
+      "sublabel": "mode ai, AI on",
+      "tag": "30 s",
+      "width": 128
+    },
+    {
+      "id": "settle",
+      "lane": "read",
+      "col": 2,
+      "type": "backend",
+      "label": "Wait to settle",
+      "sublabel": "debounce + typing",
+      "tag": "250 ms / 8 s",
+      "width": 128
+    },
+    {
+      "id": "facts",
+      "lane": "read",
+      "col": 3,
+      "type": "database",
+      "label": "Facts + history",
+      "sublabel": "one DB read",
+      "tag": "20 rounds",
+      "width": 128
+    },
+    {
+      "id": "jevin",
+      "lane": "read",
+      "col": 4,
+      "type": "cloud",
+      "label": "Jev inbound",
+      "sublabel": "intent, safety, thread",
+      "tag": "6 rounds",
+      "width": 128
+    },
+    {
+      "id": "route",
+      "lane": "read",
+      "col": 5,
+      "type": "security",
+      "label": "route()",
+      "sublabel": "pure, ordered",
+      "tag": "route.ts",
+      "width": 128
+    },
+    {
+      "id": "context",
+      "lane": "answer",
+      "col": 5,
+      "type": "database",
+      "label": "Context",
+      "sublabel": "memory, chunks, pick",
+      "tag": "k = 5",
+      "width": 128
+    },
+    {
+      "id": "generate",
+      "lane": "answer",
+      "col": 4,
+      "type": "cloud",
+      "label": "Claude draft",
+      "sublabel": "thinking off",
+      "tag": "300 tok",
+      "width": 128
+    },
+    {
+      "id": "verify",
+      "lane": "answer",
+      "col": 3,
+      "type": "security",
+      "label": "Verify",
+      "sublabel": "code, then Jev",
+      "tag": "2 drafts",
+      "width": 128
+    },
+    {
+      "id": "foldin",
+      "lane": "answer",
+      "col": 2,
+      "type": "backend",
+      "label": "Fold-in check",
+      "sublabel": "he wrote again?",
+      "tag": "max 1",
+      "width": 128
+    },
+    {
+      "id": "commit",
+      "lane": "answer",
+      "col": 1,
+      "type": "database",
+      "label": "Commit",
+      "sublabel": "compare-and-set",
+      "tag": "",
+      "width": 128
+    },
+    {
+      "id": "deliver",
+      "lane": "answer",
+      "col": 0,
+      "type": "messagebus",
+      "label": "Deliver",
+      "sublabel": "bubbles, Pusher, memory",
+      "tag": "deliver_at",
+      "width": 128
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-trigger",
+      "from": "trigger",
+      "to": "lease"
+    },
+    {
+      "id": "e-lease",
+      "from": "lease",
+      "to": "settle",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-settle",
+      "from": "settle",
+      "to": "facts",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-facts",
+      "from": "facts",
+      "to": "jevin",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-jevin",
+      "from": "jevin",
+      "to": "route",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-route",
+      "from": "route",
+      "to": "context",
+      "label": "reply / offer / deflect",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-context",
+      "from": "context",
+      "to": "generate",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-generate",
+      "from": "generate",
+      "to": "verify",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-verify",
+      "from": "verify",
+      "to": "foldin",
+      "label": "safe draft",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-foldin",
+      "from": "foldin",
+      "to": "commit",
+      "label": "no late msg",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-commit",
+      "from": "commit",
+      "to": "deliver",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-stop",
+      "from": "route",
+      "to": "commit",
+      "label": "hard stop / hold: no draft",
+      "variant": "security",
+      "role": "branch",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "id": "e-retry",
+      "from": "verify",
+      "to": "generate",
+      "label": "retry",
+      "variant": "dashed",
+      "role": "return"
+    },
+    {
+      "id": "e-fold",
+      "from": "foldin",
+      "to": "settle",
+      "label": "late msg: redo",
+      "variant": "dashed",
+      "role": "return"
+    }
+  ]
+}

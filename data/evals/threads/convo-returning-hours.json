@@ -1,0 +1,34 @@
+{
+  "id": "convo-returning-hours",
+  "title": "He comes back hours later; she greets him and no time marker leaks into her reply",
+  "setup": {
+    "history": [
+      {
+        "from": "fan",
+        "text": "cant talk long, early flight tomorrow ugh",
+        "minutes_ago": 305
+      },
+      {
+        "from": "her",
+        "text": "safe travels babe, text me when u land",
+        "minutes_ago": 304.5
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": [
+        "heyyy"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "offer": "no",
+        "thread": "returning",
+        "must_not": [
+          "later\\s*—"
+        ]
+      }
+    }
+  ]
+}

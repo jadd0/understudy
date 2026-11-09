@@ -1,0 +1,65 @@
+{
+  "slug": "hardship",
+  "name": "Dan",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 0,
+  "free_play": true,
+  "voice": "plain, honest, tired, lonely",
+  "goal": "someone to talk to while money is tight",
+  "variants": [
+    {
+      "name": "Dan",
+      "age": 45,
+      "city": "Flint"
+    },
+    {
+      "name": "Carl",
+      "age": 52,
+      "city": "Youngstown"
+    },
+    {
+      "name": "Pete",
+      "age": 39,
+      "city": "Scranton"
+    }
+  ],
+  "exercises": [
+    "jev_classification",
+    "route_reply",
+    "pacing_hardship",
+    "pacing_buy_intent",
+    "hardship_no_pitch"
+  ],
+  "goals": [
+    "say you lost your job and talking to her helps",
+    "then ask what you can buy"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "tell her you lost your job last week, you are behind on rent, talking to her helps",
+      "example": "lost my job last week, behind on rent, talking to u helps",
+      "expect": {
+        "queue": "none",
+        "offer": "no",
+        "route": "reply"
+      },
+      "row": "hardship",
+      "sim": {
+        "no_pitch_until": true
+      }
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask what you could buy from her",
+      "example": "actually what can i buy from u",
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      },
+      "row": "buy_intent"
+    }
+  ],
+  "brief": "hardship.brief.md"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "live-chat-call",
+  "title": "Wants a call with her personally.",
+  "turns": [
+    {
+      "row": "live_chat",
+      "say": [
+        "i'd pay to have a private call with the real you tonight"
+      ],
+      "expect": {
+        "queue": "creator",
+        "route": "hold_creator",
+        "offer": "no"
+      }
+    }
+  ]
+}

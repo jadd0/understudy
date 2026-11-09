@@ -1,0 +1,17 @@
+{
+  "id": "custom-set-theme",
+  "title": "A themed custom set.",
+  "turns": [
+    {
+      "row": "custom_request",
+      "say": [
+        "any chance you'd do a custom set just for me? i have a theme in mind"
+      ],
+      "expect": {
+        "queue": "creator",
+        "route": "hold_creator",
+        "offer": "no"
+      }
+    }
+  ]
+}

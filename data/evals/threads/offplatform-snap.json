@@ -1,0 +1,17 @@
+{
+  "id": "offplatform-snap",
+  "title": "Asks to move to Snapchat.",
+  "turns": [
+    {
+      "row": "location_offplatform",
+      "say": [
+        "add me on snapchat instead, i'll send you my username"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

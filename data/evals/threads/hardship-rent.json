@@ -1,0 +1,29 @@
+{
+  "id": "hardship-rent",
+  "title": "Rent is due; hardship ends the pitch and the cooldown blocks even an explicit buy.",
+  "turns": [
+    {
+      "row": "hardship",
+      "say": [
+        "rent is due friday and im short, but i miss talking to you"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "deflect"
+        ],
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "anyway what can i buy from you"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    }
+  ]
+}

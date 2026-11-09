@@ -1,0 +1,398 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens, taken from the founder's chat design
+ * (claude.ai/code/artifact/0e4e6819-e8dd-40a3-9937-2fe29bdad60c). docs/DESIGN.md lists them.
+ * Every screen uses these names; no screen introduces a colour of its own.
+ */
+@theme {
+  --font-sans: var(--font-geist), system-ui, -apple-system, sans-serif;
+
+  --color-ground: #ffffff;
+  --color-ink: #0a0a0b;
+  --color-ink-2: #3d3d45;
+  --color-muted: #6b6b73; /* 5.3:1 on white */
+  --color-muted-2: #55555d;
+  --color-line: #ececef;
+  --color-line-2: #e4e4e8;
+  --color-line-focus: #b9b9c2;
+  --color-surface: #f1f1f3; /* their bubble, search, active row */
+  --color-hover: #f4f4f6;
+  --color-hover-2: #f6f6f8;
+  --color-dot: #8e8e96;
+  --color-accent: #3d5afe;
+  --color-online: #16a34a;
+  --color-like: #e11d48;
+  --color-danger: #c81e1e;
+  --color-raised: #ffffff; /* tip panel, account menu: lifts off the ground in dark mode */
+  --color-track: #d4d4da; /* switch track, off */
+  --color-surface-2: #f7f7f9; /* tip note / custom amount field */
+  --color-tip: #ffc83d; /* tips: the composer button, the tip card, the send button */
+  --color-tip-ink: #231900;
+  --color-scrim: rgba(5, 5, 10, 0.5);
+
+  --shadow-panel: 0 24px 60px rgba(12, 12, 24, 0.16), 0 2px 8px rgba(12, 12, 24, 0.06);
+  --shadow-sheet: 0 -12px 40px rgba(12, 12, 24, 0.14);
+
+  --radius-bubble: 20px;
+  --radius-bubble-joined: 6px;
+  --radius-pill: 28px;
+  --radius-field: 12px;
+  --radius-row: 14px;
+}
+
+/* Dark mode: the design's .app.dark values, on the same token names. The `dark` class is set on <html>. */
+html.dark {
+  color-scheme: dark;
+  --color-ground: #0c0c10;
+  --color-raised: #17171d;
+  --color-surface: #1f1f26;
+  --color-surface-2: #131318;
+  --color-ink: #f3f3f6;
+  --color-ink-2: #c9c9d2;
+  --color-muted: #9c9ca8;
+  --color-muted-2: #b0b0bb;
+  --color-line: #24242c;
+  --color-line-2: #2c2c35;
+  --color-line-focus: #4a4a56;
+  --color-hover: #1c1c23;
+  --color-hover-2: #20202a;
+  --color-dot: #6f6f7b;
+  --color-track: #3a3a44;
+  --color-danger: #f87171;
+  --shadow-panel: 0 24px 60px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.55);
+}
+
+:root {
+  --sidebar-w: 320px; /* the resizable sidebar; the pre-paint script sets the stored value on <html> */
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  button {
+    cursor: pointer;
+  }
+}
+
+/* Bubble corners: the joined side of a run of messages from one sender gets the small radius. */
+@layer components {
+  .bubble {
+    padding: 9px 14px;
+    font-size: 15px;
+    line-height: 1.42;
+    border-radius: var(--radius-bubble);
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+  .bubble-them {
+    background: var(--color-surface);
+    color: var(--color-ink);
+  }
+  .bubble-me {
+    background: var(--color-accent);
+    color: #ffffff;
+  }
+  .bubble-me:not([data-first]) {
+    border-top-right-radius: var(--radius-bubble-joined);
+  }
+  .bubble-me:not([data-last]) {
+    border-bottom-right-radius: var(--radius-bubble-joined);
+  }
+  .bubble-them:not([data-first]) {
+    border-top-left-radius: var(--radius-bubble-joined);
+  }
+  .bubble-them:not([data-last]) {
+    border-bottom-left-radius: var(--radius-bubble-joined);
+  }
+
+  .typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: var(--color-muted);
+    animation: typing-bounce 1.2s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  .bubble-new,
+  .typing-row-new {
+    animation: msg-in 0.32s cubic-bezier(0.2, 0.9, 0.25, 1);
+  }
+  .bubble-new.bubble-me {
+    transform-origin: 100% 100%;
+  }
+  .bubble-new.bubble-them {
+    transform-origin: 0 100%;
+  }
+  .tip-card-new {
+    animation: tip-pop 0.55s cubic-bezier(0.2, 1.3, 0.4, 1);
+  }
+  .tip-card-new .tip-shine {
+    animation: tip-shine 1s 0.4s ease-out;
+  }
+  .tip-shine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    transform: translateX(-140%) skewX(-18deg);
+    pointer-events: none;
+  }
+  /* A bottom sheet on a phone, a popover above the composer on desktop. It stays mounted with `data-closing` for the out animation. */
+  .tip-popup {
+    transform-origin: 87% 100%;
+    animation: sheet-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+    will-change: transform, opacity;
+  }
+  .tip-popup[data-closing] {
+    animation: sheet-out 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+    pointer-events: none;
+  }
+  .tip-popup > * {
+    animation: panel-content 0.35s 0.1s both;
+  }
+  .tip-popup[data-closing] > * {
+    animation: none;
+  }
+  @media (min-width: 768px) {
+    .tip-popup {
+      transform-origin: 88% 100%;
+      animation-name: panel-in;
+    }
+    .tip-popup[data-closing] {
+      animation-name: panel-out;
+      animation-duration: 0.2s;
+    }
+  }
+  .scrim-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  .scrim-in[data-closing] {
+    animation: fade-out 0.22s ease-out both;
+    pointer-events: none;
+  }
+  .tip-btn-on {
+    animation: dock-bump 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  .account-menu {
+    transform-origin: 28px 100%;
+    animation: menu-in 0.24s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+  .account-menu[data-closing] {
+    animation: menu-out 0.16s cubic-bezier(0.4, 0, 1, 1) both;
+    pointer-events: none;
+  }
+  .switch {
+    position: relative;
+    width: 40px;
+    height: 24px;
+    flex: 0 0 auto;
+    border-radius: 12px;
+    background: var(--color-track);
+    transition: background 0.25s;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: transform 0.3s cubic-bezier(0.3, 1.4, 0.5, 1);
+  }
+  .switch[data-on] {
+    background: var(--color-accent);
+  }
+  .switch[data-on]::after {
+    transform: translateX(16px);
+  }
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+  @media (max-width: 767px) {
+    .scroll-thin {
+      scrollbar-width: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .typing-dot,
+    .bubble-new,
+    .typing-row-new,
+    .tip-card-new,
+    .tip-card-new .tip-shine,
+    .tip-popup,
+    .tip-popup > *,
+    .tip-popup[data-closing] > *,
+    .scrim-in,
+    .tip-btn-on,
+    .account-menu,
+    .account-menu[data-closing] {
+      animation: none;
+    }
+    .tip-popup[data-closing],
+    .scrim-in[data-closing] {
+      animation: fade-out 0.2s both;
+    }
+  }
+}
+
+@keyframes msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tip-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes tip-shine {
+  from {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+@keyframes panel-in {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.35, 0.2);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.01, 1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes panel-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+}
+@keyframes sheet-in {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.4, 0.2);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1, 1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sheet-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97);
+  }
+}
+@keyframes panel-content {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes dock-bump {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(0.88);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes menu-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}

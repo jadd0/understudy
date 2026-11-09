@@ -1,0 +1,99 @@
+{
+  "slug": "decliner",
+  "name": "Sam",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 0,
+  "free_play": false,
+  "voice": "curious but says no politely",
+  "goal": "browse, never buy",
+  "variants": [
+    {
+      "name": "Sam",
+      "age": 34,
+      "city": "Omaha"
+    },
+    {
+      "name": "Pat",
+      "age": 40,
+      "city": "Tulsa"
+    },
+    {
+      "name": "Robin",
+      "age": 28,
+      "city": "Richmond"
+    }
+  ],
+  "exercises": [
+    "route_offer",
+    "offer_decline",
+    "pacing_declines",
+    "pacing_buy_intent"
+  ],
+  "goals": [
+    "decline offers politely",
+    "ask again after two declines"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "ask what she sells",
+      "example": "what do u sell",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say nah that's too pricey",
+      "example": "nah too pricey",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      },
+      "sim": {
+        "declined": 1
+      }
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask what else she has",
+      "example": "what else",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "say no thanks",
+      "example": "no thanks",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      },
+      "sim": {
+        "declined": 2
+      }
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask about the bundle",
+      "example": "fine, the bundle?",
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      },
+      "row": "buy_intent",
+      "sim": {
+        "declines_cooldown": true
+      }
+    }
+  ],
+  "brief": "decliner.brief.md"
+}

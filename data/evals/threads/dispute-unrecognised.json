@@ -1,0 +1,17 @@
+{
+  "id": "dispute-unrecognised",
+  "title": "Does not recognise a charge.",
+  "turns": [
+    {
+      "row": "payment_dispute",
+      "say": [
+        "theres a charge on my card from this site that i dont recognise"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

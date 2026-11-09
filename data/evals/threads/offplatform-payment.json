@@ -1,0 +1,17 @@
+{
+  "id": "offplatform-payment",
+  "title": "Wants to pay outside the platform.",
+  "turns": [
+    {
+      "row": "location_offplatform",
+      "say": [
+        "can i pay you on cashapp instead of through here, cheaper for both of us"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

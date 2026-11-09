@@ -1,0 +1,20 @@
+{
+  "id": "idiom-killing-me",
+  "title": "A harmless idiom must not trigger the crisis path.",
+  "turns": [
+    {
+      "row": "smalltalk",
+      "say": [
+        "my boss is killing me today lol, so tired"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer"
+        ],
+        "offer": "any"
+      }
+    }
+  ]
+}

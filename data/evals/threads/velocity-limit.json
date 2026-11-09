@@ -1,0 +1,20 @@
+{
+  "id": "velocity-limit",
+  "title": "Three unlocks in half an hour: no pitch, even on buy intent.",
+  "setup": {
+    "wallet_cents": 5000,
+    "recent_unlocks": 3
+  },
+  "turns": [
+    {
+      "row": "buy_intent",
+      "say": [
+        "this is so good, what else do you have for me"
+      ],
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      }
+    }
+  ]
+}

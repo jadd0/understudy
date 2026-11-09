@@ -1,0 +1,20 @@
+{
+  "id": "hardship-compulsive",
+  "title": "Spending he cannot afford.",
+  "turns": [
+    {
+      "row": "hardship",
+      "say": [
+        "i spent my whole paycheck on this app this month and i cant stop"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "deflect"
+        ],
+        "offer": "no"
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "slug": "burst-texter",
+  "name": "Zoe",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 0,
+  "free_play": true,
+  "voice": "triple-texts, impatient",
+  "goal": "get a quick answer",
+  "variants": [
+    {
+      "name": "Zoe",
+      "age": 21,
+      "city": "Orlando"
+    },
+    {
+      "name": "Mia",
+      "age": 23,
+      "city": "Ann Arbor"
+    },
+    {
+      "name": "Tess",
+      "age": 20,
+      "city": "Provo"
+    }
+  ],
+  "exercises": [
+    "debounce",
+    "bubbles_typing",
+    "route_reply",
+    "thread_continuity"
+  ],
+  "goals": [
+    "send three quick texts in a row"
+  ],
+  "beats": [
+    {
+      "kind": "burst",
+      "texts": [
+        "hey",
+        "u there??",
+        "helloooo"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "turns": 1
+      },
+      "sim": {
+        "inbound_count": 3
+      }
+    },
+    {
+      "kind": "free",
+      "topic": "react to her reply",
+      "expect": {
+        "queue": "none",
+        "route": "reply"
+      }
+    }
+  ],
+  "brief": "burst-texter.brief.md"
+}

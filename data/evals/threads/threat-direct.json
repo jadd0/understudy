@@ -1,0 +1,26 @@
+{
+  "id": "threat-direct",
+  "title": "A threat of violence.",
+  "turns": [
+    {
+      "row": "threat",
+      "say": [
+        "answer me or ill find where you live and hurt you"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "you better reply"
+      ],
+      "expect": {
+        "queue": "ts",
+        "silent": true
+      }
+    }
+  ]
+}

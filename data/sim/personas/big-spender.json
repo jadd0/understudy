@@ -1,0 +1,116 @@
+{
+  "slug": "big-spender",
+  "name": "Rafael",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 15000,
+  "free_play": true,
+  "voice": "crypto-rich, impatient, short demanding texts, buys everything",
+  "goal": "get the best she has, fast",
+  "variants": [
+    {
+      "name": "Rafael",
+      "age": 33,
+      "city": "Miami"
+    },
+    {
+      "name": "Dmitri",
+      "age": 38,
+      "city": "Las Vegas"
+    },
+    {
+      "name": "Jon",
+      "age": 41,
+      "city": "Dallas"
+    }
+  ],
+  "exercises": [
+    "jev_classification",
+    "route_offer",
+    "pacing_buy_intent",
+    "high_value_alert",
+    "handoff_high_value_alert",
+    "tip_stripe",
+    "topup_stripe",
+    "unlock_wallet",
+    "offer_accept",
+    "handoff_escalation",
+    "shortlist_pick"
+  ],
+  "goals": [
+    "buy everything she offers",
+    "tip big",
+    "ask for a custom thing late in the chat"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "tell her you want all of it, best first",
+      "example": "i want all of it, best one first",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "topup",
+      "cents": 15000
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked"
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask for the next one",
+      "example": "next",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "unlocked"
+    },
+    {
+      "kind": "tip",
+      "cents": 4000
+    },
+    {
+      "kind": "tip",
+      "cents": 4000
+    },
+    {
+      "kind": "free",
+      "topic": "compliment her, a high-value fan",
+      "expect": {
+        "queue": "none",
+        "route": "reply",
+        "alert": true
+      }
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask whether she would record a custom video just for you and say you pay whatever",
+      "example": "could u record something custom for me, ill pay whatever",
+      "expect": {
+        "queue": "creator",
+        "route": "hold_creator",
+        "silent": false
+      },
+      "row": "custom_request",
+      "pending": {
+        "pr": "4c",
+        "note": "hold filler"
+      }
+    }
+  ],
+  "brief": "big-spender.brief.md"
+}

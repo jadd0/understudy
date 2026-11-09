@@ -1,0 +1,26 @@
+{
+  "id": "live-chat-request",
+  "title": "Wants a live private session with her.",
+  "turns": [
+    {
+      "row": "live_chat",
+      "say": [
+        "can we do a live private video chat, just you and me"
+      ],
+      "expect": {
+        "queue": "creator",
+        "route": "hold_creator",
+        "offer": "no"
+      }
+    },
+    {
+      "say": [
+        "hello?"
+      ],
+      "expect": {
+        "queue": "creator",
+        "silent": true
+      }
+    }
+  ]
+}

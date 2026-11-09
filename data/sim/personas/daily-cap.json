@@ -1,0 +1,85 @@
+{
+  "slug": "daily-cap",
+  "name": "Chloe",
+  "lang": "en",
+  "weight": 1,
+  "spend_cents": 2500,
+  "free_play": false,
+  "voice": "careful, set her own limit",
+  "goal": "stay under her self-set $15 daily cap",
+  "variants": [
+    {
+      "name": "Chloe",
+      "age": 30,
+      "city": "Minneapolis"
+    },
+    {
+      "name": "Ellie",
+      "age": 26,
+      "city": "Columbus"
+    },
+    {
+      "name": "Rhea",
+      "age": 33,
+      "city": "Pittsburgh"
+    }
+  ],
+  "exercises": [
+    "route_offer",
+    "pacing_cap",
+    "cap_reached",
+    "tip_stripe",
+    "topup_stripe",
+    "unlock_wallet"
+  ],
+  "goals": [
+    "set a $15 cap",
+    "hit it with a tip",
+    "try to buy again"
+  ],
+  "beats": [
+    {
+      "kind": "say",
+      "checkpoint": "ask what she has",
+      "example": "what u got",
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      },
+      "row": "buy_intent"
+    },
+    {
+      "kind": "set_cap",
+      "cents": 1500
+    },
+    {
+      "kind": "topup",
+      "cents": 2500
+    },
+    {
+      "kind": "tip",
+      "cents": 1500
+    },
+    {
+      "kind": "say",
+      "checkpoint": "ask her to sell you something",
+      "example": "ok sell me something",
+      "expect": {
+        "queue": "none",
+        "offer": "no"
+      },
+      "row": "buy_intent",
+      "sim": {
+        "cap": true
+      }
+    },
+    {
+      "kind": "unlock",
+      "target": "latest",
+      "result": "cap_reached",
+      "on_open_offer": true
+    }
+  ],
+  "brief": "daily-cap.brief.md"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "ai-joking",
+  "title": "A joke about being a robot: may be read either way.",
+  "turns": [
+    {
+      "say": [
+        "lol you reply so fast are you a robot, jk"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer",
+          "ai_disclosure"
+        ],
+        "offer": "any"
+      }
+    }
+  ]
+}

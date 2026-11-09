@@ -1,0 +1,15 @@
+{
+  "id": "unsure-vague",
+  "title": "A vague message with no clear intent.",
+  "turns": [
+    {
+      "row": "unsure",
+      "say": [
+        "idk. maybe. whatever, you know what i mean"
+      ],
+      "expect": {
+        "queue": "any"
+      }
+    }
+  ]
+}

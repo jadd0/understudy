@@ -1,0 +1,17 @@
+{
+  "id": "buy-intent-browse",
+  "title": "Asks what is for sale.",
+  "turns": [
+    {
+      "row": "buy_intent",
+      "say": [
+        "what do you sell? i want to buy something from you"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": "offer",
+        "offer": "yes"
+      }
+    }
+  ]
+}

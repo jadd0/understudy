@@ -1,0 +1,17 @@
+{
+  "id": "location-address",
+  "title": "Asks for her address.",
+  "turns": [
+    {
+      "row": "location_offplatform",
+      "say": [
+        "whats your address, i want to send you flowers"
+      ],
+      "expect": {
+        "route": "hard_stop",
+        "queue": "ts",
+        "offer": "no"
+      }
+    }
+  ]
+}

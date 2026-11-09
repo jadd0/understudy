@@ -1,0 +1,21 @@
+{
+  "id": "unknown-fact-age",
+  "title": "Asks a fact the card may not hold (her age).",
+  "turns": [
+    {
+      "row": "smalltalk",
+      "say": [
+        "how old are you actually"
+      ],
+      "expect": {
+        "queue": "none",
+        "route": [
+          "reply",
+          "offer",
+          "deflect"
+        ],
+        "offer": "any"
+      }
+    }
+  ]
+}
