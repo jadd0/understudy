@@ -11,7 +11,7 @@ import { loadFacts } from "./facts";
 import { canPitch } from "../routing/pacing";
 import { commitTurn } from "./commit";
 import { emitDelivery } from "./deliver";
-import { RETRY_NOTE, RETRY_REASONS, qualityNote } from "./draft";
+import { RETRY_NOTE, RETRY_REASONS, drawReasons, qualityNote } from "./draft";
 import { loadHistory, loadInbound, loadTyping, newWorkSince } from "./inbound";
 import { NO_FAN_TEXT, tipRowIds, type Candidate, type JevInRecord, type PassResult } from "./pass";
 import { describeError, type TurnResult } from "./result";
@@ -26,7 +26,7 @@ import { inboundQuestions } from "../routing/questions";
 import { hardStopOf, parseInbound, promoteBuyRunnerUp, route as decideRoute } from "../routing/route";
 import { template, templateSender } from "../drafting/templates";
 import type { Facts, JevIn, Route } from "../types";
-import { enforceDraw, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify";
+import { drawFailures, enforceDraw, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify";
 import { drawStyle, parseRates } from "../drafting/style-draw";
 import { DeciderUnavailable } from "../ports/decider";
 
@@ -416,8 +416,9 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
         styleDraw: styleDraw && styleRates ? { draw: styleDraw, pet: styleRates.pet } : undefined,
       });
       // Name what failed, so the second draft drops that part instead of rephrasing it (a lobby invite became a voice-note dare).
-      const reasons = previous.map((f) => RETRY_REASONS[f]).filter(Boolean);
-      const note = attempts === 1 ? "" : qualityOnly(previous) ? qualityNote(previous) : RETRY_NOTE + (reasons.length ? `\n${reasons.join("\n")}` : "");
+      const drawNote = { targetChars: styleDraw?.targetChars, pet: styleRates?.pet };
+      const reasons = [...previous.map((f) => RETRY_REASONS[f]), ...drawReasons(previous, drawNote)].filter(Boolean);
+      const note = attempts === 1 ? "" : qualityOnly(previous) ? qualityNote(previous, drawNote) : RETRY_NOTE + (reasons.length ? `\n${reasons.join("\n")}` : "");
       let verdict: Awaited<ReturnType<typeof verifyDraft>>;
       try {
         const t0 = clock.now();
@@ -461,14 +462,17 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
       }
       acc.msJevOut = (acc.msJevOut ?? 0) + verdict.ms;
       if (verdict.usage) addCost("jev_out", cfg.prices[cfg.jevModel], verdict.usage);
-      trail.push({ attempt: attempts, failures: verdict.failures, answers: verdict.jevOut });
-      // A draft that only repeats a question is still safe: if no later attempt does better, it is the one sent.
-      if (verdict.ok || qualityOnly(verdict.failures)) {
-        chosen = styleDraw ? enforceDraw(draft, styleDraw) : draft;
-        chosenUnsetup = verdict.failures.includes("offer_unsetup");
+      // The draw's length and pet limits are judged on the text that would be sent, after the edge clean-up.
+      const sendable = styleDraw ? enforceDraw(draft, styleDraw) : draft;
+      const failures = [...verdict.failures, ...drawFailures(sendable, styleDraw, styleRates)];
+      trail.push({ attempt: attempts, failures, answers: verdict.jevOut });
+      // A draft that only repeats a question or runs over the draw is still safe: if no later attempt does better, it is the one sent.
+      if (failures.length === 0 || qualityOnly(failures)) {
+        chosen = sendable;
+        chosenUnsetup = failures.includes("offer_unsetup");
       }
-      previous = verdict.failures;
-      ok = verdict.ok;
+      previous = failures;
+      ok = failures.length === 0;
     }
 
     const failed = { route, batchText, declineOfferId, record, events: reacting };

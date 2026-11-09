@@ -62,3 +62,58 @@ describe("the style draw in a turn", () => {
     expect(replyCalls(r)[0].system.turn).toContain("You may mention Biscuit");
   });
 });
+
+describe("the draw's length, line, emoji and pet limits in a turn", () => {
+  const SHAPED = { ...RATES, length_chars: { p25: 20, p50: 20, p75: 20, p90: 20 }, multiline: 0, question: 0 };
+  const LONG = "honestly babe i have been up since five with Biscuit barking at every single bird outside the window 😂\nand now i am shattered";
+
+  test("a long two-line reply with an emoji and the pet is retried with the reasons, and the short second draft is sent as one line", async () => {
+    const w = await world();
+    await setMarkers(w.creator.id, SHAPED);
+    const r = rig({ replies: [LONG, "ha proper tired 😂"] });
+    r.deps.random = seededRandom(1);
+    await runTurn(r.ctx, w.conv.id);
+    const calls = replyCalls(r);
+    expect(calls).toHaveLength(2);
+    expect(calls[0].system.turn).toMatch(/Keep it to about \d+ characters, one line\./);
+    expect(calls[0].system.turn).toContain("Do not ask him a question.");
+    expect(calls[1].system.turn).toContain("## Retry");
+    expect(calls[1].system.turn).toMatch(/Shorter: one line, about \d+ characters\./);
+    expect(calls[1].system.turn).toContain("Do not mention Biscuit.");
+    expect(calls[1].system.turn).not.toContain("rejected by a safety check");
+    expect(await sentBodies(w.conv.id)).toEqual(["ha proper tired"]);
+    const [t] = await db.select().from(turns).where(eq(turns.conversationId, w.conv.id));
+    expect(t.jevOut).toMatchObject([{ style: {} }, { attempt: 1, failures: ["too_long", "pet_disallowed"] }, { attempt: 2, failures: [] }]);
+  });
+
+  test("when the retry is long too it is still sent, cleaned to one line with no emoji, after exactly two attempts", async () => {
+    const w = await world();
+    await setMarkers(w.creator.id, SHAPED);
+    const r = rig({ replies: [LONG, LONG] });
+    r.deps.random = seededRandom(1);
+    await runTurn(r.ctx, w.conv.id);
+    expect(replyCalls(r)).toHaveLength(2);
+    const [body] = await sentBodies(w.conv.id);
+    expect(body).toBe("honestly babe i have been up since five with Biscuit barking at every single bird outside the window and now i am shattered");
+  });
+
+  test("a reply that is only an emoji is sent, never emptied", async () => {
+    const w = await world();
+    await setMarkers(w.creator.id, SHAPED);
+    const r = rig({ replies: ["🐕"] });
+    r.deps.random = seededRandom(1);
+    await runTurn(r.ctx, w.conv.id);
+    expect(await sentBodies(w.conv.id)).toEqual(["🐕"]);
+  });
+
+  test("markers without the length keys draw none of it: no length line, no retry on a long reply", async () => {
+    const w = await world();
+    await setMarkers(w.creator.id, RATES);
+    const r = rig({ replies: ["a perfectly ordinary and rather long reply that goes on well past her usual forty characters"] });
+    r.deps.random = seededRandom(1);
+    await runTurn(r.ctx, w.conv.id);
+    expect(replyCalls(r)).toHaveLength(1);
+    expect(replyCalls(r)[0].system.turn).not.toMatch(/about \d+ characters|second line|Do not ask him a question|ask one short question/);
+    expect(await sentBodies(w.conv.id)).toHaveLength(1);
+  });
+});

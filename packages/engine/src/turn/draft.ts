@@ -5,9 +5,27 @@ export const REASK_LINE =
   "Your previous draft asked him something he already answered, or handed his own question back to him. Answer what he asked and use what he told you. Do not write wbu or ask what he is up to. End with a different hook.";
 export const OFFER_LINE =
   "Your previous draft never led into the locked item. The app shows its card right after your message, so after answering him, tease that item: say what it is or why he would want it.";
+/** What the draw's limits need to say in a retry: the length it drew and the pet it kept out of the reply. */
+export interface DrawNote {
+  targetChars?: number;
+  pet?: string | null;
+}
+
+/** The retry lines for a reply that ran over the draw's length or named the pet it kept out. */
+export function drawReasons(failures: readonly VerifyFailure[], note: DrawNote): string[] {
+  const lines: string[] = [];
+  if (failures.includes("too_long")) lines.push(note.targetChars ? `Shorter: one line, about ${note.targetChars} characters.` : "Shorter: one line.");
+  if (failures.includes("pet_disallowed")) lines.push(note.pet ? `Do not mention ${note.pet[0].toUpperCase()}${note.pet.slice(1)}.` : "Do not mention your pet.");
+  return lines;
+}
+
 /** The retry note when every failure was a quality one: one line per failure, in a fixed order. */
-export function qualityNote(failures: readonly VerifyFailure[]): string {
-  const lines = [failures.includes("reasks") ? REASK_LINE : "", failures.includes("offer_unsetup") ? OFFER_LINE : ""].filter(Boolean);
+export function qualityNote(failures: readonly VerifyFailure[], note: DrawNote = {}): string {
+  const lines = [
+    failures.includes("reasks") ? REASK_LINE : "",
+    failures.includes("offer_unsetup") ? OFFER_LINE : "",
+    ...drawReasons(failures, note),
+  ].filter(Boolean);
   return `\n\n## Retry\n${lines.join("\n")}`;
 }
 export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
