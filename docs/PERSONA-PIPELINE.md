@@ -3,14 +3,13 @@
 How a creator's Instagram-shaped export becomes the data the reply engine reads: an anonymised
 bank, measured style figures, held-out splits, a drafted persona card, a retrieval corpus and a
 labelled query set. The creator committed here, Juno Vale, is synthetic; see [Sources](#sources).
-Decision ids (D-0xx) refer to `.product/DECISIONS.md`.
 
 Diagram: [persona-pipeline.html](diagrams/persona-pipeline.html), generated from the
 [Diagram source](#diagram-source) at the end of this file (JSON spec:
 `diagrams/persona-pipeline.dataflow.json`).
 
 Every prompt sent to Claude or Jev in this pipeline is quoted verbatim, with its state, options and
-scoring, in [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (a gate test keeps it matching the code, ).
+scoring, in [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (a gate test keeps it matching the code).
 
 Status: built. Chunks are loaded into pgvector and the retrieval eval has run on them; the newest card file is
 v2 (see [The card](#the-card)); the Claude rubric judge and blind test on the test split are built (see
@@ -78,7 +77,7 @@ which comment she answered.
 Counts for both accounts together are in [normalise](#1-normalise-raw-to-anonymised-bank).
 
 The pipeline treats the two differently: only exact pairs are ever used as examples or for evaluation
-(see [Splits](#splits-d-042)). Thread-first replies still feed style figures and retrieval.
+(see [Splits](#splits)). Thread-first replies still feed style figures and retrieval.
 
 **Collab captions.** Captions of collaborations owned by another account are not hers. They are kept as facts
 about her (a brand she works with) but flagged `voice: false`, so they never shape the voice figures. Posts with an
@@ -130,7 +129,7 @@ Guarantee: no foreign `@handle` or email survives in any committed file (checked
 | In | `bank/replies.jsonl` |
 | Out | `bank/splits.json` |
 
-See [Splits](#splits-d-042).
+See [Splits](#splits).
 
 ### 3. style: measured figures
 
@@ -205,7 +204,7 @@ by lexical overlap, and a seeded random fill, shuffled so position carries no si
 which candidates are relevant. The grounding chunks are always candidates because a question that
 avoids her wording is exactly the one lexical search misses, and a candidate set built from lexical hits
 alone would hide that. A question with no relevant chunk is dropped; none were (30 asked, 30 kept).
-This set is the input to the retrieval eval of . Both prompts are in
+This set is the input to the retrieval eval. Both prompts are in
 [PERSONA-PROMPTS.md § 4–5](PERSONA-PROMPTS.md#4-writing-the-retrieval-questions-claude).
 
 ## Splits
@@ -278,7 +277,7 @@ Seven sections, fixed order:
 | Not known | what to deflect rather than invent (age, relationship, address) | everything absent from Identity; the card gives deflections in her voice |
 | Never | contact details, home location, real-world meetups, off-platform payment | policy; see [SAFETY.md](SAFETY.md) |
 | Selling voice | how she teases a paid item | flirty, never explicit text |
-| AI honesty | answer truthfully if sincerely asked, still in voice |  |
+| AI honesty | answer truthfully if sincerely asked, still in voice | a fan who sincerely asks must be told truthfully |
 
 The card must contain no explicit text. The prompt says so, and the examples are chosen from
 friendly or flirty pairs.
@@ -311,8 +310,7 @@ The real measure is the persona evals below: a separate Claude judge on the unto
 
 ## Persona evals on the test split
 
-`npm run eval:persona -- --card-version 2 --gen-model <id> --judge-model <id>` (`eval-persona.mjs`;
-, ). It reads only the 50 **test** pairs, and nothing else reads them. For each pair
+`npm run eval:persona -- --card-version 2 --gen-model <id> --judge-model <id>` (`eval-persona.mjs`). It reads only the 50 **test** pairs, and nothing else reads them. For each pair
 `--gen-model` writes a reply with the card as its system prompt (the same `generateReply` as the
 rapid eval), then `--judge-model` makes two separate calls:
 

@@ -8,8 +8,7 @@ prompt, how the strategy was chosen, and what happens when it fails.
 
 Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built from the raw export),
 [EVALS.md](EVALS.md) (the retrieval eval), [ARCHITECTURE.md](ARCHITECTURE.md) (the whole turn),
-[PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (the prompts used to build and judge the persona). Decision ids refer to
-`.product/DECISIONS.md`.
+[PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (the prompts used to build and judge the persona).
 
 ## What retrieval is for, and what it is not for
 
@@ -81,7 +80,7 @@ description, or a comment and her reply), so nothing is split mid-thought and no
 2. Embeds every chunk with **Voyage `voyage-4`** (`retrieval.voyage_model` config row), `input_type: "document"`,
    `output_dimension: 1024`, through `providers/voyage/embed.ts`.
    - Batches are 100 texts, 21 s apart, with 5 retries 30 s apart on 429/5xx. These are the limits of a Voyage
-     account with no payment method (3 requests and 10K tokens a minute, ).
+     account with no payment method (3 requests and 10K tokens a minute).
    - The full load takes several minutes at those limits.
 3. In **one transaction**, deletes the creator's chunks and inserts all 785, so a re-run leaves the same rows
    and a failure leaves the old ones. All embedding happens before the transaction opens.
@@ -111,7 +110,7 @@ Called from `packages/engine/src/turn.ts` only for routes that write a reply (`r
   query).
 - **k:** `retrieval.k` config row, **5**.
 - **Strategy:** `retrieval.strategy` config row, read when the engine's dependencies are built
-  (`lib/host/deps.ts`). It is **`vector`** on the dev database since the PR 3b eval. The seed default is
+  (`lib/host/deps.ts`). It is **`vector`** on the dev database since the retrieval eval. The seed default is
   `fts`, so a fresh database works with no Voyage key until the eval has been run.
 
 The three strategies (`packages/engine/src/retrieve.ts`):
@@ -139,7 +138,7 @@ The adapter is `providers/voyage/persona-retriever.ts` (`PersonaRetriever`), beh
 `packages/engine/src/prompt.ts` splits Haiku's system prompt in two:
 
 - **Cached prefix** (identical on every turn for a creator, sent with `cache_control`, read from cache after the
-  first call, ): the published persona card, the answering rules and the creator's "never talk about"
+  first call): the published persona card, the answering rules and the creator's "never talk about"
   list.
 - **Per-turn suffix:** the instruction for this route, the item to tease (offers only), **the retrieved chunks**,
   and the fan's memory profile.
@@ -167,7 +166,7 @@ below.
 
 ## 5. Why vector: the eval
 
- said Voyage would be used only if a measured eval showed it was genuinely better than Postgres full-text
+The plan was that Voyage would be used only if a measured eval showed it was genuinely better than Postgres full-text
 search. `npm run eval:retrieval` ran all three strategies on 30 labelled fan questions written to avoid her
 wording (`data/persona/eval/retrieval-queries.jsonl`). The query set was committed before any result existed.
 

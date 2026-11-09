@@ -62,8 +62,7 @@
       "label": "human_ts",
       "sublabel": "admin typing",
       "lane": "main",
-      "col": 4,
-      "tag": ""
+      "col": 4
     },
     {
       "id": "nosafe",

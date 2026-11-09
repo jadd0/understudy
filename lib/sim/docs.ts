@@ -16,7 +16,7 @@ export const SHOWN_IN: Record<(typeof FEATURES)[number], string> = {
   admits_ai_unexpected: "turn explorer verify trail",
   ai_toggle_conversation: "console conversation settings",
   ai_toggle_global: "console settings",
-  boundary_line: "fan chat (boundary line, )",
+  boundary_line: "fan chat (boundary line)",
   bubbles_typing: "fan chat live, deliver_at",
   cap_reached: "fan wallet, CapReached",
   debounce: "turn explorer (one turn, N inbound)",
@@ -36,12 +36,12 @@ export const SHOWN_IN: Record<(typeof FEATURES)[number], string> = {
   handoff_verify_failed: "console inbox, suggested card",
   hardship_no_pitch: "responsible-monetisation report",
   high_value_alert: "console badge, top fans tile",
-  hold_filler: "fan chat (filler while held, )",
+  hold_filler: "fan chat (filler while held)",
   jev_classification: "turn explorer jev_in",
   lyric_playalong: "fan chat",
   manipulation: "turn explorer, deflect",
   memory_extraction: "turn explorer, prompt What she knows",
-  minor_notice: "fan chat (platform notice, )",
+  minor_notice: "fan chat (platform notice)",
   money_fence: "analytics reply violations (none expected)",
   never_list: "console settings",
   non_english: "turn explorer",
@@ -73,7 +73,7 @@ export const SHOWN_IN: Record<(typeof FEATURES)[number], string> = {
   template_location_offplatform: "fan chat",
   template_payment_dispute: "fan chat",
   template_self_harm: "fan chat",
-  thread_continuity: "turn explorer (thread answer, )",
+  thread_continuity: "turn explorer (thread answer)",
   tip_stripe: "wallet ledger, Stripe dashboard",
   topup_stripe: "wallet ledger, Stripe dashboard events",
   ts_ban: "admin",
@@ -83,7 +83,7 @@ export const SHOWN_IN: Record<(typeof FEATURES)[number], string> = {
   user_flag: "admin",
   verify_admits_ai: "turn explorer verify trail",
   verify_retry: "turn explorer attempts, jev_out",
-  warning_strikes: "fan chat (platform notice warning N of 3, )",
+  warning_strikes: "fan chat (platform notice warning N of 3)",
 };
 
 export function renderCoverage(personas: readonly Persona[]): string {
@@ -182,7 +182,7 @@ export function renderPersonas(personas: readonly Persona[]): string {
       const rows = p.beats.map((b, i) => {
         const line = b.kind === "say" ? (b.fixed ? `fixed: "${b.text}"` : `${b.checkpoint}${b.example ? ` (e.g. "${b.example}")` : ""}`) : b.kind === "burst" ? `fixed burst: ${b.texts.map((t) => `"${t}"`).join(", ")}` : labelOf(b);
         const exp = "expect" in b ? b.expect : undefined;
-        const pend = "pending" in b && b.pending ? `engine PR ${b.pending.pr}: ${b.pending.note}` : "";
+        const pend = "pending" in b && b.pending ? `engine change ${b.pending.pr}: ${b.pending.note}` : "";
         return `| ${i + 1} | ${b.kind} | ${cell(line)} | ${cell(expectCell(b))} | ${cell(fanSees(exp, b))} | ${cell(junoSees(b))} | ${cell(tsSees(b))} | ${cell(analyticsCell(b))} | ${cell(pend)} |`;
       });
       return [...head, ...rows].join("\n");

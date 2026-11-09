@@ -93,7 +93,7 @@ ${postLines}
 ${pairLines}
 ```
 
-What changed between v1 and v2 (, founder's six notes on v1): the `@mention` opening rule was
+What changed between v1 and v2 (after the founder's six notes on v1): the `@mention` opening rule was
 removed and replaced by the "one-to-one paid DMs" paragraph; DM length became one or two short
 sentences, one per bubble, at most 2 lines; playing along with song lyrics became a rule; the
 selling voice gained the post-unlock check-in and the tip thank-you. The script also strips leading
@@ -211,7 +211,7 @@ ${job.candidates.map((id) => `[${id}] ${byId.get(id).text}`).join("\n")}
 ```
 
 The labelled set (`data/persona/eval/retrieval-queries.jsonl`) is what the retrieval eval scores
-recall@5 and MRR against (, [EVALS.md](EVALS.md)).
+recall@5 and MRR against ([EVALS.md](EVALS.md)).
 
 ## 6. Scoring a reply against the rubric (Claude judge, persona eval)
 
@@ -302,4 +302,4 @@ share of items where the bot sat in A, so a judge biased to one letter is visibl
    `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>`. A changed prompt
    changes its cache key, so it is paid for again.
 3. Update the matching block on this page; `npm test`'s persona step fails until you do.
-4. Record why in `.product/DECISIONS.md`.
+4. Record why in the project's decision log.

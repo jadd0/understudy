@@ -18,7 +18,7 @@ The build contract is `AGENTS.md`.
 | command | does |
 |---|---|
 | `npm run dev`, `build`, `start` | Next.js |
-| `npm run typecheck`, `lint`, `test` | `tsc --noEmit`, ESLint, vitest (against the per-branch test database, [DATA-MODEL.md](DATA-MODEL.md#test-database-d-039)) |
+| `npm run typecheck`, `lint`, `test` | `tsc --noEmit`, ESLint, vitest (against the per-branch test database, [DATA-MODEL.md](DATA-MODEL.md#test-database)) |
 | `npm run db:generate` | drizzle-kit writes a migration to `drizzle/` from `db/schema.ts` |
 | `npm run db:migrate`, `db:seed` | apply migrations; seed creator and admins |
 | `bash scripts/gate.sh` | the gate |
@@ -28,7 +28,7 @@ The build contract is `AGENTS.md`.
 ## The gate
 
 `bash scripts/gate.sh` is the only proof that a change works: it must print `gate: PASS`. It reads
-`.product/gate-steps` (name, tab, command), runs the steps in order, skips the rest after the first
+the gate's step list, `gate-steps` (name, tab, command), runs the steps in order, skips the rest after the first
 failure, and writes each step's output to `gate-logs/<step>.log`. A gate with no steps fails. One gate
 runs at a time across all worktrees (a lock). A pass writes a stamp (`scripts/gate-stamp.mjs`) that fingerprints the tree and
 the files in `gate_inputs` (`.env.local`, `node_modules/.package-lock.json`).
@@ -41,23 +41,22 @@ the files in `gate_inputs` (`.env.local`, `node_modules/.package-lock.json`).
 | build | `npm run --silent build` |
 | persona | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` (includes the split-hygiene tests over committed data) |
 
-Add a check as a new line in `.product/gate-steps`, never by editing `gate.sh`.
+Add a check as a new line in the gate-steps file, never by editing `gate.sh`.
 
 ## Worktrees
 
 Each PR is built on its own branch in a worktree under `.claude/worktrees/<branch>` (gitignored):
 `bash scripts/worktree-setup.sh <branch> [<path>] [<base>]`. It links `node_modules` (hard-linked; run
 `npm install` in at most one tree), copies `.env.local`, and writes a code map. The merge policy is
-`merge-when-green` to local main and never push (`.product/config.md`, ). The loop is light: the
+`merge-when-green` to local main and never push. The loop is light: the
 founder and Claude build directly, with no unattended coordinator. Tests use a database per
 branch.
 
 ## Decision log
 
-`.product/DECISIONS.md` records every decision with an id, who made it, why, and where the code is.
-**Read it before changing behaviour that looks wrong**; a reversal adds a new entry and marks the old
-one superseded rather than rewriting it. Also useful: `.product/plans/pr-*.md` (what each PR was
-meant to do), `.product/roadmap.md` (status), `.product/FOUNDER-TODO.md` (what waits on the founder).
+Decisions are kept in a log with an id, who made it, why, and where the code is. It is part of the
+build tooling and is not published with the repo. A reversal adds a new entry and marks the old one
+superseded rather than rewriting it.
 
-Note: `.product/config.md` still says `db: none` for the worktree-database feature of the kit; the
-project's actual database setup is  and .
+The project's database setup is one Neon Postgres with a test database per branch
+([DATA-MODEL.md](DATA-MODEL.md#test-database)).

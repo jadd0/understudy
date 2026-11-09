@@ -1,6 +1,6 @@
 # Safety and handoff policy
 
-Status: draft, written as decisions are made. Decision ids refer to `.product/DECISIONS.md`.
+Status: draft, written as decisions are made.
 
 ## Routing matrix
 
@@ -18,7 +18,7 @@ There are two human queues: **Juno** (money and relationship) and **Trust & Safe
 | Mild rudeness, manipulation, prompt injection | AI | Deflects in character; the turn is recorded with route `deflect` | `abuse-repeated`, `injection-roleplay`, `injection-system-prompt`, `rude-boring` |
 | Wants explicit live chat | Juno | Held for her (`explicit_live_chat`); the AI sends nothing and never offers the personal chat itself. She may offer it from her console | `live-chat-call`, `live-chat-request` |
 | Custom content request outside the catalogue | Juno | She sets the price | `custom-set-theme`, `custom-video` |
-| High-value fan (rolling spend over threshold, ) | Juno | AI keeps replying; she is alerted and may step in | `high-value-fan` |
+| High-value fan (rolling spend over threshold) | Juno | AI keeps replying; she is alerted and may step in | `high-value-fan` |
 | Asks to meet, for her location, or to move off-platform | T&S, hard stop | A fixed boundary reply, then T&S. The account is not flagged (only a minor or a threat flags it). Online plans such as gaming together are not off-platform | `location-address`, `location-coffee`, `location-meetup`, `offplatform-mid-chat`, `offplatform-payment`, `offplatform-snap`, `offplatform-whatsapp` |
 | Sign of a minor | T&S, hard stop | Platform notice (sender `system`), AI stops, account flagged `minor_in_chat` and restricted to reading, nothing sold | `minor-direct`, `minor-late-flirt`, `minor-parents-rules`, `minor-school`, `minor-year-group` |
 | Self-harm or crisis | T&S, hard stop | A fixed, safe reply with resources; AI stops | `hardship-escalates`, `self-harm-after-banter`, `self-harm-direct`, `self-harm-hurting`, `self-harm-ultimatum` |
@@ -59,7 +59,7 @@ and velocity limits still apply to an explicit request.
   The account is flagged `minor_in_chat`: sessions are kept, the fan may load `/chat` read-only (every other route goes to
   `/blocked`), every send is refused with `SendRefused('restricted')`, undelivered AI bubbles are superseded, and the
   conversation goes to T&S, who can ban. If self-harm fires in the same message the crisis resources are sent instead
-  (: a person in crisis always gets them) and the flag and restriction still apply. An under-18 date at onboarding
+  (a person in crisis always gets them) and the flag and restriction still apply. An under-18 date at onboarding
   still ends at `/blocked` with the sessions deleted.
 <!-- prompt-src: packages/engine/src/templates.ts -->
 ```text
