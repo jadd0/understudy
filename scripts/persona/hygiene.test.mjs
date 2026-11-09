@@ -134,9 +134,9 @@ test("no @handle other than the creator's own and no email survives in any commi
       assert.deepEqual(findEmails(text), [], `${dir}/${name}`);
     }
   }
-  const evalText = readFileSync("docs/evals/persona.json", "utf8");
-  assert.deepEqual(foreign(evalText), [], "docs/evals/persona.json");
-  assert.deepEqual(findEmails(evalText), [], "docs/evals/persona.json");
+  const evalText = readFileSync("docs/quality/evals/persona.json", "utf8");
+  assert.deepEqual(foreign(evalText), [], "docs/quality/evals/persona.json");
+  assert.deepEqual(findEmails(evalText), [], "docs/quality/evals/persona.json");
   assert.ok(files >= 10, "scanned the committed files");
 });
 

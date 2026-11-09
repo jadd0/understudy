@@ -1,5 +1,5 @@
 // Plays the scenario bank (data/evals/threads) through the real engine with real Jev and Claude, in a database
-// built for it, then writes docs/evals/engine.json and the engine section of docs/EVALS.md.
+// built for it, then writes docs/quality/evals/engine.json and the engine section of docs/quality/EVALS.md.
 // Usage: npm run eval:engine [-- --threads "<glob>"] [-- --db <name>_eval] [-- --write]
 // A run over a subset of the bank prints its report and writes nothing unless --write is given.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -78,10 +78,10 @@ async function main() {
 
   const write = glob === DEFAULT_GLOB || process.argv.includes("--write");
   if (write) {
-    mkdirSync("docs/evals", { recursive: true });
-    writeFileSync("docs/evals/engine.json", `${JSON.stringify({ ...analyticsSummary(report), routeAccuracyByRow: report.routeAccuracy, meta, report, turns: observations }, null, 2)}\n`);
-    writeFileSync("docs/EVALS.md", spliceEngineSection(readFileSync("docs/EVALS.md", "utf8"), renderEngineSection(report, meta)));
-    console.log("wrote docs/evals/engine.json and docs/EVALS.md");
+    mkdirSync("docs/quality/evals", { recursive: true });
+    writeFileSync("docs/quality/evals/engine.json", `${JSON.stringify({ ...analyticsSummary(report), routeAccuracyByRow: report.routeAccuracy, meta, report, turns: observations }, null, 2)}\n`);
+    writeFileSync("docs/quality/EVALS.md", spliceEngineSection(readFileSync("docs/quality/EVALS.md", "utf8"), renderEngineSection(report, meta)));
+    console.log("wrote docs/quality/evals/engine.json and docs/quality/EVALS.md");
   } else {
     console.log("subset run: nothing written (pass --write to write anyway)");
   }

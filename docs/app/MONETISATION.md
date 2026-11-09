@@ -120,7 +120,7 @@ order: no active hardship cooldown (`pitch.hardship_cooldown_hours`); fewer than
 intent or an explicit request). The facts are read in `packages/engine/src/turn/facts.ts`. The cap is one rule, `capAllows` in
 `examples/app/lib/wallet/cap.ts` (spend today plus the amount within the cap): the debit refuses what it refuses, and the engine's
 shortlist drops every item whose price it refuses, so the AI never pitches an item the cap would then refuse. The `pitch.*` keys can be overridden per creator; only `floor.*` and `platform.*` rows are platform-only.
-Juno's own offers from the console skip pacing. Full routing: `docs/APP.md` §8.6.
+Juno's own offers from the console skip pacing. Full routing: `docs/app/APP.md` §8.6.
 
 ## Not built, and partly built
 

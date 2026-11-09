@@ -3,9 +3,9 @@ import type { Expect } from "@/lib/evals/threads";
 import { FEATURES, type Beat, type Persona } from "./persona";
 import { labelOf } from "./beats";
 
-export const FAN_SIM_DOC = "docs/FAN-SIM.md";
+export const FAN_SIM_DOC = "docs/quality/FAN-SIM.md";
 
-/** The generated regions of docs/FAN-SIM.md: a test regenerates them and fails on any difference. */
+/** The generated regions of docs/quality/FAN-SIM.md: a test regenerates them and fails on any difference. */
 export const REGIONS = ["coverage", "personas"] as const;
 export type Region = (typeof REGIONS)[number];
 

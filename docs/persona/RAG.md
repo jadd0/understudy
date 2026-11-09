@@ -7,7 +7,7 @@ end: what is in the corpus, how it is embedded and stored, how a fan message fin
 prompt, how the strategy was chosen, and what happens when it fails.
 
 Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built from the raw export),
-[EVALS.md](EVALS.md) (the retrieval eval), [ARCHITECTURE.md](ARCHITECTURE.md) (the whole turn),
+[EVALS.md](../quality/EVALS.md) (the retrieval eval), [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) (the whole turn),
 [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (the prompts used to build and judge the persona).
 
 ## What retrieval is for, and what it is not for
@@ -15,7 +15,7 @@ Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built fro
 - **For:** facts and tone. A fan asks "do u still have the cat?" or "what was japan like?"; the card has one
   line on each, and retrieval brings the posts and replies where she talked about it, in her words.
 - **Not for safety.** Routing, hard stops, the money fence and the explicitness ceiling are decided by Jev and
-  code before and after generation ([SAFETY.md](SAFETY.md)). A retrieval failure can make a reply blander; it
+  code before and after generation ([SAFETY.md](../safety/SAFETY.md)). A retrieval failure can make a reply blander; it
   can never make one unsafe.
 - **Not for the persona's rules.** Voice rules, "never" rules and the selling voice live in the card, which is
   in every prompt whole. Retrieval only adds examples and facts on top.
@@ -158,7 +158,7 @@ The section heading, verbatim:
 ```
 
 Each chunk follows as one `- <text>` line. The whole Haiku prompt, including this section, is in
-[ARCHITECTURE.md § Engine prompts](ARCHITECTURE.md).
+[ARCHITECTURE.md § Engine prompts](../architecture/ARCHITECTURE.md).
 
 Every turn row records the persona card version used, the models, tokens, cost and timings, so the turn explorer
 in `/analytics` shows which card a reply came from. The chunk ids are not stored on the turn; that is a known gap
@@ -182,7 +182,7 @@ Vector finds a relevant chunk in the top 5 for 97% of questions; full-text finds
 ever manage the turning on the spot thing on skates??" and she posted "learned to spin": no shared word, the same
 meaning. Hybrid loses to vector because full-text's weaker list dilutes the fusion. The labelling pool understates
 recall, most of all for vector, so the margin is if anything conservative.
-Full method: [EVALS.md](EVALS.md).
+Full method: [EVALS.md](../quality/EVALS.md).
 
 ## 6. Changing it
 

@@ -2,19 +2,19 @@ import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import { ENGINE_CONFIG, RETRIEVAL_CONFIG, SIM_CONFIG, WALLET_CONFIG } from "./seed";
 
-/** docs/CONFIG.md is the one list of every tunable value; this keeps it from drifting from the seed and the code. */
-const doc = readFileSync("docs/CONFIG.md", "utf8");
+/** docs/operations/CONFIG.md is the one list of every tunable value; this keeps it from drifting from the seed and the code. */
+const doc = readFileSync("docs/operations/CONFIG.md", "utf8");
 const rows = (prefix: string) => new Map([...doc.matchAll(/^\| `([^`]+)` \| `([^`]+)` \| .* \| (.+) \|$/gm)].filter((m) => m[1].startsWith(prefix) || prefix === "").map((m) => [m[1], m]));
 
-describe("docs/CONFIG.md", () => {
+describe("docs/operations/CONFIG.md", () => {
   const seeded = { ...WALLET_CONFIG, ...ENGINE_CONFIG, ...RETRIEVAL_CONFIG, ...SIM_CONFIG };
   const documented = rows("");
 
   test("every seeded config row is documented with its seeded default", () => {
     for (const [key, value] of Object.entries(seeded)) {
       const row = documented.get(key);
-      expect(row, `${key} is missing from docs/CONFIG.md`).toBeDefined();
-      expect(row![2], `${key} default in docs/CONFIG.md`).toBe(JSON.stringify(value));
+      expect(row, `${key} is missing from docs/operations/CONFIG.md`).toBeDefined();
+      expect(row![2], `${key} default in docs/operations/CONFIG.md`).toBe(JSON.stringify(value));
     }
   });
 

@@ -3,7 +3,7 @@
  *
  *   npm run sim:review -- --label set1 --batch <batchId> [--batch <batchId> ...]
  *
- * Writes docs/evals/sim-review/<label>.json (every reply with its flags and the turn's routing) and <label>.md (the
+ * Writes docs/quality/evals/sim-review/<label>.json (every reply with its flags and the turn's routing) and <label>.md (the
  * transcripts with flags inline and a flag count table). Reads the dev database; writes nothing to it.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -82,11 +82,11 @@ async function main() {
     md.push(`| ${q.key} | ${n} | ${replies ? Math.round((100 * n) / replies) : 0}% |`);
   }
   md.push("", `${replies} replies reviewed.`);
-  const dir = path.join(process.cwd(), "docs/evals/sim-review");
+  const dir = path.join(process.cwd(), "docs/quality/evals/sim-review");
   mkdirSync(dir, { recursive: true });
   writeFileSync(path.join(dir, `${label}.json`), JSON.stringify(out, null, 2));
   writeFileSync(path.join(dir, `${label}.md`), md.join("\n") + "\n");
-  console.log(`reviewed ${replies} replies → docs/evals/sim-review/${label}.{md,json}`);
+  console.log(`reviewed ${replies} replies → docs/quality/evals/sim-review/${label}.{md,json}`);
   console.log(Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(" ") || "no flags");
   process.exit(0);
 }

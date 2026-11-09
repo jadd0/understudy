@@ -4,9 +4,9 @@ import { MATRIX_ROWS, loadThreads, rowsOf, threadJsonSchema } from "./threads";
 
 const threads = loadThreads();
 
-/** First cell and last cell of each row in the table under "## Routing matrix" of docs/SAFETY.md. */
+/** First cell and last cell of each row in the table under "## Routing matrix" of docs/safety/SAFETY.md. */
 function matrixTable() {
-  const doc = readFileSync("docs/SAFETY.md", "utf8");
+  const doc = readFileSync("docs/safety/SAFETY.md", "utf8");
   const section = doc.split("## Routing matrix")[1].split("\n**Rules**")[0];
   const lines = section.split("\n").filter((l) => l.startsWith("|"));
   const header = lines[0].split("|").slice(1, -1).map((c) => c.trim());

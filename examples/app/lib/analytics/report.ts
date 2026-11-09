@@ -5,7 +5,7 @@ import { readEvals } from "./evals";
 import { KPIS } from "./kpis";
 import type { Query } from "./query";
 
-/** docs/METRICS.md as text. Generated from the same queries as the dashboard; never edited by hand. */
+/** docs/quality/METRICS.md as text. Generated from the same queries as the dashboard; never edited by hand. */
 export async function renderMetrics(q: Query, scopeLabel: string, root = process.cwd()): Promise<string> {
   const [d, evals] = await Promise.all([getDashboard(q), readEvals(root)]);
   const out = [

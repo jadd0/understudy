@@ -64,7 +64,7 @@ Avatar colour pairs (bg/fg) are the design's six, picked by a stable hash of the
 
 ## Screens
 
-`docs/screens/` holds 1440 and 390 captures of chat (with and without the tip panel open), wallet, console, console thread, settings, admin, the fan simulator (`admin-sim`), analytics (creator and admin views, one turn), and at 1440 the dark theme and the account menu. Every signed-in page shows the top navigation bar. Tabs
+`docs/app/screens/` holds 1440 and 390 captures of chat (with and without the tip panel open), wallet, console, console thread, settings, admin, the fan simulator (`admin-sim`), analytics (creator and admin views, one turn), and at 1440 the dark theme and the account menu. Every signed-in page shows the top navigation bar. Tabs
 reuse the ThreadList tab pills, so no separate `Tabs` component was added.
 
 ## Dark mode, resize and motion

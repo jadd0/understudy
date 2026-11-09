@@ -116,7 +116,7 @@ dl.gloss dd { margin: 0; }
 <header class="top">
   <div class="eyebrow">docs/diagrams · packages/engine/src</div>
   <h1>Understudy Message Engine</h1>
-  <p>How a fan's message becomes Juno's reply: six diagrams, each followed by a walkthrough of every step, rule and threshold. Every threshold names its <code>config</code> key and seeded default (from <code>docs/CONFIG.md</code>), the reason for it, and the file and function where it lives. Read from the code on 2026-11-04. Where the code was ambiguous, the text says so.</p>
+  <p>How a fan's message becomes Juno's reply: six diagrams, each followed by a walkthrough of every step, rule and threshold. Every threshold names its <code>config</code> key and seeded default (from <code>docs/operations/CONFIG.md</code>), the reason for it, and the file and function where it lives. Read from the code on 2026-11-04. Where the code was ambiguous, the text says so.</p>
   <p>Each diagram is interactive (pan, zoom, search, theme). Open any of them full screen from the link under its frame.</p>
 </header>
 
@@ -271,7 +271,7 @@ dl.gloss dd { margin: 0; }
     <li>After the commit, the memory call runs; the fan never waits on it.</li>
   </ol>
   <span class="where">examples/app/lib/chat/typing.ts; examples/app/lib/chat/send.ts; examples/app/lib/ui/typing-delay.ts; examples/app/lib/conversations/read.ts; examples/app/components/chat/live-thread.tsx; examples/app/providers/pusher/events.ts</span>
-  <p>Measured on 2026-11-03 (<code>docs/ARCHITECTURE.md</code>, live test, six messages): Jev call 1 about 190 to 430 ms, Haiku 0.9 to 2.6 s, Jev verify 180 to 630 ms, 3.7 to 5.8 s from his message to commit, 200 to 785 micro-dollars per turn. Those numbers predate the 250 ms debounce and were not re-measured for this page.</p>
+  <p>Measured on 2026-11-03 (<code>docs/architecture/ARCHITECTURE.md</code>, live test, six messages): Jev call 1 about 190 to 430 ms, Haiku 0.9 to 2.6 s, Jev verify 180 to 630 ms, 3.7 to 5.8 s from his message to commit, 200 to 785 micro-dollars per turn. Those numbers predate the 250 ms debounce and were not re-measured for this page.</p>
 </section>
 
 <!-- 5 ------------------------------------------------------------------ -->
@@ -300,7 +300,7 @@ dl.gloss dd { margin: 0; }
   </ul>
   <span class="where">packages/engine/src/drafting/prompt.ts · RULES, INSTRUCTIONS, buildPrompt; packages/engine/src/drafting/thread.ts · threadBlock, claudeHistory; packages/engine/src/drafting/memory.ts · renderProfile</span>
   <h3>Retrieval</h3>
-  <p><code>retrieval.strategy</code> picks <code>fts</code>, <code>vector</code> or <code>hybrid</code>. <code>docs/CONFIG.md</code> gives the seeded default as <code>fts</code>; <code>vector</code>, the retrieval eval's winner, was set on the neondb database afterwards. Vector and hybrid embed the batch with Voyage (<code>retrieval.voyage_model</code>, <code>voyage-4</code>) and fall back to full-text search if that fails. Which strategy a given database runs is whatever its row says.</p>
+  <p><code>retrieval.strategy</code> picks <code>fts</code>, <code>vector</code> or <code>hybrid</code>. <code>docs/operations/CONFIG.md</code> gives the seeded default as <code>fts</code>; <code>vector</code>, the retrieval eval's winner, was set on the neondb database afterwards. Vector and hybrid embed the batch with Voyage (<code>retrieval.voyage_model</code>, <code>voyage-4</code>) and fall back to full-text search if that fails. Which strategy a given database runs is whatever its row says.</p>
   <span class="where">packages/providers/src/voyage/persona-retriever.ts; examples/app/lib/host/deps.ts · defaultDeps</span>
 </section>
 
@@ -372,7 +372,7 @@ dl.gloss dd { margin: 0; }
 <section id="docs">
   <div class="eyebrow">Reference</div>
   <h2>Where the docs disagree with the code</h2>
-  <p>Found while drawing these diagrams. <code>docs/ARCHITECTURE.md</code> says otherwise in these places; the code is what runs.</p>
+  <p>Found while drawing these diagrams. <code>docs/architecture/ARCHITECTURE.md</code> says otherwise in these places; the code is what runs.</p>
   <ul>
     <li>The Ports table lists the production retriever as <code>packages/providers/src/pg/fts-retriever.ts</code> and events as <code>packages/providers/src/noop/events.ts</code>. <code>examples/app/lib/host/deps.ts</code> wires <code>PersonaRetriever</code> (strategy from config) and Pusher's <code>defaultEvents()</code>.</li>
     <li>The failure table says "Push transport: none yet". Pusher is wired.</li>
