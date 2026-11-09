@@ -31,8 +31,11 @@ There are two human queues: **Juno** (money and relationship) and **Trust & Safe
 
 1. Every T&S category is a hard stop: the AI sends nothing more in that conversation until a
    human releases it.
-2. Juno handoffs stop the AI: the chat moves to `handoff_creator` and the AI sends nothing until she takes over or
-   hands back (the engine's lease needs mode `ai`). Only a high-value alert leaves the AI replying.
+2. Juno handoffs stop the AI: the chat moves to `handoff_creator`; the fan gets one short filler that passed the same
+   verify as any reply and promises nothing, and the AI then sends nothing until she takes over or hands back, or until the
+   handoff is due (`escalation.creator_sla_minutes`) and the sweep settles it by policy and returns the chat to the AI.
+   Only a high-value alert leaves the AI replying. A Trust & Safety handoff is never settled by a timer: past
+   `escalation.ts_sla_minutes` it is stamped late and announced on the ops channel, and stays open.
 3. When several categories fire, the strictest owner wins: T&S, then Juno, then the AI.
 4. A hard stop is never muted by a race: its template is delivered even if a takeover won the turn's compare-and-set,
    and undelivered AI bubbles are superseded so the template is not followed by an older reply.
