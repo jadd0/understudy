@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Data model: who owns each row",
+    "quality_profile": "standard",
+    "viewBox": [1200, 760]
+  },
+  "stages": [
+    { "label": "Accounts" },
+    { "label": "Carry creator_id" },
+    { "label": "Reached through a foreign key" }
+  ],
+  "nodes": [
+    { "id": "users", "type": "external", "label": "users", "sublabel": "fans, creators, admins", "stage": 0, "row": 0, "tag": "host" },
+    { "id": "creators", "type": "database", "label": "creators", "sublabel": "root of ownership", "stage": 0, "row": 2, "tag": "host" },
+    { "id": "conversations", "type": "database", "label": "conversations", "sublabel": "unique per creator and fan", "stage": 1, "row": 0, "tag": "engine" },
+    { "id": "cards", "type": "database", "label": "persona_cards", "sublabel": "versions, one published", "stage": 1, "row": 1, "tag": "engine" },
+    { "id": "chunks", "type": "database", "label": "persona_chunks", "sublabel": "text, tsvector, embedding", "stage": 1, "row": 2, "tag": "engine" },
+    { "id": "memory", "type": "database", "label": "fan_memory", "sublabel": "key: creator + fan", "stage": 1, "row": 3, "tag": "engine" },
+    { "id": "items", "type": "database", "label": "catalogue_items", "sublabel": "what can be offered", "stage": 1, "row": 4, "tag": "host" },
+    { "id": "messages", "type": "backend", "label": "messages", "sublabel": "1 per bubble", "stage": 2, "row": 0, "tag": "conversation_id" },
+    { "id": "turns", "type": "backend", "label": "turns", "sublabel": "1 per reply", "stage": 2, "row": 1, "tag": "conversation_id" },
+    { "id": "offers", "type": "backend", "label": "offers", "sublabel": "price at offer time", "stage": 2, "row": 2, "tag": "conversation_id" },
+    { "id": "handoffs", "type": "backend", "label": "handoffs", "sublabel": "one unresolved per chat", "stage": 2, "row": 3, "tag": "conversation_id" },
+    { "id": "unlocks", "type": "backend", "label": "unlocks", "sublabel": "fan + item", "stage": 2, "row": 4, "tag": "item_id" }
+  ],
+  "flows": [
+    { "id": "f-user", "from": "users", "to": "creators", "label": "user_id", "variant": "default", "labelAt": [100, 214] },
+    { "id": "f-conv", "from": "creators", "to": "conversations", "label": "creator_id", "variant": "emphasis" },
+    { "id": "f-card", "from": "creators", "to": "cards", "label": "creator_id", "variant": "emphasis" },
+    { "id": "f-chunk", "from": "creators", "to": "chunks", "label": "creator_id", "variant": "emphasis" },
+    { "id": "f-mem", "from": "creators", "to": "memory", "label": "creator_id", "variant": "emphasis" },
+    { "id": "f-item", "from": "creators", "to": "items", "label": "creator_id", "variant": "emphasis" },
+    { "id": "f-msg", "from": "conversations", "to": "messages", "label": "conversation_id", "variant": "default" },
+    { "id": "f-turn", "from": "conversations", "to": "turns", "label": "conversation_id", "variant": "default" },
+    { "id": "f-offer", "from": "conversations", "to": "offers", "label": "conversation_id", "variant": "default" },
+    { "id": "f-hand", "from": "conversations", "to": "handoffs", "label": "conversation_id", "variant": "default" },
+    { "id": "f-unlock", "from": "items", "to": "unlocks", "label": "item_id", "variant": "default" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ownership",
+      "items": [
+        "Every top-level row names its creator. Rows that belong to a chat reach the creator through conversations.",
+        "A schema scan in the test suite fails when a new table is neither of these nor classified as creator-free."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Reads",
+      "items": [
+        "Retrieval, the card read, configuration, the shortlist and fan memory all filter by creator.",
+        "Per-turn reads are keyed by conversation and measured under a millisecond at a million messages (docs/SCALING.md)."
+      ]
+    }
+  ]
+}

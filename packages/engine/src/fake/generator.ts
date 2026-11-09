@@ -7,6 +7,8 @@ export interface FakeGeneratorOptions {
   /** Throws `GeneratorError(code)` on the n-th call (1-based). */
   failOn?: Record<number, string>;
   stopReason?: string | null;
+  /** The model the result names as having served; the requested one when unset. */
+  servedModel?: string;
 }
 
 export class FakeGenerator implements Generator {
@@ -29,6 +31,7 @@ export class FakeGenerator implements Generator {
     return {
       text,
       stopReason: this.options.stopReason ?? "end_turn",
+      model: this.options.servedModel ?? input.model,
       usage: { inputTokens: 100, outputTokens: 20, cacheReadTokens: 0, cacheWriteTokens: 0 },
     };
   }

@@ -63,6 +63,7 @@ export class AnthropicGenerator implements Generator {
     return {
       text,
       stopReason: response.stop_reason ?? null,
+      model: input.model,
       usage: {
         inputTokens: u.input_tokens,
         outputTokens: u.output_tokens,

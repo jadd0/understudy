@@ -1,0 +1,1 @@
+CREATE INDEX "messages_staff_sent_idx" ON "messages" USING btree ("conversation_id","created_at") WHERE "messages"."sender" in ('creator', 'admin') and "messages"."status" = 'sent';

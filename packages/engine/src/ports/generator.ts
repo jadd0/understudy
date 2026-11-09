@@ -23,6 +23,8 @@ export interface GenerateResult {
   readonly usage: GenerateUsage;
   /** "refusal" when the model declined; the text may then be empty. */
   readonly stopReason: string | null;
+  /** The model that actually served the call: a failover can answer from a different model than the one asked for. */
+  readonly model: string;
 }
 
 export interface Generator {
