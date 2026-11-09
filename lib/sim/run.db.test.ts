@@ -81,7 +81,7 @@ describe("advanceRun", () => {
     expect(sent).toEqual(["hii just found ur page, ur so cool", "my mom would kill me if she saw this lol im only 16 and have a test tmrw"]);
     expect(results[2].note).toBe("send refused");
     expect(await db.select().from(turns).where(eq(turns.conversationId, conv.id))).toHaveLength(2);
-    // PR 4b is on main: the platform notice (sender system, ) is really sent and the beat's expectation is strict
+    // The platform notice (sender system) is really sent and the beat's expectation is strict
     const notices = await db.select().from(messages).where(and(eq(messages.conversationId, conv.id), eq(messages.sender, "system")));
     expect(notices.map((n) => n.body).join(" ")).toMatch(/under 18/);
     expect(fan.flagReason).toBe("minor_in_chat");

@@ -56,7 +56,7 @@ export async function Inbox({
   fullOnMobile?: boolean;
   account: Account;
 }) {
-  // The console listens to its creator's inbox events (an admin's console too, ); the admin queue to T&S only.
+  // The console listens to its creator's inbox events (an admin's console too); the admin queue to T&S only.
   const [inbox, creator] = await Promise.all([listInbox(viewer), base === "/console" ? consoleCreatorFor(viewer) : null]);
   const rows = inbox.filter((r) => viewer.role === "admin" || matchesFilter(r.badge, filter));
   return (

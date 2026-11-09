@@ -1,4 +1,4 @@
-# AGENTS.md — build contract
+# AGENTS.md — contributor guide
 
 ## Stack and commands
 
@@ -9,11 +9,10 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 - `npm run dev | build | start`
 - `npm run typecheck | lint | test`
 - `npm run db:generate` (drizzle-kit, writes `drizzle/`), `npm run db:migrate`, `npm run db:seed`
-- `bash scripts/gate.sh` runs `.product/gate-steps` (typecheck, lint, test, build, persona, env, codemap)
+- `bash scripts/gate.sh` runs typecheck, lint, test, build, the persona and env checks, the codemap and the public-files check
 
 ## Rules
 
-- **The gate is the only proof.** A change works when `bash scripts/gate.sh` prints `gate: PASS`.
 - **Money is integer cents.** Never a float, never a decimal string. Column names end in `_cents`.
 - **Every top-level creator-owned row carries `creator_id`**, even while only one creator exists. Rows that hang off a
   conversation (`messages`, `turns`, `offers`, `handoffs`) and `unlocks` reach their creator through a foreign key.
@@ -25,8 +24,7 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 - **Providers** (Jev, Claude, Voyage, Stripe, Pusher) are reached through one adapter each under
   `providers/`, injected into the code that uses them, and faked in tests.
 - **Auth is Auth.js only.** Never hand-roll sessions, tokens or password handling.
-- **Decisions live in `.product/DECISIONS.md`.** Grep it before changing behaviour that looks odd.
-- Comments say what the code does and why. They never carry a PR number or plan id.
+- Comments say what the code does and why. They never cite a decision, finding or PR number.
 
 ## Auth flow
 
@@ -48,8 +46,8 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 
 `vitest.global-setup.ts` calls `scripts/test-db.mjs`, which creates `<db>_test_<branch-slug>` in the same
 Neon project if absent, applies `drizzle/`, and points `DATABASE_URL` at it. Tests never touch the dev database.
-`TEST_DB_SCOPE=<x>` appends `_<x>` to that name: the gate runs 3 shards on `_s1`..`_s3` (`scripts/test-sharded.sh`,
-), so set your own scope (e.g. `TEST_DB_SCOPE=adhoc`) for a hand run while a gate may be running on the branch.
+`TEST_DB_SCOPE=<x>` appends `_<x>` to that name: the gate runs 3 shards on `_s1`..`_s3` (`scripts/test-sharded.sh`),
+so set your own scope (e.g. `TEST_DB_SCOPE=adhoc`) for a hand run while a gate may be running on the branch.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
@@ -82,12 +80,12 @@ Every module lives in a domain folder; nothing sits loose in `lib/`. A folder's 
 | `lib/config/` | `getConfig` over the `config` table (fail closed) |
 | `lib/env/` | validated environment |
 | `lib/wallet/` | ledger, top-up, unlock, tip, cap, high-value score, money parsing |
-| `lib/engine/` | the message turn (PR 4) |
+| `lib/engine/` | the message turn |
 | `lib/host/` | the app's side of the engine's `HostPort` (`lib/engine/host.ts`): the database-backed `dbHost` over wallet, ledger, catalogue, unlocks and users |
-| `lib/persona/` | retrieval over persona chunks (PR 3b) |
-| `lib/conversations/` | conversation reads and human actions: takeover, hand-back, release (PR 7) |
+| `lib/persona/` | retrieval over persona chunks |
+| `lib/conversations/` | conversation reads and human actions: takeover, hand-back, release |
 | `lib/ui/` | pure view logic shared by components (message grouping) |
-| `lib/evals/` | engine eval: thread schema, runner, scorer, report rendering (PR 9b) |
-| `lib/sim/` | the fan simulator: personas, the agent, guard, beats, run loop, spawn, reset, export (PR 10) |
+| `lib/evals/` | engine eval: thread schema, runner, scorer, report rendering |
+| `lib/sim/` | the fan simulator: personas, the agent, guard, beats, run loop, spawn, reset, export |
 
 A new domain gets a new folder and a row here.
