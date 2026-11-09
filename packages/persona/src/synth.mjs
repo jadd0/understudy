@@ -1,6 +1,6 @@
 // Synthetic creator -> raw scrape layout: <out>/<handle>/{posts.jsonl, profile.json, NOTES.md}.
 //
-//   node scripts/persona/synth.mjs --model <id> [--brief scripts/persona/synth-brief.md]
+//   understudy-persona synth --model <id> [--brief scripts/persona/synth-brief.md]
 //        [--out data/persona/raw] [--seed juno-2026] [--budget 1500000] [--concurrency 4]
 //
 // The output has the exact shape the Instagram scraper writes, so normalise and every stage after it
