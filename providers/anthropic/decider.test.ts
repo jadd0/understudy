@@ -23,9 +23,15 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
 function make(respond: (init: RequestInit) => Response | Promise<Response>) {
-  const seen: Array<Record<string, any>> = [];
+  type Body = {
+    tool_choice: unknown;
+    thinking: unknown;
+    tools: Array<{ input_schema: { properties: unknown; required: unknown } }>;
+    messages: Array<{ content: string }>;
+  };
+  const seen: Body[] = [];
   const fetchImpl = (async (_u: unknown, init: RequestInit) => {
-    seen.push(JSON.parse(String(init.body)));
+    seen.push(JSON.parse(String(init.body)) as Body);
     return respond(init);
   }) as unknown as typeof fetch;
   return { seen, decider: new ClaudeDecider({ authToken: "tok", model: "claude-haiku-5-5", timeoutMs: 1000, fetch: fetchImpl }) };

@@ -38,6 +38,9 @@ a price change shows up in the per-turn cost the analytics already record.
 - A switch logs one line: `provider: <name> unavailable (<code>), using <next>`. The code is a short machine code,
   never a response body, because a body can echo fan text.
 
+The failover wrappers are built once per server instance and reused across requests, so a breaker's failure count
+survives from one turn to the next; a cold instance starts with every breaker closed.
+
 The wiring is in `defaultDeps` (`lib/engine/deps.ts`). Models and breaker thresholds are config rows:
 `model.decide_fallback`, `model.generate_fallback`, `breaker.failures`, `breaker.window_ms`, `breaker.cooldown_ms`
 (see [CONFIG.md](CONFIG.md)).
