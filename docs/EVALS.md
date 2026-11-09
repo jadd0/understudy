@@ -1,8 +1,8 @@
 # Evals
 
 **Which card each result measures.** The sections below are written by their scripts and are never pooled across
-cards. The engine section ran on card v6, the newest card file; the persona section ran on card v2 and the
-rapid eval (PERSONA-PIPELINE.md) on v1 and v2, and neither has been re-run on v6. The engine section's
+cards. The engine section and the persona section both ran on card v2, the published card and the newest card
+file (2026-11-09). The rapid eval (PERSONA-PIPELINE.md) ran on card v1 only. The engine section's
 pass bar is the one  fixed ( proposed it and is still marked open).
 
 ## Retrieval (Postgres full-text vs Voyage vs hybrid)
@@ -188,7 +188,7 @@ Turns that missed their expectations
 <!-- persona:start -->
 ## Persona (rubric judge and blind test)
 
-Run on the 125 **test** pairs, the split no other script reads. For each pair the generator writes a reply with the card as its system prompt. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, in seeded random order, and says which is hers. Accuracy is the share of items where it picked hers; 50% means the two are indistinguishable. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.
+Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply with the card as its system prompt. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, in seeded random order, and says which is hers. Accuracy is the share of items where it picked hers; 50% means the two are indistinguishable. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.
 
 Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `.env.local`; interrupted runs resume from `data/persona/eval/cache/`).
 
