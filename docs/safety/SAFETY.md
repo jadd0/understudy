@@ -41,6 +41,21 @@ There are two human queues: **Juno** (money and relationship) and **Trust & Safe
    and undelivered AI bubbles are superseded so the template is not followed by an older reply.
 5. Only platform rows set safety floors: a creator's `floor.safety.*` and `floor.intent` rows are ignored.
 
+## Switching a check off
+
+Five of the checks can be switched off by the platform: `safety.minor.enabled`, `safety.self_harm.enabled`,
+`safety.threat.enabled`, `safety.location_offplatform.enabled` and `safety.payment_dispute.enabled`. Every one is `true`
+by default and is read from a platform row only; a creator's row for any of them is ignored, so a creator can never
+turn a check off for their own chats. Hardship is not a hard stop and has no toggle.
+
+A disabled check is not asked of the decider and is not routed on. Even a stale or cached signal for it routes as if
+the message were clean. Turning off `location_offplatform` removes the boundary line, the strike and the pause that
+follows from it. Every other check behaves exactly as before. The engine logs one warning per process naming each
+disabled check, and `npm run check:env` names any it finds switched off in the server config or the app seed.
+
+Disabling a check is the operator's responsibility. A product with no minors risk may reasonably drop the minor check;
+the safeguards that check provides are then the operator's to supply.
+
 ## Floors, velocity and one known gap
 
 **Floors are triggers, not confidence.** Each safety category has a floor in config (`floor.safety.*`). The category
