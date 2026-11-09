@@ -503,7 +503,7 @@ On a turn with no new fan message the chat would end on her own bubble, so the a
 
 Retry note appended to the per-turn block on the second attempt; a safety retry also lists, one line each, the reason for every check the first draft failed:
 
-<!-- prompt-src: packages/engine/src/turn/run.ts -->
+<!-- prompt-src: packages/engine/src/turn/draft.ts -->
 ```text
 const RETRY_NOTE = "\n\n## Retry\nYour previous draft was rejected by a safety check. Write a different reply that follows every rule above.";
 const REASK_LINE =
