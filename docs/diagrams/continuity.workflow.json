@@ -1,0 +1,30 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Platform continuity: failover behind the ports",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    { "id": "decide", "label": "Choice questions" },
+    { "id": "write", "label": "Reply drafting" }
+  ],
+  "mainPath": ["turn", "fdec", "jev"],
+  "nodes": [
+    { "id": "turn", "lane": "decide", "col": 0, "type": "backend", "label": "Engine turn", "sublabel": "sees only the ports", "tag": "turn.ts", "width": 128 },
+    { "id": "fdec", "lane": "decide", "col": 1, "type": "security", "label": "FailoverDecider", "sublabel": "breaker per decider", "tag": "3 in 60 s", "width": 128 },
+    { "id": "jev", "lane": "decide", "col": 2, "type": "cloud", "label": "Jev", "sublabel": "primary, probabilities", "tag": "TypeSafe", "width": 128 },
+    { "id": "cdec", "lane": "decide", "col": 3, "type": "cloud", "label": "ClaudeDecider", "sublabel": "forced tool, confidence 1", "tag": "fallback", "width": 128 },
+    { "id": "fgen", "lane": "write", "col": 1, "type": "security", "label": "FailoverGenerator", "sublabel": "breaker per generator", "tag": "30 s cooldown", "width": 128 },
+    { "id": "gprim", "lane": "write", "col": 2, "type": "cloud", "label": "Claude primary", "sublabel": "model.generate", "tag": "Anthropic", "width": 128 },
+    { "id": "gfall", "lane": "write", "col": 3, "type": "cloud", "label": "Claude fallback", "sublabel": "model.generate_fallback", "tag": "same vendor", "width": 128 }
+  ],
+  "edges": [
+    { "id": "e-turn-fdec", "from": "turn", "to": "fdec", "variant": "emphasis" },
+    { "id": "e-fdec-jev", "from": "fdec", "to": "jev", "variant": "emphasis" },
+    { "id": "e-jev-cdec", "from": "jev", "to": "cdec" },
+    { "id": "e-turn-fgen", "from": "turn", "to": "fgen" },
+    { "id": "e-fgen-gprim", "from": "fgen", "to": "gprim" },
+    { "id": "e-gprim-gfall", "from": "gprim", "to": "gfall" }
+  ]
+}

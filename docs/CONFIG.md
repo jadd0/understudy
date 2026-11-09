@@ -54,6 +54,11 @@ tokens (`_per_mtok`). Times carry their unit in the name.
 | `jev.model` | `"jev-1.14.0"` | the classifier for inbound reading and verify | `lib/engine/cfg.ts` |
 | `model.generate` | `"claude-haiku-5-5"` | writes Juno's replies | `lib/engine/cfg.ts` |
 | `model.memory` | `"claude-haiku-5-5"` | updates the per-fan memory | `lib/engine/cfg.ts` |
+| `model.decide_fallback` | `"claude-haiku-5-5"` | answers the choice questions when Jev is unavailable | `lib/engine/deps.ts` |
+| `model.generate_fallback` | `"claude-sonnet-5-5"` | writes the reply when `model.generate` is unavailable | `lib/engine/deps.ts` |
+| `breaker.failures` | `3` | failures inside the window that open a provider's circuit breaker | `lib/engine/deps.ts` |
+| `breaker.window_ms` | `60000` | the window those failures are counted in | `lib/engine/deps.ts` |
+| `breaker.cooldown_ms` | `30000` | how long an open breaker skips its provider before letting one call through | `lib/engine/deps.ts` |
 | `price.claude-haiku-5-5.input_per_mtok` | `100000` | input price, for turn cost | read as `price.<model>.*` in `lib/engine/cfg.ts` |
 | `price.claude-haiku-5-5.output_per_mtok` | `500000` | output price | as above |
 | `price.claude-haiku-5-5.cache_read_per_mtok` | `10000` | cache read price | as above |
