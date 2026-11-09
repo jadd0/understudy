@@ -30,8 +30,8 @@
     {
       "id": "raw",
       "type": "external",
-      "label": "Raw scrape",
-      "sublabel": "2 handles, gitignored",
+      "label": "Raw export",
+      "sublabel": "2 handles, synthetic",
       "stage": 0,
       "row": 1
     },
@@ -68,7 +68,7 @@
       "sublabel": "retrieval corpus",
       "stage": 3,
       "row": 2,
-      "tag": "1025"
+      "tag": "785"
     },
     {
       "id": "card",
@@ -86,7 +86,7 @@
       "sublabel": "Jev, validation",
       "stage": 4,
       "row": 1,
-      "tag": "0.9692"
+      "tag": "0.9571"
     },
     {
       "id": "queries",

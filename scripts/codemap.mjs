@@ -8,7 +8,7 @@
 // its exports, and which tests import it.
 //
 // Generated, never committed (`.codemap/` is gitignored); scripts/worktree-setup.sh runs it for
-// every new worktree. Areas come from .product/config.md § Kit `codemap_areas`, as
+// every new worktree. Areas come from the Kit section of the loop config (`codemap_areas`), as
 // `key=prefix` pairs (`routes=app/, schema=db/`); unset, there is one area per top-level folder.
 // Tests are always claimed first, and top-level files go to `root`.
 //

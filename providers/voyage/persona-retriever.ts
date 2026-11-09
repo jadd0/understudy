@@ -20,7 +20,7 @@ export function parseStrategy(value: unknown): RetrievalStrategy {
 }
 
 /**
- * The engine's retriever: the strategy chosen by the retrieval eval (`retrieval.strategy`, ) over
+ * The engine's retriever: the strategy chosen by the retrieval eval (`retrieval.strategy`) over
  * `persona_chunks`. Vector and hybrid embed the fan's message with Voyage (`input_type: query`). If that call
  * fails, the turn still gets chunks from Postgres full-text search rather than none: retrieval only adds facts
  * and tone, so a weaker list beats an empty one, and the fallback is logged.

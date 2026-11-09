@@ -6,10 +6,9 @@ said), and the **fan's memory profile** (what she knows about this fan). This pa
 end: what is in the corpus, how it is embedded and stored, how a fan message finds chunks, how they reach the
 prompt, how the strategy was chosen, and what happens when it fails.
 
-Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built from the scrape),
+Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built from the raw export),
 [EVALS.md](EVALS.md) (the retrieval eval), [ARCHITECTURE.md](ARCHITECTURE.md) (the whole turn),
-[PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (the prompts used to build and judge the persona). Decision ids refer to
-`.product/DECISIONS.md`.
+[PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) (the prompts used to build and judge the persona).
 
 ## What retrieval is for, and what it is not for
 
@@ -26,10 +25,10 @@ Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built fro
 ```
  BUILD (offline, once per creator)                       QUERY (every AI reply)
  ─────────────────────────────────                       ──────────────────────
- scrape → normalise/anonymise → split 60/20/20           fan message(s) in this turn
+ raw export → normalise/anonymise → split 60/20/20     fan message(s) in this turn
             │                                                    │
             ▼                                                    ▼
- chunks.mjs: bank/chunks.jsonl (1,025 chunks)            route() says reply / offer / deflect / ai_disclosure
+ chunks.mjs: bank/chunks.jsonl (785 chunks)              route() says reply / offer / deflect / ai_disclosure
             │                                                    │  (hard stops and holds never retrieve)
             ▼                                                    ▼
  load.ts: Voyage voyage-4, input_type=document,          PersonaRetriever (strategy = config retrieval.strategy)
@@ -54,18 +53,20 @@ Built by `scripts/persona/chunks.mjs` from the anonymised bank into `data/person
 
 | chunk kind | count | text format | example |
 |---|---|---|---|
-| post (`source: caption`) | 322 | `<date> <type>: <caption> — <image description>` | `2023-10-22 reel: pov the wind on the seafront today — A woman squints into the camera on a pier as wind blows her bleached fringe straight up.` |
-| reply pair, train split | 287 | `fan: <comment> / juno: <her reply>` | `fan: cute / juno: @user you` |
-| reply pair, style-only | 416 | same | (replies used for style, never for evaluation) |
-| **total** | **1,025** | | |
+| post (`source: caption`) | 234 | `<date> <type>: <caption> — <image description>` | `2022-01-25 reel: attempt number 40ish. the railings are my best friend — A woman in a chunky knit jumper wobbles on mint-wheeled roller skates while gripping the seafront railings.` |
+| reply pair, train split | 172 | `fan: <comment> / juno: <her reply>` | `fan: where's the shop?? need that blazer / juno: @user north laine, come say hi` |
+| reply pair, style-only | 379 | same | (replies used for style, never for evaluation) |
+| **total** | **785** | | |
+
+Counts are from `data/persona/bank/chunks.jsonl`.
 
 What never enters:
 
 - **Validation and test replies**. Those are held out for the rapid eval and the blind test. `load.ts`
-  refuses to write anything if one appears, and the retro verify found 0 held-out ids or texts in the
-  chunks.
+  refuses to write anything if one appears, and `hygiene.test.mjs` checks the committed chunks for held-out ids
+  and texts.
 - **Other people's handles and emails**. Every `@handle` except hers is replaced with `@user` at
-  normalisation. The raw scrape (`data/persona/raw/`) is gitignored.
+  normalisation. A real scrape under `data/persona/raw/` is gitignored; Juno's synthetic records are committed.
 - **Non-text replies** (emoji-only image stickers, empty replies).
 
 One post = one chunk, and one reply pair = one chunk. Chunks are short (a caption plus a one-line image
@@ -79,9 +80,9 @@ description, or a comment and her reply), so nothing is split mid-thought and no
 2. Embeds every chunk with **Voyage `voyage-4`** (`retrieval.voyage_model` config row), `input_type: "document"`,
    `output_dimension: 1024`, through `providers/voyage/embed.ts`.
    - Batches are 100 texts, 21 s apart, with 5 retries 30 s apart on 429/5xx. These are the limits of a Voyage
-     account with no payment method (3 requests and 10K tokens a minute, ).
-   - The full load takes about 4 minutes and 24.7K tokens.
-3. In **one transaction**, deletes the creator's chunks and inserts all 1,025, so a re-run leaves the same rows
+     account with no payment method (3 requests and 10K tokens a minute).
+   - The full load takes several minutes at those limits.
+3. In **one transaction**, deletes the creator's chunks and inserts all 785, so a re-run leaves the same rows
    and a failure leaves the old ones. All embedding happens before the transaction opens.
 4. Stores the newest card file as the next card version, **unpublished**. Publishing is a separate step
    (`npm run persona:publish`); the engine reads only the newest published card.
@@ -109,7 +110,7 @@ Called from `lib/engine/turn.ts` only for routes that write a reply (`reply`, `o
   query).
 - **k:** `retrieval.k` config row, **5**.
 - **Strategy:** `retrieval.strategy` config row, read when the engine's dependencies are built
-  (`lib/engine/deps.ts`). It is **`vector`** on the dev database since the PR 3b eval. The seed default is
+  (`lib/engine/deps.ts`). It is **`vector`** on the dev database since the retrieval eval. The seed default is
   `fts`, so a fresh database works with no Voyage key until the eval has been run.
 
 The three strategies (`lib/persona/retrieve.ts`):
@@ -137,7 +138,7 @@ The adapter is `providers/voyage/persona-retriever.ts` (`PersonaRetriever`), beh
 `lib/engine/prompt.ts` splits Haiku's system prompt in two:
 
 - **Cached prefix** (identical on every turn for a creator, sent with `cache_control`, read from cache after the
-  first call, ): the published persona card, the answering rules and the creator's "never talk about"
+  first call): the published persona card, the answering rules and the creator's "never talk about"
   list.
 - **Per-turn suffix:** the instruction for this route, the item to tease (offers only), **the retrieved chunks**,
   and the fan's memory profile.
@@ -165,20 +166,22 @@ below.
 
 ## 5. Why vector: the eval
 
- said Voyage would be used only if a measured eval showed it was genuinely better than Postgres full-text
+The plan was that Voyage would be used only if a measured eval showed it was genuinely better than Postgres full-text
 search. `npm run eval:retrieval` ran all three strategies on 30 labelled fan questions written to avoid her
 wording (`data/persona/eval/retrieval-queries.jsonl`). The query set was committed before any result existed.
 
 | strategy | recall@5 | MRR | hit@5 | mean ms (db only) |
 |---|---|---|---|---|
-| fts | 0.165 | 0.149 | 0.30 | 72.8 |
-| **vector** | **0.667** | **0.828** | **0.90** | 80.4 |
-| hybrid | 0.531 | 0.622 | 0.83 | 89.4 |
+| fts | 0.331 | 0.480 | 0.73 | 19.1 |
+| **vector** | **0.560** | **0.933** | **0.97** | 32.2 |
+| hybrid | 0.482 | 0.862 | 0.93 | 37.7 |
 
-Vector finds a relevant chunk in the top 5 for 90% of questions; full-text finds one for 30%. Fans ask "ever
-been to japan?" and she posted "tokyo 🇯🇵": no shared word, the same meaning. Hybrid loses to vector because
-full-text's poor list dilutes the fusion. The retro verify re-derived every number exactly, and noted that
-the labelling pool understates recall, most of all for vector, so the margin is if anything conservative.
+Source: `data/persona/eval/retrieval-results.json` (corpus 785 chunks, k = 5, `voyage-4`).
+
+Vector finds a relevant chunk in the top 5 for 97% of questions; full-text finds one for 73%. Fans ask "did you
+ever manage the turning on the spot thing on skates??" and she posted "learned to spin": no shared word, the same
+meaning. Hybrid loses to vector because full-text's weaker list dilutes the fusion. The labelling pool understates
+recall, most of all for vector, so the margin is if anything conservative.
 Full method: [EVALS.md](EVALS.md).
 
 ## 6. Changing it

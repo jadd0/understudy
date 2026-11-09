@@ -2,7 +2,7 @@
 // product-kit record-pr.mjs v1 — from umbo 0f95e4fa
 //
 // Writes the loop-owned fields (status, commit, completed_at, notes, base_branch) of one PR's
-// block in the queue doc (.product/config.md § Kit `queue_doc`, default .product/roadmap.md), in
+// block in the queue doc (the loop config's Kit `queue_doc`, default the roadmap file), in
 // place. Never touches the `## PR <id> — title` heading or the `acceptance:` line.
 //
 // It fails loudly — exit 1 and one line naming what is missing — when the queue doc, the PR's

@@ -1,3 +1,4 @@
+import { dbHost } from "@/lib/host/engine-host";
 import { randomUUID } from "node:crypto";
 import { asc, eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
@@ -107,12 +108,12 @@ describe("a tip with nothing new from him", () => {
   test("is not pending once older than the window or once a human has written since", async () => {
     const stale = await answeredWorld();
     await tipRow(stale.conv.id, stale.fan.id, 2 * 3600);
-    expect(await loadEvents(stale.conv.id, 60)).toEqual([]);
+    expect(await loadEvents(stale.conv.id, 60, dbHost)).toEqual([]);
 
     const answered = await answeredWorld();
     await tipRow(answered.conv.id, answered.fan.id, 3);
     await addMessage(answered.conv.id, "creator", "thank u so much!!", { ageSeconds: 1 });
-    expect(await loadEvents(answered.conv.id, 60)).toEqual([]);
+    expect(await loadEvents(answered.conv.id, 60, dbHost)).toEqual([]);
   });
 });
 
@@ -130,7 +131,7 @@ describe("an unlock", () => {
     expect(t.jevIn).toMatchObject({ events: { tips: [], unlocks: [o.id] } });
     expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(1);
 
-    expect(await loadEvents(w.conv.id, 60)).toEqual([]);
+    expect(await loadEvents(w.conv.id, 60, dbHost)).toEqual([]);
     expect(await runTurn(w.conv.id, rig().deps)).toEqual({ status: "idle" });
   });
 });
@@ -189,13 +190,13 @@ describe("offer outcomes in the prompt", () => {
     await ins(w.itemB.id, "declined");
     await ins(itemC.id, "open", "-1 minute");
     await ins(itemD.id, "open");
-    expect(await loadOfferOutcomes(w.conv.id, w.fan.id, 10)).toEqual([
+    expect(await loadOfferOutcomes(w.conv.id, w.fan.id, 10, dbHost)).toEqual([
       { title: "Beach day", outcome: "open" },
       { title: "Night out", outcome: "expired" },
       { title: "Lazy Sunday", outcome: "declined" },
       { title: "Golden hour", outcome: "owned" },
     ]);
-    expect(await loadOfferOutcomes(w.conv.id, w.fan.id, 2)).toHaveLength(2);
+    expect(await loadOfferOutcomes(w.conv.id, w.fan.id, 2, dbHost)).toHaveLength(2);
 
     const r = rig();
     await runTurn(w.conv.id, r.deps);

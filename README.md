@@ -1,7 +1,7 @@
 # Understudy
 
-A take-home build of an AI chatter for the creator Juno Vale: fans chat with a persona drawn from her
-public Instagram voice, spend from a prepaid wallet on unlocks and tips, and humans (Juno, trust and safety)
+A take-home build of an AI chatter for the creator Juno Vale, a fictional creator whose posts and replies are
+generated: fans chat with a persona drawn from her Instagram-style voice, spend from a prepaid wallet on unlocks and tips, and humans (Juno, trust and safety)
 can take over any conversation. Code decides routing, offers and prices; the models only draft and check.
 
 ## Quick start
@@ -15,7 +15,7 @@ npm run dev                    # http://localhost:3000
 ```
 
 `bash scripts/gate.sh` (typecheck, lint, tests, build) is the only proof a change works. The build
-contract is `AGENTS.md`; decisions are in `.product/DECISIONS.md`.
+contract is `AGENTS.md`.
 
 ## Five-minute demo
 
@@ -40,6 +40,7 @@ All of it is in [docs/](docs/README.md), which has the full index. By topic:
 | Setup, commands, gate | [DEVELOPMENT.md](docs/DEVELOPMENT.md) |
 | The message engine | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Persona and retrieval | [PERSONA-PIPELINE.md](docs/PERSONA-PIPELINE.md), [RAG.md](docs/RAG.md) |
+| Collecting your own Instagram (own account or written consent only) | [SCRAPER.md](docs/SCRAPER.md) |
 | Auth, wallet, safety | [AUTH.md](docs/AUTH.md), [MONETISATION.md](docs/MONETISATION.md), [SAFETY.md](docs/SAFETY.md) |
 | Data | [DATA-MODEL.md](docs/DATA-MODEL.md) |
 | Realtime and consoles | [REALTIME.md](docs/REALTIME.md), [CONSOLE.md](docs/CONSOLE.md) |

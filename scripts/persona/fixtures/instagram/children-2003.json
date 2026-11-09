@@ -1,0 +1,39 @@
+{
+  "child_comments": [
+    {
+      "pk": "3004",
+      "text": "morning!!",
+      "created_at": 1772623500,
+      "user": {
+        "username": "fan_eve",
+        "pk": "6005"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0
+    },
+    {
+      "pk": "3005",
+      "text": "have a good one",
+      "created_at": 1772624100,
+      "user": {
+        "username": "fan_dan",
+        "pk": "6004"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0
+    },
+    {
+      "pk": "3006",
+      "text": "@fan_dan you too",
+      "created_at": 1772625000,
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0
+    }
+  ],
+  "has_more_tail_child_comments": false,
+  "status": "ok"
+}

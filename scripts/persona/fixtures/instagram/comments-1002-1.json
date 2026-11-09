@@ -1,0 +1,42 @@
+{
+  "comments": [
+    {
+      "pk": "2101",
+      "text": "",
+      "created_at": 1772535600,
+      "user": {
+        "username": "fan_amy",
+        "pk": "6001"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 2,
+      "giphy_media_info": {
+        "id": "g1"
+      }
+    },
+    {
+      "pk": "2102",
+      "text": "obsessed",
+      "created_at": 1772537400,
+      "user": {
+        "username": "fan_ben",
+        "pk": "6002"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 1
+    },
+    {
+      "pk": "2103",
+      "text": "see you there",
+      "created_at": 1772538000,
+      "user": {
+        "username": "fan_cat",
+        "pk": "6003"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0
+    }
+  ],
+  "has_more_comments": false,
+  "status": "ok"
+}

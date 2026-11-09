@@ -1,0 +1,21 @@
+{
+  "/api/v1/users/web_profile_info/?username=fixturecreator": "profile",
+  "/api/v1/feed/user/9001/?count=12": "feed-1",
+  "/api/v1/feed/user/9001/?count=12&max_id=feedcursor2": "feed-2",
+  "/api/v1/media/1001/info/": "info-1001",
+  "/api/v1/media/1002/info/": "info-1002",
+  "/api/v1/media/1003/info/": "info-1003",
+  "/api/v1/media/1004/info/": "info-1004",
+  "/api/v1/media/1001/comments/": "comments-1001-1",
+  "/api/v1/media/1001/comments/?min_id=p1cursor2": "comments-1001-2",
+  "/api/v1/media/1001/comments/2001/child_comments/": "children-2001",
+  "/api/v1/media/1001/comments/2002/child_comments/": "children-2002",
+  "/api/v1/media/1001/comments/2003/child_comments/": "children-2003",
+  "/api/v1/media/1001/comments/2004/child_comments/": "children-2004",
+  "/api/v1/media/1002/comments/": "comments-1002-1",
+  "/api/v1/media/1002/comments/2101/child_comments/": "children-2101",
+  "/api/v1/media/1002/comments/2102/child_comments/": "children-2102",
+  "/api/v1/media/1003/comments/": "comments-1003-1",
+  "/api/v1/media/1003/comments/2201/child_comments/": "children-2201",
+  "/api/v1/media/1004/comments/": "comments-1004-1"
+}

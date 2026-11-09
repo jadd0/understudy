@@ -5,6 +5,7 @@ import { handoffs, messages, offers, turns, users } from "@/db/schema";
 import { unlockOffer } from "@/lib/wallet/unlock";
 import { fund } from "@/lib/wallet/test-helpers";
 import { acquireLease, commitTurn, handBack, type CommitPlan } from "./lease";
+import { dbHost } from "@/lib/host/engine-host";
 import { processConversation } from "./process";
 import { runTurn } from "./turn";
 import { addMessage, getConversation } from "./test-db";
@@ -306,7 +307,7 @@ describe("lock order", () => {
     try {
       const unlocking = unlockOffer(w.fan.id, offer.id);
       await until("the unlock to wait on the wallet", () => blockedBy(holderPid));
-      const stopping = commitTurn(lease!, plan);
+      const stopping = commitTurn(lease!, plan, dbHost);
       await until("the hard stop to wait behind the unlock", () => blockedBehind(holderPid));
       release.resolve();
       settled = await Promise.allSettled([unlocking, stopping]);

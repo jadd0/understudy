@@ -174,7 +174,7 @@ export async function runThread(thread: Thread, ctx: RunnerContext): Promise<Obs
     if (!conversationId) throw new Error(`thread ${thread.id}: first message was refused (${refused ? "send refused" : "no conversation"})`);
     const convId = conversationId;
 
-    const facts = refused ? null : await loadFacts(convId, fan.id, ctx.creatorId, factsCfg);
+    const facts = refused ? null : await loadFacts(convId, fan.id, ctx.creatorId, factsCfg, ctx.deps.host);
     let errorLines: string[] = [];
     if (!refused) {
       // Messages scheduled with say_later arrive while the engine is working, the way a fan types on.

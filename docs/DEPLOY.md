@@ -175,7 +175,7 @@ npm run persona:publish -- --creator junovale --card-version <N>
 The publish command prints `card file v<N> -> stored version <M>`; re-running it changes nothing.
 
 **Retrieval strategy.** The seed writes `retrieval.strategy = "vector"` (Voyage embeddings), the winner of the
-retrieval eval (recall@5 0.667 against full-text's 0.165), so production needs no extra step. A Voyage
+retrieval eval (recall@5 0.560 against full-text's 0.331), so production needs no extra step. A Voyage
 error falls back to full-text for that turn.
 
 When finished, `unset DATABASE_URL SEED_CREATOR_EMAIL SEED_ADMIN_EMAILS VOYAGE_API_KEY`.

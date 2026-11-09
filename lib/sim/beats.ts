@@ -153,7 +153,7 @@ export async function messageBeat(env: BeatEnv, index: number, beat: Kind<"say" 
     declineWindowMinutes: await getConfig<number>("pitch.decline_window_minutes"),
     velocityWindowMinutes: await getConfig<number>("pitch.velocity_window_minutes"),
   };
-  const facts = refused ? null : await loadFacts(convId, env.fanId, env.creatorId, factsCfg);
+  const facts = refused ? null : await loadFacts(convId, env.fanId, env.creatorId, factsCfg, deps.engine.host);
   let engineErrorLine: string | null = null;
   if (!refused) {
     const run = await captureEngineErrors(() => processConversation(convId, deps.engine));
@@ -211,7 +211,7 @@ export async function moneyBeat(env: BeatEnv, index: number, beat: Kind<"topup" 
     }
     case "tip": {
       try {
-        // In a chat the tip goes through the fan's own path (system row and her thanks, ); the engine runs here, not after a response.
+        // In a chat the tip goes through the fan's own path (system row and her thanks); the engine runs here, not after a response.
         if (conversationId) await tipInChat(env.fanId, env.creatorId, conversationId, beat.cents, `${env.runId}:${index}`, () => {});
         else await tip(env.fanId, env.creatorId, beat.cents, `${env.runId}:${index}`);
       } catch (e) {
