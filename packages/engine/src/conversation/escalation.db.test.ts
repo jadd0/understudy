@@ -49,7 +49,7 @@ async function hold(
 
 const handoffOf = async (id: string) => (await db.select().from(handoffs).where(eq(handoffs.id, id)))[0];
 const aiMessages = async (conversationId: string) =>
-  db.select().from(messages).where(and(eq(messages.conversationId, conversationId), eq(messages.sender, "ai")));
+  db.select().from(messages).where(and(eq(messages.conversationId, conversationId), eq(messages.sender, "ai"))).orderBy(messages.createdAt);
 
 describe("runEscalations: creator-queue handoffs", () => {
   test("a due creator-queue handoff with an auto-resolve reason is resolved by sla and the AI answers the waiting message", async () => {
