@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { db, withTx, type Tx } from "@/db/client";
-import { conversations, handoffs, messages, offers, turns, users } from "@/db/schema";
+import { conversations, handoffs, messages, offers, turns } from "@/db/schema";
 import { deliverOffsets, splitBubbles } from "./bubbles";
 import { openHandoff } from "./handoff";
+import type { HostPort } from "./host";
 import { unrepeatedTemplate } from "./templates";
 import type { HandoffQueue, HandoffReason, RouteName } from "./types";
 
@@ -134,15 +135,6 @@ async function msTotalOf(tx: Tx, inboundIds: string[]): Promise<number | null> {
   return inboundIds.length === 0 ? null : Math.round(await elapsedSinceFirstInbound(tx, inboundIds));
 }
 
-/** Account-level flag. A minor seen in chat is `minor_in_chat`: restricted to reading, sessions kept. */
-export async function flagUser(tx: Tx, fanId: string, reason: HandoffReason) {
-  const flagReason = reason === "minor" ? "minor_in_chat" : reason;
-  await tx
-    .update(users)
-    .set({ flaggedAt: sql`coalesce(${users.flaggedAt}, now())`, flagReason: sql`coalesce(${users.flagReason}, ${flagReason})` })
-    .where(eq(users.id, fanId));
-}
-
 /**
  * AI bubbles the fan has not seen yet (`deliver_at` still ahead) are superseded, and an open offer one of them
  * carried is expired: the fan never saw it, so it must not stay redeemable. Used by a takeover and a hard stop.
@@ -175,7 +167,7 @@ export async function supersedeUnseenBubbles(tx: Tx, conversationId: string): Pr
  * turn is recorded `superseded`, the draft is kept unsent, and nothing else is written. Config is read by the
  * caller; inside this transaction only `tx` is used.
  */
-export async function commitTurn(lease: Lease, plan: CommitPlan): Promise<CommitResult> {
+export async function commitTurn(lease: Lease, plan: CommitPlan, host: HostPort): Promise<CommitResult> {
   return withTx(async (tx) => {
     const set: Partial<typeof conversations.$inferInsert> = {
       version: sql`${conversations.version} + 1` as unknown as number,
@@ -202,7 +194,7 @@ export async function commitTurn(lease: Lease, plan: CommitPlan): Promise<Commit
       )
       .returning({ id: conversations.id });
 
-    if (cas.length === 0) return recordSuperseded(tx, lease, plan);
+    if (cas.length === 0) return recordSuperseded(tx, lease, plan, host);
 
     const elapsedMs = await elapsedSinceFirstInbound(tx, plan.turn.inboundIds);
     const [turn] = await tx
@@ -220,7 +212,7 @@ export async function commitTurn(lease: Lease, plan: CommitPlan): Promise<Commit
     // The template must not follow an older, still-undelivered bubble. Offers are locked before the user row:
     // the platform order is conversation, offer, wallet, user (AGENTS.md), the one an unlock also takes.
     if (plan.hardStop) await supersedeUnseenBubbles(tx, lease.conversationId);
-    if (plan.hardStop?.flagUser) await flagUser(tx, lease.fanId, plan.hardStop.reason);
+    if (plan.hardStop?.flagUser) await host.flagFan(tx, lease.fanId, plan.hardStop.reason);
 
     if (plan.declineOfferId) {
       await tx
@@ -297,7 +289,7 @@ export async function commitTurn(lease: Lease, plan: CommitPlan): Promise<Commit
 }
 
 /** The reply part lost the compare-and-set. Only the safety outcome (if any) and the unsent record are written. */
-async function recordSuperseded(tx: Tx, lease: Lease, plan: CommitPlan): Promise<CommitResult> {
+async function recordSuperseded(tx: Tx, lease: Lease, plan: CommitPlan, host: HostPort): Promise<CommitResult> {
   let handoffId: string | null = null;
   if (plan.hardStop) {
     // Platform lock order (AGENTS.md): the conversation row first, then offers, then the user.
@@ -310,7 +302,7 @@ async function recordSuperseded(tx: Tx, lease: Lease, plan: CommitPlan): Promise
       .where(eq(conversations.id, lease.conversationId));
     handoffId = await openHandoff(tx, lease.conversationId, "ts", plan.hardStop.reason);
     await supersedeUnseenBubbles(tx, lease.conversationId);
-    if (plan.hardStop.flagUser) await flagUser(tx, lease.fanId, plan.hardStop.reason);
+    if (plan.hardStop.flagUser) await host.flagFan(tx, lease.fanId, plan.hardStop.reason);
   }
   // Release the lease only if it is still ours; a re-lease belongs to someone else.
   await tx

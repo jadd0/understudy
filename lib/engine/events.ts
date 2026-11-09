@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { getConfig } from "@/lib/config";
+import type { HostPort } from "./host";
 import type { JevLine } from "./thread";
 
 /** The client message id prefix of the system row a tip leaves in the chat (`tip:<fan>:<key>`). */
@@ -29,20 +30,20 @@ export const eventRecord = (events: readonly PendingEvent[]): EventRecord => ({
  * events from the last `windowMinutes`, and newer than the last message a human sent (a human who wrote since has
  * already had the chance to react), count, so older rows written before reactions existed are never thanked.
  */
-export async function loadEvents(conversationId: string, windowMinutes: number): Promise<PendingEvent[]> {
+export async function loadEvents(conversationId: string, windowMinutes: number, host: HostPort): Promise<PendingEvent[]> {
   const { rows } = await db.execute(sql`
     with human as (
       select coalesce(max(created_at), '-infinity'::timestamptz) as at from messages
       where conversation_id = ${conversationId} and sender in ('creator', 'admin') and status = 'sent'
     )
-    select 'tip' as kind, m.id, null::text as title, m.created_at as at
+    select 'tip' as kind, m.id, null::uuid as item_id, m.created_at as at
     from messages m, human
     where m.conversation_id = ${conversationId} and m.sender = 'system' and m.status = 'sent' and m.turn_id is null
       and m.client_msg_id like ${`${TIP_ROW_PREFIX}%`}
       and m.created_at > now() - make_interval(mins => ${windowMinutes}::int) and m.created_at > human.at
     union all
-    select 'unlock' as kind, o.id, ci.title, o.resolved_at as at
-    from offers o join catalogue_items ci on ci.id = o.item_id, human
+    select 'unlock' as kind, o.id, o.item_id, o.resolved_at as at
+    from offers o, human
     where o.conversation_id = ${conversationId} and o.status = 'accepted'
       and o.resolved_at > now() - make_interval(mins => ${windowMinutes}::int) and o.resolved_at > human.at
       and not exists (
@@ -50,15 +51,17 @@ export async function loadEvents(conversationId: string, windowMinutes: number):
         where t.conversation_id = ${conversationId} and t.outcome not in ('superseded', 'error')
           and coalesce(t.jev_in -> 'events' -> 'unlocks', '[]'::jsonb) @> jsonb_build_array(o.id::text))
     order by at, id`);
-  return (rows as { kind: "tip" | "unlock"; id: string; title: string | null }[]).map((r) =>
-    r.kind === "tip" ? { kind: "tip", id: r.id } : { kind: "unlock", id: r.id, title: r.title ?? "" },
+  const found = rows as { kind: "tip" | "unlock"; id: string; item_id: string | null }[];
+  const items = await host.items(found.flatMap((r) => (r.item_id ? [r.item_id] : [])));
+  return found.map((r) =>
+    r.kind === "tip" ? { kind: "tip", id: r.id } : { kind: "unlock", id: r.id, title: (r.item_id && items.get(r.item_id)?.title) || "" },
   );
 }
 
 /** Whether a conversation holds an event still waiting for a reaction; reads the window for its creator. */
-export async function hasPendingEvents(conversationId: string, creatorId: string): Promise<boolean> {
+export async function hasPendingEvents(conversationId: string, creatorId: string, host: HostPort): Promise<boolean> {
   const windowMinutes = await getConfig<number>("engine.event_window_minutes", creatorId);
-  return (await loadEvents(conversationId, windowMinutes)).length > 0;
+  return (await loadEvents(conversationId, windowMinutes, host)).length > 0;
 }
 
 /** Jev's view of an event: a platform line in `earlier_messages`, with no amount. */
@@ -83,22 +86,24 @@ export interface OfferOutcome {
  * unlocks, not the offer's status: a re-offer of an item he already had may be open, declined or expired, and he
  * still owns it.
  */
-export async function loadOfferOutcomes(conversationId: string, fanId: string, limit: number): Promise<OfferOutcome[]> {
+export async function loadOfferOutcomes(conversationId: string, fanId: string, limit: number, host: HostPort): Promise<OfferOutcome[]> {
   if (limit <= 0) return [];
   const { rows } = await db.execute(sql`
-    select title, outcome from (
-      select distinct on (o.item_id) ci.title, o.created_at,
+    select item_id, outcome from (
+      select distinct on (o.item_id) o.item_id, o.created_at,
         case
-          when exists (select 1 from unlocks u where u.fan_id = ${fanId} and u.item_id = o.item_id) then 'owned'
           when o.status = 'open' and o.expires_at > now() then 'open'
           when o.status = 'declined' then 'declined'
           else 'expired'
         end as outcome
-      from offers o join catalogue_items ci on ci.id = o.item_id
+      from offers o
       where o.conversation_id = ${conversationId}
       order by o.item_id, o.created_at desc, o.id desc
     ) latest
     order by created_at desc
     limit ${limit}`);
-  return rows as unknown as OfferOutcome[];
+  const latest = rows as { item_id: string; outcome: Exclude<OfferOutcome["outcome"], "owned"> }[];
+  const ids = latest.map((r) => r.item_id);
+  const [items, owned] = await Promise.all([host.items(ids), host.owns(fanId, ids)]);
+  return latest.map((r) => ({ title: items.get(r.item_id)?.title ?? "", outcome: owned.has(r.item_id) ? "owned" : r.outcome }));
 }

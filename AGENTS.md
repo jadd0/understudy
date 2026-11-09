@@ -83,6 +83,7 @@ Every module lives in a domain folder; nothing sits loose in `lib/`. A folder's 
 | `lib/env/` | validated environment |
 | `lib/wallet/` | ledger, top-up, unlock, tip, cap, high-value score, money parsing |
 | `lib/engine/` | the message turn (PR 4) |
+| `lib/host/` | the app's side of the engine's `HostPort` (`lib/engine/host.ts`): the database-backed `dbHost` over wallet, ledger, catalogue, unlocks and users |
 | `lib/persona/` | retrieval over persona chunks (PR 3b) |
 | `lib/conversations/` | conversation reads and human actions: takeover, hand-back, release (PR 7) |
 | `lib/ui/` | pure view logic shared by components (message grouping) |

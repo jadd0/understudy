@@ -153,7 +153,7 @@ export async function messageBeat(env: BeatEnv, index: number, beat: Kind<"say" 
     declineWindowMinutes: await getConfig<number>("pitch.decline_window_minutes"),
     velocityWindowMinutes: await getConfig<number>("pitch.velocity_window_minutes"),
   };
-  const facts = refused ? null : await loadFacts(convId, env.fanId, env.creatorId, factsCfg);
+  const facts = refused ? null : await loadFacts(convId, env.fanId, env.creatorId, factsCfg, deps.engine.host);
   let engineErrorLine: string | null = null;
   if (!refused) {
     const run = await captureEngineErrors(() => processConversation(convId, deps.engine));

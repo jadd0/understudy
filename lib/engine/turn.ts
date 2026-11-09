@@ -2,7 +2,6 @@ import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversations, messages, personaCards, turns } from "@/db/schema";
 import { ConfigMissing, getConfig } from "@/lib/config";
-import { capAllows } from "@/lib/wallet/cap";
 import type { Clock } from "@/platform/ports/clock";
 import type { Decider } from "@/platform/ports/decider";
 import type { Events } from "@/platform/ports/events";
@@ -14,6 +13,7 @@ import { CostLedger, costMicros } from "./cost";
 import { waitForMore, waitForQuiet, type InboundState, type WaitDeps, type WaitStats } from "./debounce";
 import { eventJevLines, eventRecord, hasPendingEvents, loadEvents, loadOfferOutcomes, type EventRecord, type PendingEvent } from "./events";
 import { loadFacts } from "./facts";
+import type { HostPort } from "./host";
 import { canPitch } from "./pacing";
 import { acquireLease, commitTurn, recordFailure, releaseLease, type CommitPlan, type CommitResult, type Lease, type TurnRecord } from "./lease";
 import { extractMemory, loadProfile } from "./memory";
@@ -34,6 +34,8 @@ export interface Deps {
   retriever: Retriever;
   events: Events;
   clock: Clock;
+  /** Everything the engine reads or writes in the app's own tables: wallet, ledger, catalogue, unlocks, users. */
+  host: HostPort;
   /** Uniform in [0, 1); only the bubble gap uses it. Defaults to Math.random. */
   random?: () => number;
 }
@@ -228,7 +230,7 @@ const NO_FAN_TEXT: JevIn = {
 };
 
 async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRecord): Promise<TurnResult> {
-  const { decider, generator, retriever, events, clock } = deps;
+  const { decider, generator, retriever, events, clock, host } = deps;
   const cost = new CostLedger();
   acc.tokens = cost.tokens;
   const addCost = (...args: Parameters<CostLedger["add"]>) => {
@@ -266,7 +268,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
     load: async (): Promise<InboundState> => {
       const [r, ev, typing] = await Promise.all([
         loadInbound(lease.conversationId),
-        loadEvents(lease.conversationId, cfg.eventWindowMinutes),
+        loadEvents(lease.conversationId, cfg.eventWindowMinutes, host),
         loadTyping(lease.conversationId),
       ]);
       rows = r;
@@ -323,7 +325,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
       batchText = rows.map((m) => m.body).join("\n");
 
       history = await loadHistory(lease.conversationId, cfg.historyRounds);
-      const loaded = await loadFacts(lease.conversationId, lease.fanId, lease.creatorId, cfg);
+      const loaded = await loadFacts(lease.conversationId, lease.fanId, lease.creatorId, cfg, host);
       sessionGap = sessionGapMs(history, inboundIds, cfg.gapMarkerMinutes);
       facts = { ...loaded, sessionStart: sessionGap !== null };
       // In a hardship cooldown she does not thank him for spending: the events are left unstamped and age out.
@@ -417,20 +419,20 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
             console.error(`engine: retrieval failed ${describeError(e)}`);
             return [];
           }),
-      loadOfferOutcomes(lease.conversationId, lease.fanId, cfg.offerHistoryCount),
-      ownsEverything(lease.creatorId, lease.fanId),
+      loadOfferOutcomes(lease.conversationId, lease.fanId, cfg.offerHistoryCount, host),
+      ownsEverything(host, lease.creatorId, lease.fanId),
     ]);
 
     let offerItem: ShortlistItem | null = null;
     if (route.name === "offer") {
       try {
         // Only items the debit would accept: the same cap rule, so an offer is never one the cap then refuses.
-        const affordable = (items: ShortlistItem[]) => items.filter((it) => capAllows(facts.spentTodayCents, it.priceCents, facts.capCents));
-        const unowned = affordable(await buildShortlist(lease.creatorId, lease.fanId, lease.conversationId, route.offerKinds));
+        const affordable = (items: ShortlistItem[]) => items.filter((it) => host.capAllows(facts.spentTodayCents, it.priceCents, facts.capCents));
+        const unowned = affordable(await buildShortlist(host, lease.creatorId, lease.fanId, lease.conversationId, route.offerKinds));
         // Nothing new he can take: offer something he already owns, a favourite worth unlocking again. It is charged
         // like any purchase, so the same cap rule applies.
         const shortlist =
-          unowned.length > 0 ? unowned : affordable(await buildOwnedShortlist(lease.creatorId, lease.fanId, lease.conversationId, route.offerKinds));
+          unowned.length > 0 ? unowned : affordable(await buildOwnedShortlist(host, lease.creatorId, lease.fanId, lease.conversationId, route.offerKinds));
         const t0 = clock.now();
         const pick = await pickOffer(decider, shortlist, jevState);
         acc.msJevIn = (acc.msJevIn ?? 0) + (clock.now() - t0);
@@ -571,7 +573,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
     }
     if (pass.candidate) {
       safe = pass.candidate;
-      const late = foldIns < cfg.foldInMax && budgetOk() ? await newWorkSince(lease.conversationId, safe.seenKeys, cfg.eventWindowMinutes) : false;
+      const late = foldIns < cfg.foldInMax && budgetOk() ? await newWorkSince(lease.conversationId, safe.seenKeys, cfg.eventWindowMinutes, host) : false;
       if (late) {
         // He wrote, tipped or unlocked while she was drafting: throw this draft away and answer the whole batch.
         foldIns++;
@@ -605,7 +607,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
   return finish(plan, c.route, c.batchText);
 
   async function finish(p: CommitPlan, r: Route, text: string): Promise<TurnResult> {
-    const result = await commitTurn(lease, p);
+    const result = await commitTurn(lease, p, host);
     if (result.applied) {
       // The console inbox (preview, time, badge) refreshes on this; a reply, a hold or a hard stop all change it.
       await events
@@ -645,13 +647,13 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
 }
 
 /** True when unanswered fan messages, or tips and unlocks, exist beyond the ones the draft's pass saw. */
-async function newWorkSince(conversationId: string, seen: readonly string[], windowMinutes: number): Promise<boolean> {
-  const [inbound, events] = await Promise.all([loadInbound(conversationId), loadEvents(conversationId, windowMinutes)]);
+async function newWorkSince(conversationId: string, seen: readonly string[], windowMinutes: number, host: HostPort): Promise<boolean> {
+  const [inbound, events] = await Promise.all([loadInbound(conversationId), loadEvents(conversationId, windowMinutes, host)]);
   return [...inbound.map((m) => m.id), ...events.map((e) => e.id)].some((id) => !seen.includes(id));
 }
 
 /** Whether a conversation holds anything a turn should still take: an unanswered fan message or a pending event. */
-export async function hasPendingWork(conversationId: string, creatorId: string): Promise<boolean> {
-  const [inbound, events] = await Promise.all([loadInbound(conversationId), hasPendingEvents(conversationId, creatorId)]);
+export async function hasPendingWork(conversationId: string, creatorId: string, host: HostPort): Promise<boolean> {
+  const [inbound, events] = await Promise.all([loadInbound(conversationId), hasPendingEvents(conversationId, creatorId, host)]);
   return inbound.length > 0 || events;
 }

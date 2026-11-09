@@ -1,3 +1,4 @@
+import { dbHost } from "@/lib/host/engine-host";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
@@ -792,10 +793,10 @@ describe("reading the chat as a conversation", () => {
     const r = rig({ replies: ["ooh i have something locked for you\nyou should see it\nthree bubbles of tease"] });
     expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ route: "offer" });
     const cfgFacts = { declineWindowMinutes: 1440, velocityWindowMinutes: 30 };
-    expect((await loadFacts(w.conv.id, w.fan.id, w.creator.id, cfgFacts)).roundsSinceOffer).toBe(0);
+    expect((await loadFacts(w.conv.id, w.fan.id, w.creator.id, cfgFacts, dbHost)).roundsSinceOffer).toBe(0);
     // each later answered round counts once, however many bubbles she sent
     await addMessage(w.conv.id, "fan", "show me more");
     await runTurn(w.conv.id, rig({ script: { thread: "new_topic" } }).deps);
-    expect((await loadFacts(w.conv.id, w.fan.id, w.creator.id, cfgFacts)).roundsSinceOffer).toBe(1);
+    expect((await loadFacts(w.conv.id, w.fan.id, w.creator.id, cfgFacts, dbHost)).roundsSinceOffer).toBe(1);
   });
 });

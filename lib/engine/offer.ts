@@ -1,78 +1,42 @@
 import { sql } from "drizzle-orm";
 import { db, type Tx } from "@/db/client";
 import { answerOf, DeciderUnavailable, type Decider, type DeciderState } from "@/platform/ports/decider";
+import type { HostPort, ShortlistItem } from "./host";
 import { offerPickQuestion } from "./questions";
 
-export interface ShortlistItem {
-  id: string;
-  kind: "ppv" | "bundle" | "personal";
-  title: string;
-  teaser: string | null;
-  priceCents: number;
-  /** He has already unlocked it: offered only when nothing he does not own is left, and unlocking it again is charged. */
-  owned?: boolean;
-}
+export type { ShortlistItem };
 
 /**
  * Items the fan already owns, for when he owns everything else on the shortlist's terms: the same kinds and order,
  * active, and not the subject of an open offer here. Unlocking one again charges its price like any purchase
  * (`unlockOffer`), so the caller applies the same cap filter as to the unowned shortlist.
  */
-export async function buildOwnedShortlist(
+export const buildOwnedShortlist = (
+  host: HostPort,
   creatorId: string,
   fanId: string,
   conversationId: string,
   kinds?: ShortlistItem["kind"][],
-): Promise<ShortlistItem[]> {
-  const kindFilter = kinds && kinds.length > 0 ? sql`and c.kind in (${sql.join(kinds.map((k) => sql`${k}::catalogue_kind`), sql`, `)})` : sql``;
-  const { rows } = await db.execute(sql`
-    select c.id, c.kind, c.title, c.teaser, c.price_cents as "priceCents", true as owned
-    from catalogue_items c
-    where c.creator_id = ${creatorId} and c.active ${kindFilter}
-      and exists (select 1 from unlocks u where u.fan_id = ${fanId} and u.item_id = c.id)
-      and not exists (select 1 from offers o
-                      where o.conversation_id = ${conversationId} and o.item_id = c.id
-                        and o.status = 'open' and o.expires_at > now())
-    order by c.price_cents, c.title, c.id`);
-  return rows as unknown as ShortlistItem[];
-}
+): Promise<ShortlistItem[]> => host.catalogue.ownedShortlist({ creatorId, fanId, conversationId, kinds });
 
 /**
  * Whether the fan owns every active ppv and bundle item the creator lists (and at least one): the AI can offer him
  * nothing new. The personal chat is never AI-offered, so it does not count.
  */
-export async function ownsEverything(creatorId: string, fanId: string): Promise<boolean> {
-  const { rows } = await db.execute(sql`
-    select count(*)::int as listed,
-           count(*) filter (where exists (select 1 from unlocks u where u.fan_id = ${fanId} and u.item_id = c.id))::int as owned
-    from catalogue_items c
-    where c.creator_id = ${creatorId} and c.active and c.kind in ('ppv', 'bundle')`);
-  const r = rows[0] as { listed: number; owned: number };
-  return r.listed > 0 && r.owned === r.listed;
-}
+export const ownsEverything = (host: HostPort, creatorId: string, fanId: string): Promise<boolean> =>
+  host.catalogue.ownsEverything(creatorId, fanId);
 
 /**
  * The items the AI may offer: the creator's active ones, not already unlocked by the fan, and not the subject
  * of an open unexpired offer in this conversation. Built by code, in a fixed order, so the model only ever picks.
  */
-export async function buildShortlist(
+export const buildShortlist = (
+  host: HostPort,
   creatorId: string,
   fanId: string,
   conversationId: string,
   kinds?: ShortlistItem["kind"][],
-): Promise<ShortlistItem[]> {
-  const kindFilter = kinds && kinds.length > 0 ? sql`and c.kind in (${sql.join(kinds.map((k) => sql`${k}::catalogue_kind`), sql`, `)})` : sql``;
-  const { rows } = await db.execute(sql`
-    select c.id, c.kind, c.title, c.teaser, c.price_cents as "priceCents"
-    from catalogue_items c
-    where c.creator_id = ${creatorId} and c.active ${kindFilter}
-      and not exists (select 1 from unlocks u where u.fan_id = ${fanId} and u.item_id = c.id)
-      and not exists (select 1 from offers o
-                      where o.conversation_id = ${conversationId} and o.item_id = c.id
-                        and o.status = 'open' and o.expires_at > now())
-    order by c.price_cents, c.title, c.id`);
-  return rows as unknown as ShortlistItem[];
-}
+): Promise<ShortlistItem[]> => host.catalogue.shortlist({ creatorId, fanId, conversationId, kinds });
 
 /**
  * Jev picks from the shortlist; it sees keys, titles and teasers, never prices. A single candidate needs no
