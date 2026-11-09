@@ -60,22 +60,32 @@ class JudgeOutputError extends Error {
   }
 }
 
-/** The model may wrap its JSON in one code fence; nothing else is tolerated. */
+/**
+ * The model may wrap its JSON in a code fence or put a sentence before or after it; the object from the first "{" to
+ * the last "}" is read. A reply with no object in it is still rejected.
+ */
 function parseJsonObject(text) {
   const body = text.trim().replace(/^```(?:json)?\s*\n([\s\S]*)\n```$/, "$1").trim();
   let value;
   try {
     value = JSON.parse(body);
   } catch {
-    throw new JudgeOutputError("not_json");
+    const start = body.indexOf("{");
+    const end = body.lastIndexOf("}");
+    try {
+      if (start < 0 || end <= start) throw new Error("no object");
+      value = JSON.parse(body.slice(start, end + 1));
+    } catch {
+      throw new JudgeOutputError("not_json");
+    }
   }
   if (value === null || typeof value !== "object" || Array.isArray(value)) throw new JudgeOutputError("not_object");
   return value;
 }
 
-const keysOf = (value, allowed) => {
-  const keys = Object.keys(value).sort();
-  if (keys.join() !== [...allowed].sort().join()) throw new JudgeOutputError("wrong_keys");
+/** Every required key must be there; an extra key the judge adds (a "note") is ignored, never read. */
+const keysOf = (value, required) => {
+  if (!required.every((k) => Object.hasOwn(value, k))) throw new JudgeOutputError("wrong_keys");
 };
 
 const reasonOf = (value) => {
@@ -185,7 +195,7 @@ export async function evaluateItem({ pair, card, summary, claude, genModel, judg
   try {
     const prepared = await drafter({ pair, card });
     draw = prepared.draw ?? null;
-    generated = await cached({ stage: "gen", model: genModel, request: sha16(`${prepared.system}\n${prepared.prompt}`), draw }, async () => {
+    generated = await cached({ stage: "gen", model: genModel, thinking: "off", request: sha16(`${prepared.system}\n${prepared.prompt}`), draw }, async () => {
       const gen = await claude.complete({ model: genModel, system: prepared.system, prompt: prepared.prompt, maxTokens: 300 });
       budget.addClaude(gen.usage);
       return prepared.finish(cleanReply(gen.text));
@@ -197,7 +207,7 @@ export async function evaluateItem({ pair, card, summary, claude, genModel, judg
   }
 
   const judge = async (stage, system, prompt, parse) => {
-    const verdict = await cached({ stage, model: judgeModel, system, prompt }, async () => {
+    const verdict = await cached({ stage, model: judgeModel, thinking: "off", system, prompt }, async () => {
       const response = await claude.complete({ model: judgeModel, system, prompt, maxTokens: 400 });
       budget.addClaude(response.usage);
       return parse(response.text);

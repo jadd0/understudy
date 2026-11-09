@@ -64,3 +64,11 @@ test("a model is required and a missing key fails closed", async () => {
   assert.equal(calls.length, 0);
   assert.throws(() => createClaude({ fetch: async () => ok(), apiKey: "" }), (e) => e.code === "not_configured");
 });
+
+test("thinking is off: disabled on Haiku, between tools on Sonnet 5.5, so the budget goes to the reply", async () => {
+  const { claude, calls } = harness([ok(), ok()]);
+  await claude.complete({ model: "claude-haiku-5-5", prompt: "hi", maxTokens: 50 });
+  await claude.complete({ model: "claude-sonnet-5-5", prompt: "hi", maxTokens: 50 });
+  assert.deepEqual(calls[0].body.thinking, { type: "disabled" });
+  assert.deepEqual(calls[1].body.thinking, { type: "between_tools" });
+});
