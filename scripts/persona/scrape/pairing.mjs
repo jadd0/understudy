@@ -5,7 +5,8 @@
 // same thread is by that handle: the latest such comment before the reply wins. Anything else
 // pairs to the thread root and says so with "thread_root".
 
-const LEADING_MENTION = /^\s*@([A-Za-z0-9._]+)/;
+// A handle never ends in a period, so one right after it ("@maddie. thanks") is punctuation.
+const LEADING_MENTION = /^\s*@([A-Za-z0-9._]*[A-Za-z0-9_])/;
 
 /**
  * @typedef {{ id: string, user: string, ts: number, text: string, nonText: boolean }} ThreadComment

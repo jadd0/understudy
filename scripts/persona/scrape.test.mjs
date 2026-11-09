@@ -94,6 +94,15 @@ import { mapHerComment, mapPost, toThreadComment } from "./scrape/record.mjs";
 
 const comment = (id, user, text, ts, extra = {}) => ({ id, user, text, ts, nonText: false, likes: 0, ...extra });
 
+test("a period straight after the mention is punctuation, not part of the handle", () => {
+  const thread = [comment("r", "fan_a", "root text", 100), comment("c1", "maddie.skates", "child", 110)];
+  const plain = pairReply({ reply: comment("x", "me", "@fan_a. thank you", 120), thread });
+  assert.equal(plain.basis, "replied_to_comment_id");
+  assert.equal(plain.target.id, "r");
+  const dotted = pairReply({ reply: comment("y", "me", "@maddie.skates. ha", 120), thread });
+  assert.equal(dotted.target.id, "c1");
+});
+
 test("a reply that @-mentions an earlier thread commenter pairs exactly; one that does not pairs to the thread root", () => {
   const root = comment("r", "fan_a", "root text", 100);
   const child = comment("c1", "fan_b", "child text", 110);
