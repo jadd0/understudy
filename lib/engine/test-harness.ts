@@ -4,6 +4,7 @@ import { creators } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { FakeDecider, type Scripted } from "@/providers/fake/decider";
 import { FakeGenerator, type FakeGeneratorOptions } from "@/providers/fake/generator";
+import { dbHost } from "@/lib/host/engine-host";
 import { FtsRetriever } from "@/providers/pg/fts-retriever";
 import type { Events } from "@/platform/ports/events";
 import type { Deps } from "./turn";
@@ -89,6 +90,7 @@ export function rig(opts: {
       generator,
       retriever: new FtsRetriever(db),
       events,
+      host: dbHost,
       clock: {
         // Sleeping advances the injected clock, so the turn budget sees the time the debounce "spent".
         now: () => Date.now() + skew.ms,

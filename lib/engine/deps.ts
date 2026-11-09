@@ -1,4 +1,5 @@
 import { db } from "@/db/client";
+import { dbHost } from "@/lib/host/engine-host";
 import { getConfig } from "@/lib/config";
 import { AnthropicGenerator } from "@/providers/anthropic/generator";
 import { defaultEvents } from "@/providers/pusher/events";
@@ -25,5 +26,6 @@ export async function defaultDeps(): Promise<Deps> {
     retriever: new PersonaRetriever(db, strategy, async (q) => (await embed([q], "query", { model: voyageModel, retries: 1 })).embeddings[0]),
     events: defaultEvents(),
     clock: systemClock,
+    host: dbHost,
   };
 }

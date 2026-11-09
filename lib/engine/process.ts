@@ -19,7 +19,7 @@ export async function processConversation(conversationId: string, deps: Deps): P
     }
     if (result.status !== "committed") break;
     committed++;
-    if (!(await hasPendingWork(conversationId, result.creatorId))) break;
+    if (!(await hasPendingWork(conversationId, result.creatorId, deps.host))) break;
   }
   return committed;
 }
