@@ -307,6 +307,8 @@ describe("routing outcomes", () => {
     expect(fan.flagReason).toBe("threat");
     const out = (await msgsOf(w.conv.id)).filter((m) => m.sender !== "fan");
     expect(out).toMatchObject([{ sender: "ai", status: "sent", body: "not okay. this chat ends here", deliverAt: null }]);
+    // stamped with the flag's own timestamp: the /blocked page finds the line by "at or after the flag"
+    expect(out[0].createdAt.getTime()).toBeGreaterThanOrEqual(fan.flaggedAt!.getTime());
     expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "threat" }]);
     expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_ts" });
     // the line was written under the threat instruction and checked like a reply, and no strike is recorded
