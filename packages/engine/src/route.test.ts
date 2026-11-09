@@ -257,3 +257,22 @@ describe("a strong runner-up buy_intent is routed as a buy", () => {
     expect(route(unsure, facts({ atCap: true }), CFG)).toMatchObject({ name: "hold_creator", reason: "unsure" });
   });
 });
+
+describe("a held chat that was just settled by policy", () => {
+  test("a hold intent with holdSuppressed is a deflect", () => {
+    const f = facts({ holdSuppressed: true });
+    for (const intent of ["custom_request", "live_chat"] as const) {
+      expect(route(jev({ intent }), f, CFG)).toMatchObject({ name: "deflect" });
+    }
+    expect(route(jev({ intent: "smalltalk", intentP: 0.3 }), f, CFG)).toMatchObject({ name: "deflect" });
+    // without the flag the same reads are held, for the reasons they always were
+    expect(route(jev({ intent: "custom_request" }), facts(), CFG)).toMatchObject({ name: "hold_creator", reason: "custom_request" });
+    expect(route(jev({ intent: "live_chat" }), facts(), CFG)).toMatchObject({ name: "hold_creator", reason: "explicit_live_chat" });
+    expect(route(jev({ intent: "smalltalk", intentP: 0.3 }), facts(), CFG)).toMatchObject({ name: "hold_creator", reason: "unsure" });
+  });
+
+  test("suppression never softens a hard stop", () => {
+    const stop = route(jev({ intent: "custom_request", p: { minor: 0.9 } }), facts({ holdSuppressed: true }), CFG);
+    expect(stop).toMatchObject({ name: "hard_stop", reason: "minor" });
+  });
+});

@@ -55,10 +55,6 @@
         "route": "hold_creator"
       },
       "row": "custom_request",
-      "pending": {
-        "pr": "4c",
-        "note": "short in-voice hold filler"
-      },
       "sim": {
         "filler": true
       }

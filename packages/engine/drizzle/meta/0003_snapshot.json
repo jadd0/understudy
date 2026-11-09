@@ -1,5 +1,5 @@
 {
-  "id": "1c82d8b9-ee1c-4f13-8916-81e077b81439",
+  "id": "ee54218b-0b6c-4409-b233-5af755cad513",
   "prevId": "e3ac23bd-fffa-4aef-910b-878939acfa7d",
   "version": "7",
   "dialect": "postgresql",
@@ -76,6 +76,12 @@
         },
         "no_pitch_until": {
           "name": "no_pitch_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hold_suppressed_until": {
+          "name": "hold_suppressed_until",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
@@ -268,6 +274,24 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "due_at": {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_by": {
+          "name": "resolved_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sla_breached_at": {
+          "name": "sla_breached_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -282,6 +306,22 @@
             }
           ],
           "isUnique": true,
+          "where": "\"handoffs\".\"status\" <> 'resolved'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "handoffs_due_idx": {
+          "name": "handoffs_due_idx",
+          "columns": [
+            {
+              "expression": "due_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "where": "\"handoffs\".\"status\" <> 'resolved'",
           "concurrently": false,
           "method": "btree",
@@ -306,7 +346,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "handoffs_resolved_by_check": {
+          "name": "handoffs_resolved_by_check",
+          "value": "\"handoffs\".\"resolved_by\" in ('human', 'sla')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.messages": {
@@ -491,28 +536,6 @@
           ],
           "isUnique": false,
           "where": "\"messages\".\"offer_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "messages_staff_sent_idx": {
-          "name": "messages_staff_sent_idx",
-          "columns": [
-            {
-              "expression": "conversation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"messages\".\"sender\" in ('creator', 'admin') and \"messages\".\"status\" = 'sent'",
           "concurrently": false,
           "method": "btree",
           "with": {}

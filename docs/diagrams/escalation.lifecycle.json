@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Escalation Lifecycle",
+    "quality_profile": "standard"
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Creator queue"
+    },
+    {
+      "id": "events",
+      "label": "What the sweep does when it is due"
+    },
+    {
+      "id": "terminal",
+      "label": "Trust & Safety queue"
+    }
+  ],
+  "states": [
+    {
+      "id": "held",
+      "type": "start",
+      "label": "held",
+      "sublabel": "filler sent, due in 30 min",
+      "lane": "main",
+      "col": 0,
+      "tag": "engine_error: person"
+    },
+    {
+      "id": "claimed",
+      "type": "external",
+      "label": "claimed",
+      "sublabel": "a person is on it",
+      "lane": "main",
+      "col": 2,
+      "tag": "never auto-resolved"
+    },
+    {
+      "id": "settled",
+      "type": "failure",
+      "label": "resolved by sla",
+      "sublabel": "mode ai, next hold suppressed",
+      "lane": "events",
+      "col": 0,
+      "tag": "resolved_by = sla"
+    },
+    {
+      "id": "answered",
+      "type": "external",
+      "label": "AI answers",
+      "sublabel": "answers what waits",
+      "lane": "events",
+      "col": 2,
+      "tag": "repeat is deflected"
+    },
+    {
+      "id": "tsopen",
+      "type": "start",
+      "label": "T&S open",
+      "sublabel": "due in 15 min",
+      "lane": "terminal",
+      "col": 0,
+      "tag": "handoff_ts"
+    },
+    {
+      "id": "late",
+      "type": "failure",
+      "label": "breach stamped",
+      "sublabel": "once, emitted on ops",
+      "lane": "terminal",
+      "col": 2,
+      "tag": "stays open"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-claim",
+      "from": "held",
+      "to": "claimed",
+      "label": "takeover",
+      "variant": "emphasis"
+    },
+    {
+      "id": "t-due",
+      "from": "held",
+      "to": "settled",
+      "label": "auto reason",
+      "variant": "default"
+    },
+    {
+      "id": "t-answer",
+      "from": "settled",
+      "to": "answered",
+      "label": "hand back",
+      "variant": "default"
+    },
+    {
+      "id": "t-late",
+      "from": "tsopen",
+      "to": "late",
+      "label": "past due",
+      "variant": "security"
+    }
+  ]
+}

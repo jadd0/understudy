@@ -44,6 +44,13 @@ None of these is a `config` row: the engine reads the tables above, so they take
 cache. A persona reload creates a new card version whose never-list is parsed from the card text, so an edit made
 here lasts only until the next reload; put the term in the card as well.
 
+## The due time on a queue row
+
+A row whose chat has an open handoff shows a quiet line under the preview. In the creator's inbox: "Auto-resolves in N min"
+while the handoff is unclaimed, due, and its reason is in `escalation.auto_resolve_reasons`; "Auto-resolving now" once past
+due (the next sweep settles it); nothing for a reason a person must handle. In the admin's Safety queue: "Waiting 12m",
+with "· late" once the handoff passed `escalation.ts_sla_minutes`. Taking the chat over claims the handoff and the line goes.
+
 ## Takeover, hand-back, release, ban
 
 1. **Take over** (`takeOverConversation` → `takeover`): one transaction locks the conversation, sets mode

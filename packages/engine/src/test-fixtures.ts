@@ -43,6 +43,7 @@ export function facts(over: Partial<Facts> = {}): Facts {
     roundsSinceOffer: 2,
     highValue: false,
     hasUnresolvedHandoff: false,
+    holdSuppressed: false,
     hasOpenOffer: false,
     hasUnlocked: false,
     justUnlocked: false,

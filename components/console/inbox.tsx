@@ -73,6 +73,7 @@ export async function Inbox({
           time: shortAge(r.ageMs),
           href: `${base}/${r.id}`,
           badge: r.badge ?? undefined,
+          note: r.dueNote ?? undefined,
           active: r.id === activeId,
           unread: r.badge === "Handoff" || r.badge === "T&S",
         }))}
