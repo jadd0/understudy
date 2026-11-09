@@ -1,0 +1,17 @@
+{
+  "name": "@understudy/engine",
+  "version": "0.1.0",
+  "description": "The conversation engine: the message turn, the ports it talks through and the fakes that stand in for them in tests.",
+  "type": "module",
+  "private": true,
+  "license": "ISC",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "types": "./src/index.ts",
+  "files": ["src", "README.md"],
+  "peerDependencies": {
+    "drizzle-orm": "*"
+  }
+}
