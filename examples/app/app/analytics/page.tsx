@@ -191,7 +191,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </div>
       </Section>
 
-      <Section title="Quality evals" hint="Read from docs/evals/engine.json and docs/evals/persona.json; each tile reads not run until its file exists.">
+      <Section title="Quality evals" hint="Read from docs/quality/evals/engine.json and docs/quality/evals/persona.json; each tile reads not run until its file exists.">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <Stat label="Safety violations" value={e(evals.engine?.safetyViolations, String)} sub="must be 0" />
           <Stat label="Handoff precision" value={e(handoffMean(evals.engine, "precision"), pct)} sub="mean of queues" />

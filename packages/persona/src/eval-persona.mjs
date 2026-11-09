@@ -3,7 +3,7 @@
 //   1. scores that reply 1-5 on voice, fact consistency and natural pitch (rubric judge), and
 //   2. is shown her real reply and the generated one, unlabelled in seeded random order, and says
 //      which one is hers (blind test).
-// Results go to docs/evals/persona.json and between the persona markers of docs/EVALS.md.
+// Results go to docs/quality/evals/persona.json and between the persona markers of docs/quality/EVALS.md.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { BudgetExceeded, isMain, loadEnvFile, parseArgs, readJson, readJsonl, seededRng, sha16, stableSort, TokenBudget, writeJson } from "./lib/io.mjs";
@@ -294,7 +294,7 @@ export function renderSection(persona) {
   return [
     "## Persona (rubric judge and blind test)",
     "",
-    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply with the card as its system prompt. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, in seeded random order, and says which is hers. Accuracy is the share of items where it picked hers; 50% means the two are indistinguishable. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/evals/persona.json`. Results for different card versions or models are never pooled.",
+    "Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply with the card as its system prompt. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, in seeded random order, and says which is hers. Accuracy is the share of items where it picked hers; 50% means the two are indistinguishable. Prompts: [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.",
     "",
     "Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `.env.local`; interrupted runs resume from `data/persona/eval/cache/`).",
     "",
@@ -359,6 +359,6 @@ if (isMain(import.meta.url)) {
     limit,
   });
   if (limit) console.log(`--limit ${limit}: nothing written`);
-  else recordResult({ result, personaPath: "docs/evals/persona.json", evalsPath: "docs/EVALS.md" });
+  else recordResult({ result, personaPath: "docs/quality/evals/persona.json", evalsPath: "docs/quality/EVALS.md" });
   console.log(JSON.stringify({ tokens: result.tokens_this_run, aggregate: result.aggregate }, null, 1));
 }

@@ -924,7 +924,7 @@ optional seed, include minor), Normal mix, Every persona, a runs table (status, 
 to `/admin/[id]`, `/console/[id]`, `/analytics/turns`), Stop, Stop all, Clear sim data, and **Open as fan**. Open as fan
 asks Auth.js for a sign-in link for that run's fan (`captureSignInLink` in `examples/app/lib/auth/demo-seats.ts`, the same capture the
 demo seats use, so nothing is emailed) and shows it; open it in a second browser profile to watch the fan's chat while the
-run plays. The link is Auth.js's one-time token: a second use is rejected. No screenshot exists yet; when the page is signed off, captures at 1440 and 390 go in `docs/screens/admin-sim-*.png`.
+run plays. The link is Auth.js's one-time token: a second use is rejected. No screenshot exists yet; when the page is signed off, captures at 1440 and 390 go in `docs/app/screens/admin-sim-*.png`.
 
 **Demo vs auto.** Demo mode waits `sim.demo_gap_ms` (scaled by the run's jitter) before each fan message so typing and
 bubbles are watchable, and at a human step (`takeover`, `hand_back`, `release`, `ban`, the AI switches) it sets the run

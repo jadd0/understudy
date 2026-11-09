@@ -19,7 +19,7 @@ vercel link        # pick the scope, create or select the project, accept the de
 
 In the project's settings set **Root Directory** to `examples/app` and leave "Include source files outside of the Root Directory in the Build Step" on (the default): the app builds from the workspace packages under `packages/`. `examples/app/vercel.json` is already in the repo: the cron and the Stripe webhook's function limit (section 8), and its function paths are relative to that root directory.
 
-The app reads `data/sim/personas/` and `docs/evals/` relative to its working directory. Both sit outside the root directory, so check `/admin/sim` and `/analytics` on the first deploy: the sim page lists its personas and the dashboard reads its evals only if those files are traced into the deployment.
+The app reads `data/sim/personas/` and `docs/quality/evals/` relative to its working directory. Both sit outside the root directory, so check `/admin/sim` and `/analytics` on the first deploy: the sim page lists its personas and the dashboard reads its evals only if those files are traced into the deployment.
 
 ## 2. Create the production database
 
@@ -126,7 +126,7 @@ needs adding on the Pusher side. A separate app per environment is cleaner but n
 | path | schedule | does |
 |---|---|---|
 | `/api/cron/sweep` | `* * * * *` (every minute) | the engine sweep: picks up conversations whose turn did not run to completion |
-| `/api/cron/sim` | `* * * * *` (every minute) | the fan simulator's rescue tick (docs/FAN-SIM.md); does nothing while config `sim.enabled` is false, which is how the seed leaves it |
+| `/api/cron/sim` | `* * * * *` (every minute) | the fan simulator's rescue tick (docs/quality/FAN-SIM.md); does nothing while config `sim.enabled` is false, which is how the seed leaves it |
 
 Vercel calls each with `Authorization: Bearer $CRON_SECRET`; both routes answer 401 without a matching
 `CRON_SECRET`, so the variable must be set. Leave `sim.enabled` false in production unless you mean to run sim fans there.

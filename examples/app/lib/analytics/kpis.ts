@@ -195,7 +195,7 @@ export const KPIS: Kpi[] = [
     id: "evals",
     title: "Eval-backed quality",
     definition: "Handoff precision and recall, route accuracy and safety violations from the engine eval; persona rubric and blind-test accuracy from the persona eval. The report reads them and does not run them.",
-    formula: "Read from docs/evals/engine.json and docs/evals/persona.json. Handoff precision and recall are the mean over the queues in the file; the persona score is the mean of the rubric criteria. A missing or unreadable file shows not run.",
+    formula: "Read from docs/quality/evals/engine.json and docs/quality/evals/persona.json. Handoff precision and recall are the mean over the queues in the file; the persona score is the mean of the rubric criteria. A missing or unreadable file shows not run.",
     source: "lib/analytics/evals.ts `readEvals`",
     counts: "The latest run of each eval.",
     excludes: "Anything an eval has not written. Eval-run fans (email eval+...@understudy.test) are left out of every live KPI above, so eval traffic never skews them.",

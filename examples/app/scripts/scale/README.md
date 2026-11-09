@@ -1,7 +1,7 @@
 # Volume measurement
 
 Fills a disposable test database with about a million messages, then records how the hot-path queries run. The
-results are in `docs/scaling/explain.json` and written up in `docs/SCALING.md`.
+results are in `docs/operations/scaling/explain.json` and written up in `docs/operations/SCALING.md`.
 
 Both scripts refuse a database whose name does not contain `_test_`.
 
@@ -14,7 +14,7 @@ export DATABASE_URL=$(node scripts/test-db.mjs)
 npx tsx examples/app/scripts/scale/seed-volume.ts [--creators 200] [--fans-per-creator 100] [--messages-per-conversation 50]
 
 # 3. EXPLAIN (ANALYZE, BUFFERS) each hot path, 20 runs after a warm-up
-npx tsx examples/app/scripts/scale/explain.ts --out docs/scaling/explain.json
+npx tsx examples/app/scripts/scale/explain.ts --out docs/operations/scaling/explain.json
 ```
 
 `explain.ts` calls the real code (`loadFacts`, `retrieveFts`, `retrieveVector`, `sweep`, `listInbox`, `getHandoffs`)

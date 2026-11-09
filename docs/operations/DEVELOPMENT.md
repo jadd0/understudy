@@ -7,22 +7,22 @@ The build contract is `AGENTS.md`.
 
 1. `npm install` (an npm workspace: `packages/*` is the library, `examples/server` and `examples/app` are two hosts on it)
 2. Copy the keys listed in `examples/app/.env.example` into `examples/app/.env.local` (names only here; see
-   [AUTH.md](AUTH.md#environment-keys) for what each is for). `.env*.local` is gitignored.
+   [AUTH.md](../app/AUTH.md#environment-keys) for what each is for). `.env*.local` is gitignored.
 3. `npm run check:env` checks the file. `npm run db:migrate` applies the engine's migrations and then `examples/app/drizzle/` to `DATABASE_URL` (Neon `neondb`).
 4. `npm run db:seed` creates the creator (from `SEED_CREATOR_EMAIL`) and admins (`SEED_ADMIN_EMAILS`),
    idempotently; each is skipped with a message if its variable is unset.
-5. `npm run dev`. Run the Next scripts from the repository root: the app reads `data/` and `docs/evals/` relative to the working directory, and the root scripts start Next with the repository root as that directory.
+5. `npm run dev`. Run the Next scripts from the repository root: the app reads `data/` and `docs/quality/evals/` relative to the working directory, and the root scripts start Next with the repository root as that directory.
 
 ## Commands
 
 | command | does |
 |---|---|
 | `npm run dev`, `build`, `start` | Next.js, the app in `examples/app/` |
-| `npm run typecheck`, `lint`, `test` | `tsc --noEmit`, ESLint, vitest (against the per-branch test database, [DATA-MODEL.md](DATA-MODEL.md#test-database)) |
+| `npm run typecheck`, `lint`, `test` | `tsc --noEmit`, ESLint, vitest (against the per-branch test database, [DATA-MODEL.md](../architecture/DATA-MODEL.md#test-database)) |
 | `npm run db:generate` | drizzle-kit writes a migration to `packages/engine/drizzle/` from the engine schema, then one to `examples/app/drizzle/` from `examples/app/db/host-schema.ts` |
 | `npm run db:migrate`, `db:seed` | apply migrations; seed creator and admins |
 | `bash scripts/gate.sh` | the gate |
-| `npx understudy-persona build --creator junovale --card-model <id> --gen-model <id> --jev-model <id>` | persona build; see [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md#running-it) |
+| `npx understudy-persona build --creator junovale --card-model <id> --gen-model <id> --jev-model <id>` | persona build; see [PERSONA-PIPELINE.md](../persona/PERSONA-PIPELINE.md#running-it) |
 | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` | persona tests only |
 
 ## The gate
@@ -59,4 +59,4 @@ build tooling and is not published with the repo. A reversal adds a new entry an
 superseded rather than rewriting it.
 
 The project's database setup is one Neon Postgres with a test database per branch
-([DATA-MODEL.md](DATA-MODEL.md#test-database)).
+([DATA-MODEL.md](../architecture/DATA-MODEL.md#test-database)).

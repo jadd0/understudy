@@ -252,7 +252,7 @@ Latest values:
 ## Eval-backed quality
 
 - **Definition:** Handoff precision and recall, route accuracy and safety violations from the engine eval; persona rubric and blind-test accuracy from the persona eval. The report reads them and does not run them.
-- **Formula:** Read from docs/evals/engine.json and docs/evals/persona.json. Handoff precision and recall are the mean over the queues in the file; the persona score is the mean of the rubric criteria. A missing or unreadable file shows not run.
+- **Formula:** Read from docs/quality/evals/engine.json and docs/quality/evals/persona.json. Handoff precision and recall are the mean over the queues in the file; the persona score is the mean of the rubric criteria. A missing or unreadable file shows not run.
 - **Source:** lib/analytics/evals.ts `readEvals`
 - **Counts:** The latest run of each eval.
 - **Does not count:** Anything an eval has not written. Eval-run fans (email eval+...@understudy.test) are left out of every live KPI above, so eval traffic never skews them.

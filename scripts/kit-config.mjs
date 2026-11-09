@@ -65,7 +65,7 @@ export function kitConfig(root = ROOT) {
     gate_inputs: list(raw.gate_inputs || (stack === "node" ? "examples/app/.env.local, node_modules/.package-lock.json" : "examples/app/.env.local")),
     scope_always_allowed: list(raw.scope_always_allowed || (stack === "node" ? "package-lock.json" : "")),
     queue_doc: raw.queue_doc || coordinator.queue_doc || ".product/roadmap.md",
-    diagram_registry: raw.diagram_registry || "docs/diagrams/flows.md",
+    diagram_registry: raw.diagram_registry || "docs/README.md",
     diagram_data_paths: list(raw.diagram_data_paths || "db/, migrations/, app/api/, pages/api/, api/, server/, jobs/, actions/"),
     codemap_areas: list(raw.codemap_areas || ""),
   };

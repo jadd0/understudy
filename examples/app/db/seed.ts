@@ -97,7 +97,7 @@ export const ENGINE_CONFIG: Record<string, unknown> = {
   "price.jev-1.14.0.output_per_mtok": 0,
 };
 
-// Fan simulator config (docs/FAN-SIM.md). The voice model is a config update away if a persona drifts.
+// Fan simulator config (docs/quality/FAN-SIM.md). The voice model is a config update away if a persona drifts.
 export const SIM_CONFIG: Record<string, unknown> = {
   // Off until an admin switches it on from /admin/sim: a freshly seeded database must not start sim runs from the cron tick.
   "sim.enabled": false,

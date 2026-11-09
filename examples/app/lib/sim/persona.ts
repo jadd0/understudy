@@ -3,7 +3,7 @@ import path from "node:path";
 import { z } from "zod";
 import { ExpectSchema, MATRIX_ROWS } from "@/lib/evals/threads";
 
-/** The engine features the roster must cover (docs/FAN-SIM.md, coverage matrix). A gate test proves every one has a persona and every persona names only these. */
+/** The engine features the roster must cover (docs/quality/FAN-SIM.md, coverage matrix). A gate test proves every one has a persona and every persona names only these. */
 export const FEATURES = [
   "admits_ai_unexpected",
   "ai_toggle_conversation",
