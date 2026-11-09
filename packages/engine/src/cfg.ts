@@ -1,7 +1,5 @@
-import { and, eq, inArray, isNull, like, or } from "drizzle-orm";
-import { db } from "@/db/client";
-import { config } from "@/db/schema";
-import { ConfigMissing } from "@/lib/config";
+import type { EngineCtx } from "./ctx";
+import { ConfigMissing, type ConfigRow } from "./ports/config";
 import { SAFETY_KEYS, type RouteCfg } from "./types";
 import type { Prices } from "./cost";
 
@@ -75,23 +73,36 @@ export function isPlatformOnly(key: string): boolean {
   return key.startsWith("floor.") || key.startsWith("platform.");
 }
 
+const PRICE_PREFIX = "price.";
+
+/**
+ * The creator's row wins over the platform's, except for the platform-only keys, which are read from platform rows
+ * alone. Rows the port returned for another creator or for keys nobody asked for are ignored.
+ */
+function resolve(rows: ConfigRow[], creatorId: string | undefined, wanted: (key: string) => boolean): Map<string, unknown> {
+  const map = new Map<string, unknown>();
+  const relevant = rows.filter((r) => wanted(r.key));
+  for (const r of relevant.filter((r) => r.creatorId === null)) map.set(r.key, r.value);
+  for (const r of relevant.filter((r) => r.creatorId !== null && r.creatorId === creatorId && !isPlatformOnly(r.key))) map.set(r.key, r.value);
+  return map;
+}
+
+/** One setting: a creator's row wins, then the platform row. No code default: a missing row throws `ConfigMissing`. */
+export async function getConfig<T = unknown>(ctx: Pick<EngineCtx, "config">, key: string, creatorId?: string): Promise<T> {
+  const rows = await ctx.config.rows({ keys: [key], prefixes: [], creatorId });
+  const map = resolve(rows, creatorId, (k) => k === key);
+  if (!map.has(key)) throw new ConfigMissing(key);
+  return map.get(key) as T;
+}
+
 /**
  * Every engine setting in one query: the creator's row wins over the platform's (except for the platform-only
  * keys), and a missing row throws `ConfigMissing`.
  */
-export async function loadEngineConfig(creatorId: string): Promise<EngineCfg> {
-  const rows = await db
-    .select({ key: config.key, value: config.value, creatorId: config.creatorId })
-    .from(config)
-    .where(
-      and(
-        or(inArray(config.key, KEYS), like(config.key, "price.%")),
-        or(isNull(config.creatorId), eq(config.creatorId, creatorId)),
-      ),
-    );
-  const map = new Map<string, unknown>();
-  for (const r of rows.filter((r) => r.creatorId === null)) map.set(r.key, r.value);
-  for (const r of rows.filter((r) => r.creatorId !== null && !isPlatformOnly(r.key))) map.set(r.key, r.value);
+export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId: string): Promise<EngineCfg> {
+  const rows = await ctx.config.rows({ keys: KEYS, prefixes: [PRICE_PREFIX], creatorId });
+  const keySet = new Set(KEYS);
+  const map = resolve(rows, creatorId, (k) => keySet.has(k) || k.startsWith(PRICE_PREFIX));
   const get = <T>(key: string): T => {
     if (!map.has(key)) throw new ConfigMissing(key);
     return map.get(key) as T;

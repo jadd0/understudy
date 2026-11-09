@@ -4,10 +4,12 @@ import { creators } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { FakeDecider, type Scripted } from "./fake/decider";
 import { FakeGenerator, type FakeGeneratorOptions } from "./fake/generator";
+import { dbConfigPort } from "@/lib/config";
 import { dbHost } from "@/lib/host/engine-host";
 import { FtsRetriever } from "@/providers/pg/fts-retriever";
 import type { Events } from "./ports/events";
-import type { Deps } from "./turn";
+import { createChatter, type Chatter } from "./chatter";
+import type { Deps, EngineCtx } from "./ctx";
 import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "./test-db";
 
 const NO = { value: "no", probabilities: { yes: 0.02, no: 0.98 } };
@@ -46,6 +48,10 @@ export function isMemoryCall(input: { system: { cached: string } }) {
 
 export interface Rig {
   deps: Deps;
+  /** The engine context over the test database, for tests that call engine functions directly. */
+  ctx: EngineCtx;
+  /** The same wiring as `createChatter` gives a host. */
+  chatter: Chatter;
   decider: FakeDecider;
   generator: FakeGenerator;
   sleeps: number[];
@@ -84,23 +90,25 @@ export function rig(opts: {
       emitted.push({ channel, event, payload });
     },
   };
-  return {
-    deps: {
-      decider,
-      generator,
-      retriever: new FtsRetriever(db),
-      events,
-      host: dbHost,
-      clock: {
-        // Sleeping advances the injected clock, so the turn budget sees the time the debounce "spent".
-        now: () => Date.now() + skew.ms,
-        sleep: async (ms) => {
-          sleeps.push(ms);
-          skew.ms += ms;
-          await onSleep.current?.(ms);
-        },
+  const deps: Deps = {
+    decider,
+    generator,
+    retriever: new FtsRetriever(db),
+    events,
+    clock: {
+      // Sleeping advances the injected clock, so the turn budget sees the time the debounce "spent".
+      now: () => Date.now() + skew.ms,
+      sleep: async (ms: number) => {
+        sleeps.push(ms);
+        skew.ms += ms;
+        await onSleep.current?.(ms);
       },
     },
+  };
+  return {
+    deps,
+    ctx: { db, config: dbConfigPort, host: dbHost, deps },
+    chatter: createChatter({ db, config: dbConfigPort, host: dbHost, deps }),
     decider,
     generator,
     sleeps,

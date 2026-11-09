@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
-import { db, type Tx } from "@/db/client";
+import type { EngineCtx } from "./ctx";
+import type { EngineTx } from "./ports/db";
 import { answerOf, DeciderUnavailable, type Decider, type DeciderState } from "./ports/decider";
 import type { HostPort, ShortlistItem } from "./host";
 import { offerPickQuestion } from "./questions";
@@ -58,8 +59,8 @@ export async function pickOffer(
 }
 
 /** The conversation's open unexpired offer, if any (expired ones are treated as expired on read). */
-export async function openOfferId(conversationId: string): Promise<string | null> {
-  const { rows } = await db.execute(sql`
+export async function openOfferId(ctx: EngineCtx, conversationId: string): Promise<string | null> {
+  const { rows } = await ctx.db.execute(sql`
     select id from offers
     where conversation_id = ${conversationId} and status = 'open' and expires_at > now()
     order by created_at desc limit 1`);
@@ -67,13 +68,13 @@ export async function openOfferId(conversationId: string): Promise<string | null
 }
 
 /** Marks a declined offer. Runs in the commit transaction; a no-op if the fan unlocked it in the meantime. */
-export async function declineOffer(tx: Tx, offerId: string): Promise<void> {
+export async function declineOffer(tx: EngineTx, offerId: string): Promise<void> {
   await tx.execute(sql`update offers set status = 'declined', resolved_at = now() where id = ${offerId} and status = 'open'`);
 }
 
 /** Open offers past their expiry become `expired`. Idempotent; returns how many were marked. */
-export async function expireOffers(): Promise<number> {
-  const { rows } = await db.execute(sql`
+export async function expireOffers(ctx: EngineCtx): Promise<number> {
+  const { rows } = await ctx.db.execute(sql`
     update offers set status = 'expired', resolved_at = now()
     where status = 'open' and expires_at <= now() returning id`);
   return rows.length;

@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
-import { db } from "@/db/client";
-import { getConfig } from "@/lib/config";
+import { getConfig } from "./cfg";
+import type { EngineCtx } from "./ctx";
 import { expireOffers } from "./offer";
 import { processConversation } from "./process";
-import { describeError, type Deps } from "./turn";
+import { describeError } from "./turn";
 
 export interface SweepResult {
   leasesCleared: number;
@@ -25,15 +25,15 @@ export const SWEEP_START_BUDGET_MS = 35_000;
  * messages no turn has answered, older than the debounce and with no live lease, are processed oldest message
  * first, (3) expired open offers are marked. All comparisons use the database clock; the start budget uses the injected clock.
  */
-export async function sweep(deps: Deps): Promise<SweepResult> {
-  const started = deps.clock.now();
-  const debounceMs = await getConfig<number>("engine.debounce_ms");
+export async function sweep(ctx: EngineCtx): Promise<SweepResult> {
+  const started = ctx.deps.clock.now();
+  const debounceMs = await getConfig<number>(ctx, "engine.debounce_ms");
 
-  const cleared = await db.execute(sql`
+  const cleared = await ctx.db.execute(sql`
     update conversations set lease_token = null, lease_until = null
     where lease_until is not null and lease_until < now() returning id`);
 
-  const { rows } = await db.execute(sql`
+  const { rows } = await ctx.db.execute(sql`
     select c.id, min(m.created_at) as oldest from conversations c
     join messages m on m.conversation_id = c.id
     where c.mode = 'ai' and c.ai_enabled and c.lease_until is null
@@ -47,13 +47,13 @@ export async function sweep(deps: Deps): Promise<SweepResult> {
     limit ${MAX_CONVERSATIONS_PER_SWEEP}`);
   let processed = 0;
   for (const row of rows as { id: string }[]) {
-    if (deps.clock.now() - started >= SWEEP_START_BUDGET_MS) break;
+    if (ctx.deps.clock.now() - started >= SWEEP_START_BUDGET_MS) break;
     try {
-      await processConversation(row.id, deps);
+      await processConversation(ctx, row.id);
       processed++;
     } catch (e) {
       console.error(`engine: sweep ${describeError(e)}`);
     }
   }
-  return { leasesCleared: cleared.rows.length, conversationsProcessed: processed, offersExpired: await expireOffers() };
+  return { leasesCleared: cleared.rows.length, conversationsProcessed: processed, offersExpired: await expireOffers(ctx) };
 }
