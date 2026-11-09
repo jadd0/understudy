@@ -1,14 +1,14 @@
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
-import { config, fanMemory, handoffs, ledgerEntries, messages, offers, personaCards, sessions, turns, users, wallets } from "@/db/schema";
+import { config, fanMemory, handoffs, ledgerEntries, messages, offers, personaCards, sessions, strikes, turns, users, wallets } from "@/db/schema";
 import { processConversation } from "./process";
 import { PAID_LINE } from "./thread";
 import { runTurn } from "./turn";
 import { loadFacts } from "./facts";
 import { addMessage, getConversation, seedChat, setEngineConfig } from "./test-db";
 import { ConfigMissing } from "@/lib/config";
-import { isMemoryCall, rig, setCreatorAi, world, YES } from "./test-harness";
+import { deferred, isMemoryCall, rig, setCreatorAi, world, YES } from "./test-harness";
 
 const turnsOf = (conversationId: string) =>
   db.select().from(turns).where(eq(turns.conversationId, conversationId)).orderBy(asc(turns.createdAt), asc(turns.id));
@@ -299,37 +299,51 @@ describe("routing outcomes", () => {
     expect(r.emitted.map((e) => e.event)).toContain("message.created");
   });
 
-  test("a threat flags the account as before and sends nothing", async () => {
+  test("a threat: one line in her voice, then the flag and Trust & Safety", async () => {
     const w = await world({}, "i know where you live");
-    await runTurn(rig({ script: { threat: YES } }).ctx, w.conv.id);
+    const r = rig({ script: { threat: YES }, replies: ["not okay. this chat ends here"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hard_stop", outcome: "hard_stop" });
+    const [fan] = await db.select().from(users).where(eq(users.id, w.fan.id));
+    expect(fan.flagReason).toBe("threat");
+    const out = (await msgsOf(w.conv.id)).filter((m) => m.sender !== "fan");
+    expect(out).toMatchObject([{ sender: "ai", status: "sent", body: "not okay. this chat ends here", deliverAt: null }]);
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "threat" }]);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_ts" });
+    // the line was written under the threat instruction and checked like a reply, and no strike is recorded
+    expect(r.generator.calls[0].system.turn).toContain("threatened or frightened you");
+    expect((await turnsOf(w.conv.id))[0].jevOut).toMatchObject([{ boundary: true, failures: [] }]);
+    expect(await db.select().from(strikes).where(eq(strikes.conversationId, w.conv.id))).toHaveLength(0);
+  });
+
+  test("a threat whose line fails a check keeps the silent hard stop, and so does a provider error", async () => {
+    const w = await world({}, "i know where you live");
+    await runTurn(rig({ script: { threat: YES, on_persona: "no" } }).ctx, w.conv.id);
     const [fan] = await db.select().from(users).where(eq(users.id, w.fan.id));
     expect(fan.flagReason).toBe("threat");
     expect((await msgsOf(w.conv.id)).filter((m) => m.sender !== "fan")).toHaveLength(0);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_ts" });
+
+    const w2 = await world({}, "i will find you");
+    const broken = rig({ script: { threat: YES }, replies: [() => { throw new Error("provider down"); }] });
+    expect(await runTurn(broken.ctx, w2.conv.id)).toMatchObject({ status: "committed", outcome: "hard_stop" });
+    expect((await msgsOf(w2.conv.id)).filter((m) => m.sender !== "fan")).toHaveLength(0);
+    expect(await getConversation(w2.conv.id)).toMatchObject({ mode: "handoff_ts" });
   });
 
   test("hard_stop_supersedes_pending_bubbles", async () => {
-    const w = await world({}, "where do you live? lets meet");
+    const w = await world({}, "im 15, where do you live?");
     const pending = await addMessage(w.conv.id, "ai", "an older bubble, not delivered yet");
     await db.update(messages).set({ deliverAt: sql`now() + interval '9 seconds'` }).where(eq(messages.id, pending.id));
     const seen = await addMessage(w.conv.id, "ai", "already delivered", { ageSeconds: 20 });
-    await runTurn(rig({ script: { location_offplatform: YES } }).ctx, w.conv.id);
+    await runTurn(rig({ script: { minor: YES, location_offplatform: YES } }).ctx, w.conv.id);
     const status = async (id: string) => (await db.select().from(messages).where(eq(messages.id, id)))[0].status;
     expect(await status(pending.id)).toBe("superseded");
     expect(await status(seen.id)).toBe("sent");
-    const sent = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai" && m.status === "sent" && m.id !== seen.id);
+    const sent = (await msgsOf(w.conv.id)).filter((m) => m.sender === "system" && m.status === "sent");
     expect(sent).toHaveLength(1);
-    expect(sent[0].body).toMatch(/can't meet up/);
-  });
-
-  test("asking to meet or for her location gets the refusal template and a Trust & Safety handoff", async () => {
-    const w = await world({}, "where do you live? lets meet");
-    const r = rig({ script: { location_offplatform: YES } });
-    await runTurn(r.ctx, w.conv.id);
-    const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
-    expect(ai[0].body).toMatch(/can't meet up/);
-    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "location_offplatform" }]);
-    const [fan] = await db.select().from(users).where(eq(users.id, w.fan.id));
-    expect(fan.flaggedAt).toBeNull();
+    expect(sent[0].body).toMatch(/under 18/);
+    // a minor signal outranks the off-platform ask: no strike
+    expect(await db.select().from(strikes).where(eq(strikes.conversationId, w.conv.id))).toHaveLength(0);
   });
 
   test("a payment dispute gets a short acknowledgement and a human", async () => {
@@ -889,5 +903,192 @@ describe("reading the chat as a conversation", () => {
     await addMessage(w.conv.id, "fan", "show me more");
     await runTurn(rig({ script: { thread: "new_topic" } }).ctx, w.conv.id);
     expect((await loadFacts(r.ctx, w.conv.id, w.fan.id, w.creator.id, cfgFacts)).roundsSinceOffer).toBe(1);
+  });
+});
+
+describe("boundary strikes", () => {
+  const ASK = { location_offplatform: YES };
+  const NOTICE_1 = "Warning 1 of 3: keep it on the app. Meetups, other apps and outside payments aren't allowed. 3 warnings pauses this chat.";
+  const NOTICE_2 = NOTICE_1.replace("Warning 1", "Warning 2");
+  const PAUSED = "Warning 3 of 3: this chat is paused for a safety review. You can still read it.";
+  const herSide = async (conversationId: string) => (await msgsOf(conversationId)).filter((m) => m.sender !== "fan");
+  const strikesOf = (conversationId: string) => db.select().from(strikes).where(eq(strikes.conversationId, conversationId));
+  const ask = async (w: Awaited<ReturnType<typeof world>>, text: string, r = rig({ script: ASK, replies: ["i keep my chats right here babe"] })) => {
+    await addMessage(w.conv.id, "fan", text, { ageSeconds: 5 });
+    return { r, result: await runTurn(r.ctx, w.conv.id) };
+  };
+
+  test("first off-platform ask: her line, Warning 1 of 3, mode stays ai, a T&S alert opens", async () => {
+    const w = await world({}, "wanna grab a coffee?");
+    const r = rig({ script: ASK, replies: ["aw no coffee dates, i keep my chats right here"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed", route: "boundary", outcome: "replied" });
+
+    const out = await herSide(w.conv.id);
+    expect(out.map((m) => [m.sender, m.status, m.body])).toEqual([
+      ["ai", "sent", "aw no coffee dates, i keep my chats right here"],
+      ["system", "sent", NOTICE_1],
+    ]);
+    // the notice follows her line, never before it
+    expect(out[1].createdAt.getTime()).toBeGreaterThan(out[0].createdAt.getTime());
+    expect(out[1].deliverAt === null || out[0].deliverAt === null || out[1].deliverAt >= out[0].deliverAt).toBe(true);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "ai", leaseToken: null });
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "location_offplatform", status: "open" }]);
+    const [fan] = await db.select().from(users).where(eq(users.id, w.fan.id));
+    expect(fan.flaggedAt).toBeNull();
+    const [row] = await strikesOf(w.conv.id);
+    expect(row).toMatchObject({ creatorId: w.creator.id, fanId: w.fan.id, reason: "location_offplatform" });
+    const [t] = await turnsOf(w.conv.id);
+    expect(row.turnId).toBe(t.id);
+    expect(t.handoffId).not.toBeNull();
+    expect(r.generator.calls[0].system.turn).toContain("asked to meet up");
+    // both bubbles are announced for delivery, with one typing hold
+    expect(r.emitted.filter((e) => e.event === "message.created")).toHaveLength(2);
+    // the AI is still answering: the next ordinary message gets an ordinary reply
+    await addMessage(w.conv.id, "fan", "ok fair, what are you up to", { ageSeconds: 5 });
+    const next = rig({ replies: ["just chilling with my cat"] });
+    expect(await runTurn(next.ctx, w.conv.id)).toMatchObject({ route: "reply", outcome: "replied" });
+  });
+
+  test("second ask: Warning 2 of 3; third: the paused notice, mode handoff_ts, flag not set", async () => {
+    const w = await world({}, "where do you live");
+    await runTurn(rig({ script: ASK, replies: ["i keep my chats right here"] }).ctx, w.conv.id);
+
+    const second = await ask(w, "come on just give me your snap");
+    expect(second.result).toMatchObject({ route: "boundary", outcome: "replied" });
+    expect((await herSide(w.conv.id)).map((m) => m.body).filter((b) => b.startsWith("Warning"))).toEqual([NOTICE_1, NOTICE_2]);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "ai" });
+    expect(await strikesOf(w.conv.id)).toHaveLength(2);
+
+    const before = (await herSide(w.conv.id)).length;
+    const third = await ask(w, "one coffee, thats all");
+    expect(third.result).toMatchObject({ status: "committed", route: "hard_stop", outcome: "hard_stop" });
+    expect(third.r.generator.calls.filter((c) => !isMemoryCall(c))).toHaveLength(0); // no line is drafted on the last strike
+    const out = await herSide(w.conv.id);
+    expect(out).toHaveLength(before + 1);
+    expect(out.at(-1)).toMatchObject({ sender: "system", status: "sent", body: PAUSED, deliverAt: null });
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_ts" });
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "location_offplatform" }]);
+    const [fan] = await db.select().from(users).where(eq(users.id, w.fan.id));
+    expect(fan.flaggedAt).toBeNull();
+    expect(await strikesOf(w.conv.id)).toHaveLength(3);
+    // the chat is Trust & Safety's now: the engine takes no more turns
+    expect(await runTurn(rig().ctx, w.conv.id)).toEqual({ status: "busy" });
+  });
+
+  test("a boundary line that fails verify falls back to the fixed template, the notice still goes", async () => {
+    const w = await world({}, "text me on insta");
+    // "dm me on insta" is an invitation: the check refuses it and the fixed line goes instead
+    const r = rig({ script: { ...ASK, offplatform_or_meetup: YES }, replies: ["dm me on insta @juno"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed", route: "boundary", outcome: "replied" });
+    const out = await herSide(w.conv.id);
+    expect(out.map((m) => m.sender)).toEqual(["ai", "system"]);
+    expect(out[0].body).toMatch(/can't meet up/);
+    expect(out[0].body).not.toMatch(/insta/);
+    expect(out[1].body).toBe(NOTICE_1);
+    expect(await strikesOf(w.conv.id)).toHaveLength(1);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "ai" });
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "location_offplatform" }]);
+  });
+
+  test("a provider error on the boundary draft also falls back to the fixed line, and the second fallback is reworded", async () => {
+    const w = await world({}, "wanna meet");
+    const broken = () => rig({ script: ASK, replies: [() => { throw new Error("provider down"); }] });
+    expect(await runTurn(broken().ctx, w.conv.id)).toMatchObject({ status: "committed", route: "boundary" });
+    await ask(w, "please", broken());
+    const lines = (await herSide(w.conv.id)).filter((m) => m.sender === "ai").map((m) => m.body);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatch(/can't meet up/);
+    expect(lines[1]).not.toBe(lines[0]);
+    expect((await herSide(w.conv.id)).filter((m) => m.sender === "system").map((m) => m.body)).toEqual([NOTICE_1, NOTICE_2]);
+  });
+
+  test("strikes outside the window do not count", async () => {
+    const w = await world({}, "wanna meet");
+    for (const days of [100, 120]) {
+      await db.insert(strikes).values({ creatorId: w.creator.id, fanId: w.fan.id, conversationId: w.conv.id, reason: "location_offplatform", createdAt: sql`now() - make_interval(days => ${days})` });
+    }
+    const r = rig({ script: ASK, replies: ["i keep my chats right here"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "boundary" });
+    expect((await herSide(w.conv.id)).at(-1)?.body).toBe(NOTICE_1);
+    // an old strike plus one inside the window is Warning 2
+    const recent = await world({}, "meet me");
+    await db.insert(strikes).values({ creatorId: recent.creator.id, fanId: recent.fan.id, conversationId: recent.conv.id, reason: "location_offplatform", createdAt: sql`now() - make_interval(days => 89)` });
+    await db.insert(strikes).values({ creatorId: recent.creator.id, fanId: recent.fan.id, conversationId: recent.conv.id, reason: "location_offplatform", createdAt: sql`now() - make_interval(days => 91)` });
+    await runTurn(rig({ script: ASK, replies: ["i keep my chats right here"] }).ctx, recent.conv.id);
+    expect((await herSide(recent.conv.id)).at(-1)?.body).toBe(NOTICE_2);
+    // the window is a config row
+    const narrow = await world({ "ts.strike_window_days": 30 }, "meet me");
+    await db.insert(strikes).values({ creatorId: narrow.creator.id, fanId: narrow.fan.id, conversationId: narrow.conv.id, reason: "location_offplatform", createdAt: sql`now() - make_interval(days => 45)` });
+    await runTurn(rig({ script: ASK, replies: ["i keep my chats right here"] }).ctx, narrow.conv.id);
+    expect((await herSide(narrow.conv.id)).at(-1)?.body).toBe(NOTICE_1);
+    await setEngineConfig();
+  });
+
+  test("the maximum is a config row: with 2 the second strike pauses the chat", async () => {
+    const w = await world({ "ts.max_strikes": 2 }, "meet me");
+    await runTurn(rig({ script: ASK, replies: ["i keep my chats right here"] }).ctx, w.conv.id);
+    expect((await herSide(w.conv.id)).at(-1)?.body).toContain("Warning 1 of 2:");
+    await ask(w, "again");
+    expect((await herSide(w.conv.id)).at(-1)?.body).toBe("Warning 2 of 2: this chat is paused for a safety review. You can still read it.");
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_ts" });
+    await setEngineConfig();
+  });
+
+  test("three asks to meet in one batch are one strike, not three", async () => {
+    const w = await world({}, "can we meet");
+    await addMessage(w.conv.id, "fan", "please meet me", { ageSeconds: 4 });
+    await addMessage(w.conv.id, "fan", "just once", { ageSeconds: 3 });
+    const r = rig({ script: ASK, replies: ["i keep my chats right here"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "boundary" });
+    expect(await strikesOf(w.conv.id)).toHaveLength(1);
+    expect((await herSide(w.conv.id)).filter((m) => m.sender === "system").map((m) => m.body)).toEqual([NOTICE_1]);
+  });
+
+  test("a draft retry records no strike: the strike is written once, by the commit", async () => {
+    const w = await world({}, "wanna meet");
+    // the first draft fails the money check, the second passes
+    const r = rig({ script: ASK, replies: ["its $5 to meet", "i keep my chats right here"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "boundary" });
+    expect((await turnsOf(w.conv.id))[0]).toMatchObject({ attempts: 2 });
+    expect(await strikesOf(w.conv.id)).toHaveLength(1);
+  });
+
+  test("a strike-3 commit racing a takeover: the takeover wins and no strike, notice or hand-off survives", async () => {
+    const w = await world({}, "one coffee thats all");
+    for (let i = 0; i < 2; i++) {
+      await db.insert(strikes).values({ creatorId: w.creator.id, fanId: w.fan.id, conversationId: w.conv.id, reason: "location_offplatform" });
+    }
+    const reached = deferred();
+    const gate = deferred();
+    const r = rig({
+      script: ASK,
+      decider: {
+        latch: async (n) => {
+          if (n === 1) {
+            reached.resolve();
+            await gate.promise;
+          }
+        },
+      },
+    });
+    const running = runTurn(r.ctx, w.conv.id);
+    await reached.promise;
+    await db.execute(sql`update conversations set mode = 'human_creator', version = version + 1 where id = ${w.conv.id}`);
+    gate.resolve();
+    expect(await running).toMatchObject({ status: "superseded" });
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "human_creator" });
+    expect(await strikesOf(w.conv.id)).toHaveLength(2);
+    expect(await herSide(w.conv.id)).toHaveLength(0);
+    expect(await handoffsOf(w.conv.id)).toHaveLength(0);
+    expect(r.emitted.filter((e) => e.event === "message.created")).toHaveLength(0);
+  });
+
+  test("a minor signal in the same batch is a minor hard stop with no strike", async () => {
+    const w = await world({}, "im 14, want to meet?");
+    await runTurn(rig({ script: { ...ASK, minor: YES } }).ctx, w.conv.id);
+    expect(await strikesOf(w.conv.id)).toHaveLength(0);
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "ts", reason: "minor" }]);
+    const [fan] = await db.select().from(users).where(eq(users.id, w.fan.id));
+    expect(fan.flagReason).toBe("minor_in_chat");
   });
 });
