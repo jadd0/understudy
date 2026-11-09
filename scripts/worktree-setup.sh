@@ -2,7 +2,7 @@
 # product-kit worktree-setup.sh v1 — from umbo 0f95e4fa
 #
 # Creates a git worktree for a PR branch, ready for a builder: dependencies linked, env copied,
-# codemap written and, under `db: postgres` in .product/config.md § Kit, a database of its own.
+# codemap written and, under `db: postgres` in the loop config's Kit section, a database of its own.
 #
 # Usage: scripts/worktree-setup.sh <branch-name> [<path>] [<base-branch>]
 #   scripts/worktree-setup.sh pr-2-tenancy                       # -> .claude/worktrees/pr-2-tenancy
@@ -79,7 +79,7 @@ fi
 if [ "$(cfg db)" = "postgres" ]; then
   PREFIX="$(cfg db_prefix)"
   if [ -z "$PREFIX" ]; then
-    echo "worktree-setup: db: postgres needs db_prefix in .product/config.md § Kit." >&2
+    echo "worktree-setup: db: postgres needs db_prefix in the loop config's Kit section." >&2
     exit 1
   fi
   ENV="$WORKTREE_PATH/.env.local"

@@ -25,8 +25,8 @@ export function recentEmoji(history: readonly Pick<ChatMessage, "sender" | "body
 /**
  * The draft without any emoji in `recent`, tidying the space it leaves. Other emoji stay; a draft that would be left
  * empty is kept whole. She often ends a sentence with an emoji instead of a full stop ("not her in person 🙈 still
- * happy"), so a removed emoji with text on both sides becomes a line break, and each sentence stays its own bubble
- *. Deleting it outright glued the two sentences into one ("not her in person still happy").
+ * happy"), so a removed emoji with text on both sides becomes a line break, and each sentence stays its own bubble.
+ * Deleting it outright glued the two sentences into one ("not her in person still happy").
  */
 export function dropRepeatedEmoji(draft: string, recent: readonly string[]): string {
   if (recent.length === 0) return draft;

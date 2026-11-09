@@ -15,7 +15,7 @@ npm run dev                    # http://localhost:3000
 ```
 
 `bash scripts/gate.sh` (typecheck, lint, tests, build) is the only proof a change works. The build
-contract is `AGENTS.md`; decisions are in `.product/DECISIONS.md`.
+contract is `AGENTS.md`.
 
 ## Five-minute demo
 

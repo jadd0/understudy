@@ -318,7 +318,7 @@ export async function release(viewer: Viewer, handoffId: string, events: Events 
 
 /**
  * Admin only. Returns a conversation on the T&S side to the AI: through its unresolved T&S handoff when it has
- * one, else directly (an admin took it over from the AI or the creator, , so no handoff was ever opened).
+ * one, else directly (an admin took it over from the AI or the creator, so no handoff was ever opened).
  */
 export async function releaseConversation(viewer: Viewer, conversationId: string, events: Events = defaultEvents()): Promise<void> {
   requireAdmin(viewer);
