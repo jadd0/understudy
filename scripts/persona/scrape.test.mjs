@@ -224,9 +224,11 @@ test("a repeating cursor stops the loop instead of looping forever", async () =>
     "/api/v1/media/1001/comments/?min_id=p1cursor2": async () =>
       new Response(JSON.stringify({ comments: [], has_more_comments: true, next_min_id: "p1cursor2" }), { status: 200 }),
   });
-  const { posts } = await scrapeFixture({ fetch: loopFetch, maxPosts: 1 });
+  const { posts } = await scrapeFixture({ fetch: loopFetch, maxPosts: 1, caps: { maxCommentPages: 1000 } });
   assert.equal(posts[0].comment_scan.more_left_unscanned, true);
-  assert.ok(requests.length < 40);
+  // First page, then the page that repeats its cursor: two fetches, not a thousand.
+  assert.equal(requests.filter((r) => r.url.includes("/media/1001/comments/?")).length, 1);
+  assert.equal(posts[0].comment_scan.pages, 2);
 });
 
 test("a 429 stops the run, keeps what was written, and records it in NOTES.md", async () => {
