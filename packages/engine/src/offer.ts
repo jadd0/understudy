@@ -73,7 +73,7 @@ export async function declineOffer(tx: EngineTx, offerId: string): Promise<void>
 }
 
 /** Open offers past their expiry become `expired`. Idempotent; returns how many were marked. */
-export async function expireOffers(ctx: EngineCtx): Promise<number> {
+export async function expireOffers(ctx: Pick<EngineCtx, "db">): Promise<number> {
   const { rows } = await ctx.db.execute(sql`
     update offers set status = 'expired', resolved_at = now()
     where status = 'open' and expires_at <= now() returning id`);

@@ -1,7 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { defaultDeps } from "@/lib/host/deps";
-import { sweep } from "@understudy/engine";
+import { chatter } from "@/lib/host/deps";
 
 export const maxDuration = 60;
 
@@ -16,6 +15,6 @@ function authorised(request: Request): boolean {
 /** Vercel Cron calls this every minute with `Authorization: Bearer $CRON_SECRET`. */
 export async function GET(request: Request) {
   if (!authorised(request)) return new NextResponse("unauthorised", { status: 401 });
-  const result = await sweep(await defaultDeps());
+  const result = await (await chatter()).sweep();
   return NextResponse.json(result);
 }

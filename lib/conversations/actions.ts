@@ -1,9 +1,11 @@
 import { and, eq, ne, sql } from "drizzle-orm";
 import { withTx } from "@/db/client";
 import { conversations, creators, handoffs, users } from "@/db/schema";
-import { supersedeUnseenBubbles } from "@understudy/engine";
+import { db } from "@/db/client";
+import { handBack as engineHandBack, supersedeUnseenBubbles } from "@understudy/engine";
 
-export { handBack } from "@understudy/engine";
+/** Gives a conversation back to the AI. Needs only the database: no providers, no settings. */
+export const handBack = (conversationId: string, opts?: { allWaiting?: boolean }) => engineHandBack({ db }, conversationId, opts);
 
 export class TakeoverRefused extends Error {
   constructor(public readonly code: "not_found" | "not_allowed") {

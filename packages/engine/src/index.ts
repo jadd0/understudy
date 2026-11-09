@@ -3,7 +3,8 @@
 export { createChatter, MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS, MessageRefused } from "./chatter";
 export type { Chatter, ChatterOptions, HandledMessage, IncomingMessage, MessageRefusedCode } from "./chatter";
 export { costMicros } from "./cost";
-export type { Deps } from "./ctx";
+export type { Deps, EngineCtx } from "./ctx";
+export { handBack, supersedeUnseenBubbles } from "./lease";
 export { TIP_ROW_PREFIX } from "./events";
 export type { FactsCfg, LoadedFacts } from "./facts";
 export type { HostPort, ShortlistKind, ShortlistQuery } from "./host";

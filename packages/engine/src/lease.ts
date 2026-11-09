@@ -381,7 +381,7 @@ export async function recordFailure(ctx: EngineCtx, lease: Lease, rec: TurnRecor
  * `allWaiting` stamps every waiting fan message instead: a Trust & Safety release, where whatever the fan wrote
  * while support held the chat was written to support, not to her.
  */
-export async function handBack(ctx: EngineCtx, conversationId: string, opts: { allWaiting?: boolean } = {}): Promise<void> {
+export async function handBack(ctx: Pick<EngineCtx, "db">, conversationId: string, opts: { allWaiting?: boolean } = {}): Promise<void> {
   await ctx.db.transaction(async (tx) => {
     const [conv] = await tx
       .update(conversations)
