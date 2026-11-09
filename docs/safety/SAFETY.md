@@ -93,7 +93,7 @@ turn; it is left out until the evaluation bank shows how often it happens.
 
 ## Which sim fan produces each row
 
-The fan simulator ([FAN-SIM.md](FAN-SIM.md)) has a persona for each row, so any of them can be shown live with `npm run sim -- --persona <slug>` or from `/admin/sim`. Each persona's subsection in FAN-SIM.md lists the beats, what the fan sees, what Juno sees and what T&S sees.
+The fan simulator ([FAN-SIM.md](../quality/FAN-SIM.md)) has a persona for each row, so any of them can be shown live with `npm run sim -- --persona <slug>` or from `/admin/sim`. Each persona's subsection in FAN-SIM.md lists the beats, what the fan sees, what Juno sees and what T&S sees.
 
 | Matrix row | Persona |
 |---|---|

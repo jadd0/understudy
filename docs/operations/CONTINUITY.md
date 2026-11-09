@@ -4,7 +4,7 @@ Understudy runs on third parties. This is the one place that says what each one 
 the product does when it does, and what is not covered. Every provider is reached through one adapter under
 `examples/app/providers/` behind a port, so a fallback is another implementation of the same port and the engine does not change.
 
-![Failover behind the ports](diagrams/continuity.html)
+![Failover behind the ports](continuity.html)
 
 ## Summary
 

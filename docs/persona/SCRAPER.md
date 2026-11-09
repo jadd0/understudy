@@ -6,8 +6,8 @@ gitignored, except the two synthetic creators.
 
 The persona pipeline starts from a raw scrape of one creator's account. This is the code that makes
 that scrape, so anyone can run it on their own account and feed the result to the same pipeline
-([PERSONA-PIPELINE.md](PERSONA-PIPELINE.md)). Diagram: [scraper.html](diagrams/scraper.html) (JSON spec:
-`diagrams/scraper.dataflow.json`).
+([PERSONA-PIPELINE.md](PERSONA-PIPELINE.md)). Diagram: [scraper.html](scraper.html) (JSON spec:
+`scraper.dataflow.json`).
 
 ## Run it
 

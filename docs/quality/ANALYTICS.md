@@ -3,7 +3,7 @@
 `/analytics` shows how conversations behave: what the engine decided, what it cost, what it earned and where it
 handed over to a person. It is read-only: no query writes, and the page adds no schema, config or engine behaviour.
 The numbers are defined, with formulas and what each one leaves out, in the generated [METRICS.md](METRICS.md).
-Data flow: [diagrams/analytics.html](diagrams/analytics.html).
+Data flow: [analytics.html](analytics.html).
 
 ## Who sees what
 
@@ -35,7 +35,7 @@ ignored. A turn outside the viewer's scope returns 404, the same as one that doe
 | Latency | p50 and p95 for Jev in, generate, Jev out, total, computed in SQL. |
 | Cost | Spend per bucket, cost per reply, tokens and an estimated price by stage and model. |
 | Responsible monetisation | Hardship turns, pitched despite hardship (must be 0), cooldowns running, fans at their daily cap. |
-| Quality evals | Safety violations, handoff precision and recall (mean of queues), route accuracy from `docs/evals/engine.json`; persona rubric mean and blind-test accuracy from `docs/evals/persona.json`. Each tile reads "not run" while its file is missing or unreadable. |
+| Quality evals | Safety violations, handoff precision and recall (mean of queues), route accuracy from `docs/quality/evals/engine.json`; persona rubric mean and blind-test accuracy from `docs/quality/evals/persona.json`. Each tile reads "not run" while its file is missing or unreadable. |
 | Turn explorer | 10 turns a page (`PAGE_SIZE`), filter by route and outcome; Previous and Next load the page in place through a server action (`turnsPageAction`) without a navigation. Each row opens one turn. |
 | Payments needing review (admins only) | Open `uncredited_payments` rows: Checkout events that credited no wallet. "Mark resolved" (`resolveUncreditedAction`) sets `resolved_at`; any refund is done by hand in Stripe. |
 

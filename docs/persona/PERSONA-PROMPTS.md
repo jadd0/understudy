@@ -9,7 +9,7 @@ its source, so this page cannot drift from what runs.
 The pipeline these prompts sit in, and why each stage exists, is in
 [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md). The message engine's runtime prompts (Jev inbound
 classification, offer pick, draft verification, Haiku reply) are documented with the engine in
-[ARCHITECTURE.md](ARCHITECTURE.md).
+[ARCHITECTURE.md](../architecture/ARCHITECTURE.md).
 
 ## Contents
 
@@ -211,7 +211,7 @@ ${job.candidates.map((id) => `[${id}] ${byId.get(id).text}`).join("\n")}
 ```
 
 The labelled set (`data/persona/eval/retrieval-queries.jsonl`) is what the retrieval eval scores
-recall@5 and MRR against ([EVALS.md](EVALS.md)).
+recall@5 and MRR against ([EVALS.md](../quality/EVALS.md)).
 
 ## 6. Scoring a reply against the rubric (Claude judge, persona eval)
 
@@ -292,7 +292,7 @@ number from 0.5 to 1) and `reason`; anything else is an error for that item. An 
 (50% means indistinguishable), accuracy per length bucket of her real reply (up to 10, 11 to 30, over
 30 characters), the error count, mean confidence, and the share of answers that were "A" next to the
 share of items where the bot sat in A, so a judge biased to one letter is visible. Results:
-[EVALS.md](EVALS.md).
+[EVALS.md](../quality/EVALS.md).
 
 ## Changing a prompt
 

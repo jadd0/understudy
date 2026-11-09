@@ -20,7 +20,7 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
   takes them in that order; a write whose foreign key points at a conversation counts as taking it, so lock the
   conversation first.
 - **No literals for model ids, prices or floors.** They live in `config` rows read through
-  `getConfig(key, creatorId?)`, which throws `ConfigMissing` rather than fall back to a code default. Every row and every code timing constant is listed in `docs/CONFIG.md`; `examples/app/db/config-doc.test.ts` fails the gate when one is missing or its default differs.
+  `getConfig(key, creatorId?)`, which throws `ConfigMissing` rather than fall back to a code default. Every row and every code timing constant is listed in `docs/operations/CONFIG.md`; `examples/app/db/config-doc.test.ts` fails the gate when one is missing or its default differs.
 - **Providers** (Jev, Claude, Voyage, Stripe, Pusher) are reached through one adapter each, injected into the code
   that uses them, and faked in tests. The engine's adapters live in `packages/providers` (`@understudy/providers`);
   Stripe and Pusher, which serve the app's wallet and realtime, stay in `examples/app/providers/`.

@@ -13,7 +13,7 @@
     { "id": "queries", "type": "backend", "label": "KPI queries", "sublabel": "percentiles in SQL", "stage": 2, "row": 2, "tag": "getDashboard" },
     { "id": "page", "type": "frontend", "label": "/analytics", "sublabel": "tiles, charts, explorer", "stage": 3, "row": 1, "tag": "read-only" },
     { "id": "turnpage", "type": "frontend", "label": "Turn page", "sublabel": "/analytics/turns/[id]", "stage": 3, "row": 2, "tag": "404 out of scope" },
-    { "id": "report", "type": "cloud", "label": "docs/METRICS.md", "sublabel": "generated", "stage": 3, "row": 3, "tag": "metrics:report" }
+    { "id": "report", "type": "cloud", "label": "docs/quality/METRICS.md", "sublabel": "generated", "stage": 3, "row": 3, "tag": "metrics:report" }
   ],
   "flows": [
     { "id": "f-session", "from": "session", "to": "scope", "label": "role, fresh", "variant": "security" },

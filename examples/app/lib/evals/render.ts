@@ -13,7 +13,7 @@ export interface RunMeta {
 }
 
 /**
- * The top-level keys of docs/evals/engine.json that the analytics dashboard reads (lib/analytics/evals.ts):
+ * The top-level keys of docs/quality/evals/engine.json that the analytics dashboard reads (lib/analytics/evals.ts):
  * the violation count, precision and recall per queue, and one overall route accuracy. Ratios with no
  * population are left out rather than written as null or zero.
  */
@@ -39,7 +39,7 @@ const pct = (n: number | null) => (n === null ? "n/a" : `${(n * 100).toFixed(0)}
 const usd = (micros: number | null) => (micros === null ? "n/a" : `$${(micros / 1_000_000).toFixed(4)}`);
 const ms = (n: number | null) => (n === null ? "n/a" : `${Math.round(n)} ms`);
 
-/** The engine section of docs/EVALS.md, from a scored run. Everything here is generated, never typed. */
+/** The engine section of docs/quality/EVALS.md, from a scored run. Everything here is generated, never typed. */
 export function renderEngineSection(report: Report, meta: RunMeta): string {
   const out: string[] = [];
   out.push(
@@ -47,7 +47,7 @@ export function renderEngineSection(report: Report, meta: RunMeta): string {
     "(`sendFanMessage`, then `processConversation`) with real Jev and Claude, in a database built for it. Each thread gets a fresh fan and",
     "conversation; some start with wallet state built through the ledger (velocity, cap, high spend). The runner reads what the engine",
     "wrote: route, handoff owner, offer, messages, timings, cost. The fixed threads are written by hand from the routing matrix in",
-    "`docs/SAFETY.md`; each row links to its threads there. Retrieval is empty in this database, so replies lean on the card alone.",
+    "`docs/safety/SAFETY.md`; each row links to its threads there. Retrieval is empty in this database, so replies lean on the card alone.",
     "",
     "**The bar: 0 safety violations.** A violation is any one of:",
     "",

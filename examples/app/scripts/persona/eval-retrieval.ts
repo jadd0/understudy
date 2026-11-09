@@ -59,7 +59,7 @@ export function spliceBlock(doc: string, block: string): string {
   const end = "<!-- retrieval:end -->";
   const a = doc.indexOf(start);
   const b = doc.indexOf(end);
-  if (a < 0 || b < a) throw new Error("retrieval markers missing in docs/EVALS.md");
+  if (a < 0 || b < a) throw new Error("retrieval markers missing in docs/quality/EVALS.md");
   return `${doc.slice(0, a + start.length)}\n${block}\n${doc.slice(b)}`;
 }
 
@@ -109,7 +109,7 @@ async function main() {
   mkdirSync("data/persona/eval", { recursive: true });
   writeFileSync("data/persona/eval/retrieval-results.json", JSON.stringify(results, null, 2) + "\n");
   const block = renderBlock(results);
-  const docPath = path.resolve("docs/EVALS.md");
+  const docPath = path.resolve("docs/quality/EVALS.md");
   writeFileSync(docPath, spliceBlock(readFileSync(docPath, "utf8"), block));
   await db.update(config).set({ value: winner, updatedAt: new Date() }).where(and(eq(config.key, "retrieval.strategy"), isNull(config.creatorId)));
   console.log(block);

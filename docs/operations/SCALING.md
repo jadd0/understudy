@@ -1,8 +1,8 @@
 # Scaling
 
 How the data model behaves as creators and conversations grow, from measurements rather than claims. Every number
-below comes from `docs/scaling/explain.json` (the plans after the one index added here) and
-`docs/scaling/explain.before-index.json` (the plans before it), or is arithmetic on figures in them, or is marked as
+below comes from `docs/operations/scaling/explain.json` (the plans after the one index added here) and
+`docs/operations/scaling/explain.before-index.json` (the plans before it), or is arithmetic on figures in them, or is marked as
 not measured. The keys are named where they are used: `server`, `volume`, `tables`, `indexes` and, per path,
 `results[].p50Ms`, `p95Ms`, `rows`, `sharedHitBlocks` and `nodes`. To reproduce them, see `examples/app/scripts/scale/README.md`.
 
