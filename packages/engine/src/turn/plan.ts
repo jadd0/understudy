@@ -1,5 +1,9 @@
 import type { HandoffSla } from "../conversation/handoff";
-import type { HandoffQueue, HandoffReason, RouteName } from "../types";
+import { bubbleGap } from "../drafting/bubbles";
+import type { HandoffQueue, HandoffReason, Route, RouteName } from "../types";
+import { template } from "../drafting/templates";
+import { tipRowIds, type JevInRecord, type PassResult } from "./pass";
+import type { TurnState } from "./state";
 
 export interface TurnRecord {
   inboundIds: string[];
@@ -52,3 +56,51 @@ export type CommitResult =
   | { applied: true; turnId: string; messageIds: string[]; offerId: string | null; handoffId: string | null; deliverInMs: number[] }
   /** A lost compare-and-set still delivers a hard stop's template (`messageIds`); a plain draft is stored unsent. */
   | { applied: false; turnId: string; handoffId: string | null; messageIds: string[]; deliverInMs: number[] };
+
+/**
+ * The plan every outcome starts from: the route and what Jev read go onto the accumulator, and the commit's fixed
+ * settings (strike limits, SLA, typing pace) are read from the config. The caller fills in what it does.
+ */
+export function basePlan(s: TurnState, route: Route, declineOfferId: string | null, jevIn: JevInRecord): CommitPlan {
+  const { cfg, acc, stats } = s;
+  acc.jevIn = { ...jevIn, debounce: { waitedMs: stats.waitedMs, passes: stats.passes, foldIns: s.foldIns } };
+  acc.route = route.name;
+  return {
+    outcome: "replied",
+    turn: acc,
+    reply: null,
+    offer: null,
+    declineOfferId,
+    handoff: null,
+    setMode: null,
+    hardStop: null,
+    // A strike is counted by the commit itself, under the conversation lock, so a draft retry never records one.
+    strike: route.strike ? { reason: "location_offplatform", maxStrikes: cfg.route.maxStrikes, windowDays: cfg.strikeWindowDays } : null,
+    alert: route.alert,
+    sla: cfg.sla,
+    hardshipCooldownHours: route.hardship ? cfg.hardshipCooldownHours : null,
+    typing: {
+      cps: cfg.typingCps,
+      maxMs: cfg.typingMaxMs,
+      gapMs: bubbleGap(cfg.bubbleGapMsMin, cfg.bubbleGapMsMax, s.ctx.deps.random ?? Math.random),
+    },
+  };
+}
+
+/**
+ * The plan for a pass where no draft passed safety. A boundary line sends the fixed line with the same warning and the
+ * AI keeps chatting; anything else holds the last draft for the creator to edit and hands the conversation over.
+ */
+export function unsafePlan(s: TurnState, failed: Extract<PassResult, { kind: "draft" }>["failed"], lastDraft: string): CommitPlan {
+  const plan = basePlan(s, failed.route, failed.declineOfferId, failed.record);
+  if (failed.route.name === "boundary") {
+    plan.reply = { body: template("location_offplatform", s.cfg.supportEmail), kind: "sent", fixed: true };
+    return plan;
+  }
+  plan.outcome = "suggested";
+  plan.reply = { body: lastDraft, kind: "draft" };
+  plan.setMode = "handoff_creator";
+  plan.handoff = { queue: "creator", reason: "verify_failed" };
+  plan.eventMessageIds = tipRowIds(failed.events);
+  return plan;
+}
