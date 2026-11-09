@@ -1,4 +1,13 @@
 import Stripe from "stripe";
+import { stripeConfigured } from "@/lib/env";
+
+/** Raised before any Stripe call when the install has no Stripe keys: top-ups are off. */
+export class StripeNotConfigured extends Error {
+  constructor() {
+    super("Stripe is not configured on this install");
+    this.name = "StripeNotConfigured";
+  }
+}
 
 export type TopupSessionInput = {
   fanId: string;
@@ -65,6 +74,7 @@ let shared: StripeProvider | undefined;
 
 /** Built from the environment on first use, so importing this module needs no keys. */
 export function stripeProvider(): StripeProvider {
+  if (!stripeConfigured()) throw new StripeNotConfigured();
   return (shared ??= createStripeProvider());
 }
 

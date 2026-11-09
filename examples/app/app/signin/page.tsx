@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirectHome } from "@/lib/auth/guards";
 import { Turnstile } from "./turnstile";
-import { getEnv } from "@/lib/env";
+import { emailConfigured } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Field, FormAlert, SoloPage } from "@/components/ui/field";
 import { requestSignIn } from "./actions";
@@ -17,8 +17,10 @@ const ERRORS: Record<string, string> = {
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if ((await auth())?.user) await redirectHome();
   const { error } = await searchParams;
+  // The widget is rendered only when the human check is configured (the server skips it otherwise, outside production).
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   return (
-    <SoloPage title="Sign in" lead="We'll email you a one-tap sign-in link. No password needed.">
+    <SoloPage title="Sign in" lead={emailConfigured() ? "We'll email you a one-tap sign-in link. No password needed." : "No mail is configured on this install: the sign-in link is printed to the server console."}>
       {error && ERRORS[error] ? <FormAlert>{ERRORS[error]}</FormAlert> : null}
       <form action={requestSignIn} className="flex flex-col gap-4">
         <Field id="email" name="email" type="email" label="Email" required autoComplete="email" placeholder="you@example.com" />
@@ -37,7 +39,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
             />
           </div>
         </details>
-        <Turnstile siteKey={getEnv().NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+        {siteKey ? <Turnstile siteKey={siteKey} /> : null}
         <Button type="submit">Continue</Button>
       </form>
     </SoloPage>

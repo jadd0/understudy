@@ -11,6 +11,7 @@ import { Skeleton, SkeletonField, SkeletonGroup, SkeletonLine } from "@/componen
 import { getConfig } from "@/lib/config";
 import { getFanCap } from "@/lib/wallet/cap";
 import { formatCents } from "@/lib/wallet/money";
+import { stripeConfigured } from "@/lib/env";
 import { changeCap, topUp } from "./actions";
 
 /*
@@ -77,6 +78,7 @@ export function BalanceSkeleton() {
 }
 
 export async function TopUpForms() {
+  if (!stripeConfigured()) return <p className="text-[14px] text-muted-2">Top-ups are off on this install.</p>;
   const [presets, min, max] = await Promise.all([
     getConfig<number[]>("wallet.topup_options_cents"),
     getConfig<number>("wallet.topup_min_cents"),

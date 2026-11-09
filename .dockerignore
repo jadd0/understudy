@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.git
+.env*
+**/.env*
+.product
+.claude
+.agent
+.codemap
+gate-logs
+examples/app/.next
+**/.next
+*.pdf

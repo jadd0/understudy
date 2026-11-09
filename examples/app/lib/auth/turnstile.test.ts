@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { verifyTurnstile } from "@/lib/auth/turnstile";
+import { resetTurnstileNote, turnstileConfigured, verifyTurnstile } from "@/lib/auth/turnstile";
 
 // Cloudflare's documented dummy secrets: https://developers.cloudflare.com/turnstile/troubleshooting/testing/
 // 1x...AA always passes, 2x...AA always fails.
@@ -46,5 +46,34 @@ describe("verifyTurnstile", () => {
     expect(init.method).toBe("POST");
     const body = init.body as URLSearchParams;
     expect(Object.fromEntries(body)).toEqual({ secret: SECRET_PASS, response: "tok-123", remoteip: "9.9.9.9" });
+  });
+});
+
+describe("verifyTurnstile without a secret", () => {
+  test("outside production the check is skipped, with one note per process and no request", async () => {
+    resetTurnstileNote();
+    const fetch = vi.fn();
+    const note = vi.fn();
+    for (const nodeEnv of ["development", "test", undefined]) {
+      expect(await verifyTurnstile(null, null, { fetch, secret: "", nodeEnv, note })).toBe(true);
+    }
+    expect(note).toHaveBeenCalledTimes(1);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  test("in production it refuses, even with a token, and never calls Cloudflare", async () => {
+    const fetch = vi.fn();
+    expect(await verifyTurnstile("tok", null, { fetch, secret: "", nodeEnv: "production" })).toBe(false);
+    expect(await verifyTurnstile(null, null, { fetch, secret: "", nodeEnv: "production" })).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  test("with a secret a missing token still fails outside production", async () => {
+    expect(await verifyTurnstile(null, null, { fetch: vi.fn(), secret: SECRET_PASS, nodeEnv: "development" })).toBe(false);
+  });
+
+  test("configured needs both keys", () => {
+    expect(turnstileConfigured({ TURNSTILE_SECRET_KEY: "s" })).toBe(false);
+    expect(turnstileConfigured({ TURNSTILE_SECRET_KEY: "s", NEXT_PUBLIC_TURNSTILE_SITE_KEY: "k" })).toBe(true);
   });
 });
