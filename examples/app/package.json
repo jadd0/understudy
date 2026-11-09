@@ -4,7 +4,7 @@
   "description": "A Next.js host for the Understudy engine: fan chat, creator console, wallet, Stripe and Pusher, on the packages.",
   "private": true,
   "type": "module",
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

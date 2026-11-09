@@ -4,7 +4,7 @@
   "description": "A headless Fastify host for the Understudy engine: HTTP in, server-sent replies out, human takeover, a signed webhook.",
   "private": true,
   "type": "module",
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "dev": "tsx src/main.ts",
     "migrate": "tsx src/main.ts --migrate-only",

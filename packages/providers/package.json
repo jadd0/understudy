@@ -4,7 +4,7 @@
   "description": "The adapters behind the engine's ports: Claude, Jev, failover, Postgres full-text and Voyage retrieval, and a no-op event sink.",
   "type": "module",
   "private": true,
-  "license": "ISC",
+  "license": "MIT",
   "exports": {
     ".": "./src/index.ts"
   },

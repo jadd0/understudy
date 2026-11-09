@@ -4,7 +4,7 @@
   "description": "Persona pipeline and Instagram scraper: turn a creator's posts and replies into an anonymised bank, a persona card and its evals.",
   "type": "module",
   "private": true,
-  "license": "ISC",
+  "license": "MIT",
   "engines": { "node": ">=22" },
   "exports": {
     ".": { "types": "./src/index.d.ts", "default": "./src/index.mjs" },

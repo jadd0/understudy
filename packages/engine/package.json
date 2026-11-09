@@ -4,7 +4,7 @@
   "description": "The conversation engine: the message turn, the ports it talks through and the fakes that stand in for them in tests.",
   "type": "module",
   "private": true,
-  "license": "ISC",
+  "license": "MIT",
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/db/schema.ts",
