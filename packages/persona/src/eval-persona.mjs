@@ -185,7 +185,7 @@ export async function evaluateItem({ pair, card, summary, claude, genModel, judg
   try {
     const prepared = await drafter({ pair, card });
     draw = prepared.draw ?? null;
-    generated = await cached({ stage: "gen", model: genModel, request: sha16(`${prepared.system}\n${prepared.prompt}`), draw }, async () => {
+    generated = await cached({ stage: "gen", model: genModel, thinking: "off", request: sha16(`${prepared.system}\n${prepared.prompt}`), draw }, async () => {
       const gen = await claude.complete({ model: genModel, system: prepared.system, prompt: prepared.prompt, maxTokens: 300 });
       budget.addClaude(gen.usage);
       return prepared.finish(cleanReply(gen.text));
@@ -197,7 +197,7 @@ export async function evaluateItem({ pair, card, summary, claude, genModel, judg
   }
 
   const judge = async (stage, system, prompt, parse) => {
-    const verdict = await cached({ stage, model: judgeModel, system, prompt }, async () => {
+    const verdict = await cached({ stage, model: judgeModel, thinking: "off", system, prompt }, async () => {
       const response = await claude.complete({ model: judgeModel, system, prompt, maxTokens: 400 });
       budget.addClaude(response.usage);
       return parse(response.text);

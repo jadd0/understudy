@@ -22,6 +22,15 @@ export class ClaudeError extends Error {
   }
 }
 
+/**
+ * Thinking off for every call: on Haiku 5.5 it is on by default and can spend the whole max_tokens budget, leaving no
+ * text block (a long prompt made it do so on 20 of 50 eval replies). Sonnet 5.5 cannot disable it, so it thinks only
+ * between tools, which a single-turn call never reaches. The engine's own generator does the same.
+ */
+export function thinkingOff(model) {
+  return model.startsWith("claude-sonnet-5-5") ? { type: "between_tools" } : { type: "disabled" };
+}
+
 const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function createClaude({
@@ -59,6 +68,7 @@ export function createClaude({
       model,
       max_tokens: maxTokens,
       messages: [{ role: "user", content: prompt }],
+      thinking: thinkingOff(model),
     };
     if (system) payload.system = system;
     const body = JSON.stringify(payload);
