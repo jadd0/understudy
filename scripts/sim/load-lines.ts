@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { getConfig } from "@/lib/config";
 import { loadLines } from "@/lib/sim/lines";
-import { embed } from "@/providers/voyage/embed";
+import { embed } from "@understudy/providers";
 
 /** Embeds data/sim/lines/*.jsonl into sim_lines. Idempotent. */
 export async function main(): Promise<void> {

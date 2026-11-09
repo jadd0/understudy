@@ -1,5 +1,4 @@
-import type { Db } from "@/db/client";
-import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps, type Chunk, type Retriever } from "@understudy/engine";
+import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps, type Chunk, type EngineDb, type Retriever } from "@understudy/engine";
 
 /**
  * Reply chunks read "fan: <comment> / juno: @user <reply>": Instagram puts the @mention in front of every comment
@@ -26,7 +25,7 @@ export function parseStrategy(value: unknown): RetrievalStrategy {
  */
 export class PersonaRetriever implements Retriever {
   constructor(
-    private readonly db: Db,
+    private readonly db: EngineDb,
     private readonly strategy: RetrievalStrategy,
     private readonly embedQuery: RetrieveDeps["embedQuery"],
     private readonly log: (line: string) => void = (l) => console.error(l),

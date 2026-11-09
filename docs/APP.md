@@ -84,9 +84,9 @@ layouts, the tip sheet, the dark theme, the account menu, the analytics pages an
 | Database | Neon Postgres with pgvector, through Drizzle ORM on `@neondatabase/serverless` (WebSocket `Pool`, so transactions are interactive) | [`db/schema.ts`](../db/schema.ts), [`db/client.ts`](../db/client.ts), [`drizzle/`](../drizzle/) |
 | Auth | Auth.js v5 (`next-auth@beta`) with the Resend email provider and the Drizzle adapter, database sessions | [`lib/auth/index.ts`](../lib/auth/index.ts) |
 | Bot defence | Cloudflare Turnstile on sign-in | [`lib/auth/turnstile.ts`](../lib/auth/turnstile.ts) |
-| Classifier | TypeSafe Jev (`jev-1.14.0`) by REST | [`providers/typesafe/decider.ts`](../providers/typesafe/decider.ts) |
-| Reply model | Claude Haiku 5.5 through the official SDK | [`providers/anthropic/generator.ts`](../providers/anthropic/generator.ts) |
-| Embeddings | Voyage `voyage-4`, 1024 dimensions | [`providers/voyage/`](../providers/voyage/) |
+| Classifier | TypeSafe Jev (`jev-1.14.0`) by REST | [`packages/providers/src/typesafe/decider.ts`](../packages/providers/src/typesafe/decider.ts) |
+| Reply model | Claude Haiku 5.5 through the official SDK | [`packages/providers/src/anthropic/generator.ts`](../packages/providers/src/anthropic/generator.ts) |
+| Embeddings | Voyage `voyage-4`, 1024 dimensions | [`packages/providers/src/voyage/`](../packages/providers/src/voyage/) |
 | Payments | Stripe test mode: Checkout and PaymentIntents, webhook credited | [`providers/stripe.ts`](../providers/stripe.ts) |
 | Realtime | Pusher Channels, private channels authorised by our session | [`providers/pusher/`](../providers/pusher/) |
 | Hosting | Vercel, with two per-minute crons | [`vercel.json`](../vercel.json) |
@@ -518,10 +518,10 @@ cannot take the lease returns immediately.
 
 | Port | Production | Tests |
 |---|---|---|
-| [`Decider`](../packages/engine/src/ports/decider.ts) | [`TypeSafeDecider`](../providers/typesafe/decider.ts): `POST https://api.typesafe.ai/v1/systemone`, 20 s timeout, one retry after 500 ms on 429 or 529 | [`FakeDecider`](../packages/engine/src/fake/decider.ts) |
-| [`Generator`](../packages/engine/src/ports/generator.ts) | [`AnthropicGenerator`](../providers/anthropic/generator.ts): official SDK, 30 s timeout, 1 retry, thinking disabled | [`FakeGenerator`](../packages/engine/src/fake/generator.ts) |
-| [`Retriever`](../packages/engine/src/ports/retriever.ts) | [`PersonaRetriever`](../providers/voyage/persona-retriever.ts) with the strategy in [`retrieval.strategy`](CONFIG.md#retrieval) | [`FtsRetriever`](../providers/pg/fts-retriever.ts) and others on the test database |
-| [`Events`](../packages/engine/src/ports/events.ts) | [`defaultEvents`](../providers/pusher/events.ts) (Pusher, or a no-op without keys) | a recorder, or [`noopEvents`](../providers/noop/events.ts) |
+| [`Decider`](../packages/engine/src/ports/decider.ts) | [`TypeSafeDecider`](../packages/providers/src/typesafe/decider.ts): `POST https://api.typesafe.ai/v1/systemone`, 20 s timeout, one retry after 500 ms on 429 or 529 | [`FakeDecider`](../packages/engine/src/fake/decider.ts) |
+| [`Generator`](../packages/engine/src/ports/generator.ts) | [`AnthropicGenerator`](../packages/providers/src/anthropic/generator.ts): official SDK, 30 s timeout, 1 retry, thinking disabled | [`FakeGenerator`](../packages/engine/src/fake/generator.ts) |
+| [`Retriever`](../packages/engine/src/ports/retriever.ts) | [`PersonaRetriever`](../packages/providers/src/voyage/persona-retriever.ts) with the strategy in [`retrieval.strategy`](CONFIG.md#retrieval) | [`FtsRetriever`](../packages/providers/src/pg/fts-retriever.ts) and others on the test database |
+| [`Events`](../packages/engine/src/ports/events.ts) | [`defaultEvents`](../providers/pusher/events.ts) (Pusher, or a no-op without keys) | a recorder, or [`noopEvents`](../packages/providers/src/noop/events.ts) |
 | [`Clock`](../packages/engine/src/ports/clock.ts) | `systemClock` (sleep and elapsed time only) | a controllable clock |
 
 Errors from every adapter are reduced to a class and a code before logging, because a provider's error body can echo
@@ -1145,7 +1145,7 @@ next card load.
 
 Measured on 30 labelled queries over the 785 chunks
 ([`data/persona/eval/retrieval-results.json`](../data/persona/eval/retrieval-results.json)). The engine's
-[`PersonaRetriever`](../providers/voyage/persona-retriever.ts) follows [`retrieval.strategy`](CONFIG.md#retrieval); if Voyage fails it falls
+[`PersonaRetriever`](../packages/providers/src/voyage/persona-retriever.ts) follows [`retrieval.strategy`](CONFIG.md#retrieval); if Voyage fails it falls
 back to full-text for that turn, and it strips the `@user` from reply chunks so the model does not copy
 Instagram's reply prefix.
 
@@ -1651,7 +1651,7 @@ Conversation mode `closed`, handoff reason `hardship_escalation`, chunk source `
 | Daily cap, high value, welcome credit | [`lib/wallet/cap.ts`](../lib/wallet/cap.ts), [`lib/wallet/score.ts`](../lib/wallet/score.ts), [`lib/wallet/grant.ts`](../lib/wallet/grant.ts) |
 | Uncredited payments | [`lib/wallet/uncredited.ts`](../lib/wallet/uncredited.ts) |
 | Persona package | [`packages/persona/`](../packages/persona/), database scripts [`scripts/persona/`](../scripts/persona/), data in [`data/persona/`](../data/persona/) |
-| Retrieval | [`packages/engine/src/retrieve.ts`](../packages/engine/src/retrieve.ts), [`providers/voyage/persona-retriever.ts`](../providers/voyage/persona-retriever.ts) |
+| Retrieval | [`packages/engine/src/retrieve.ts`](../packages/engine/src/retrieve.ts), [`packages/providers/src/voyage/persona-retriever.ts`](../packages/providers/src/voyage/persona-retriever.ts) |
 | Realtime | [`providers/pusher/`](../providers/pusher/), [`app/api/pusher/auth/route.ts`](../app/api/pusher/auth/route.ts), [`components/chat/use-realtime.ts`](../components/chat/use-realtime.ts) |
 | Analytics | [`lib/analytics/`](../lib/analytics/), [`app/analytics/`](../app/analytics/), [`scripts/metrics-report.ts`](../scripts/metrics-report.ts) |
 | Engine eval | [`lib/evals/`](../lib/evals/), [`scripts/eval-engine.ts`](../scripts/eval-engine.ts), [`data/evals/threads/`](../data/evals/threads/) |

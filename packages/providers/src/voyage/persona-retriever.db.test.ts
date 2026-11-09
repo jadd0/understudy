@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
-import { personaChunks } from "@/db/schema";
+import { personaChunks } from "@understudy/engine/schema";
 import { makeCreator } from "@understudy/engine/testing";
 import { parseStrategy, PersonaRetriever, promptText } from "./persona-retriever";
 

@@ -6,7 +6,7 @@ import { db } from "@/db/client";
 import { config, creators, personaChunks } from "@/db/schema";
 import { getConfig } from "@/lib/config";
 import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps } from "@understudy/engine";
-import { embed } from "@/providers/voyage/embed";
+import { embed } from "@understudy/providers";
 import { UNBILLED_LIMITS } from "./load";
 
 export const STRATEGIES = ["fts", "vector", "hybrid"] as const;

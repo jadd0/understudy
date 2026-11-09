@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { fanMemory, offers, personaCards } from "@/db/schema";
-import { TypeSafeDecider } from "@/providers/typesafe/decider";
+import { TypeSafeDecider } from "@understudy/providers";
 import { addMessage } from "./test-db";
 import { rig, world } from "./test-harness";
 import { runTurn } from "./turn";

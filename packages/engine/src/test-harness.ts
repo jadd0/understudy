@@ -4,7 +4,7 @@ import { FakeDecider, type Scripted } from "./fake/decider";
 import { FakeGenerator, type FakeGeneratorOptions } from "./fake/generator";
 import { dbConfigPort } from "@/lib/config";
 import { dbHost } from "@/lib/host/engine-host";
-import { FtsRetriever } from "@/providers/pg/fts-retriever";
+import { FtsRetriever } from "@understudy/providers";
 import type { Events } from "./ports/events";
 import { createChatter, type Chatter } from "./chatter";
 import type { Deps, EngineCtx } from "./ctx";
