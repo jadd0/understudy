@@ -17,6 +17,7 @@ One Postgres 18 database on Neon, seeded by `scripts/scale/seed-volume.ts`:
 | offers | 8,000 |
 | persona chunks | 8,000 (40 per creator, with 1024-dimension embeddings) |
 | handoffs | 200 (open) |
+| staff messages | 5,986 across 2,000 conversations (one in ten had a takeover, 1 to 5 replies each, one in four of them by an admin) |
 
 Message bodies in the seed are short (about 60 characters) and the turn rows carry small `jsonb` records, so the
 byte figures below are a floor: real replies and the full Jev and token records make rows larger.
@@ -48,16 +49,16 @@ cache.
 
 | hot path | p50 / p95 ms | rows | plan |
 |---|---|---|---|
-| lease claim | 0.06 / 0.27 | 1 | primary key on `conversations` |
-| inbound load (unanswered fan messages for one conversation) | 0.04 / 0.05 | 1 | `messages_unanswered_idx`, `messages_staff_sent_idx` |
-| facts (offer history, declines in window, velocity) | 0.17 / 0.18 | 1 | `offers_conversation_idx`, `turns_conversation_idx`, `messages_conversation_created_idx` |
-| published card read | 0.03 / 0.05 | 1 | `persona_cards_creator_version_unique` |
-| chat history (last 600 rows of one conversation) | 0.12 / 0.13 | 50 | `messages_conversation_updated_idx` |
-| retrieval, full text | 0.12 / 0.14 | 6 | `persona_chunks_creator_idx`, then the text filter |
-| retrieval, vector | 0.30 / 2.64 | 6 | `persona_chunks_creator_idx`, then an exact sort of the creator's chunks |
-| sweep scan (stale unanswered conversations) | 4.91 / 7.26 | 10 | `messages_unanswered_idx`, `messages_staff_sent_idx`, one scan of `conversations` |
-| creator inbox page (100 conversations) | 16.63 / 18.11 | 100 | `conversations_creator_fan_unique`, `messages_conversation_updated_idx` |
-| handoff queue (open handoffs for one creator) | 0.14 / 0.18 | 1 | `conversations_creator_fan_unique` |
+| lease claim | 0.10 / 0.10 | 1 | primary key on `conversations` |
+| inbound load (unanswered fan messages for one conversation) | 0.06 / 0.06 | 1 | `messages_unanswered_idx`, `messages_staff_sent_idx` |
+| facts (offer history, declines in window, velocity) | 0.17 / 0.19 | 1 | `offers_conversation_idx`, `turns_conversation_idx`, `messages_conversation_created_idx` |
+| published card read | 0.04 / 0.04 | 1 | `persona_cards_creator_version_unique` |
+| chat history (last 600 rows of one conversation) | 0.13 / 0.15 | 50 | `messages_conversation_updated_idx` |
+| retrieval, full text | 0.13 / 0.15 | 6 | `persona_chunks_creator_idx`, then the text filter |
+| retrieval, vector | 0.30 / 0.32 | 6 | `persona_chunks_creator_idx`, then an exact sort of the creator's chunks |
+| sweep scan (stale unanswered conversations) | 4.95 / 5.99 | 10 | `messages_unanswered_idx`, `messages_staff_sent_idx`, one scan of `conversations` |
+| creator inbox page (100 conversations) | 18.69 / 22.80 | 100 | `conversations_creator_fan_unique`, `messages_conversation_updated_idx` |
+| handoff queue (open handoffs for one creator) | 0.14 / 0.17 | 1 | `conversations_creator_fan_unique` |
 
 Some of these plans also scan a small table sequentially (`handoffs` and `creators` at 200 rows each,
 `creator_settings` at none), under the 10,000-row line the script uses to flag a scan.
@@ -67,7 +68,7 @@ latency is the providers (section 6). The two paths that cost milliseconds are t
 minute, and the creator inbox.
 
 Not measured: a creator with far more than 100 conversations. The inbox read has no page limit and runs three
-correlated subqueries per conversation (about 0.16 ms each conversation here), so its time grows in proportion to the
+correlated subqueries per conversation (about 0.19 ms each conversation here), so its time grows in proportion to the
 conversations a creator has; a creator with thousands of fans needs a paged inbox before that read stays interactive.
 The vector retrieval plan sorts all of one creator's chunks exactly rather than using the HNSW index, which is cheap
 at 40 chunks and has not been measured at tens of thousands.
@@ -102,13 +103,12 @@ that were sent. With it that check is one backward index-only probe.
 
 | plan | before | after |
 |---|---|---|
-| sweep scan, p50 / p95 | 23.84 / 28.78 ms | 4.91 / 7.26 ms |
-| inbound load, p50 / p95 | 0.13 / 0.13 ms | 0.04 / 0.05 ms |
+| sweep scan, p50 / p95 | 24.60 / 29.81 ms | 4.95 / 5.99 ms |
+| inbound load, p50 / p95 | 0.13 / 0.16 ms | 0.06 / 0.06 ms |
 | Seq Scan on `conversations` in the sweep | present | still present, as the hash build |
 
-The seed holds no creator or admin messages, so the index is empty (8 kB) and the after figures show the cost of an
-empty probe; in use it holds only the messages humans sent. A plain `CREATE INDEX` takes a write lock on `messages`
-while it builds; on a table of this size apply it in a quiet window.
+The index holds only the messages humans sent (5,986 rows, 256 kB). A plain `CREATE INDEX` takes a write lock on
+`messages` while it builds; on a table of this size apply it in a quiet window.
 
 No other index was added: no other hot path scans a table over 10,000 rows sequentially.
 

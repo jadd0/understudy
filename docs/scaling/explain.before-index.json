@@ -13,11 +13,11 @@
   "results": [
     {
       "name": "lease claim",
-      "source": "acquireLease (packages/engine/src/lease.ts)",
+      "source": "acquireLease (packages/engine/src/lease.ts), statement read from the source",
       "statement": "update conversations c set lease_token = $1::uuid, lease_until = now() + make_interval(secs => $2) where c.id = $3 and c.mode = 'ai' and c.ai_enabled and (c.lease_until is null or c.lease_until < now()) and coalesce((select s.ai_enabled from creator_settings s where s.creator_id = c.creator_id), true) returning c.version, c.creator_id as \"creatorId\", c.fan_id as \"fanId\"",
       "runs": 20,
-      "p50Ms": 0.076,
-      "p95Ms": 0.082,
+      "p50Ms": 0.098,
+      "p95Ms": 0.117,
       "rows": 1,
       "scans": [
         "Index Scan on conversations using conversations_pkey",
@@ -27,11 +27,11 @@
     },
     {
       "name": "inbound load",
-      "source": "loadInbound (packages/engine/src/turn.ts)",
+      "source": "loadInbound (packages/engine/src/turn.ts), statement read from the source",
       "statement": "select m.id, m.body from messages m where m.conversation_id = $1 and m.sender = 'fan' and m.turn_id is null and m.created_at > coalesce((select max(o.created_at) from messages o where o.conversation_id = $2 and o.sender in ('creator', 'admin') and o.status = 'sent'), 'epoch'::timestamptz) order by m.created_at, m.id",
       "runs": 20,
-      "p50Ms": 0.128,
-      "p95Ms": 0.131,
+      "p50Ms": 0.134,
+      "p95Ms": 0.163,
       "rows": 1,
       "scans": [
         "Bitmap Heap Scan on messages",
@@ -43,10 +43,10 @@
     {
       "name": "facts",
       "source": "loadFacts (packages/engine/src/facts.ts)",
-      "statement": "select coalesce((select no_pitch_until > now() from conversations where id = $1), false) as no_pitch_active, (select count(*)::int from offers where conversation_id = $2 and status = 'declined' and resolved_at > now() - make_interval(mins => $3::int)) as declines, (select count(*)::int from turns t where t.conversation_id = $4 and t.outcome = 'replied' and t.offer_id is null and cardinality(t.inbound_ids) > 0 and t.created_at > coalesce((select max(created_at) from offers where conversation_id = $5), 'epoch'::timestamptz)) as since_offer, exists(select 1 from handoffs where conversation_id = $6 and status <> 'resolved') as unresolved, exists(select 1 from offers where conversation_id = $7 and status = 'open' and expires_at > now()) as open_offer, exists(select 1 from offers where conversation_id = $8 and status = 'accepted') as unlocked, exists( select 1 from offers o where o.conversation_id = $9 and o.status = 'accepted' and o.resolved_at > coalesce( (select max(m.created_at) from messages m where m.conversation_id = $10 and m.sender in ('ai', 'creator', 'admin') and m.status = 'sent'), '-infinity'::timestamptz) ) as just_unlocked",
+      "statement": "select coalesce((select no_pitch_until > now() from conversations where id = $1), false) as no_pitch_active, (select count(*)::int from offers where conversation_id = $2 and status = 'declined' and resolved_at > now() - make_interval(mins => $3::int)) as declines, (select count(*)::int from turns t where t.conversation_id = $4 and t.outcome = 'replied' and t.offer_id is null and cardinality(t.inbound_ids) > 0 and t.created_at > coalesce((select max(created_at) from offers where conversation_id = $5), 'epoch'::timestamptz)) as since_offer, coalesce((select hold_suppressed_until > now() from conversations where id = $6), false) as hold_suppressed, exists(select 1 from handoffs where conversation_id = $7 and status <> 'resolved') as unresolved, exists(select 1 from offers where conversation_id = $8 and status = 'open' and expires_at > now()) as open_offer, exists(select 1 from offers where conversation_id = $9 and status = 'accepted') as unlocked, exists( select 1 from offers o where o.conversation_id = $10 and o.status = 'accepted' and o.resolved_at > coalesce( (select max(m.created_at) from messages m where m.conversation_id = $11 and m.sender in ('ai', 'creator', 'admin') and m.status = 'sent'), '-infinity'::timestamptz) ) as just_unlocked",
       "runs": 20,
-      "p50Ms": 0.173,
-      "p95Ms": 0.178,
+      "p50Ms": 0.179,
+      "p95Ms": 0.185,
       "rows": 1,
       "scans": [
         "Bitmap Heap Scan on offers",
@@ -65,7 +65,7 @@
       "statement": "select \"id\", \"creator_id\", \"version\", \"body\", \"never_list\", \"published_at\" from \"persona_cards\" where (\"persona_cards\".\"creator_id\" = $1 and \"persona_cards\".\"published_at\" is not null) order by \"persona_cards\".\"version\" desc limit $2",
       "runs": 20,
       "p50Ms": 0.04,
-      "p95Ms": 0.045,
+      "p95Ms": 0.043,
       "rows": 1,
       "scans": [
         "Index Scan on persona_cards using persona_cards_creator_version_unique"
@@ -77,8 +77,8 @@
       "source": "loadHistory (packages/engine/src/turn.ts), built with the same drizzle calls",
       "statement": "select \"id\" from \"messages\" where (\"messages\".\"conversation_id\" = $1 and \"messages\".\"status\" = $2 and \"messages\".\"sender\" <> $3) order by \"messages\".\"created_at\" desc, \"messages\".\"id\" desc limit $4",
       "runs": 20,
-      "p50Ms": 0.128,
-      "p95Ms": 0.14,
+      "p50Ms": 0.131,
+      "p95Ms": 0.148,
       "rows": 50,
       "scans": [
         "Bitmap Heap Scan on messages",
@@ -91,8 +91,8 @@
       "source": "retrieveFts (packages/engine/src/retrieve.ts)",
       "statement": "select meta->>'chunk_id' as chunk_id, text, ts_rank_cd(tsv, to_tsquery('simple', $1)) as score from persona_chunks where creator_id = $2 and tsv @@ to_tsquery('simple', $3) order by score desc, id limit $4",
       "runs": 20,
-      "p50Ms": 0.121,
-      "p95Ms": 0.131,
+      "p50Ms": 0.128,
+      "p95Ms": 0.137,
       "rows": 6,
       "scans": [
         "Bitmap Heap Scan on persona_chunks",
@@ -105,8 +105,8 @@
       "source": "retrieveVector (packages/engine/src/retrieve.ts)",
       "statement": "select meta->>'chunk_id' as chunk_id, text, 1 - (embedding <=> $1::vector) as score from persona_chunks where creator_id = $2 and embedding is not null order by embedding <=> $3::vector, id limit $4",
       "runs": 20,
-      "p50Ms": 0.298,
-      "p95Ms": 0.311,
+      "p50Ms": 0.311,
+      "p95Ms": 0.325,
       "rows": 6,
       "scans": [
         "Bitmap Heap Scan on persona_chunks",
@@ -119,8 +119,8 @@
       "source": "sweep (packages/engine/src/sweep.ts), run with a clock past its start budget so it scans and processes nothing",
       "statement": "select c.id, min(m.created_at) as oldest from conversations c join messages m on m.conversation_id = c.id where c.mode = 'ai' and c.ai_enabled and c.lease_until is null and m.sender = 'fan' and m.turn_id is null and m.created_at < now() - make_interval(secs => $1) and m.created_at > coalesce((select max(o.created_at) from messages o where o.conversation_id = c.id and o.sender in ('creator', 'admin') and o.status = 'sent'), 'epoch'::timestamptz) group by c.id order by min(m.created_at), c.id limit $2",
       "runs": 20,
-      "p50Ms": 23.844,
-      "p95Ms": 28.784,
+      "p50Ms": 24.598,
+      "p95Ms": 29.81,
       "rows": 10,
       "scans": [
         "Bitmap Heap Scan on messages",
@@ -135,10 +135,10 @@
     {
       "name": "creator inbox page",
       "source": "listInbox (lib/conversations/read.ts)",
-      "statement": "select \"conversations\".\"id\", \"conversations\".\"mode\", \"conversations\".\"ai_enabled\", \"users\".\"name\", \"users\".\"email\", \"conversations\".\"created_at\", (select m.body from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1), (select m.sender::text from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1), (select extract(epoch from now() - coalesce(m.deliver_at, m.created_at)) * 1000 from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1)::float8, exists (select 1 from handoffs h where h.conversation_id = \"conversations\".\"id\" and h.queue = 'creator' and h.status <> 'resolved'), exists (select 1 from messages m where m.conversation_id = \"conversations\".\"id\" and m.suggested and m.status = 'blocked'), extract(epoch from now() - \"conversations\".\"created_at\") * 1000 from \"conversations\" inner join \"users\" on \"users\".\"id\" = \"conversations\".\"fan_id\" where (\"conversations\".\"creator_id\" in (select \"id\" from \"creators\" where \"creators\".\"user_id\" = $1) and \"conversations\".\"mode\" not in ('handoff_ts','human_ts') and not exists (select 1 from \"handoffs\" where (\"handoffs\".\"conversation_id\" = \"conversations\".\"id\" and \"handoffs\".\"queue\" = $2 and \"handoffs\".\"status\" <> $3))) order by '0'::text, coalesce((select max(coalesce(m.deliver_at, m.created_at)) from messages m where m.conversation_id = \"conversations\".\"id\"), \"conversations\".\"created_at\") desc, \"conversations\".\"id\" desc",
+      "statement": "select \"conversations\".\"id\", \"conversations\".\"mode\", \"conversations\".\"ai_enabled\", \"users\".\"name\", \"users\".\"email\", \"conversations\".\"created_at\", (select m.body from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1), (select m.sender::text from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1), (select extract(epoch from now() - coalesce(m.deliver_at, m.created_at)) * 1000 from messages m where m.conversation_id = \"conversations\".\"id\" and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1)::float8, exists (select 1 from handoffs h where h.conversation_id = \"conversations\".\"id\" and h.queue = 'creator' and h.status <> 'resolved'), exists (select 1 from messages m where m.conversation_id = \"conversations\".\"id\" and m.suggested and m.status = 'blocked'), \"conversations\".\"creator_id\", (select h.queue::text from handoffs h where h.conversation_id = \"conversations\".\"id\" and h.status = 'open'), (select h.reason::text from handoffs h where h.conversation_id = \"conversations\".\"id\" and h.status = 'open'), (select extract(epoch from h.due_at - now()) * 1000 from handoffs h where h.conversation_id = \"conversations\".\"id\" and h.status = 'open')::float8, (select extract(epoch from now() - h.opened_at) * 1000 from handoffs h where h.conversation_id = \"conversations\".\"id\" and h.status = 'open')::float8, exists (select 1 from handoffs h where h.conversation_id = \"conversations\".\"id\" and h.status = 'open' and h.sla_breached_at is not null), extract(epoch from now() - \"conversations\".\"created_at\") * 1000 from \"conversations\" inner join \"users\" on \"users\".\"id\" = \"conversations\".\"fan_id\" where (\"conversations\".\"creator_id\" in (select \"id\" from \"creators\" where \"creators\".\"user_id\" = $1) and \"conversations\".\"mode\" not in ('handoff_ts','human_ts') and not exists (select 1 from \"handoffs\" where (\"handoffs\".\"conversation_id\" = \"conversations\".\"id\" and \"handoffs\".\"queue\" = $2 and \"handoffs\".\"status\" <> $3))) order by '0'::text, coalesce((select max(coalesce(m.deliver_at, m.created_at)) from messages m where m.conversation_id = \"conversations\".\"id\"), \"conversations\".\"created_at\") desc, \"conversations\".\"id\" desc",
       "runs": 20,
-      "p50Ms": 16.283,
-      "p95Ms": 17.308,
+      "p50Ms": 20.721,
+      "p95Ms": 25.402,
       "rows": 100,
       "scans": [
         "Bitmap Heap Scan on conversations",
@@ -156,8 +156,8 @@
       "source": "getHandoffs (lib/analytics/handoffs.ts)",
       "statement": "select count(*) as n from handoffs h join conversations c on c.id = h.conversation_id where ((c.creator_id in ($1::uuid) and not exists (select 1 from users ef where ef.id = c.fan_id and ef.email like $2) and true) and c.mode not in ('handoff_ts', 'human_ts') and not exists (select 1 from handoffs th where th.conversation_id = c.id and th.queue = 'ts')) and h.status = 'open'",
       "runs": 20,
-      "p50Ms": 0.141,
-      "p95Ms": 0.153,
+      "p50Ms": 0.144,
+      "p95Ms": 0.147,
       "rows": 1,
       "scans": [
         "Bitmap Heap Scan on conversations",
