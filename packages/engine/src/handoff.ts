@@ -1,6 +1,6 @@
 import { and, eq, ne, sql } from "drizzle-orm";
-import type { Tx } from "@/db/client";
-import { handoffs } from "@/db/schema";
+import type { EngineTx } from "./ports/db";
+import { handoffs } from "./schema";
 import type { HandoffQueue, HandoffReason } from "./types";
 
 /**
@@ -11,7 +11,7 @@ import type { HandoffQueue, HandoffReason } from "./types";
  * A `high_value_alert` never changes an existing row. Returns the row id.
  */
 export async function openHandoff(
-  tx: Tx,
+  tx: EngineTx,
   conversationId: string,
   queue: HandoffQueue,
   reason: HandoffReason,

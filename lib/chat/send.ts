@@ -1,16 +1,14 @@
 import { after } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { conversations, creators, messages, users } from "@/db/schema";
-import { defaultDeps } from "@/lib/host/deps";
-import { processConversation } from "@understudy/engine";
+import { creators, users } from "@/db/schema";
+import { chatter } from "@/lib/host/deps";
+import { MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS, MessageRefused, type Chatter } from "@understudy/engine";
 
 /** A host page or route that calls `sendFanMessage` re-exports this as its `maxDuration` (seconds). */
 export const ENGINE_MAX_DURATION_S = 60;
 
-export const MAX_MESSAGE_CHARS = 2000;
-
-export const MAX_CLIENT_MSG_ID_CHARS = 100;
+export { MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS };
 
 /** Why a send was refused. `restricted` is a fan flagged `minor_in_chat`: they may read but not write. */
 export const SEND_REFUSED_REASONS = ["empty", "too_long", "bad_id", "not_a_fan", "restricted", "no_creator"] as const;
@@ -42,7 +40,10 @@ export async function sendFanMessage(
   body: string,
   clientMsgId: string,
   schedule: (task: () => Promise<unknown>) => void = (task) => after(task),
+  /** The engine to store through. Callers that run the engine themselves pass their own wiring instead of the production one. */
+  engine: () => Promise<Chatter> = chatter,
 ): Promise<SendResult> {
+  // Cheap input checks first, so a malformed send is refused for that before any lookup.
   const text = body.trim();
   if (text.length === 0) throw new SendRefused("empty");
   if (text.length > MAX_MESSAGE_CHARS) throw new SendRefused("too_long");
@@ -57,41 +58,13 @@ export async function sendFanMessage(
   const [creator] = await db.select({ id: creators.id }).from(creators).where(eq(creators.id, creatorId));
   if (!creator) throw new SendRefused("no_creator");
 
-  // A client message id belongs to whoever first used it. Checked before the conversation is created, so a
-  // refused send leaves no row behind.
-  const [taken] = await db
-    .select({ id: messages.id, conversationId: messages.conversationId, senderUserId: messages.senderUserId })
-    .from(messages)
-    .where(eq(messages.clientMsgId, clientMsgId));
-  if (taken) {
-    if (taken.senderUserId !== fanId) throw new SendRefused("not_a_fan");
-    return { conversationId: taken.conversationId, messageId: taken.id, duplicate: true };
+  try {
+    const handled = await (await engine()).handleMessage({ creatorId, fanId, body, clientMsgId });
+    if (!handled.duplicate) schedule(handled.process);
+    return { conversationId: handled.conversationId, messageId: handled.messageId, duplicate: handled.duplicate };
+  } catch (e) {
+    // A client message id belongs to whoever first used it: another fan's is not a send from a fan of this chat.
+    if (e instanceof MessageRefused) throw new SendRefused(e.code === "not_owner" ? "not_a_fan" : e.code);
+    throw e;
   }
-
-  await db.insert(conversations).values({ creatorId, fanId }).onConflictDoNothing();
-  const [conv] = await db
-    .select({ id: conversations.id })
-    .from(conversations)
-    .where(and(eq(conversations.creatorId, creatorId), eq(conversations.fanId, fanId)));
-
-  const [inserted] = await db
-    .insert(messages)
-    .values({ conversationId: conv.id, sender: "fan", senderUserId: fanId, body: text, clientMsgId })
-    .onConflictDoNothing({ target: messages.clientMsgId })
-    .returning({ id: messages.id });
-  if (!inserted) {
-    const [existing] = await db
-      .select({ id: messages.id, conversationId: messages.conversationId, senderUserId: messages.senderUserId })
-      .from(messages)
-      .where(eq(messages.clientMsgId, clientMsgId));
-    // A client message id belongs to whoever first used it.
-    if (!existing || existing.senderUserId !== fanId) throw new SendRefused("not_a_fan");
-    return { conversationId: existing.conversationId, messageId: existing.id, duplicate: true };
-  }
-
-  // He has stopped typing: the engine must not keep holding his turn for a ping that is still in the future.
-  await db.update(conversations).set({ fanTypingUntil: null }).where(eq(conversations.id, conv.id));
-
-  schedule(async () => processConversation(conv.id, await defaultDeps()));
-  return { conversationId: conv.id, messageId: inserted.id, duplicate: false };
 }

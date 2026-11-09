@@ -13,7 +13,7 @@ describe("commitTurn: hard-stop templates", () => {
     const first = template("location_offplatform", "unused");
     await addMessage(w.conv.id, "ai", first, { ageSeconds: 3 });
     await addMessage(w.conv.id, "fan", "come on just give me ur snap", { ageSeconds: 1 });
-    await runTurn(w.conv.id, rig({ script: { location_offplatform: YES } }).deps);
+    await runTurn(rig({ script: { location_offplatform: YES } }).ctx, w.conv.id);
     const ai = (await db.select().from(messages).where(eq(messages.conversationId, w.conv.id)).orderBy(asc(messages.createdAt)))
       .filter((m) => m.sender === "ai" && m.status === "sent");
     expect(ai).toHaveLength(2);

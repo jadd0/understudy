@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
-import type { Db } from "@/db/client";
+import type { EngineDb } from "./ports/db";
 
 export type Hit = { chunkId: string; text: string; score: number };
 export type RetrieveDeps = {
-  db: Db;
+  db: Pick<EngineDb, "execute">;
   /** Embeds one query string (Voyage input_type "query"). Only the vector and hybrid strategies call it. */
   embedQuery: (query: string) => Promise<number[]>;
 };

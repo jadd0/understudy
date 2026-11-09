@@ -7,6 +7,7 @@
   "license": "ISC",
   "exports": {
     ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
     "./testing": "./src/testing.ts"
   },
   "types": "./src/index.ts",

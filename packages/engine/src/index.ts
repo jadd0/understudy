@@ -1,27 +1,29 @@
 // The engine's public entry: what a host calls and the ports it implements.
 
+export { createChatter, MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS, MessageRefused } from "./chatter";
+export type { Chatter, ChatterOptions, HandledMessage, IncomingMessage, MessageRefusedCode } from "./chatter";
 export { costMicros } from "./cost";
-export { TIP_ROW_PREFIX } from "./events";
-export { loadFacts } from "./facts";
-export type { LoadedFacts } from "./facts";
-export type { HostPort, ShortlistKind, ShortlistQuery } from "./host";
+export type { Deps, EngineCtx } from "./ctx";
 export { handBack, supersedeUnseenBubbles } from "./lease";
-export { expireOffers } from "./offer";
+export { TIP_ROW_PREFIX } from "./events";
+export type { FactsCfg, LoadedFacts } from "./facts";
+export type { HostPort, ShortlistKind, ShortlistQuery } from "./host";
 export { systemClock } from "./ports/clock";
+export { ConfigMissing } from "./ports/config";
+export type { ConfigPort, ConfigRow } from "./ports/config";
+export type { EngineDb, EngineTx } from "./ports/db";
 export { DeciderUnavailable, TypeSafeNotConfigured } from "./ports/decider";
 export type { Answer, Decider, DeciderResult, DeciderState, Question } from "./ports/decider";
 export type { Events } from "./ports/events";
 export { GeneratorError } from "./ports/generator";
 export type { GenerateInput, GenerateMessage, GenerateResult, GenerateUsage, Generator } from "./ports/generator";
 export type { Chunk, Retriever } from "./ports/retriever";
-export { processConversation } from "./process";
 export { inboundQuestions, VERIFY_QUESTIONS } from "./questions";
 export { retrieveFts, retrieveHybrid, retrieveVector } from "./retrieve";
 export type { Hit, RetrieveDeps } from "./retrieve";
-export { sweep } from "./sweep";
-export { runTurn } from "./turn";
-export type { Deps } from "./turn";
 export { hardStopOf, parseSafety } from "./route";
+export type { SweepResult } from "./sweep";
+export type { TurnResult } from "./turn";
 export { SAFETY_KEYS, THREADS } from "./types";
 export type { Explicitness, RouteCfg } from "./types";
 export { mentionsMoney } from "./verify";

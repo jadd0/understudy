@@ -1,19 +1,14 @@
 import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
-import { db } from "@/db/client";
-import { conversations, messages, personaCards, turns } from "@/db/schema";
-import { ConfigMissing, getConfig } from "@/lib/config";
-import type { Clock } from "./ports/clock";
-import type { Decider } from "./ports/decider";
+import type { EngineCtx } from "./ctx";
+import { ConfigMissing } from "./ports/config";
+import { conversations, messages, personaCards, turns } from "./schema";
 import type { Events } from "./ports/events";
-import type { Generator } from "./ports/generator";
-import type { Retriever } from "./ports/retriever";
-import { loadEngineConfig, type EngineCfg } from "./cfg";
+import { getConfig, loadEngineConfig, type EngineCfg } from "./cfg";
 import { bubbleGap } from "./bubbles";
 import { CostLedger, costMicros } from "./cost";
 import { waitForMore, waitForQuiet, type InboundState, type WaitDeps, type WaitStats } from "./debounce";
 import { eventJevLines, eventRecord, hasPendingEvents, loadEvents, loadOfferOutcomes, type EventRecord, type PendingEvent } from "./events";
 import { loadFacts } from "./facts";
-import type { HostPort } from "./host";
 import { canPitch } from "./pacing";
 import { acquireLease, commitTurn, recordFailure, releaseLease, type CommitPlan, type CommitResult, type Lease, type TurnRecord } from "./lease";
 import { extractMemory, loadProfile } from "./memory";
@@ -27,18 +22,6 @@ import { template, templateSender } from "./templates";
 import type { Facts, JevIn, Route } from "./types";
 import { qualityOnly, verifyDraft, type VerifyFailure } from "./verify";
 import { DeciderUnavailable } from "./ports/decider";
-
-export interface Deps {
-  decider: Decider;
-  generator: Generator;
-  retriever: Retriever;
-  events: Events;
-  clock: Clock;
-  /** Everything the engine reads or writes in the app's own tables: wallet, ledger, catalogue, unlocks, users. */
-  host: HostPort;
-  /** Uniform in [0, 1); only the bubble gap uses it. Defaults to Math.random. */
-  random?: () => number;
-}
 
 export type TurnResult =
   | { status: "busy" | "idle" }
@@ -61,8 +44,8 @@ interface InboundRow {
  * Fan messages no turn has answered, newer than the last message a human sent. AI replies do not count: a turn
  * stamps what it answered, so a fan message that arrived while a reply was being written is still waiting.
  */
-export async function loadInbound(conversationId: string): Promise<InboundRow[]> {
-  const { rows } = await db.execute(sql`
+export async function loadInbound(ctx: EngineCtx, conversationId: string): Promise<InboundRow[]> {
+  const { rows } = await ctx.db.execute(sql`
     select m.id, m.body from messages m
     where m.conversation_id = ${conversationId} and m.sender = 'fan' and m.turn_id is null
       and m.created_at > coalesce((select max(o.created_at) from messages o
@@ -75,8 +58,8 @@ export async function loadInbound(conversationId: string): Promise<InboundRow[]>
 /** Rows read per round of history; bounds the query, and `lastRounds` then cuts at round boundaries. */
 const HISTORY_ROWS_PER_ROUND = 30;
 
-async function loadHistory(conversationId: string, rounds: number): Promise<ChatMessage[]> {
-  const rows = await db
+async function loadHistory(ctx: EngineCtx, conversationId: string, rounds: number): Promise<ChatMessage[]> {
+  const rows = await ctx.db
     .select({ id: messages.id, sender: messages.sender, body: messages.body, createdAt: messages.createdAt })
     .from(messages)
     .where(and(eq(messages.conversationId, conversationId), eq(messages.status, "sent"), ne(messages.sender, "system")))
@@ -86,8 +69,8 @@ async function loadHistory(conversationId: string, rounds: number): Promise<Chat
 }
 
 /** True while the fan's composer says he is typing (database clock). */
-async function loadTyping(conversationId: string): Promise<boolean> {
-  const { rows } = await db.execute(sql`select coalesce(fan_typing_until > now(), false) as typing from conversations where id = ${conversationId}`);
+async function loadTyping(ctx: EngineCtx, conversationId: string): Promise<boolean> {
+  const { rows } = await ctx.db.execute(sql`select coalesce(fan_typing_until > now(), false) as typing from conversations where id = ${conversationId}`);
   return (rows[0] as { typing: boolean } | undefined)?.typing ?? false;
 }
 
@@ -108,14 +91,14 @@ export async function emitDelivery(events: Events, conversationId: string, resul
  * One turn: lease, wait out the debounce, classify, route, (pick an offer, draft, verify), commit. Provider calls
  * run outside any transaction. Any failure after the lease records an error turn and answers nothing.
  */
-export async function runTurn(conversationId: string, deps: Deps): Promise<TurnResult> {
-  const [conv] = await db.select().from(conversations).where(eq(conversations.id, conversationId));
+export async function runTurn(ctx: EngineCtx, conversationId: string): Promise<TurnResult> {
+  const [conv] = await ctx.db.select().from(conversations).where(eq(conversations.id, conversationId));
   if (!conv) return { status: "idle" };
-  const leaseMs = await getConfig<number>("engine.lease_ms", conv.creatorId);
+  const leaseMs = await getConfig<number>(ctx, "engine.lease_ms", conv.creatorId);
   // Read before the lease, like the lease length: a failure later in the turn (a missing engine row included)
   // still knows when to hand over, and a missing row here fails the turn before anything is held.
-  const maxAttempts = await getConfig<number>("engine.max_attempts", conv.creatorId);
-  const lease = await acquireLease(conversationId, leaseMs);
+  const maxAttempts = await getConfig<number>(ctx, "engine.max_attempts", conv.creatorId);
+  const lease = await acquireLease(ctx, conversationId, leaseMs);
   if (!lease) return { status: "busy" };
 
   const acc: TurnRecord = {
@@ -134,16 +117,16 @@ export async function runTurn(conversationId: string, deps: Deps): Promise<TurnR
     attempts: null,
   };
   try {
-    const cfg = await loadEngineConfig(lease.creatorId);
-    return await attemptTurn(lease, cfg, deps, acc);
+    const cfg = await loadEngineConfig(ctx, lease.creatorId);
+    return await attemptTurn(ctx, lease, cfg, acc);
   } catch (e) {
     console.error(`engine: turn failed ${describeError(e)}`);
     try {
-      const failure = await recordFailure(lease, acc, maxAttempts);
+      const failure = await recordFailure(ctx, lease, acc, maxAttempts);
       return { status: "error", turnId: failure.turnId };
     } catch (inner) {
       console.error(`engine: could not record failure ${describeError(inner)}`);
-      await releaseLease(lease).catch(() => {});
+      await releaseLease(ctx, lease).catch(() => {});
       throw e;
     }
   }
@@ -229,8 +212,9 @@ const NO_FAN_TEXT: JevIn = {
   promotedFrom: null,
 };
 
-async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRecord): Promise<TurnResult> {
-  const { decider, generator, retriever, events, clock, host } = deps;
+async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: TurnRecord): Promise<TurnResult> {
+  const { decider, retriever, events, clock } = ctx.deps;
+  const { host } = ctx;
   const cost = new CostLedger();
   acc.tokens = cost.tokens;
   const addCost = (...args: Parameters<CostLedger["add"]>) => {
@@ -240,7 +224,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
   const models = { jev: cfg.jevModel, generate: cfg.generateModel, memory: cfg.memoryModel };
   acc.models = models;
 
-  const [card] = await db
+  const [card] = await ctx.db
     .select()
     .from(personaCards)
     // Only a published card speaks for the creator; a newly loaded version waits until it is published.
@@ -267,9 +251,9 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
     // in the same turn and she answers both at once.
     load: async (): Promise<InboundState> => {
       const [r, ev, typing] = await Promise.all([
-        loadInbound(lease.conversationId),
-        loadEvents(lease.conversationId, cfg.eventWindowMinutes, host),
-        loadTyping(lease.conversationId),
+        loadInbound(ctx, lease.conversationId),
+        loadEvents(ctx, lease.conversationId, cfg.eventWindowMinutes),
+        loadTyping(ctx, lease.conversationId),
       ]);
       rows = r;
       pending = ev;
@@ -296,7 +280,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
       typing: {
         cps: cfg.typingCps,
         maxMs: cfg.typingMaxMs,
-        gapMs: bubbleGap(cfg.bubbleGapMsMin, cfg.bubbleGapMsMax, deps.random ?? Math.random),
+        gapMs: bubbleGap(cfg.bubbleGapMsMin, cfg.bubbleGapMsMax, ctx.deps.random ?? Math.random),
       },
     };
   };
@@ -324,14 +308,14 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
       // Fan text only: a tip row's body carries the amount and must reach neither memory, retrieval nor Jev.
       batchText = rows.map((m) => m.body).join("\n");
 
-      history = await loadHistory(lease.conversationId, cfg.historyRounds);
-      const loaded = await loadFacts(lease.conversationId, lease.fanId, lease.creatorId, cfg, host);
+      history = await loadHistory(ctx, lease.conversationId, cfg.historyRounds);
+      const loaded = await loadFacts(ctx, lease.conversationId, lease.fanId, lease.creatorId, cfg);
       sessionGap = sessionGapMs(history, inboundIds, cfg.gapMarkerMinutes);
       facts = { ...loaded, sessionStart: sessionGap !== null };
       // In a hardship cooldown she does not thank him for spending: the events are left unstamped and age out.
       reacting = facts.noPitchActive ? [] : pending;
       if (eventOnly && reacting.length === 0) return { kind: "idle" };
-      openOffer = facts.hasOpenOffer ? await openOfferId(lease.conversationId) : null;
+      openOffer = facts.hasOpenOffer ? await openOfferId(ctx, lease.conversationId) : null;
 
       // Jev sees the new messages and a little earlier context: no card, no prices, no memory.
       const reactsToUnlock = reacting.some((e) => e.kind === "unlock");
@@ -411,7 +395,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
 
     // Independent reads, side by side: each is a round trip to the database (or the retriever).
     const [profile, chunks, offerOutcomes, ownsAll] = await Promise.all([
-      loadProfile(lease.creatorId, lease.fanId),
+      loadProfile(ctx, lease.creatorId, lease.fanId),
       // No fan text, nothing to retrieve on.
       eventOnly
         ? []
@@ -419,7 +403,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
             console.error(`engine: retrieval failed ${describeError(e)}`);
             return [];
           }),
-      loadOfferOutcomes(lease.conversationId, lease.fanId, cfg.offerHistoryCount, host),
+      loadOfferOutcomes(ctx, lease.conversationId, lease.fanId, cfg.offerHistoryCount),
       ownsEverything(host, lease.creatorId, lease.fanId),
     ]);
 
@@ -483,7 +467,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
       let verdict: Awaited<ReturnType<typeof verifyDraft>>;
       try {
         const t0 = clock.now();
-        const gen = await generator.generate({
+        const gen = await ctx.deps.generator.generate({
           system: { cached: built.system.cached, turn: built.system.turn + note },
           messages: built.messages,
           maxTokens: cfg.maxTokens,
@@ -562,7 +546,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
     }
     if (pass.kind === "idle") {
       if (!safe) {
-        await releaseLease(lease);
+        await releaseLease(ctx, lease);
         return { status: "idle" };
       }
       break;
@@ -573,7 +557,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
     }
     if (pass.candidate) {
       safe = pass.candidate;
-      const late = foldIns < cfg.foldInMax && budgetOk() ? await newWorkSince(lease.conversationId, safe.seenKeys, cfg.eventWindowMinutes, host) : false;
+      const late = foldIns < cfg.foldInMax && budgetOk() ? await newWorkSince(ctx, lease.conversationId, safe.seenKeys, cfg.eventWindowMinutes) : false;
       if (late) {
         // He wrote, tipped or unlocked while she was drafting: throw this draft away and answer the whole batch.
         foldIns++;
@@ -607,7 +591,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
   return finish(plan, c.route, c.batchText);
 
   async function finish(p: CommitPlan, r: Route, text: string): Promise<TurnResult> {
-    const result = await commitTurn(lease, p, host);
+    const result = await commitTurn(ctx, lease, p);
     if (result.applied) {
       // The console inbox (preview, time, badge) refreshes on this; a reply, a hold or a hard stop all change it.
       await events
@@ -621,7 +605,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
     // A reaction to a tip or an unlock has no fan text to learn from.
     if ((p.outcome === "replied" || p.outcome === "suggested") && text.trim() !== "") {
       try {
-        const usage = await extractMemory(generator, {
+        const usage = await extractMemory(ctx, {
           creatorId: lease.creatorId,
           fanId: lease.fanId,
           fanText: text,
@@ -630,7 +614,7 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
         });
         if (usage) {
           const micros = costMicros(cfg.prices[cfg.memoryModel], usage);
-          await db
+          await ctx.db
             .update(turns)
             .set({
               costMicros: sql`${turns.costMicros} + ${micros}`,
@@ -647,13 +631,13 @@ async function attemptTurn(lease: Lease, cfg: EngineCfg, deps: Deps, acc: TurnRe
 }
 
 /** True when unanswered fan messages, or tips and unlocks, exist beyond the ones the draft's pass saw. */
-async function newWorkSince(conversationId: string, seen: readonly string[], windowMinutes: number, host: HostPort): Promise<boolean> {
-  const [inbound, events] = await Promise.all([loadInbound(conversationId), loadEvents(conversationId, windowMinutes, host)]);
+async function newWorkSince(ctx: EngineCtx, conversationId: string, seen: readonly string[], windowMinutes: number): Promise<boolean> {
+  const [inbound, events] = await Promise.all([loadInbound(ctx, conversationId), loadEvents(ctx, conversationId, windowMinutes)]);
   return [...inbound.map((m) => m.id), ...events.map((e) => e.id)].some((id) => !seen.includes(id));
 }
 
 /** Whether a conversation holds anything a turn should still take: an unanswered fan message or a pending event. */
-export async function hasPendingWork(conversationId: string, creatorId: string, host: HostPort): Promise<boolean> {
-  const [inbound, events] = await Promise.all([loadInbound(conversationId), hasPendingEvents(conversationId, creatorId, host)]);
+export async function hasPendingWork(ctx: EngineCtx, conversationId: string, creatorId: string): Promise<boolean> {
+  const [inbound, events] = await Promise.all([loadInbound(ctx, conversationId), hasPendingEvents(ctx, conversationId, creatorId)]);
   return inbound.length > 0 || events;
 }

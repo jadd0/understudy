@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { catalogueItems, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
 import { sendFanMessage } from "@/lib/chat/send";
 import { rig, world } from "@understudy/engine/testing";
-import { runTurn, type Events } from "@understudy/engine";
+import { type Events } from "@understudy/engine";
 import { InvalidAmount } from "@/lib/wallet/errors";
 import { unlockOffer } from "@/lib/wallet/unlock";
 import { balanceOf, fund, setConfig as setWalletConfig } from "@/lib/wallet/test-helpers";
@@ -60,12 +60,12 @@ describe("settings", () => {
   test("never_list_change_reaches_next_verify", async () => {
     const w = await world();
     const clean = rig({ replies: ["i adore pineapple pizza"] });
-    expect(await runTurn(w.conv.id, clean.deps)).toMatchObject({ outcome: "replied" });
+    expect(await clean.chatter.runTurn(w.conv.id)).toMatchObject({ outcome: "replied" });
 
     const w2 = await world();
     expect(await setNeverList(creatorOf(w2), [" pineapple ", "Pineapple", "", "my ex"])).toEqual(["pineapple", "my ex"]);
     const r = rig({ replies: ["i adore pineapple pizza"] });
-    const result = await runTurn(w2.conv.id, r.deps);
+    const result = await r.chatter.runTurn(w2.conv.id);
     expect(result).toMatchObject({ outcome: "suggested" });
     const [card] = await db.select().from(personaCards).where(eq(personaCards.creatorId, w2.creator.id));
     expect(card.neverList).toEqual(["pineapple", "my ex"]);
@@ -106,7 +106,7 @@ describe("sending as the human", () => {
   test("send_suggested_sends_edited_body_as_creator", async () => {
     const w = await world();
     const r = rig({ replies: ["its $0 for you", "just 5 bucks then"] });
-    await runTurn(w.conv.id, r.deps);
+    await r.chatter.runTurn(w.conv.id);
     const viewer = creatorOf(w);
     const draft = await getSuggested(viewer, w.conv.id);
     expect(draft?.body).toBe("just 5 bucks then");
@@ -123,7 +123,7 @@ describe("sending as the human", () => {
 
   test("discard drops the draft; a fan or another creator cannot send it", async () => {
     const w = await world();
-    await runTurn(w.conv.id, rig({ replies: ["its $0 for you", "just 5 bucks then"] }).deps);
+    await rig({ replies: ["its $0 for you", "just 5 bucks then"] }).chatter.runTurn(w.conv.id);
     const draft = (await getSuggested(creatorOf(w), w.conv.id))!;
     const other = await makeCreator();
     await expect(sendSuggested(asViewer({ id: other.userId, role: "creator" }), draft.id, "mine", events)).rejects.toBeInstanceOf(ConversationNotFound);

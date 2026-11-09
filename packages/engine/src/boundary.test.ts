@@ -5,10 +5,6 @@ import { describe, expect, test } from "vitest";
 const ROOT = process.cwd();
 const PKG = "packages/engine/src";
 
-// Everything the package may take from the app. The package owns no connection or tables of its own yet,
-// so it reads them through the app's database client and schema, and its tunables through `getConfig`.
-const ALLOWED_APP_IMPORTS = ["@/db/client", "@/db/schema", "@/lib/config"];
-
 const walk = (dir: string): string[] =>
   readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((e) => {
     if (e.name === "node_modules" || e.name === ".next" || e.name === ".claude" || e.name.startsWith(".")) return [];
@@ -28,19 +24,19 @@ const specifiersOf = (src: string): string[] =>
 const isTestSupport = (f: string) => /\.test\.tsx?$/.test(f) || /(^|\/)test-[^/]+\.ts$/.test(f) || f.endsWith("/fake-host.ts") || f.endsWith("/testing.ts");
 
 describe("the engine package boundary", () => {
-  test("the package imports from the app only @/db/client, @/db/schema and @/lib/config", () => {
+  test("the package imports nothing from the app", () => {
     const files = walk(PKG).filter((f) => !isTestSupport(f));
     expect(files.length).toBeGreaterThan(10);
     expect(files).toContain(`${PKG}/turn.ts`);
     expect(files).toContain(`${PKG}/index.ts`);
     expect(files).not.toContain(`${PKG}/test-harness.ts`);
     const offenders: string[] = [];
-    let appImports = 0;
+    let specifiers = 0;
     for (const f of files) {
       for (const spec of specifiersOf(readFileSync(join(ROOT, f), "utf8"))) {
+        specifiers++;
         if (spec.startsWith("@/")) {
-          appImports++;
-          if (!ALLOWED_APP_IMPORTS.includes(spec)) offenders.push(`${f}: ${spec}`);
+          offenders.push(`${f}: ${spec}`);
         } else if (spec.startsWith(".")) {
           // A relative path that climbs out of the package is an app import by another name.
           const target = relative(ROOT, join(ROOT, f, "..", spec));
@@ -48,7 +44,7 @@ describe("the engine package boundary", () => {
         }
       }
     }
-    expect(appImports).toBeGreaterThan(0);
+    expect(specifiers).toBeGreaterThan(50);
     expect(offenders).toEqual([]);
   });
 
@@ -59,7 +55,7 @@ describe("the engine package boundary", () => {
     let viaEntry = 0;
     for (const f of files) {
       for (const spec of specifiersOf(readFileSync(join(ROOT, f), "utf8"))) {
-        if (spec === "@understudy/engine" || spec === "@understudy/engine/testing") viaEntry++;
+        if (spec === "@understudy/engine" || spec === "@understudy/engine/testing" || spec === "@understudy/engine/schema") viaEntry++;
         else if (spec.startsWith("@understudy/engine/") || spec.includes("packages/engine")) offenders.push(`${f}: ${spec}`);
         else if (spec.startsWith(".") && relative(ROOT, join(ROOT, f, "..", spec)).startsWith("packages/engine")) offenders.push(`${f}: ${spec}`);
       }

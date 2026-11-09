@@ -1,12 +1,11 @@
 import { expect, test } from "vitest";
-import { runTurn } from "@understudy/engine";
 import { rig, world } from "@understudy/engine/testing";
 import { makeQuery } from "./query";
 import { getRoutes } from "./routes";
 
 test("turn_committed_by_runTurn_appears_in_routes", async () => {
   const w = await world({ "retrieval.k": 5 }); // the engine's test helper does not seed this row
-  const result = await runTurn(w.conv.id, rig().deps);
+  const result = await rig().chatter.runTurn(w.conv.id);
   expect(result).toMatchObject({ status: "committed", route: "reply", outcome: "replied" });
 
   // The window straddles the real clock the turn row was stamped with; the injected `to` is only an upper bound.

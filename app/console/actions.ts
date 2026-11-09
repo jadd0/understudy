@@ -12,8 +12,7 @@ import { getEvents } from "@/lib/conversations/events";
 import { getSnapshot, type Viewer } from "@/lib/conversations/read";
 import { getChanges, getOlderMessages } from "@/lib/conversations/paging";
 import { toResult, windowRead } from "@/lib/conversations/result";
-import { defaultDeps } from "@/lib/host/deps";
-import { processConversation } from "@understudy/engine";
+import { chatter } from "@/lib/host/deps";
 import { dollarsToCents } from "@/lib/wallet/money";
 
 /**
@@ -53,7 +52,7 @@ export async function handBackAction(conversationId: string) {
   return toResult(async () => {
     await handBackConversation(v, conversationId, getEvents());
     // Fan messages after Juno's last reply are answered now, not at the next sweep.
-    after(async () => processConversation(conversationId, await defaultDeps()));
+    after(async () => (await chatter()).processConversation(conversationId));
   });
 }
 
@@ -62,7 +61,7 @@ export async function releaseAction(conversationId: string) {
   const v = await viewer();
   return toResult(async () => {
     await releaseConversation(v, conversationId, getEvents());
-    after(async () => processConversation(conversationId, await defaultDeps()));
+    after(async () => (await chatter()).processConversation(conversationId));
   });
 }
 

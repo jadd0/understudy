@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
-import { db } from "@/db/client";
-import type { HostPort } from "./host";
+import type { EngineCtx } from "./ctx";
 import type { Facts } from "./types";
 
 /** What the database knows about the fan; whether this batch starts a new session depends on the batch and is added by the turn. */
@@ -19,14 +18,14 @@ export interface FactsCfg {
  * Reads only. What the host owns (spend, cap, unlocks, high value) comes from `host.fanFacts`; the rest is the engine's own tables.
  */
 export async function loadFacts(
+  ctx: EngineCtx,
   conversationId: string,
   fanId: string,
   creatorId: string,
   cfg: FactsCfg,
-  host: HostPort,
 ): Promise<LoadedFacts> {
-  const hostFacts = await host.fanFacts({ fanId, creatorId, velocityWindowMinutes: cfg.velocityWindowMinutes });
-  const { rows } = await db.execute(sql`
+  const hostFacts = await ctx.host.fanFacts({ fanId, creatorId, velocityWindowMinutes: cfg.velocityWindowMinutes });
+  const { rows } = await ctx.db.execute(sql`
     select
       coalesce((select no_pitch_until > now() from conversations where id = ${conversationId}), false) as no_pitch_active,
       (select count(*)::int from offers

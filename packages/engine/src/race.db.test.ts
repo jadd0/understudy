@@ -5,7 +5,6 @@ import { handoffs, messages, offers, turns, users } from "@/db/schema";
 import { unlockOffer } from "@/lib/wallet/unlock";
 import { fund } from "@/lib/wallet/test-helpers";
 import { acquireLease, commitTurn, handBack, type CommitPlan } from "./lease";
-import { dbHost } from "@/lib/host/engine-host";
 import { processConversation } from "./process";
 import { runTurn } from "./turn";
 import { addMessage, getConversation } from "./test-db";
@@ -37,7 +36,7 @@ describe("races", () => {
     const w = await world();
     const h = hold();
     const r = rig({ generator: { latch: h.latch }, replies: ["bot draft"] });
-    const running = runTurn(w.conv.id, r.deps);
+    const running = runTurn(r.ctx, w.conv.id);
     await h.reached;
     await takeoverSql(w.conv.id);
     await addMessage(w.conv.id, "creator", "juno here, hi!");
@@ -58,7 +57,7 @@ describe("races", () => {
     const w = await world({}, "im 15 and i want to die");
     const h = hold();
     const r = rig({ script: { minor: YES, self_harm: YES }, decider: { latch: async (n) => h.latch(n) } });
-    const running = runTurn(w.conv.id, r.deps);
+    const running = runTurn(r.ctx, w.conv.id);
     await h.reached;
     await takeoverSql(w.conv.id);
     h.release();
@@ -84,7 +83,7 @@ describe("races", () => {
     const w = await world({}, "i want to end it");
     const h = hold();
     const r = rig({ script: { self_harm: YES }, decider: { latch: async (n) => h.latch(n) } });
-    const running = runTurn(w.conv.id, r.deps);
+    const running = runTurn(r.ctx, w.conv.id);
     await h.reached;
     await takeoverSql(w.conv.id);
     h.release();
@@ -99,9 +98,9 @@ describe("races", () => {
     const w = await world();
     const h = hold();
     const r = rig({ generator: { latch: h.latch } });
-    const first = processConversation(w.conv.id, r.deps);
+    const first = processConversation(r.ctx, w.conv.id);
     await h.reached;
-    expect(await processConversation(w.conv.id, r.deps)).toBe(0);
+    expect(await processConversation(r.ctx, w.conv.id)).toBe(0);
     h.release();
     expect(await first).toBe(1);
     expect(await turnsOf(w.conv.id)).toHaveLength(1);
@@ -116,11 +115,11 @@ describe("races", () => {
       for (const body of ["are you there", "hello??"]) {
         ids.push((await addMessage(w.conv.id, "fan", body)).id);
         // every send schedules its own processConversation; none may start a second turn
-        expect(await processConversation(w.conv.id, r.deps)).toBe(0);
+        expect(await processConversation(r.ctx, w.conv.id)).toBe(0);
       }
       r.onSleep.current = null;
     };
-    expect(await processConversation(w.conv.id, r.deps)).toBe(1);
+    expect(await processConversation(r.ctx, w.conv.id)).toBe(1);
     const ts = await turnsOf(w.conv.id);
     expect(ts).toHaveLength(1);
     expect([...ts[0].inboundIds].sort()).toEqual([...ids].sort());
@@ -132,7 +131,7 @@ describe("races", () => {
     const w = await world({ "engine.fold_in_max": 0 });
     const h = hold();
     const r = rig({ generator: { latch: h.latch }, replies: ["first answer", "second answer"] });
-    const running = processConversation(w.conv.id, r.deps);
+    const running = processConversation(r.ctx, w.conv.id);
     await h.reached;
     const late = await addMessage(w.conv.id, "fan", "one more thing");
     h.release();
@@ -146,7 +145,7 @@ describe("races", () => {
     const w = await world();
     const h = hold();
     const r = rig({ generator: { latch: h.latch }, replies: ["first answer", "second answer"] });
-    const running = processConversation(w.conv.id, r.deps);
+    const running = processConversation(r.ctx, w.conv.id);
     await h.reached;
     const late = await addMessage(w.conv.id, "fan", "one more thing");
     h.release();
@@ -165,11 +164,11 @@ describe("races", () => {
     await addMessage(w.conv.id, "fan", "m3", { ageSeconds: 3 });
     await addMessage(w.conv.id, "creator", "juno answered", { ageSeconds: 2 });
     const m4 = await addMessage(w.conv.id, "fan", "m4, after her answer", { ageSeconds: 1 });
-    await handBack(w.conv.id);
+    await handBack(rig().ctx, w.conv.id);
     const fresh = await addMessage(w.conv.id, "fan", "m5, new", { ageSeconds: 0 });
 
     const r = rig();
-    expect(await processConversation(w.conv.id, r.deps)).toBe(1);
+    expect(await processConversation(r.ctx, w.conv.id)).toBe(1);
     const answered = (await turnsOf(w.conv.id)).filter((t) => t.outcome === "replied");
     expect(answered.map((t) => t.inboundIds)).toEqual([[m4.id, fresh.id]]);
   });
@@ -194,12 +193,12 @@ describe("races", () => {
         },
       },
     });
-    const a = processConversation(w.conv.id, r.deps);
+    const a = processConversation(r.ctx, w.conv.id);
     await aReached.promise;
     await db.execute(sql`update conversations set lease_until = now() - interval '1 second' where id = ${w.conv.id}`);
 
     // the sweep (or the next send) takes the expired lease; both turns now sit at the model
-    const b = processConversation(w.conv.id, r.deps);
+    const b = processConversation(r.ctx, w.conv.id);
     await bReached.promise;
     // the original finishes first, holding a lease that is no longer the conversation's
     aGate.resolve();
@@ -262,7 +261,7 @@ describe("lock order", () => {
       offerId: offer.id,
       deliverAt: sql`now() + interval '1 minute'`,
     });
-    const lease = await acquireLease(w.conv.id, 60_000);
+    const lease = await acquireLease(rig().ctx, w.conv.id, 60_000);
     expect(lease).not.toBeNull();
     const plan: CommitPlan = {
       outcome: "hard_stop",
@@ -307,7 +306,7 @@ describe("lock order", () => {
     try {
       const unlocking = unlockOffer(w.fan.id, offer.id);
       await until("the unlock to wait on the wallet", () => blockedBy(holderPid));
-      const stopping = commitTurn(lease!, plan, dbHost);
+      const stopping = commitTurn(rig().ctx, lease!, plan);
       await until("the hard stop to wait behind the unlock", () => blockedBehind(holderPid));
       release.resolve();
       settled = await Promise.allSettled([unlocking, stopping]);

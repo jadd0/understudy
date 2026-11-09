@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { messages, turns } from "@/db/schema";
-import { DeciderUnavailable, GeneratorError, runTurn, VERIFY_QUESTIONS, type Decider, type Generator } from "@understudy/engine";
+import { DeciderUnavailable, GeneratorError, VERIFY_QUESTIONS, type Decider, type Generator } from "@understudy/engine";
 import { getConversation, rig, world } from "@understudy/engine/testing";
 import { FailoverDecider } from "./decider";
 import { FailoverGenerator } from "./generator";
@@ -24,7 +24,7 @@ describe("failover behind the ports", () => {
     const primary = down();
     const lines: string[] = [];
     r.deps.decider = new FailoverDecider([{ name: "jev", decider: primary }, { name: "claude", decider: r.decider }], breaker, (l) => lines.push(l));
-    const result = await runTurn(w.conv.id, r.deps);
+    const result = await r.chatter.runTurn(w.conv.id);
     expect(result).toMatchObject({ status: "committed", outcome: "replied" });
     expect(await aiMessages(w.conv.id)).toHaveLength(1);
     // the working decider saw the inbound read and then the verify questions: none was skipped
@@ -41,7 +41,7 @@ describe("failover behind the ports", () => {
     const w = await world();
     const r = rig();
     r.deps.decider = new FailoverDecider([{ name: "jev", decider: down("http_503") }, { name: "claude", decider: down("timeout") }], breaker, () => {});
-    expect((await runTurn(w.conv.id, r.deps)).status).toBe("error");
+    expect((await r.chatter.runTurn(w.conv.id)).status).toBe("error");
     expect((await db.select().from(turns).where(eq(turns.conversationId, w.conv.id))).map((t) => t.outcome)).toEqual(["error"]);
     expect(await aiMessages(w.conv.id)).toHaveLength(0);
     expect(await getConversation(w.conv.id)).toMatchObject({ mode: "ai", failedTurns: 1 });
@@ -69,7 +69,7 @@ describe("failover behind the ports", () => {
     const r = rig();
     const primary: Generator & { calls: number } = { calls: 0, generate: async () => { primary.calls++; throw new GeneratorError("http_529"); } };
     r.deps.generator = new FailoverGenerator([{ name: "claude", generator: primary }, { name: "claude-fallback", generator: r.generator }], breaker, () => {});
-    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ status: "committed", outcome: "replied" });
+    expect(await r.chatter.runTurn(w.conv.id)).toMatchObject({ status: "committed", outcome: "replied" });
     expect(primary.calls).toBeGreaterThan(0);
     expect(await aiMessages(w.conv.id)).toHaveLength(1);
   });

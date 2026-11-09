@@ -3,7 +3,6 @@ import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { handoffs, messages, offers, turns, users } from "@/db/schema";
 import { addMessage, getConversation, makeConversation, makeCreator, makeFan, deferred, rig, world } from "@understudy/engine/testing";
-import { runTurn } from "@understudy/engine";
 import { handBack, takeover, TakeoverRefused } from "./actions";
 
 async function admin() {
@@ -90,7 +89,7 @@ describe("takeover", () => {
         },
       },
     });
-    const running = runTurn(w.conv.id, r.deps);
+    const running = r.chatter.runTurn(w.conv.id);
     await reached.promise;
     await takeover(w.conv.id, w.creator.userId);
     gate.resolve();

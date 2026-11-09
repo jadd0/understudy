@@ -8,6 +8,7 @@ import { DeciderUnavailable } from "./ports/decider";
 import { buildShortlist, declineOffer, expireOffers, openOfferId, pickOffer } from "./offer";
 import { loadFacts } from "./facts";
 import { canPitch } from "./pacing";
+import { rig } from "./test-harness";
 import { CFG } from "./test-fixtures";
 import { makeConversation, makeCreator, makeFan, makeItem, setEngineConfig } from "./test-db";
 import { sql } from "drizzle-orm";
@@ -77,19 +78,19 @@ describe("decline and expiry", () => {
     const w = await world();
     const [o1] = await open(w.conv.id, w.a.id);
     const [o2] = await open(w.conv.id, w.b.id);
-    expect(await openOfferId(w.conv.id)).toBe(o2.id);
+    expect(await openOfferId(rig().ctx, w.conv.id)).toBe(o2.id);
     await withTx((tx) => declineOffer(tx, o1.id));
-    const f1 = await loadFacts(w.conv.id, w.fan.id, w.creator.id, { declineWindowMinutes: 1440, velocityWindowMinutes: 30 }, dbHost);
+    const f1 = await loadFacts(rig().ctx, w.conv.id, w.fan.id, w.creator.id, { declineWindowMinutes: 1440, velocityWindowMinutes: 30 });
     expect(f1.declinesInWindow).toBe(1);
     expect(canPitch({ ...f1, roundsSinceOffer: 20 }, CFG, "smalltalk").ok).toBe(true);
     await withTx((tx) => declineOffer(tx, o2.id));
-    const f2 = await loadFacts(w.conv.id, w.fan.id, w.creator.id, { declineWindowMinutes: 1440, velocityWindowMinutes: 30 }, dbHost);
+    const f2 = await loadFacts(rig().ctx, w.conv.id, w.fan.id, w.creator.id, { declineWindowMinutes: 1440, velocityWindowMinutes: 30 });
     expect(f2.declinesInWindow).toBe(2);
     expect(canPitch({ ...f2, roundsSinceOffer: 20 }, CFG, "smalltalk")).toEqual({ ok: false, why: "declines" });
 
     // Declines older than the window stop counting.
     await db.update(offers).set({ resolvedAt: sql`now() - interval '25 hours'` }).where(eq(offers.id, o1.id));
-    const f3 = await loadFacts(w.conv.id, w.fan.id, w.creator.id, { declineWindowMinutes: 1440, velocityWindowMinutes: 30 }, dbHost);
+    const f3 = await loadFacts(rig().ctx, w.conv.id, w.fan.id, w.creator.id, { declineWindowMinutes: 1440, velocityWindowMinutes: 30 });
     expect(f3.declinesInWindow).toBe(1);
   });
 
@@ -97,8 +98,8 @@ describe("decline and expiry", () => {
     const w = await world();
     const [live] = await open(w.conv.id, w.a.id, { seconds: 3600 });
     const [stale] = await open(w.conv.id, w.b.id, { seconds: -10 });
-    expect(await openOfferId(w.conv.id)).toBe(live.id);
-    expect(await expireOffers()).toBeGreaterThanOrEqual(1);
+    expect(await openOfferId(rig().ctx, w.conv.id)).toBe(live.id);
+    expect(await expireOffers(rig().ctx)).toBeGreaterThanOrEqual(1);
     const status = async (id: string) => (await db.select().from(offers).where(eq(offers.id, id)))[0];
     expect(await status(stale.id)).toMatchObject({ status: "expired" });
     expect((await status(stale.id)).resolvedAt).not.toBeNull();
@@ -109,9 +110,9 @@ describe("decline and expiry", () => {
     const w = await world();
     await open(w.conv.id, w.a.id, { seconds: -5 });
     const cfg = { declineWindowMinutes: 1440, velocityWindowMinutes: 30 };
-    expect((await loadFacts(w.conv.id, w.fan.id, w.creator.id, cfg, dbHost)).hasOpenOffer).toBe(false);
+    expect((await loadFacts(rig().ctx, w.conv.id, w.fan.id, w.creator.id, cfg)).hasOpenOffer).toBe(false);
     await open(w.conv.id, w.b.id);
-    expect((await loadFacts(w.conv.id, w.fan.id, w.creator.id, cfg, dbHost)).hasOpenOffer).toBe(true);
+    expect((await loadFacts(rig().ctx, w.conv.id, w.fan.id, w.creator.id, cfg)).hasOpenOffer).toBe(true);
   });
 
   test("facts: justUnlocked is true after he accepts her offer and false once she has replied", async () => {
@@ -119,9 +120,9 @@ describe("decline and expiry", () => {
     const cfg = { declineWindowMinutes: 1440, velocityWindowMinutes: 30 };
     await db.insert(messages).values({ conversationId: w.conv.id, sender: "ai", body: "wanna see?", status: "sent", createdAt: sql`now() - interval '1 minute'` });
     await db.insert(offers).values({ conversationId: w.conv.id, itemId: w.a.id, priceCents: 999, status: "accepted", expiresAt: sql`now() + interval '1 hour'`, resolvedAt: sql`now() - interval '30 seconds'` });
-    expect((await loadFacts(w.conv.id, w.fan.id, w.creator.id, cfg, dbHost)).justUnlocked).toBe(true);
+    expect((await loadFacts(rig().ctx, w.conv.id, w.fan.id, w.creator.id, cfg)).justUnlocked).toBe(true);
     await db.insert(messages).values({ conversationId: w.conv.id, sender: "ai", body: "enjoy 🙈", status: "sent" });
-    const after = await loadFacts(w.conv.id, w.fan.id, w.creator.id, cfg, dbHost);
+    const after = await loadFacts(rig().ctx, w.conv.id, w.fan.id, w.creator.id, cfg);
     expect(after.justUnlocked).toBe(false);
     expect(after.hasUnlocked).toBe(true);
   });

@@ -1,4 +1,4 @@
-import type { handoffReasonEnum, turnRouteEnum } from "@/db/schema";
+import type { handoffReasonEnum, turnRouteEnum } from "./schema";
 
 export type HandoffReason = (typeof handoffReasonEnum.enumValues)[number];
 export type RouteName = (typeof turnRouteEnum.enumValues)[number];

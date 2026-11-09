@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "@/db/client";
-import { fanMemory } from "@/db/schema";
-import type { Generator, GenerateUsage } from "./ports/generator";
+import type { EngineCtx } from "./ctx";
+import { fanMemory } from "./schema";
+import type { GenerateUsage } from "./ports/generator";
 import { mentionsMoney } from "./verify";
 
 /**
@@ -85,8 +85,8 @@ export function renderProfile(profile: FanProfile): string {
 // ---- storage and extraction ----
 
 
-export async function loadProfile(creatorId: string, fanId: string): Promise<FanProfile> {
-  const [row] = await db
+export async function loadProfile(ctx: EngineCtx, creatorId: string, fanId: string): Promise<FanProfile> {
+  const [row] = await ctx.db
     .select({ profile: fanMemory.profile })
     .from(fanMemory)
     .where(and(eq(fanMemory.creatorId, creatorId), eq(fanMemory.fanId, fanId)));
@@ -112,10 +112,10 @@ function parseJsonObject(text: string): unknown {
  * Returns the call's usage so the caller can add it to the turn's cost, or null when nothing was extracted.
  */
 export async function extractMemory(
-  generator: Generator,
+  ctx: EngineCtx,
   args: { creatorId: string; fanId: string; fanText: string; model: string; maxTokens: number },
 ): Promise<GenerateUsage | null> {
-  const result = await generator.generate({
+  const result = await ctx.deps.generator.generate({
     system: { cached: EXTRACT_SYSTEM, turn: "Return the JSON object now." },
     messages: [{ role: "user", content: args.fanText }],
     maxTokens: args.maxTokens,
@@ -123,13 +123,13 @@ export async function extractMemory(
   });
   const found = sanitizeProfile(parseJsonObject(result.text));
   for (let attempt = 0; attempt < 2; attempt++) {
-    await db.insert(fanMemory).values({ creatorId: args.creatorId, fanId: args.fanId }).onConflictDoNothing();
-    const [row] = await db
+    await ctx.db.insert(fanMemory).values({ creatorId: args.creatorId, fanId: args.fanId }).onConflictDoNothing();
+    const [row] = await ctx.db
       .select({ profile: fanMemory.profile, version: fanMemory.version })
       .from(fanMemory)
       .where(and(eq(fanMemory.creatorId, args.creatorId), eq(fanMemory.fanId, args.fanId)));
     const merged = mergeProfile(sanitizeProfile(row.profile), found);
-    const updated = await db
+    const updated = await ctx.db
       .update(fanMemory)
       .set({ profile: merged, version: sql`${fanMemory.version} + 1`, updatedAt: sql`now()` })
       .where(and(eq(fanMemory.creatorId, args.creatorId), eq(fanMemory.fanId, args.fanId), eq(fanMemory.version, row.version)))

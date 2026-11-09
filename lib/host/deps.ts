@@ -1,6 +1,5 @@
 import { db } from "@/db/client";
 import { dbHost } from "@/lib/host/engine-host";
-import { getConfig } from "@/lib/config";
 import { ClaudeDecider } from "@/providers/anthropic/decider";
 import { AnthropicGenerator } from "@/providers/anthropic/generator";
 import { FailoverDecider } from "@/providers/failover/decider";
@@ -9,7 +8,8 @@ import { defaultEvents } from "@/providers/pusher/events";
 import { embed } from "@/providers/voyage/embed";
 import { parseStrategy, PersonaRetriever } from "@/providers/voyage/persona-retriever";
 import { TypeSafeDecider } from "@/providers/typesafe/decider";
-import { systemClock, type Deps } from "@understudy/engine";
+import { dbConfigPort, getConfig } from "@/lib/config";
+import { createChatter, systemClock, type Chatter, type Deps } from "@understudy/engine";
 
 /**
  * The production wiring: Jev by REST with Claude behind it as the decider fallback, Claude by its SDK with a second
@@ -27,8 +27,33 @@ export async function defaultDeps(): Promise<Deps> {
     retriever: new PersonaRetriever(db, strategy, async (q) => (await embed([q], "query", { model: voyageModel, retries: 1 })).embeddings[0]),
     events: defaultEvents(),
     clock: systemClock,
-    host: dbHost,
   };
+}
+
+/** The engine over the app's database, settings and host tables, driving the given providers. */
+export function chatterFor(deps: Deps): Chatter {
+  return createChatter({ db, config: dbConfigPort, host: dbHost, deps });
+}
+
+/**
+ * The providers of `defaultDeps`, resolved on first use. Storing a message needs no provider and no setting, so a
+ * chatter built only to store never reads the model rows; one that answers reads them once, fresh for that send.
+ */
+function lazyDeps(): Deps {
+  let resolved: Promise<Deps> | undefined;
+  const get = () => (resolved ??= defaultDeps());
+  return {
+    decider: { ask: async (questions, context) => (await get()).decider.ask(questions, context) },
+    generator: { generate: async (input) => (await get()).generator.generate(input) },
+    retriever: { retrieve: async (creatorId, query, k) => (await get()).retriever.retrieve(creatorId, query, k) },
+    events: { emit: async (channel, event, payload) => (await get()).events.emit(channel, event, payload) },
+    clock: systemClock,
+  };
+}
+
+/** The production engine. Built on every call, so a changed model row applies to the next send. */
+export async function chatter(): Promise<Chatter> {
+  return chatterFor(lazyDeps());
 }
 
 type Failover = Pick<Deps, "decider" | "generator">;

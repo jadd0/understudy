@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
-import { db, withTx, type Tx } from "@/db/client";
-import { conversations, handoffs, messages, offers, turns } from "@/db/schema";
+import type { EngineCtx } from "./ctx";
+import type { HostPort } from "./host";
+import type { EngineTx } from "./ports/db";
+import { conversations, handoffs, messages, offers, turns } from "./schema";
 import { deliverOffsets, splitBubbles } from "./bubbles";
 import { openHandoff } from "./handoff";
-import type { HostPort } from "./host";
 import { unrepeatedTemplate } from "./templates";
 import type { HandoffQueue, HandoffReason, RouteName } from "./types";
 
@@ -20,9 +21,9 @@ export interface Lease {
  * Takes the conversation for one turn, or returns null. Only an AI-mode conversation with the AI switched on for
  * both the conversation and the creator, and no live lease, can be taken. All time is the database clock.
  */
-export async function acquireLease(conversationId: string, leaseMs: number): Promise<Lease | null> {
+export async function acquireLease(ctx: EngineCtx, conversationId: string, leaseMs: number): Promise<Lease | null> {
   const token = randomUUID();
-  const { rows } = await db.execute(sql`
+  const { rows } = await ctx.db.execute(sql`
     update conversations c
     set lease_token = ${token}::uuid, lease_until = now() + make_interval(secs => ${leaseMs / 1000})
     where c.id = ${conversationId} and c.mode = 'ai' and c.ai_enabled
@@ -34,8 +35,8 @@ export async function acquireLease(conversationId: string, leaseMs: number): Pro
 }
 
 /** Gives the conversation back without a commit. A no-op if the lease is no longer ours. */
-export async function releaseLease(lease: Lease): Promise<void> {
-  await db
+export async function releaseLease(ctx: EngineCtx, lease: Lease): Promise<void> {
+  await ctx.db
     .update(conversations)
     .set({ leaseToken: null, leaseUntil: null })
     .where(and(eq(conversations.id, lease.conversationId), eq(conversations.leaseToken, lease.token)));
@@ -105,7 +106,7 @@ function turnValues(conversationId: string, rec: TurnRecord, outcome: string) {
 }
 
 /** The body of her last bubble the fan can see or will see (AI or a human on her side), or null. */
-async function lastHerBody(tx: Tx, conversationId: string): Promise<string | null> {
+async function lastHerBody(tx: EngineTx, conversationId: string): Promise<string | null> {
   const [row] = await tx
     .select({ body: messages.body })
     .from(messages)
@@ -121,7 +122,7 @@ async function lastHerBody(tx: Tx, conversationId: string): Promise<string | nul
   return row?.body ?? null;
 }
 
-async function elapsedSinceFirstInbound(tx: Tx, inboundIds: string[]): Promise<number> {
+async function elapsedSinceFirstInbound(tx: EngineTx, inboundIds: string[]): Promise<number> {
   if (inboundIds.length === 0) return 0;
   const [row] = await tx
     .select({ ms: sql<number>`coalesce(extract(epoch from now() - min(${messages.createdAt})) * 1000, 0)::float8` })
@@ -131,7 +132,7 @@ async function elapsedSinceFirstInbound(tx: Tx, inboundIds: string[]): Promise<n
 }
 
 /** `ms_total` for a turn that did not commit a reply: time since the first message it was handling. */
-async function msTotalOf(tx: Tx, inboundIds: string[]): Promise<number | null> {
+async function msTotalOf(tx: EngineTx, inboundIds: string[]): Promise<number | null> {
   return inboundIds.length === 0 ? null : Math.round(await elapsedSinceFirstInbound(tx, inboundIds));
 }
 
@@ -139,7 +140,7 @@ async function msTotalOf(tx: Tx, inboundIds: string[]): Promise<number | null> {
  * AI bubbles the fan has not seen yet (`deliver_at` still ahead) are superseded, and an open offer one of them
  * carried is expired: the fan never saw it, so it must not stay redeemable. Used by a takeover and a hard stop.
  */
-export async function supersedeUnseenBubbles(tx: Tx, conversationId: string): Promise<void> {
+export async function supersedeUnseenBubbles(tx: EngineTx, conversationId: string): Promise<void> {
   const gone = await tx
     .update(messages)
     .set({ status: "superseded" })
@@ -167,8 +168,9 @@ export async function supersedeUnseenBubbles(tx: Tx, conversationId: string): Pr
  * turn is recorded `superseded`, the draft is kept unsent, and nothing else is written. Config is read by the
  * caller; inside this transaction only `tx` is used.
  */
-export async function commitTurn(lease: Lease, plan: CommitPlan, host: HostPort): Promise<CommitResult> {
-  return withTx(async (tx) => {
+export async function commitTurn(ctx: EngineCtx, lease: Lease, plan: CommitPlan): Promise<CommitResult> {
+  const { host } = ctx;
+  return ctx.db.transaction(async (tx) => {
     const set: Partial<typeof conversations.$inferInsert> = {
       version: sql`${conversations.version} + 1` as unknown as number,
       leaseToken: null,
@@ -289,7 +291,7 @@ export async function commitTurn(lease: Lease, plan: CommitPlan, host: HostPort)
 }
 
 /** The reply part lost the compare-and-set. Only the safety outcome (if any) and the unsent record are written. */
-async function recordSuperseded(tx: Tx, lease: Lease, plan: CommitPlan, host: HostPort): Promise<CommitResult> {
+async function recordSuperseded(tx: EngineTx, lease: Lease, plan: CommitPlan, host: HostPort): Promise<CommitResult> {
   let handoffId: string | null = null;
   if (plan.hardStop) {
     // Platform lock order (AGENTS.md): the conversation row first, then offers, then the user.
@@ -346,8 +348,8 @@ export interface FailureResult {
  * with outcome `error`, the lease released and the conversation left in AI mode. Reaching `maxAttempts` failed
  * turns in a row hands the conversation to the creator.
  */
-export async function recordFailure(lease: Lease, rec: TurnRecord, maxAttempts: number): Promise<FailureResult> {
-  return withTx(async (tx) => {
+export async function recordFailure(ctx: EngineCtx, lease: Lease, rec: TurnRecord, maxAttempts: number): Promise<FailureResult> {
+  return ctx.db.transaction(async (tx) => {
     const [conv] = await tx
       .update(conversations)
       .set({ failedTurns: sql`${conversations.failedTurns} + 1` as unknown as number, leaseToken: null, leaseUntil: null })
@@ -379,8 +381,8 @@ export async function recordFailure(lease: Lease, rec: TurnRecord, maxAttempts: 
  * `allWaiting` stamps every waiting fan message instead: a Trust & Safety release, where whatever the fan wrote
  * while support held the chat was written to support, not to her.
  */
-export async function handBack(conversationId: string, opts: { allWaiting?: boolean } = {}): Promise<void> {
-  await withTx(async (tx) => {
+export async function handBack(ctx: Pick<EngineCtx, "db">, conversationId: string, opts: { allWaiting?: boolean } = {}): Promise<void> {
+  await ctx.db.transaction(async (tx) => {
     const [conv] = await tx
       .update(conversations)
       .set({ mode: "ai", version: sql`${conversations.version} + 1` as unknown as number, leaseToken: null, leaseUntil: null, failedTurns: 0 })

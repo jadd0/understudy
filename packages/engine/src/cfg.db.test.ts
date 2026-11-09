@@ -5,6 +5,7 @@ import { ENGINE_CONFIG } from "@/db/seed";
 import { loadEngineConfig } from "./cfg";
 import { SWEEP_START_BUDGET_MS } from "./sweep";
 import { makeCreator, setEngineConfig } from "./test-db";
+import { rig } from "./test-harness";
 
 describe("loadEngineConfig", () => {
   test("creator_cannot_override_safety_floor", async () => {
@@ -19,7 +20,7 @@ describe("loadEngineConfig", () => {
     };
     for (const [key, value] of Object.entries(rows)) await db.insert(config).values({ key, value, creatorId: creator.id });
 
-    const cfg = await loadEngineConfig(creator.id);
+    const cfg = await loadEngineConfig(rig().ctx, creator.id);
     expect(cfg.route.floors.minor).toBe(0.3);
     expect(cfg.route.floors.self_harm).toBe(0.3);
     expect(cfg.route.floors.intent).toBe(0.5);
@@ -32,7 +33,7 @@ describe("loadEngineConfig", () => {
     // A platform row removed here would fail every parallel test file (ConfigMissing is the fail-closed path), so
     // this pins that each new key is a seeded row the loader reads, with the seed's value.
     await setEngineConfig();
-    const cfg = await loadEngineConfig((await makeCreator()).id);
+    const cfg = await loadEngineConfig(rig().ctx, (await makeCreator()).id);
     expect(cfg).toMatchObject({
       debounceMs: 250,
       debounceMaxMs: 8000,
