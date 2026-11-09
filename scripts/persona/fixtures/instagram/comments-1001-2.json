@@ -1,0 +1,29 @@
+{
+  "comments": [
+    {
+      "pk": "2004",
+      "text": "wow",
+      "created_at": 1772625600,
+      "user": {
+        "username": "fan_fay",
+        "pk": "6006"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 1
+    },
+    {
+      "pk": "2005",
+      "text": "thanks for all the love, back to the studio",
+      "created_at": 1772629200,
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "comment_like_count": 4,
+      "child_comment_count": 0
+    }
+  ],
+  "has_more_comments": false,
+  "comment_count": 7,
+  "status": "ok"
+}

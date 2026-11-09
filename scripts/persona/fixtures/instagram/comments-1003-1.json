@@ -1,0 +1,17 @@
+{
+  "comments": [
+    {
+      "pk": "2201",
+      "text": "gorgeous",
+      "created_at": 1772449200,
+      "user": {
+        "username": "fan_eve",
+        "pk": "6005"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 1
+    }
+  ],
+  "has_more_comments": false,
+  "status": "ok"
+}

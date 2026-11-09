@@ -1,0 +1,62 @@
+{
+  "items": [
+    {
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "like_count": 120,
+      "comment_count": 7,
+      "usertags": {
+        "in": [
+          {
+            "user": {
+              "username": "tagged_pal",
+              "pk": "5001"
+            }
+          }
+        ]
+      },
+      "coauthor_producers": [],
+      "location": {
+        "name": "Test Harbour"
+      },
+      "pk": "1001",
+      "code": "FIX1",
+      "media_type": 1,
+      "taken_at": 1772618400,
+      "caption": {
+        "text": "slow morning #coffee #fixture with @friend_one"
+      },
+      "timeline_pinned_user_ids": [
+        "9001"
+      ]
+    },
+    {
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "like_count": 300,
+      "comment_count": 3,
+      "usertags": {
+        "in": []
+      },
+      "coauthor_producers": [],
+      "location": null,
+      "pk": "1002",
+      "code": "FIX2",
+      "media_type": 2,
+      "product_type": "clips",
+      "taken_at": 1772532000,
+      "caption": {
+        "text": "reel day"
+      },
+      "play_count": 4500
+    }
+  ],
+  "more_available": true,
+  "next_max_id": "feedcursor2",
+  "num_results": 2,
+  "status": "ok"
+}

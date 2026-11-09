@@ -1,0 +1,41 @@
+{
+  "comments": [
+    {
+      "pk": "2001",
+      "text": "love this so much",
+      "created_at": 1772622000,
+      "user": {
+        "username": "fan_amy",
+        "pk": "6001"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 1
+    },
+    {
+      "pk": "2002",
+      "text": "where is this?",
+      "created_at": 1772622600,
+      "user": {
+        "username": "fan_ben",
+        "pk": "6002"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 2
+    },
+    {
+      "pk": "2003",
+      "text": "good morning",
+      "created_at": 1772623200,
+      "user": {
+        "username": "fan_dan",
+        "pk": "6004"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 3
+    }
+  ],
+  "has_more_comments": true,
+  "next_min_id": "p1cursor2",
+  "comment_count": 7,
+  "status": "ok"
+}

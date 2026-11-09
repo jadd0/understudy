@@ -1,0 +1,50 @@
+{
+  "items": [
+    {
+      "user": {
+        "username": "otherhandle",
+        "pk": "9002"
+      },
+      "like_count": 50,
+      "comment_count": 1,
+      "usertags": {
+        "in": []
+      },
+      "coauthor_producers": [
+        {
+          "username": "fixturecreator",
+          "pk": "9001"
+        }
+      ],
+      "location": null,
+      "pk": "1003",
+      "code": "FIX3",
+      "media_type": 8,
+      "taken_at": 1772445600,
+      "caption": {
+        "text": "their trip, our collab"
+      }
+    },
+    {
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "like_count": 5,
+      "comment_count": 1,
+      "usertags": {
+        "in": []
+      },
+      "coauthor_producers": [],
+      "location": null,
+      "pk": "1004",
+      "code": "FIX4",
+      "media_type": 1,
+      "taken_at": 1772359200,
+      "caption": null
+    }
+  ],
+  "more_available": false,
+  "num_results": 2,
+  "status": "ok"
+}

@@ -1,0 +1,28 @@
+{
+  "child_comments": [
+    {
+      "pk": "3002",
+      "text": "same question",
+      "created_at": 1772622900,
+      "user": {
+        "username": "fan_cat",
+        "pk": "6003"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0
+    },
+    {
+      "pk": "3003",
+      "text": "@fan_cat the harbour near my place",
+      "created_at": 1772624400,
+      "user": {
+        "username": "fixturecreator",
+        "pk": "9001"
+      },
+      "comment_like_count": 0,
+      "child_comment_count": 0
+    }
+  ],
+  "has_more_tail_child_comments": false,
+  "status": "ok"
+}
