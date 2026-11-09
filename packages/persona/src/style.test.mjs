@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { computeStyle, percentile } from "./style.mjs";
+import { computeStyle, MATE, percentile, petFromProfile, SIGNOFF_X, usesConcreteFact } from "./style.mjs";
 
 const captions = [
   { id: "c1", voice: true, caption: "hello world :3" },
@@ -69,4 +69,42 @@ test("percentile is nearest-rank", () => {
   assert.equal(percentile([1, 2, 3, 4, 5], 0.5), 3);
   assert.equal(percentile([1, 2, 3, 4, 5], 0.9), 5);
   assert.equal(percentile([], 0.5), null);
+});
+
+test("markers are measured on train and style_only replies, one count per reply", () => {
+  const rs = [
+    reply("m1", "@a ha mate, biscuit says hi x"),
+    reply("m2", "see you at Rottingdean beach babe 🌊"),
+    reply("m3", "xmas is coming xD"),
+    reply("m4", "it was £12 at the Co-op"),
+    reply("m5", "Mate wow"),
+    reply("hold", "mate mate mate x"),
+  ];
+  const sp = { replies: { train: ["m1", "m2", "m3", "m4"], validation: ["hold"], test: [], style_only: ["m5"] } };
+  const { markers } = computeStyle({ captions: [], replies: rs, splits: sp, pet: "biscuit" });
+  assert.deepEqual(markers, {
+    n: 5,
+    pet: "biscuit",
+    signoff_x: 0.2,
+    mate: 0.4,
+    babe: 0.2,
+    pet_name: 0.2,
+    emoji: 0.2,
+    concrete_fact: 0.4,
+  });
+});
+
+test("petFromProfile reads the assistant line, null without one", () => {
+  assert.equal(petFromProfile({ bio: "skates\nbiscuit's assistant" }), "biscuit");
+  assert.equal(petFromProfile({ bio: "skates" }), null);
+  assert.equal(petFromProfile(null), null);
+});
+
+test("sign-off x needs to end the reply; markers in a word do not count", () => {
+  assert.equal(SIGNOFF_X.test("night x"), true);
+  assert.equal(SIGNOFF_X.test("night xx 💛"), true);
+  assert.equal(SIGNOFF_X.test("x marks it"), false);
+  assert.equal(SIGNOFF_X.test("merry xmas"), false);
+  assert.equal(MATE.test("checkmate"), false);
+  assert.equal(usesConcreteFact("Hello there", null), false);
 });
