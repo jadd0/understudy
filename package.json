@@ -5,6 +5,9 @@
   "directories": {
     "doc": "docs"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "vitest run",
     "dev": "next dev",
