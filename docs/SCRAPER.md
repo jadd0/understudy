@@ -18,8 +18,8 @@ that scrape, so anyone can run it on their own account and feed the result to th
 3. Run:
 
 ```sh
-node scripts/persona/scrape/scrape.mjs --handle <your_handle>
-node scripts/persona/normalise.mjs --creator <your_handle>
+npx understudy-persona scrape --handle <your_handle>
+npx understudy-persona normalise --creator <your_handle>
 ```
 
 `--help` prints the flags and the consent line. The scraper exits 1 and sends nothing when `IG_SESSIONID`
@@ -41,7 +41,7 @@ It refuses to write into `junovale` or `junofilm`, the committed synthetic creat
 
 `<out>/<handle>/posts.jsonl`, one line per post, appended as each post finishes (a run that stops keeps
 what it had), plus `profile.json` and `NOTES.md` (counts, the caps used, how many posts hit a cap). The
-fields are exactly the ones `normalise.mjs` and `synth.mjs` read; `scripts/persona/fixtures/raw/alice/` is
+fields are exactly the ones `normalise.mjs` and `synth.mjs` read; `packages/persona/fixtures/raw/alice/` is
 the smallest example. Image descriptions are left empty (`description: ""`): describing images is not the
 scraper's job.
 
@@ -69,11 +69,11 @@ its caption as a fact about her and not her voice.
 
 ## How it stays safe to run
 
-- `scripts/persona/scrape/instagram.mjs` is the only code that talks to Instagram. It refuses any method
+- `packages/persona/src/scrape/instagram.mjs` is the only code that talks to Instagram. It refuses any method
   but GET before fetch is called, sends the cookie only to `https://www.instagram.com`, does not follow
   redirects, and never logs or throws a response body or the cookie.
-- The tests (`scripts/persona/scrape.test.mjs`) replay invented responses for one fictional account from
-  `scripts/persona/fixtures/instagram/` and never reach Instagram: their fake fetch throws on any URL without
+- The tests (`packages/persona/src/scrape.test.mjs`) replay invented responses for one fictional account from
+  `packages/persona/fixtures/instagram/` and never reach Instagram: their fake fetch throws on any URL without
   a fixture. Nothing real is committed.
 - The endpoint paths are collected in one table in `instagram.mjs`. They describe the web app's own JSON
   endpoints and are unverified until the first live run on your account; if Instagram changes a path or a

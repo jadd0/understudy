@@ -15,24 +15,24 @@ classification, offer pick, draft verification, Haiku reply) are documented with
 
 | # | Call | Model (flag) | Purpose | Source |
 |---|---|---|---|---|
-| 1 | Claude, system + user | `--card-model` (v1 and v2: `claude-opus-5-5`) | draft the persona card | `scripts/persona/draft-card.mjs` |
-| 2 | Claude, system = card | `--gen-model` (`claude-haiku-5-5`) | write a reply as her, for the rapid eval | `scripts/persona/rapid-eval.mjs` |
-| 3 | Jev, one choice question | `--jev-model` (`jev-1.14.0`, pinned) | judge which reply is really hers | `scripts/persona/rapid-eval.mjs` |
-| 4 | Claude, user only | `--gen-model` | list topics and write the 30 retrieval questions | `scripts/persona/queries.mjs` |
-| 5 | Claude, user only | `--gen-model` | label which candidate chunks answer each question | `scripts/persona/queries.mjs` |
-| 6 | Claude, system + user | `--judge-model` (`claude-sonnet-5-5`) | score a generated reply 1-5 on voice, fact consistency, natural pitch (test split) | `scripts/persona/eval-persona.mjs` |
-| 7 | Claude, system + user | `--judge-model` | blind test: which of two unlabelled replies is hers (test split) | `scripts/persona/eval-persona.mjs` |
+| 1 | Claude, system + user | `--card-model` (v1 and v2: `claude-opus-5-5`) | draft the persona card | `packages/persona/src/draft-card.mjs` |
+| 2 | Claude, system = card | `--gen-model` (`claude-haiku-5-5`) | write a reply as her, for the rapid eval | `packages/persona/src/rapid-eval.mjs` |
+| 3 | Jev, one choice question | `--jev-model` (`jev-1.14.0`, pinned) | judge which reply is really hers | `packages/persona/src/rapid-eval.mjs` |
+| 4 | Claude, user only | `--gen-model` | list topics and write the 30 retrieval questions | `packages/persona/src/queries.mjs` |
+| 5 | Claude, user only | `--gen-model` | label which candidate chunks answer each question | `packages/persona/src/queries.mjs` |
+| 6 | Claude, system + user | `--judge-model` (`claude-sonnet-5-5`) | score a generated reply 1-5 on voice, fact consistency, natural pitch (test split) | `packages/persona/src/eval-persona.mjs` |
+| 7 | Claude, system + user | `--judge-model` | blind test: which of two unlabelled replies is hers (test split) | `packages/persona/src/eval-persona.mjs` |
 
 How each provider is called:
 
 - **Claude**: `POST /v1/messages`, `anthropic-version: 2026-10-21`, body `{model, max_tokens,
   system?, messages: [{role: "user", content: prompt}]}`. No temperature, top_p or top_k: the API
-  version rejects them. Client: `scripts/persona/lib/claude.mjs`.
+  version rejects them. Client: `packages/persona/src/lib/claude.mjs`.
 - **Jev** (TypeSafe System One): `POST https://api.typesafe.ai/v1/systemone`, body
   `{state, model, questions: {<key>: {type: "choice", instructions, criteria: {<option>: label}}}}`.
   Jev returns the chosen option, a probability per option, and a confidence. There is no free-text
   prompt: the question's `instructions` and option labels are the whole prompt, and `state` is the
-  JSON it reasons over. Client: `scripts/persona/lib/jev.mjs`.
+  JSON it reasons over. Client: `packages/persona/src/lib/jev.mjs`.
 
 ## 1. Drafting the card (Claude)
 
@@ -42,7 +42,7 @@ validation and test replies are never read.
 
 **System prompt** (`${personaName}` is "Juno"):
 
-<!-- prompt-src: scripts/persona/draft-card.mjs -->
+<!-- prompt-src: packages/persona/src/draft-card.mjs -->
 ```text
 You write persona cards: the briefing a reply-writing model reads before it chats as a real creator, in the creator's own voice, with her fans. You are drafting the card for ${personaName} from measured data. Rules:
 - Use only what the data states. Never invent a fact about her. Where a fact is not in the data, it belongs under "Not known".
@@ -57,7 +57,7 @@ pairs the model picked, rendered verbatim from the bank, so examples can never b
 caption) @ location: caption | image: description`. `${pairLines}` is one block per train pair:
 `[id] fan: <comment>` then `Juno: <reply>`.
 
-<!-- prompt-src: scripts/persona/draft-card.mjs -->
+<!-- prompt-src: packages/persona/src/draft-card.mjs -->
 ```text
 Draft the card for ${personaName}. Output exactly these markdown sections, in this order, each as a level-2 heading:
 
@@ -111,7 +111,7 @@ and 7), through the one shared `generateReply` in `rapid-eval.mjs`. System promp
 (`card/v<N>.md`). `max_tokens` 300. The output has surrounding quotes and any leading `@handle`
 stripped. `${comment}` is the fan comment (`replying_to`).
 
-<!-- prompt-src: scripts/persona/rapid-eval.mjs -->
+<!-- prompt-src: packages/persona/src/rapid-eval.mjs -->
 ```text
 A fan commented on your Instagram post:\n\n"${comment}"\n\nWrite your reply. Output only the reply text, nothing else.
 ```
@@ -135,7 +135,7 @@ reply also has its leading `@user` removed, so the mention cannot give it away.
 
 **Question** `author`, instructions (`${personaName}` is "Juno"):
 
-<!-- prompt-src: scripts/persona/rapid-eval.mjs -->
+<!-- prompt-src: packages/persona/src/rapid-eval.mjs -->
 ```text
 Which reply did ${personaName} write herself? One of the two replies was written by ${personaName}; the other was written by an AI imitating her.
 ```
@@ -143,13 +143,13 @@ Which reply did ${personaName} write herself? One of the two replies was written
 **Options:**
 
 - `a`:
-<!-- prompt-src: scripts/persona/rapid-eval.mjs -->
+<!-- prompt-src: packages/persona/src/rapid-eval.mjs -->
 ```text
 Reply A was written by ${personaName}
 ```
 
 - `b`:
-<!-- prompt-src: scripts/persona/rapid-eval.mjs -->
+<!-- prompt-src: packages/persona/src/rapid-eval.mjs -->
 ```text
 Reply B was written by ${personaName}
 ```
@@ -177,7 +177,7 @@ One call. `max_tokens` 8,000. `${count}` is 30. `${listing}` is every caption ch
 seeded-random reply chunks, one per line as `[chunk id] text`. The questions are told to avoid her
 wording, because those are the questions keyword search misses and the eval must contain them.
 
-<!-- prompt-src: scripts/persona/queries.mjs -->
+<!-- prompt-src: packages/persona/src/queries.mjs -->
 ```text
 Below are chunks from one creator's retrieval bank: her post captions with image descriptions, and some fan-comment and reply pairs. A chat assistant answers fans in her voice and retrieves chunks to ground its answers.
 
@@ -198,7 +198,7 @@ source chunks, the top 20 by lexical overlap, and a seeded random fill, shuffled
 carries no signal (`pickCandidates` in `queries.mjs`). Ids the model returns that are not in the
 candidate list are discarded.
 
-<!-- prompt-src: scripts/persona/queries.mjs -->
+<!-- prompt-src: packages/persona/src/queries.mjs -->
 ```text
 A fan asks the creator: "${job.question}"
 
@@ -221,7 +221,7 @@ One call per **test** pair, on the reply written by prompt 2 (cached, so each re
 reply. It never sees her real reply, so fact consistency is judged against the card alone.
 `${personaName}` is "Juno". System prompt:
 
-<!-- prompt-src: scripts/persona/eval-persona.mjs -->
+<!-- prompt-src: packages/persona/src/eval-persona.mjs -->
 ```text
 You are a strict evaluator of an AI persona that replies to fan comments as ${personaName}, an Instagram creator. You are given a summary of her card (who she is and how she writes), a fan's comment, and the persona's reply. Score the reply from 1 to 5 on three criteria. Use the whole scale; 5 is rare.
 
@@ -235,7 +235,7 @@ Answer with one JSON object and nothing else, in this shape:
 
 User prompt (`${summary}`, `${comment}` and `${reply}` are filled in):
 
-<!-- prompt-src: scripts/persona/eval-persona.mjs -->
+<!-- prompt-src: packages/persona/src/eval-persona.mjs -->
 ```text
 CARD SUMMARY
 ${summary}
@@ -263,7 +263,7 @@ item. Both replies have a leading `@handle` and surrounding quotes removed. The 
 the card or any example of her writing: it gets only the fact that one reply is hers. `max_tokens`
 400, `--judge-model`. System prompt:
 
-<!-- prompt-src: scripts/persona/eval-persona.mjs -->
+<!-- prompt-src: packages/persona/src/eval-persona.mjs -->
 ```text
 You are shown an Instagram comment from a fan and two replies to it. One reply was written by ${personaName} herself. The other was written by an AI imitating her. Decide which reply is ${personaName}'s. Judge the writing, not the order: which of the two replies is hers is decided at random.
 
@@ -274,7 +274,7 @@ confidence is how sure you are: 0.5 is a coin flip and 1 is certain.
 
 User prompt (`${comment}`, `${a}` and `${b}` are filled in):
 
-<!-- prompt-src: scripts/persona/eval-persona.mjs -->
+<!-- prompt-src: packages/persona/src/eval-persona.mjs -->
 ```text
 FAN COMMENT
 ${comment}
@@ -297,7 +297,7 @@ share of items where the bot sat in A, so a judge biased to one letter is visibl
 ## Changing a prompt
 
 1. Edit the prompt in its script. Never edit a card or eval output by hand.
-2. Re-run the stage: `node scripts/persona/build.mjs --card-version <N+1> --force draft-card,rapid-eval ...`
+2. Re-run the stage: `npx understudy-persona build --card-version <N+1> --force draft-card,rapid-eval ...`
    (flags in [PERSONA-PIPELINE.md § Running it](PERSONA-PIPELINE.md#running-it)), or for sections 6 and 7
    `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>`. A changed prompt
    changes its cache key, so it is paid for again.

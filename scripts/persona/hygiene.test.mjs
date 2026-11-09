@@ -3,12 +3,12 @@ import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { findEmails, findForeignHandles } from "./lib/anonymise.mjs";
-import { readJsonl } from "./lib/io.mjs";
-import { buildChunks, writeChunks } from "./chunks.mjs";
-import { stripLeadingMentions } from "./rapid-eval.mjs";
-import { splitReplies } from "./split.mjs";
-import { writeStyle } from "./style.mjs";
+import { findEmails, findForeignHandles } from "../../packages/persona/src/lib/anonymise.mjs";
+import { readJsonl } from "../../packages/persona/src/lib/io.mjs";
+import { buildChunks, writeChunks } from "../../packages/persona/src/chunks.mjs";
+import { stripLeadingMentions } from "../../packages/persona/src/rapid-eval.mjs";
+import { splitReplies } from "../../packages/persona/src/split.mjs";
+import { writeStyle } from "../../packages/persona/src/style.mjs";
 import { cpSync } from "node:fs";
 
 // Builder-level hygiene: whatever the data, held-out replies never reach the chunks.

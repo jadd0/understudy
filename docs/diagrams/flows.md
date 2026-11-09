@@ -2,7 +2,7 @@
 
 One line per flow: name, diagram, the code that implements it.
 
-- Persona pipeline → `docs/diagrams/persona-pipeline.html` → `scripts/persona/*`
+- Persona pipeline → `docs/diagrams/persona-pipeline.html` → `{packages/persona/src/**,scripts/persona/*}`
 - Analytics: tables to queries to dashboard and report → `docs/diagrams/analytics.html` → `{lib/analytics/*.ts,app/analytics/**,scripts/metrics-report.ts}`
 - Fan message to bubbles and typing over Pusher → `docs/diagrams/realtime.html` → `{providers/pusher/**,components/chat/live-thread.tsx,app/chat/actions.ts,lib/conversations/read.ts}`
 - Takeover, hand-back, release → `docs/diagrams/human-handoff.html` → `{lib/conversations/controls.ts,app/console/actions.ts,app/admin/actions.ts}`
@@ -15,4 +15,4 @@ One line per flow: name, diagram, the code that implements it.
 - What each model sees: Jev's fenced state vs Claude's prompt → `docs/diagrams/engine-context.html` → `{lib/engine/prompt.ts,lib/engine/thread.ts,lib/engine/memory.ts,providers/voyage/persona-retriever.ts}`
 - Conversation modes: ai, handoffs, takeover, hand-back, release → `docs/diagrams/engine-states.html` → `{lib/engine/lease.ts,lib/engine/handoff.ts,lib/conversations/actions.ts,lib/conversations/controls.ts}`
 - RAG: Juno's chunks embedded once by Voyage, each fan message embedded, nearest 5 by pgvector into Claude's prompt, keyword fallback → `docs/diagrams/rag.html` → `{providers/voyage/**,lib/persona/retrieve.ts,scripts/persona/load.ts,lib/engine/prompt.ts}`
-- Instagram scraper: web API, GET-only transport, pairing and mapping, raw layout, normalise → `docs/diagrams/scraper.html` → `{scripts/persona/scrape/**,scripts/persona/fixtures/instagram/**}`
+- Instagram scraper: web API, GET-only transport, pairing and mapping, raw layout, normalise → `docs/diagrams/scraper.html` → `{packages/persona/src/scrape/**,packages/persona/fixtures/instagram/**}`

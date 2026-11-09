@@ -5,6 +5,9 @@
   "directories": {
     "doc": "docs"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "vitest run",
     "dev": "next dev",
@@ -20,7 +23,11 @@
     "eval:retrieval": "tsx --env-file-if-exists=.env.local scripts/persona/eval-retrieval.ts",
     "persona:publish": "tsx --env-file-if-exists=.env.local scripts/persona/publish-card.ts",
     "eval:engine": "tsx --env-file-if-exists=.env.local scripts/eval-engine.ts",
-    "eval:persona": "node scripts/persona/eval-persona.mjs",
+    "eval:persona": "understudy-persona eval",
+    "persona:build": "understudy-persona build",
+    "persona:synth": "understudy-persona synth",
+    "persona:scrape": "understudy-persona scrape",
+    "persona:leak": "understudy-persona leak-check",
     "check:env": "node scripts/check-env.mjs",
     "test:live": "LIVE=1 vitest run --config vitest.live.config.mts",
     "sim": "tsx --env-file-if-exists=.env.local scripts/sim/run.ts",

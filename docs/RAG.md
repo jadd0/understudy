@@ -49,7 +49,7 @@ Related: [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md) (how the corpus is built fro
 
 ## 1. The corpus
 
-Built by `scripts/persona/chunks.mjs` from the anonymised bank into `data/persona/bank/chunks.jsonl`.
+Built by `packages/persona/src/chunks.mjs` from the anonymised bank into `data/persona/bank/chunks.jsonl`.
 
 | chunk kind | count | text format | example |
 |---|---|---|---|

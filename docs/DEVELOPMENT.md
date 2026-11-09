@@ -22,8 +22,8 @@ The build contract is `AGENTS.md`.
 | `npm run db:generate` | drizzle-kit writes a migration to `drizzle/` from `db/schema.ts` |
 | `npm run db:migrate`, `db:seed` | apply migrations; seed creator and admins |
 | `bash scripts/gate.sh` | the gate |
-| `node scripts/persona/build.mjs --creator junovale --card-model <id> --gen-model <id> --jev-model <id>` | persona build; see [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md#running-it) |
-| `node --test scripts/persona/*.test.mjs` | persona tests only |
+| `npx understudy-persona build --creator junovale --card-model <id> --gen-model <id> --jev-model <id>` | persona build; see [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md#running-it) |
+| `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` | persona tests only |
 
 ## The gate
 
@@ -39,7 +39,7 @@ the files in `gate_inputs` (`.env.local`, `node_modules/.package-lock.json`).
 | lint | `npm run --silent lint` |
 | test | `npm run --silent test` |
 | build | `npm run --silent build` |
-| persona | `node --test scripts/persona/*.test.mjs` (includes the split-hygiene tests over committed data) |
+| persona | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` (includes the split-hygiene tests over committed data) |
 
 Add a check as a new line in the gate-steps file, never by editing `gate.sh`.
 

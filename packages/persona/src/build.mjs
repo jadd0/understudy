@@ -1,6 +1,6 @@
 // Runs the whole pipeline: normalise -> split -> style -> chunks -> draft-card -> rapid-eval -> queries.
 //
-//   node scripts/persona/build.mjs --creator junovale --card-model <id> --gen-model <id> --jev-model <id>
+//   understudy-persona build --creator junovale --card-model <id> --gen-model <id> --jev-model <id>
 //        [--seed understudy-2026] [--data data/persona] [--card-version 1] [--query-model <id>]
 //        [--label juno] [--budget 2000000] [--force <step>[,<step>]|all]
 //

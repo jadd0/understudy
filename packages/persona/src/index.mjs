@@ -1,0 +1,16 @@
+// Public entry of @understudy/persona. Importing it runs nothing: every stage is a function.
+export { synth } from "./synth.mjs";
+export { normalise } from "./normalise.mjs";
+export { writeSplits } from "./split.mjs";
+export { writeStyle } from "./style.mjs";
+export { writeChunks } from "./chunks.mjs";
+export { draftCard } from "./draft-card.mjs";
+export { rapidEval } from "./rapid-eval.mjs";
+export { makeQueries } from "./queries.mjs";
+export { build, STEPS } from "./build.mjs";
+export { scrape } from "./scrape/scrape.mjs";
+export { evalPersona } from "./eval-persona.mjs";
+export { leakCheck } from "./leak-check.mjs";
+export { createClaude } from "./lib/claude.mjs";
+export { createJev } from "./lib/jev.mjs";
+export { TokenBudget } from "./lib/io.mjs";

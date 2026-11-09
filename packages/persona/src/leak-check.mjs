@@ -1,7 +1,7 @@
 // Flags any text in a tree that comes from a private raw scrape: 6-word shingles of captions, the
 // creator's comments, the comments she replied to and descriptions, plus every handle seen in it.
 // The repo is public, so a copied sentence with no name on it must still be caught.
-//   node scripts/persona/leak-check.mjs [--summary]
+//   understudy-persona leak-check [--summary]
 // LEAK_CHECK_RAW (read from the environment or .env.local) names the private raw directory, one
 // folder per handle with profile.json and posts.jsonl. Unset or missing: the step skips and exits 0
 // so a clone without the scrape still gates. The tree is the current directory. Nothing is written,
