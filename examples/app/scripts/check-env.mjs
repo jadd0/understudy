@@ -1,7 +1,8 @@
 // Checks an env file against the schema in lib/env and the extra shape rules below, and prints names only.
-//   npm run check:env -- [file] [--production]
+//   npm run check:env -- [file] [--production] [--safety-config=<file>]
 // file defaults to the app's own .env.local (examples/app/.env.local). --production also requires every key the deployed app needs at runtime
 // (the schema leaves provider keys optional so local work does not need them) and an https AUTH_URL.
+// It also names any safety check switched off in the server config or the app seed (or --safety-config), as information only.
 // Exit 0 when nothing is wrong, 1 otherwise. A value is never printed, only the key name and the rule it broke.
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
@@ -102,6 +103,29 @@ export async function checkEnv(values, { production = false } = {}) {
   return problems;
 }
 
+/** Config files that carry the platform's `safety.<key>.enabled` rows, read as text (the app's seed is TypeScript). */
+export const SAFETY_CONFIG_FILES = ["../../server/config.json", "../db/seed.ts"];
+
+/** Names of the safety checks a config text switches off. Pure over `text`; a check is off only by an explicit `false`. */
+export function disabledSafetyChecks(text) {
+  return [...text.matchAll(/"safety\.([a-z_]+)\.enabled"\s*:\s*false\b/g)].map((m) => m[1]);
+}
+
+/** Reads each config file that exists and returns the disabled checks as `{ file, check }`. */
+export function scanDisabledSafety(files) {
+  const found = [];
+  for (const file of files) {
+    let text;
+    try {
+      text = readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
+    for (const check of disabledSafetyChecks(text)) found.push({ file, check });
+  }
+  return found;
+}
+
 async function main(argv) {
   const production = argv.includes("--production");
   const file = argv.find((a) => !a.startsWith("--")) ?? fileURLToPath(new URL("../.env.local", import.meta.url));
@@ -112,6 +136,9 @@ async function main(argv) {
     console.error(`check-env: cannot read ${file}`);
     return 1;
   }
+  const override = argv.find((a) => a.startsWith("--safety-config="))?.slice("--safety-config=".length);
+  const safetyFiles = override ? [override] : SAFETY_CONFIG_FILES.map((p) => fileURLToPath(new URL(p, import.meta.url)));
+  for (const { file, check } of scanDisabledSafety(safetyFiles)) console.log(`check-env: safety check ${check} is disabled in ${file}`);
   const problems = await checkEnv(parseEnv(text), { production });
   if (problems.length === 0) {
     console.log(`check-env: ${file} OK${production ? " (production)" : ""}`);

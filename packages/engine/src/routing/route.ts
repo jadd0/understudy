@@ -16,6 +16,7 @@ import {
   type RouteCfg,
   type SafetyKey,
   type TemplateKey,
+  type ToggleableCheck,
   type ThreadAnswer,
 } from "../types";
 import { DeciderUnavailable } from "../ports/decider";
@@ -35,13 +36,13 @@ export function parsePitchFit(result: DeciderResult): number | null {
 }
 
 /** Reduces Jev's first-call answers to what routing reads. An intent or explicitness outside the options is malformed; a thread or pitch_fit answer never is. */
-export function parseInbound(result: DeciderResult, withOfferResponse: boolean): JevIn {
+export function parseInbound(result: DeciderResult, withOfferResponse: boolean, enabled: Partial<Record<SafetyKey, boolean>> = {}): JevIn {
   const intentAnswer = answerOf(result, "intent");
   if (!(INTENTS as readonly string[]).includes(intentAnswer.value)) throw new DeciderUnavailable("malformed");
   const explicitAnswer = answerOf(result, "explicitness");
   if (!(EXPLICITNESS as readonly string[]).includes(explicitAnswer.value)) throw new DeciderUnavailable("malformed");
 
-  const p = parseSafety(result);
+  const p = parseSafety(result, enabled);
   const buyP = intentAnswer.probabilities.buy_intent ?? (intentAnswer.value === "buy_intent" ? intentAnswer.confidence : 0);
   return {
     intent: intentAnswer.value as Intent,
@@ -85,8 +86,9 @@ const HARD_STOPS: { key: SafetyKey; reason: HandoffReason; template?: TemplateKe
 export function hardStopOf(
   p: Record<SafetyKey, number>,
   floors: RouteCfg["floors"],
+  enabled: Partial<Record<SafetyKey, boolean>> = {},
 ): { reason: HandoffReason; template?: TemplateKey; boundaryLine?: boolean } | null {
-  const fired = (key: SafetyKey) => p[key] >= floors[key];
+  const fired = (key: SafetyKey) => enabled[key] !== false && p[key] >= floors[key];
   const stop = HARD_STOPS.find((h) => fired(h.key));
   if (!stop) return null;
   const template = fired("self_harm") ? "self_harm" : stop.template;
@@ -94,10 +96,14 @@ export function hardStopOf(
   return { reason: stop.reason, template, boundaryLine: stop.boundaryLine && template === undefined ? true : undefined };
 }
 
-/** Reads the six safety answers (probability of "yes") out of a Jev result. */
-export function parseSafety(result: DeciderResult): Record<SafetyKey, number> {
+/** Reads the six safety answers (probability of "yes") out of a Jev result; a disabled check was not asked and reads 0. */
+export function parseSafety(result: DeciderResult, enabled: Partial<Record<SafetyKey, boolean>> = {}): Record<SafetyKey, number> {
   const p = {} as Record<SafetyKey, number>;
   for (const key of SAFETY_KEYS) {
+    if (enabled[key] === false) {
+      p[key] = 0;
+      continue;
+    }
     const a = answerOf(result, key);
     p[key] = a.probabilities.yes ?? (a.value === "yes" ? a.confidence : 1 - a.confidence);
   }
@@ -110,7 +116,7 @@ export function parseSafety(result: DeciderResult): Record<SafetyKey, number> {
  * self-harm check always sends the crisis template, even when a more severe reason names the handoff.
  */
 export function route(jev: JevIn, facts: Facts, cfg: RouteCfg): Route {
-  const fired = (key: SafetyKey) => jev.p[key] >= cfg.floors[key];
+  const fired = (key: SafetyKey) => cfg.enabled[key as ToggleableCheck] !== false && jev.p[key] >= cfg.floors[key];
   const hardship = fired("hardship");
   const alert = facts.highValue && !facts.hasUnresolvedHandoff;
 
@@ -119,7 +125,7 @@ export function route(jev: JevIn, facts: Facts, cfg: RouteCfg): Route {
   const hold = (reason: HandoffReason): Route =>
     facts.holdSuppressed ? { name: "deflect", hardship, alert } : { name: "hold_creator", reason, hardship, alert };
 
-  const stop = hardStopOf(jev.p, cfg.floors);
+  const stop = hardStopOf(jev.p, cfg.floors, cfg.enabled);
   if (stop) return { name: "hard_stop", reason: stop.reason, template: stop.template, boundaryLine: stop.boundaryLine, hardship: false, alert: false };
 
   // A meetup or off-platform ask is a strike: her boundary line and a numbered warning while the AI keeps chatting,

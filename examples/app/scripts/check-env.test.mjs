@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { checkEnv, PRODUCTION_REQUIRED } from "./check-env.mjs";
+import { checkEnv, disabledSafetyChecks, PRODUCTION_REQUIRED } from "./check-env.mjs";
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "check-env.mjs");
 const SECRET = "zzz-secret-marker-value";
@@ -83,4 +83,19 @@ test("the CLI exits non-zero and never prints a value", () => {
   const ok = writeFileSync(file, Object.entries(good).map(([k, v]) => `${k}=${v}`).join("\n"));
   assert.equal(ok, undefined);
   assert.equal(spawnSync(process.execPath, [SCRIPT, file], { encoding: "utf8" }).status, 0);
+});
+
+test("a config with one safety check disabled is reported by name, and the CLI prints it", () => {
+  const rows = '{ "safety.minor.enabled": false, "safety.threat.enabled": true, "safety.self_harm.enabled": true }';
+  assert.deepEqual(disabledSafetyChecks(rows), ["minor"]);
+  assert.deepEqual(disabledSafetyChecks('{ "safety.minor.enabled": true }'), []);
+  const dir = mkdtempSync(join(tmpdir(), "check-env-safety-"));
+  const config = join(dir, "config.json");
+  const env = join(dir, "env");
+  writeFileSync(config, rows);
+  writeFileSync(env, Object.entries(good).map(([k, v]) => `${k}=${v}`).join("\n"));
+  const run = spawnSync(process.execPath, [SCRIPT, env, `--safety-config=${config}`], { encoding: "utf8" });
+  assert.equal(run.status, 0);
+  assert.match(run.stdout, /safety check minor is disabled/);
+  assert.doesNotMatch(run.stdout, /threat/);
 });
