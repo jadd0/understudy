@@ -13,7 +13,7 @@ export interface Responsible {
 }
 
 /**
- * . Turn rows keep Jev's parsed answers but not which pacing rule blocked a pitch, so the per-reason
+ * Responsible-selling rules. Turn rows keep Jev's parsed answers but not which pacing rule blocked a pitch, so the per-reason
  * split covers what the data can show: hardship from the turn, the cooldown and the cap from current state.
  */
 export async function getResponsible(q: Query): Promise<Responsible> {

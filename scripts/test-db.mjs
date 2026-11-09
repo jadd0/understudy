@@ -41,7 +41,7 @@ export function baseDatabase() {
 /**
  * Creates `name` in the same Neon project if absent, applies the migrations, and returns its URL. Never touches
  * the base database. With `recreate`, a database whose migrations fail is dropped and built again once: a test
- * database is disposable, and rows left by older tests can block a newer migration (an enum cast, ).
+ * database is disposable, and rows left by older tests can block a newer migration (an enum cast).
  */
 export async function ensureDb(name, { recreate = false } = {}) {
   const url = baseDatabase().url;
@@ -62,7 +62,7 @@ export async function ensureDb(name, { recreate = false } = {}) {
     await applyMigrations(target);
   } catch (e) {
     // Only a data error (SQLSTATE class 22, e.g. an enum cast over an old row) or 55P04 (an enum value added and used
-    // in one migration run on a database whose enum predates it, ) means a stale database. Anything else, such
+    // in one migration run on a database whose enum predates it) means a stale database. Anything else, such
     // as a lock or a duplicate from another process, must never drop a database a test run may be using.
     const code = String(e?.cause?.code ?? e?.code ?? "");
     if (!recreate || !(code.startsWith("22") || code === "55P04")) throw e;

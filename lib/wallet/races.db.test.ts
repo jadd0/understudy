@@ -29,7 +29,7 @@ const outcomes = (settled: PromiseSettledResult<unknown>[]) => ({
   errors: settled.flatMap((r) => (r.status === "rejected" ? [(r.reason as Error).name] : [])),
 });
 
-describe(" races", () => {
+describe("wallet races", () => {
   test("the same offer unlocked 10 times at once debits exactly once", async () => {
     const fan = await makeFan();
     const creator = await makeCreator();

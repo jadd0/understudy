@@ -28,7 +28,7 @@ const tsHandoff = (any: boolean) =>
 /**
  * The one place that decides which conversations a viewer may see; every read below is filtered by it.
  * A creator sees her own conversations that are not on the Trust & Safety side (mode, or an unresolved ts
- * handoff). An admin sees every conversation (, so Trust & Safety can step in anywhere, ). A fan sees their own.
+ * handoff). An admin sees every conversation (so Trust & Safety can step in anywhere). A fan sees their own.
  */
 export function scopeFor(viewer: Viewer): SQL {
   if (viewer.role === "fan") return eq(conversations.fanId, viewer.id);
@@ -143,7 +143,7 @@ export interface Thread {
     creatorImage: string | null;
     creatorId: string;
     fanId: string;
-    /** The fan is restricted as a minor seen in chat (`minor_in_chat`, ): read-only, and never handed to the AI. */
+    /** The fan is restricted as a minor seen in chat (`minor_in_chat`): read-only, and never handed to the AI. */
     fanRestricted: boolean;
   };
   messages: ThreadMessage[];
@@ -380,7 +380,7 @@ export async function canSubscribe(
 ): Promise<boolean> {
   if (channel.kind === "ts") return viewer.role === "admin";
   if (channel.kind === "creator") {
-    // An admin sees every conversation, so a creator's inbox events are within its scope (its console view, ).
+    // An admin sees every conversation, so a creator's inbox events are within its scope (its console view).
     if (viewer.role === "admin") return true;
     if (viewer.role !== "creator") return false;
     return (await creatorFor(viewer.id))?.id === channel.id;

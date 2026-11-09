@@ -7,7 +7,7 @@ import { CFG, facts, jev, PITCHABLE } from "./test-fixtures";
 
 const r = (j = jev(), f = facts()) => route(j, f, CFG);
 
-describe("route: the  matrix", () => {
+describe("route: the routing matrix", () => {
   test("small talk, flirting and plain questions are answered by the AI", () => {
     expect(r(jev({ intent: "smalltalk" }))).toMatchObject({ name: "reply", hardship: false, alert: false });
     expect(r(jev({ intent: "flirt", explicitness: "flirty" })).name).toBe("reply");

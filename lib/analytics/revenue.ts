@@ -6,7 +6,7 @@ export interface TopFan {
   fanId: string;
   creatorId: string;
   isSim: boolean;
-  /**  score in cents: Σ debit × 0.5^(age / half-life), by the injected `now`. */
+  /** High-value score in cents: Σ debit × 0.5^(age / half-life), by the injected `now`. */
   scoreCents: number;
   spentCents: number;
 }
@@ -77,7 +77,7 @@ function emptyRevenue(q: Query): Revenue {
   };
 }
 
-/** Fans ranked by the  high-value score as of `q.now`. The half-life is the creator's config row, else the platform's. */
+/** Fans ranked by the high-value score as of `q.now`. The half-life is the creator's config row, else the platform's. */
 export async function getTopFans(q: Query, limit = 10): Promise<TopFan[]> {
   if (q.creatorIds.length === 0) return [];
   const rows = await rowsOf<{ fan_id: string; creator_id: string; is_sim: boolean; score: unknown; spent: unknown }>(sql`
