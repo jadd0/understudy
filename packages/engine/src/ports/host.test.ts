@@ -11,10 +11,10 @@ const sourceFiles = (dir: string): string[] =>
   readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((e) => {
     const rel = join(dir, e.name);
     if (e.isDirectory()) return sourceFiles(rel);
-    return /\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) && !/^test-/.test(e.name) && e.name !== "fake-host.ts" ? [rel] : [];
+    return /\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) && !/(^|\/)testing\/(?!fakes\/)[^/]+\.ts$/.test(rel) ? [rel] : [];
   });
 
-// Host tables the engine must not name, in code or in raw SQL (lease.ts included).
+// Host tables the engine must not name, in code or in raw SQL (the commit and lease files included).
 // `unlocks` and `users` are also property and column words, so they count only as SQL tables or drizzle imports.
 const HOST_TABLES = [
   /\bledger_entries\b/,
