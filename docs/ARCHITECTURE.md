@@ -431,9 +431,15 @@ Assembly of the two system blocks, including the hardship instruction and every 
     if (input.offer.owned) turnParts[turnParts.length - 1] += `\n${OWNED_ITEM_LINE}`;
   }
   if (input.chunks.length) turnParts.push(`## Things she has said or posted (for facts and tone)\n${input.chunks.map((c) => `- ${c.text}`).join("\n")}`);
+  if (input.styleDraw) turnParts.push(styleDrawBlock(input.styleDraw.draw, input.styleDraw.pet));
   const memory = renderProfile(input.profile);
   if (memory) turnParts.push(`## What she knows about this fan\n${memory}`);
 ```
+
+When the card carries her measured voice-marker rates, a reply or offer turn also gets a `## Voice for this reply`
+block (`styleDrawBlock`): this reply's draw of which markers it may use, as constraints, and a line to answer a
+question plainly first. A sign-off or address term the draw did not allow is removed from the edges of the chosen draft
+after it passes verify.
 
 Reactions to a tip or an unlock, and what became of the offers in this chat. A turn with no new fan
 message gets `EVENT_ONLY_INSTRUCTION` in place of the route instruction; any turn holding a pending event gets the
