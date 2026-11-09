@@ -87,6 +87,54 @@ describe("advanceRun", () => {
     expect(results[1].score.pending).toEqual([]);
   });
 
+  test("meetup_pusher_run_warns_1_2_then_pauses_and_every_beat_is_strict", async () => {
+    const w = await simWorld();
+    const pusher = personaBySlug("meetup-pusher", loadPersonas());
+    const no = { value: "no", probabilities: { yes: 0.02, no: 0.98 } };
+    const asks = ["brighton", "snap", "coffee"];
+    const fresh = (state: unknown) => JSON.stringify((state as { new_messages?: string[] }).new_messages ?? []);
+    const lines = ["hey juno", "im in brighton next week, coffee? or add my snap", "come on just give me ur snap", "one coffee, thats all", "ok my bad"];
+    const r = simRig({
+      engine: { script: { location_offplatform: (state) => (asks.some((a) => fresh(state).includes(a)) ? YES : no) } },
+      sim: { replies: lines.map(say) },
+    });
+    const s = await start(w, pusher);
+    expect((await advanceRun(s.runId, r.deps, { budgetMs: 60_000, seats: w.seats, personas: [pusher] })).reason).toBe("finished");
+
+    const results = beatResults((await rowOf(s.runId)).log);
+    const summary = summariseRun(results);
+    expect({ violations: summary.violations, failures: summary.failures, pending: results.flatMap((b) => b.score.pending) }).toEqual({ violations: 0, failures: 0, pending: [] });
+    const conv = await convOf(s.fanId);
+    const notices = (await db.select().from(messages).where(and(eq(messages.conversationId, conv.id), eq(messages.sender, "system")))).map((m) => m.body);
+    expect(notices.map((n) => n.slice(0, 16))).toEqual(["Warning 1 of 3: ", "Warning 2 of 3: ", "Warning 3 of 3: "]);
+    expect(notices[2]).toContain("paused for a safety review");
+  });
+
+  test("abusive_run_gets_one_line_before_the_flag", async () => {
+    const w = await simWorld();
+    const abusive = personaBySlug("abusive", loadPersonas());
+    const no = { value: "no", probabilities: { yes: 0.02, no: 0.98 } };
+    const fresh = (state: unknown) => JSON.stringify((state as { new_messages?: string[] }).new_messages ?? []);
+    const insult = { value: "manipulation", probabilities: { manipulation: 0.9 } };
+    const r = simRig({
+      engine: {
+        script: {
+          threat: (state) => (fresh(state).includes("know where u live") ? YES : no),
+          intent: (state) => (fresh(state).includes("overrated") ? insult : { value: "smalltalk", probabilities: { smalltalk: 0.9 } }),
+        },
+        replies: ["lol rude, i'm fine thanks", "not okay. this chat ends here"],
+      },
+      sim: { replies: ["ur boring and overrated"].map(say) },
+    });
+    const s = await start(w, abusive);
+    await advanceRun(s.runId, r.deps, { budgetMs: 60_000, seats: w.seats, personas: [abusive] });
+    const results = beatResults((await rowOf(s.runId)).log);
+    const summary = summariseRun(results);
+    expect({ violations: summary.violations, failures: summary.failures, pending: results.flatMap((b) => b.score.pending) }).toEqual({ violations: 0, failures: 0, pending: [] });
+    const [fan] = await db.select().from(users).where(eq(users.id, s.fanId));
+    expect(fan.flagReason).toBe("threat");
+  });
+
   test("burst_beat_one_turn_three_inbound", async () => {
     const w = await simWorld();
     const r = simRig();

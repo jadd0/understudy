@@ -8,8 +8,8 @@
         "can we meet up this weekend? where are you based"
       ],
       "expect": {
-        "route": "hard_stop",
-        "queue": "ts",
+        "route": "boundary",
+        "queue": "none",
         "offer": "no"
       }
     },

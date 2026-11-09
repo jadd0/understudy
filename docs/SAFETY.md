@@ -19,10 +19,10 @@ There are two human queues: **Juno** (money and relationship) and **Trust & Safe
 | Wants explicit live chat | Juno | Held for her (`explicit_live_chat`); the AI sends nothing and never offers the personal chat itself. She may offer it from her console | `live-chat-call`, `live-chat-request` |
 | Custom content request outside the catalogue | Juno | She sets the price | `custom-set-theme`, `custom-video` |
 | High-value fan (rolling spend over threshold) | Juno | AI keeps replying; she is alerted and may step in | `high-value-fan` |
-| Asks to meet, for her location, or to move off-platform | T&S, hard stop | A fixed boundary reply, then T&S. The account is not flagged (only a minor or a threat flags it). Online plans such as gaming together are not off-platform | `location-address`, `location-coffee`, `location-meetup`, `offplatform-mid-chat`, `offplatform-payment`, `offplatform-snap`, `offplatform-whatsapp` |
+| Asks to meet, for her location, or to move off-platform | AI, a strike | A boundary line in her voice and a platform notice "Warning n of 3"; the AI keeps chatting and T&S gets an alert. The third strike (`ts.max_strikes`, counted per fan per creator inside `ts.strike_window_days`) pauses the chat for review. The account is not flagged (only a minor or a threat flags it). Online plans such as gaming together are not off-platform | `location-address`, `location-coffee`, `location-meetup`, `offplatform-mid-chat`, `offplatform-payment`, `offplatform-snap`, `offplatform-whatsapp` |
 | Sign of a minor | T&S, hard stop | Platform notice (sender `system`), AI stops, account flagged `minor_in_chat` and restricted to reading, nothing sold | `minor-direct`, `minor-late-flirt`, `minor-parents-rules`, `minor-school`, `minor-year-group` |
 | Self-harm or crisis | T&S, hard stop | A fixed, safe reply with resources; AI stops | `hardship-escalates`, `self-harm-after-banter`, `self-harm-direct`, `self-harm-hurting`, `self-harm-ultimatum` |
-| Threats, harassment, doxxing | T&S, hard stop | AI stops; account flagged | `threat-chargeback`, `threat-direct`, `threat-doxx`, `threat-stalking` |
+| Threats, harassment, doxxing | T&S, hard stop | One boundary line in her voice, then the AI stops and the account is flagged (no line if none passes its checks) | `threat-chargeback`, `threat-direct`, `threat-doxx`, `threat-stalking` |
 | Refund or payment dispute | T&S (support) | Short acknowledgement, then a human | `dispute-refund`, `dispute-unrecognised`, `dispute-wrong-item` |
 | Financial hardship or distress | AI, no selling | Supportive, no pitch, and no pitch for `pitch.hardship_cooldown_hours` after. Never handed off: the `hardship_escalation` reason exists in the schema but nothing opens it | `hardship-compulsive`, `hardship-escalates`, `hardship-rent`, `hardship-then-banter` |
 | Jev below its floor | Juno's queue (T&S for safety categories); a best guess of `buy_intent` is offered instead when pacing allows | Unsure means a human, unless it is most likely a sale | `unsure-gibberish`, `unsure-vague` |
@@ -57,7 +57,14 @@ and velocity limits still apply to an explicit request.
 
 **What each stop does.**
 
-- A threat flags the account (`flag_reason = 'threat'`; the fan lands on the blocked page) and sends nothing.
+- A threat gets one boundary line in her voice (written under its own instruction and checked like a reply, except that
+  a refusal is expected), then flags the account (`flag_reason = 'threat'`; the fan lands on the blocked page, which
+  shows that line). If no line passes its checks nothing is sent, as before.
+- A meetup or off-platform ask is a strike, not a stop. She writes a boundary line (the fixed line below if no draft
+  passes), the platform adds the notice, and a T&S alert opens without changing who owns the chat. The strike that reaches
+  `ts.max_strikes` pauses the chat for review with the paused notice and does not flag the account. A minor or
+  self-harm signal in the same message outranks it and is a hard stop with no strike. A real address handed over goes
+  to T&S as one more strike; no detector tells it apart.
 - A minor in chat gets the platform notice at once, as sender `system` and not in Juno's voice, quoted below.
   The account is flagged `minor_in_chat`: sessions are kept, the fan may load `/chat` read-only (every other route goes to
   `/blocked`), every send is refused with `SendRefused('restricted')`, undelivered AI bubbles are superseded, and the
@@ -69,8 +76,14 @@ and velocity limits still apply to an explicit request.
     "Hi — we think this account may belong to someone under 18, so messaging is turned off. You can still read this chat. If we've got this wrong, contact {support_email}.",
 ```
 
-- Self-harm sends the fixed crisis reply with resources; location, off-platform and payment disputes send a fixed
-  short reply. None of these replies come from a model.
+- Self-harm sends the fixed crisis reply with resources and a payment dispute sends a fixed short reply, neither from a
+  model. The strike notices are the platform's own fixed wording:
+
+<!-- prompt-src: packages/engine/src/templates.ts -->
+```text
+    ? `Warning ${max} of ${max}: this chat is paused for a safety review. You can still read it.`
+    : `Warning ${n} of ${max}: keep it on the app. Meetups, other apps and outside payments aren't allowed. ${max} warnings pauses this chat.`;
+```
 - Juno's queue (custom requests, live chat, unsure, a draft that failed verification, repeated engine errors)
   sends nothing from the AI; the conversation waits for her.
 

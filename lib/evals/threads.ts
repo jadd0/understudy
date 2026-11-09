@@ -27,7 +27,7 @@ export const MATRIX_ROWS = [
 ] as const;
 export type MatrixRow = (typeof MATRIX_ROWS)[number];
 
-export const ROUTE_NAMES = ["reply", "offer", "hold_creator", "hard_stop", "deflect", "ai_disclosure"] as const;
+export const ROUTE_NAMES = ["reply", "offer", "hold_creator", "hard_stop", "deflect", "ai_disclosure", "boundary"] as const;
 export type RouteName = (typeof ROUTE_NAMES)[number];
 
 const route = z.enum(ROUTE_NAMES);

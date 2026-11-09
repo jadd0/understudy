@@ -26,7 +26,7 @@ export interface TurnPage {
   pages: number;
 }
 
-const ROUTES = ["reply", "offer", "hold_creator", "hard_stop", "deflect", "ai_disclosure", "none"];
+const ROUTES = ["reply", "offer", "hold_creator", "hard_stop", "deflect", "ai_disclosure", "boundary", "none"];
 export const ROUTE_FILTERS = ROUTES;
 
 /** Paged turns in the window, newest first. A route filter of `none` selects turns that recorded no route. */

@@ -68,6 +68,7 @@ export const turnRouteEnum = pgEnum("turn_route", [
   "hard_stop",
   "deflect",
   "ai_disclosure",
+  "boundary",
 ]);
 
 // Tables
@@ -255,6 +256,27 @@ export const handoffs = pgTable(
     index("handoffs_due_idx").on(t.dueAt).where(sql`${t.status} <> 'resolved'`),
     check("handoffs_resolved_by_check", sql`${t.resolvedBy} in ('human', 'sla')`),
   ],
+);
+
+/**
+ * One row per boundary strike: a fan's meetup or off-platform ask, counted per fan per creator inside a window
+ * (`ts.strike_window_days`). Written only by the commit that sends the boundary line, never on a draft retry.
+ * `creator_id` and `fan_id` are host ids with no foreign key.
+ */
+export const strikes = pgTable(
+  "strikes",
+  {
+    id: id(),
+    creatorId: uuid("creator_id").notNull(),
+    fanId: uuid("fan_id").notNull(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id),
+    turnId: uuid("turn_id").references((): AnyPgColumn => turns.id),
+    reason: text("reason").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("strikes_fan_idx").on(t.creatorId, t.fanId, t.createdAt)],
 );
 
 export const fanMemory = pgTable(

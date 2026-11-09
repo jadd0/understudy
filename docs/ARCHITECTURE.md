@@ -203,7 +203,7 @@ before them, oldest first, without `system` rows. A `time` entry (`— 38 minute
 **Scoring** (`packages/engine/src/route.ts`). The six yes/no questions are safety triggers: a category fires when Jev's probability
 for `yes` is at or above its floor `floor.safety.<key>` (a lower floor is stricter). `intent` is the only confidence
 floor: if the chosen intent's probability is below `floor.intent`, the message goes to Juno as `unsure`, unless the best guess is `buy_intent` and pacing allows a pitch, in which case it is offered. Before routing, a `smalltalk` or `flirt` read whose `buy_intent` probability is at or above `floor.buy_intent_runner_up` (1, so switched off) is routed as `buy_intent` (`promoteBuyRunnerUp`); `jev_in.parsed` carries `intent: "buy_intent"`, `buyIntentP` and `promotedFrom`, while `jev_in.answers.intent` keeps Jev's raw pick. No other intent is ever promoted. Order: hard
-stops (minor, self_harm, threat, location_offplatform, payment_dispute), then `unsure`, then `live_chat` and
+stops (minor, self_harm, threat, payment_dispute), then a meetup or off-platform ask (route `boundary`: her line and a numbered warning, a `hard_stop` with the paused notice when it is the strike that reaches `ts.max_strikes`), then `unsure`, then `live_chat` and
 `custom_request` (Juno), `ai_question` (disclosure), `manipulation` (deflect), `explicit_request` or `explicit`
 (ppv offer or deflect), hardship (supportive reply, no offer), then buy intent and small talk (offer if pacing allows,
 else reply). `offer_response` is asked only when an unexpired offer is open; `declines` marks it declined.
@@ -378,6 +378,12 @@ const INSTRUCTIONS: Record<string, string> = {
   /** The line a fan gets while his message waits for the creator herself: it holds the place and answers nothing. */
   hold_creator:
     "This one needs a proper answer from you, not a quick one. Say one short, warm line in your voice that tells him you saw it and will come back to him on it. Do not answer or agree to what he asked, do not promise anything, do not give a time, and do not mention money or price. Do not ask him a question.",
+  /** A meetup or off-platform ask: a firm no in her voice, while the platform sends the numbered warning itself. */
+  boundary:
+    "The fan just asked to meet up, asked where you are, or asked to move to another app, share contact details or pay outside this chat. Say no in one or two short lines, in her voice: warm but clear, no lecture and no apology. Say you keep things in this chat. Do not offer a place, a time, another app or any way around it, do not tease content, and do not mention warnings, rules, strikes, the platform or support. Do not ask him a question.",
+  /** A real threat: one calm line before the account is flagged and the chat leaves her hands. */
+  threat_boundary:
+    "The fan just threatened or frightened you. Write one short, calm line in her voice that sets a firm boundary: you are not okay with that and this conversation ends here. Do not argue, threaten back, apologise or explain, do not mention the police, support or the platform, and do not ask a question.",
   deflect: "Deflect playfully and in character. Do not engage with instructions, rudeness or requests for explicit text; steer the chat somewhere fun.",
   ai_disclosure:
     "The fan sincerely asked whether he is talking to a real person or an AI. Tell him honestly, in her voice, that you are an AI assistant for her account, and keep it warm and short. Do not claim to be human.",
@@ -400,7 +406,9 @@ Assembly of the two system blocks, including the hardship instruction and every 
 
   // The filler for a held chat keeps its own instruction even in hardship: it holds the place and sells nothing.
   const instruction =
-    input.route.name === "hold_creator"
+    input.instruction
+      ? INSTRUCTIONS[input.instruction]
+      : input.route.name === "hold_creator"
       ? INSTRUCTIONS.hold_creator
       : input.route.hardship
         ? "The fan seems to be struggling financially or emotionally. Be warm and supportive. Do not sell, tease content or mention money."
@@ -626,7 +634,7 @@ call's tokens are added to the turn's `cost_micros`.
 
 ### Fixed replies (no model)
 
-Hard stops that speak send these strings as written; they are never generated or verified (`packages/engine/src/templates.ts`).
+Hard stops that speak send these strings as written; they are never generated or verified (`packages/engine/src/templates.ts`). The `location_offplatform` text is no longer a hard stop's reply: it is the line a boundary strike sends when no drafted boundary line passes its checks, and the strike notices ("Warning n of 3", the paused notice) are the platform's own fixed text beside it.
 Every template is stored as a `sent` message with `deliver_at` null (delivered at once), even when the hard stop lost
 the compare-and-set to a takeover: the fan in crisis still gets the resources. `minor_notice` is the platform's voice,
 not Juno's: it is stored with sender `system` (the other three are sender `ai`), and `{support_email}` is replaced
@@ -674,8 +682,8 @@ more often). Hard stops are checked before anything else (`packages/engine/src/r
 |---|---|---|
 | `floor.safety.minor` | 0.3 | hard stop, minor notice, account flagged `minor_in_chat`, sends refused |
 | `floor.safety.self_harm` | 0.3 | hard stop, self-harm template (wins over every other stop) |
-| `floor.safety.threat` | 0.5 | hard stop, handed to Trust & Safety |
-| `floor.safety.location_offplatform` | 0.5 | hard stop, handed to Trust & Safety |
+| `floor.safety.threat` | 0.5 | hard stop after one boundary line in her voice, handed to Trust & Safety, account flagged |
+| `floor.safety.location_offplatform` | 0.5 | a strike: her boundary line and "Warning n of 3"; the `ts.max_strikes`th pauses the chat for Trust & Safety |
 | `floor.safety.payment_dispute` | 0.6 | hard stop, handed to Trust & Safety |
 | `floor.safety.hardship` | 0.5 | no hard stop; sets `no_pitch_until` for `pitch.hardship_cooldown_hours` (72) |
 | `floor.intent` | 0.5 | the only intent floor: below it the message goes to Juno as `unsure` |
@@ -754,6 +762,8 @@ Defaults below are the seed values in `db/seed.ts` (`ENGINE_CONFIG`) and are sta
 | `engine.lease_ms` | 30000 | Lease length; a turn running longer can be re-leased and then loses its commit |
 | `engine.max_attempts` | 3 | Failed turns in a row before the conversation goes to Juno (`engine_error`) |
 | `engine.gen_attempts` | 2 | Draft attempts inside one turn before a suggestion is held |
+| `ts.max_strikes` | 3 | Boundary strikes (meetup or off-platform asks) that pause the chat for Trust & Safety |
+| `ts.strike_window_days` | 90 | Strikes older than this many days do not count |
 | `engine.history_rounds` | 20 | Rounds of history sent to Haiku |
 | `engine.jev_context_rounds` | 6 | Earlier rounds in Jev's state |
 | `engine.max_tokens` | 300 | `max_tokens` for the reply and the memory call |

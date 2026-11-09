@@ -276,6 +276,8 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
       handoff: null,
       setMode: null,
       hardStop: null,
+      // A strike is counted by the commit itself, under the conversation lock, so a draft retry never records one.
+      strike: route.strike ? { reason: "location_offplatform", maxStrikes: cfg.route.maxStrikes, windowDays: cfg.strikeWindowDays } : null,
       alert: route.alert,
       sla: cfg.sla,
       hardshipCooldownHours: route.hardship ? cfg.hardshipCooldownHours : null,
@@ -288,8 +290,9 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
   };
 
   /**
-   * The line a held chat sends while the creator is away: one draft, the same verify as any reply, and nothing
-   * sent unless every check passes. A failed check or a provider error sends nothing and the hold goes ahead.
+   * One short line written outside the reply loop: the filler a held chat sends while the creator is away, or the
+   * boundary line before a threat is flagged. One draft, the same verify as any reply (a boundary line may refuse),
+   * and nothing sent unless every check passes. A failed check or a provider error sends nothing and the stop goes ahead.
    */
   const draftFiller = async (
     route: Route,
@@ -299,10 +302,13 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
     jevState: { earlier_messages: ReturnType<typeof jevLines>; new_messages: string[] },
     thread: JevIn["thread"],
     batchText: string,
+    boundary = false,
   ): Promise<string | null> => {
+    const label = boundary ? { boundary: true } : { filler: true };
     try {
       const recent = recentEmoji(history);
       const built = buildPrompt({
+        instruction: boundary ? "threat_boundary" : undefined,
         cardBody: card.body,
         neverList: card.neverList,
         chunks: [],
@@ -338,16 +344,17 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
           neverList: card.neverList,
           stopReason: gen.stopReason,
           paid: facts.hasUnlocked,
+          boundary,
         },
         () => clock.now(),
       );
       acc.msJevOut = (acc.msJevOut ?? 0) + verdict.ms;
       if (verdict.usage) addCost("jev_out", cfg.prices[cfg.jevModel], verdict.usage);
-      trail.push({ filler: true, failures: verdict.failures, answers: verdict.jevOut });
+      trail.push({ ...label, failures: verdict.failures, answers: verdict.jevOut });
       return verdict.ok && text !== "" ? text : null;
     } catch (e) {
-      console.error(`engine: hold filler failed ${describeError(e)}`);
-      trail.push({ filler: true, error: describeError(e) });
+      console.error(`engine: ${boundary ? "boundary line" : "hold filler"} failed ${describeError(e)}`);
+      trail.push({ ...label, error: describeError(e) });
       return null;
     }
   };
@@ -444,13 +451,21 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
       const plan = basePlan(route, declineOfferId, record);
       // A human owns the chat now and sees the tip row; it is not left queued for a later AI thanks.
       plan.eventMessageIds = tipRowIds(reacting);
-      if (route.name === "hard_stop") {
+      if (route.name === "hard_stop" && route.strike) {
+        // The strike that pauses the chat: the commit moves it to Trust & Safety and sends the paused notice, only if
+        // the chat is still the AI's. A takeover that got there first wins and no strike is recorded.
+        plan.outcome = "hard_stop";
+      } else if (route.name === "hard_stop") {
         plan.outcome = "hard_stop";
         plan.setMode = "handoff_ts";
         plan.handoff = { queue: "ts", reason: route.reason! };
         plan.hardStop = { reason: route.reason!, flagUser: route.reason === "minor" || route.reason === "threat" };
         if (route.template) {
           plan.reply = { body: template(route.template, cfg.supportEmail), kind: "sent", sender: templateSender(route.template) };
+        } else if (route.boundaryLine) {
+          // One line in her voice before the flag. No passing line keeps the silent stop.
+          const line = await draftFiller(route, history, facts, sessionGap, jevState, jevIn.thread, batchText, true);
+          if (line) plan.reply = { body: line, kind: "sent" };
         }
       } else {
         plan.outcome = "handoff";
@@ -562,13 +577,15 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
             stopReason: gen.stopReason,
             paid: facts.hasUnlocked,
             offer: offerItem,
+            boundary: route.name === "boundary",
           },
           () => clock.now(),
         );
       } catch (e) {
         // A provider error on a retry never costs a safe draft already in hand: stop retrying and send that one.
-        if (chosen === null) throw e;
-        console.error(`engine: attempt ${attempts} failed, keeping an earlier safe draft ${describeError(e)}`);
+        // A boundary line never fails the turn: the fixed template goes instead, so the fan always hears one.
+        if (chosen === null && route.name !== "boundary") throw e;
+        console.error(`engine: attempt ${attempts} failed, ${chosen === null ? "using the fixed boundary line" : "keeping an earlier safe draft"} ${describeError(e)}`);
         trail.push({ attempt: attempts, error: describeError(e) });
         break;
       }
@@ -639,8 +656,13 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
       break;
     }
     if (safe) break; // A later pass found nothing safe: the earlier draft, for the earlier batch, still stands.
-    // No attempt in the turn passed safety: hold the last draft for the creator to edit and hand the conversation over.
     plan = basePlan(pass.failed.route, pass.failed.declineOfferId, pass.failed.record);
+    if (pass.failed.route.name === "boundary") {
+      // No boundary line passed safety: the fixed line goes, with the same warning, and the AI keeps chatting.
+      plan.reply = { body: template("location_offplatform", cfg.supportEmail), kind: "sent", fixed: true };
+      return finish(plan, pass.failed.route, pass.failed.batchText);
+    }
+    // No attempt in the turn passed safety: hold the last draft for the creator to edit and hand the conversation over.
     plan.outcome = "suggested";
     plan.reply = { body: pass.lastDraft, kind: "draft" };
     plan.setMode = "handoff_creator";
@@ -671,7 +693,7 @@ async function attemptTurn(ctx: EngineCtx, lease: Lease, cfg: EngineCfg, acc: Tu
         .catch((e) => console.error(`engine: emit failed ${describeError(e)}`));
     }
     // A hard stop's template is delivered even when the commit lost the race.
-    if (p.reply?.kind === "sent") await emitDelivery(events, lease.conversationId, result);
+    if (p.reply?.kind === "sent" || p.strike) await emitDelivery(events, lease.conversationId, result);
     if (!result.applied) return { status: "superseded", turnId: result.turnId };
 
     // A reaction to a tip or an unlock has no fan text to learn from.

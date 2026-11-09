@@ -47,7 +47,7 @@ describe("the two migration sets", () => {
     const host = createdTables(join(process.cwd(), "drizzle"));
     const engine = createdTables(join(process.cwd(), "packages/engine/drizzle"));
     expect(engine).toEqual([
-      "conversations", "creator_settings", "fan_memory", "handoffs", "messages", "offers", "persona_cards", "persona_chunks", "turns",
+      "conversations", "creator_settings", "fan_memory", "handoffs", "messages", "offers", "persona_cards", "persona_chunks", "strikes", "turns",
     ]);
     expect(host.length).toBeGreaterThan(5);
     expect(host.filter((t) => engine.includes(t))).toEqual([]);

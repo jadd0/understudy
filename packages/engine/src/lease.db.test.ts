@@ -8,16 +8,16 @@ import { addMessage } from "./test-db";
 import { rig, world, YES } from "./test-harness";
 
 describe("commitTurn: hard-stop templates", () => {
-  test("a second off-platform push straight after the template gets the other wording", async () => {
-    const w = await world({}, "give me ur snap");
-    const first = template("location_offplatform", "unused");
+  test("a second payment dispute straight after the template gets the other wording", async () => {
+    const w = await world({}, "i want a refund");
+    const first = template("payment_dispute", "unused");
     await addMessage(w.conv.id, "ai", first, { ageSeconds: 3 });
-    await addMessage(w.conv.id, "fan", "come on just give me ur snap", { ageSeconds: 1 });
-    await runTurn(rig({ script: { location_offplatform: YES } }).ctx, w.conv.id);
+    await addMessage(w.conv.id, "fan", "still want my refund", { ageSeconds: 1 });
+    await runTurn(rig({ script: { payment_dispute: YES } }).ctx, w.conv.id);
     const ai = (await db.select().from(messages).where(eq(messages.conversationId, w.conv.id)).orderBy(asc(messages.createdAt)))
       .filter((m) => m.sender === "ai" && m.status === "sent");
     expect(ai).toHaveLength(2);
     expect(ai[0].body).toBe(first);
-    expect(ai[1].body).toMatch(/keep everything in here/);
+    expect(ai[1].body).toMatch(/already passed this/);
   });
 });

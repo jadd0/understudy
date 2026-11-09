@@ -150,6 +150,7 @@ export async function messageBeat(env: BeatEnv, index: number, beat: Kind<"say" 
   const factsCfg = {
     declineWindowMinutes: await getConfig<number>("pitch.decline_window_minutes"),
     velocityWindowMinutes: await getConfig<number>("pitch.velocity_window_minutes"),
+    strikeWindowDays: await getConfig<number>("ts.strike_window_days"),
   };
   const facts = refused ? null : await chatterFor(deps.engine).loadFacts(convId, env.fanId, env.creatorId, factsCfg);
   let engineErrorLine: string | null = null;

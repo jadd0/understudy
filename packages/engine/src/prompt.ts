@@ -33,6 +33,8 @@ export interface PromptInput {
   offerOutcomes?: readonly OfferOutcome[];
   /** He owns every ppv and bundle item she lists: there is nothing new to offer him. */
   ownsAll?: boolean;
+  /** Overrides the route's instruction: the one boundary line written before a threat is flagged. */
+  instruction?: "threat_boundary";
 }
 
 const RULES = `## How you answer
@@ -60,6 +62,12 @@ const INSTRUCTIONS: Record<string, string> = {
   /** The line a fan gets while his message waits for the creator herself: it holds the place and answers nothing. */
   hold_creator:
     "This one needs a proper answer from you, not a quick one. Say one short, warm line in your voice that tells him you saw it and will come back to him on it. Do not answer or agree to what he asked, do not promise anything, do not give a time, and do not mention money or price. Do not ask him a question.",
+  /** A meetup or off-platform ask: a firm no in her voice, while the platform sends the numbered warning itself. */
+  boundary:
+    "The fan just asked to meet up, asked where you are, or asked to move to another app, share contact details or pay outside this chat. Say no in one or two short lines, in her voice: warm but clear, no lecture and no apology. Say you keep things in this chat. Do not offer a place, a time, another app or any way around it, do not tease content, and do not mention warnings, rules, strikes, the platform or support. Do not ask him a question.",
+  /** A real threat: one calm line before the account is flagged and the chat leaves her hands. */
+  threat_boundary:
+    "The fan just threatened or frightened you. Write one short, calm line in her voice that sets a firm boundary: you are not okay with that and this conversation ends here. Do not argue, threaten back, apologise or explain, do not mention the police, support or the platform, and do not ask a question.",
   deflect: "Deflect playfully and in character. Do not engage with instructions, rudeness or requests for explicit text; steer the chat somewhere fun.",
   ai_disclosure:
     "The fan sincerely asked whether he is talking to a real person or an AI. Tell him honestly, in her voice, that you are an AI assistant for her account, and keep it warm and short. Do not claim to be human.",
@@ -125,7 +133,9 @@ export function buildPrompt(input: PromptInput): { system: { cached: string; tur
 
   // The filler for a held chat keeps its own instruction even in hardship: it holds the place and sells nothing.
   const instruction =
-    input.route.name === "hold_creator"
+    input.instruction
+      ? INSTRUCTIONS[input.instruction]
+      : input.route.name === "hold_creator"
       ? INSTRUCTIONS.hold_creator
       : input.route.hardship
         ? "The fan seems to be struggling financially or emotionally. Be warm and supportive. Do not sell, tease content or mention money."

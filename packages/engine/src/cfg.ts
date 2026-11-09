@@ -28,6 +28,8 @@ export interface EngineCfg {
   offerHistoryCount: number;
   declineWindowMinutes: number;
   velocityWindowMinutes: number;
+  /** How many days back a boundary strike still counts (`ts.max_strikes` is in `route`). */
+  strikeWindowDays: number;
   hardshipCooldownHours: number;
   supportEmail: string;
   sla: HandoffSla;
@@ -70,6 +72,8 @@ const KEYS = [
   "pitch.hardship_cooldown_hours",
   "pitch.velocity_max_unlocks",
   "pitch.velocity_window_minutes",
+  "ts.max_strikes",
+  "ts.strike_window_days",
 ];
 
 /** Read when present: the models a failover may serve from. */
@@ -161,6 +165,7 @@ export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId
     offerHistoryCount: get("engine.offer_history_count"),
     declineWindowMinutes: get("pitch.decline_window_minutes"),
     velocityWindowMinutes: get("pitch.velocity_window_minutes"),
+    strikeWindowDays: get("ts.strike_window_days"),
     hardshipCooldownHours: get("pitch.hardship_cooldown_hours"),
     supportEmail: get("platform.support_email"),
     sla: { creatorMinutes: get("escalation.creator_sla_minutes"), tsMinutes: get("escalation.ts_sla_minutes") },
@@ -170,6 +175,7 @@ export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId
       fitFloor: get("pitch.fit_floor"),
       maxDeclines: get("pitch.max_declines"),
       velocityMaxUnlocks: get("pitch.velocity_max_unlocks"),
+      maxStrikes: get("ts.max_strikes"),
     },
     prices,
   };

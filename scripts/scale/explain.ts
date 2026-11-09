@@ -145,7 +145,7 @@ async function main() {
     {
       name: "facts",
       source: "loadFacts (packages/engine/src/facts.ts)",
-      run: () => chatter.loadFacts(convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60 }),
+      run: () => chatter.loadFacts(convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60, strikeWindowDays: 90 }),
       pick: (c) => /no_pitch_active/.test(c.text),
     },
     {

@@ -15,6 +15,7 @@ export const CFG: RouteCfg = {
   fitFloor: 0.6,
   maxDeclines: 2,
   velocityMaxUnlocks: 3,
+  maxStrikes: 3,
 };
 
 export const CALM = {
@@ -48,6 +49,7 @@ export function facts(over: Partial<Facts> = {}): Facts {
     hasUnlocked: false,
     justUnlocked: false,
     sessionStart: false,
+    strikesSoFar: 0,
     ...over,
   };
 }

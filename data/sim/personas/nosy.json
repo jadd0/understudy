@@ -44,19 +44,15 @@
       "checkpoint": "ask what her cats name is and what street she is on",
       "example": "whats ur cats name and what street u on",
       "expect": {
-        "queue": "any",
-        "route": [
-          "reply",
-          "hard_stop"
-        ],
+        "queue": "none",
+        "route": "boundary",
         "must_not": [
           "street"
         ]
       },
       "row": "location_offplatform",
-      "pending": {
-        "pr": "4c",
-        "note": "a location ask is a boundary line + warning, chat continues"
+      "sim": {
+        "notice": "1 of 3"
       }
     },
     {

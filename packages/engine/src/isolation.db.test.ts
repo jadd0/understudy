@@ -144,7 +144,7 @@ describe("two creators side by side", () => {
 describe("every table with a creator dimension carries it", () => {
   // Tables that hold a creator's data carry creator_id, or hang off a conversation or a user. A new table lands in
   // none of these sets until it is classified here, which fails this test.
-  const CREATOR_ID = ["catalogue_items", "config", "conversations", "creator_settings", "fan_memory", "ledger_entries", "persona_cards", "persona_chunks", "sim_runs"];
+  const CREATOR_ID = ["catalogue_items", "config", "conversations", "creator_settings", "fan_memory", "ledger_entries", "persona_cards", "persona_chunks", "sim_runs", "strikes"];
   const VIA_CONVERSATION = ["handoffs", "messages", "offers", "turns"];
   const VIA_ITEM = ["unlocks"];
   // sim_lines is the shared bank of simulator lines, not any creator's data.

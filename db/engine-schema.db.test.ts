@@ -12,7 +12,7 @@ describe("engine migration", () => {
        where t.typname in ('handoff_reason','turn_route') group by t.typname order by t.typname` as never,
     );
     const byName = Object.fromEntries((enums.rows as { typname: string; labels: string[] }[]).map((r) => [r.typname, r.labels]));
-    expect(byName.turn_route).toEqual(["reply", "offer", "hold_creator", "hard_stop", "deflect", "ai_disclosure"]);
+    expect(byName.turn_route).toEqual(["reply", "offer", "hold_creator", "hard_stop", "deflect", "ai_disclosure", "boundary"]);
     expect(byName.handoff_reason).toHaveLength(12);
 
     const cols = await db.execute(

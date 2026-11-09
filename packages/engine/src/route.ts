@@ -71,25 +71,27 @@ export function promoteBuyRunnerUp(jev: JevIn, floor: number): JevIn {
 }
 
 /** Strictest first, as the safety policy fixes it: the first hard-stop category that fires names the handoff. */
-const HARD_STOPS: { key: SafetyKey; reason: HandoffReason; template?: TemplateKey }[] = [
+const HARD_STOPS: { key: SafetyKey; reason: HandoffReason; template?: TemplateKey; boundaryLine?: boolean }[] = [
   { key: "minor", reason: "minor", template: "minor_notice" },
   { key: "self_harm", reason: "self_harm", template: "self_harm" },
-  { key: "threat", reason: "threat" },
-  { key: "location_offplatform", reason: "location_offplatform", template: "location_offplatform" },
+  { key: "threat", reason: "threat", boundaryLine: true },
   { key: "payment_dispute", reason: "payment_dispute", template: "payment_dispute" },
 ];
 
 /**
- * The hard stop the safety probabilities call for, or null: the floors applied in the policy's order.
+ * The hard stop the safety probabilities call for, or null: the floors applied in the policy's order. A meetup or
+ * off-platform ask is not one: it is a boundary strike, decided in `route`.
  */
 export function hardStopOf(
   p: Record<SafetyKey, number>,
   floors: RouteCfg["floors"],
-): { reason: HandoffReason; template?: TemplateKey } | null {
+): { reason: HandoffReason; template?: TemplateKey; boundaryLine?: boolean } | null {
   const fired = (key: SafetyKey) => p[key] >= floors[key];
   const stop = HARD_STOPS.find((h) => fired(h.key));
   if (!stop) return null;
-  return { reason: stop.reason, template: fired("self_harm") ? "self_harm" : stop.template };
+  const template = fired("self_harm") ? "self_harm" : stop.template;
+  // A fired self-harm check sends the crisis template, never a model-written line.
+  return { reason: stop.reason, template, boundaryLine: stop.boundaryLine && template === undefined ? true : undefined };
 }
 
 /** Reads the six safety answers (probability of "yes") out of a Jev result. */
@@ -118,7 +120,15 @@ export function route(jev: JevIn, facts: Facts, cfg: RouteCfg): Route {
     facts.holdSuppressed ? { name: "deflect", hardship, alert } : { name: "hold_creator", reason, hardship, alert };
 
   const stop = hardStopOf(jev.p, cfg.floors);
-  if (stop) return { name: "hard_stop", reason: stop.reason, template: stop.template, hardship: false, alert: false };
+  if (stop) return { name: "hard_stop", reason: stop.reason, template: stop.template, boundaryLine: stop.boundaryLine, hardship: false, alert: false };
+
+  // A meetup or off-platform ask is a strike: her boundary line and a numbered warning while the AI keeps chatting,
+  // and the strike that reaches the maximum pauses the chat for Trust & Safety. Minors and self-harm were decided above.
+  if (fired("location_offplatform")) {
+    return facts.strikesSoFar + 1 >= cfg.maxStrikes
+      ? { name: "hard_stop", reason: "location_offplatform", strike: true, hardship: false, alert: false }
+      : { name: "boundary", strike: true, hardship: false, alert: false };
+  }
 
   if (jev.intentP < cfg.floors.intent) {
     // An unsure read whose best guess is buying still gets a code-picked offer when pacing allows: a wrong

@@ -55,12 +55,40 @@ describe("route: the routing matrix", () => {
     ["minor", "minor", "minor_notice"],
     ["self_harm", "self_harm", "self_harm"],
     ["threat", "threat", undefined],
-    ["location_offplatform", "location_offplatform", "location_offplatform"],
     ["payment_dispute", "payment_dispute", "payment_dispute"],
   ] as const)("%s is a hard stop to Trust & Safety", (key, reason, template) => {
     const out = r(jev({ p: { [key]: 0.9 } }));
     expect(out).toMatchObject({ name: "hard_stop", reason });
     expect(out.template).toBe(template);
+  });
+
+  test("an off-platform ask is a boundary route with a strike, not a hard stop", () => {
+    expect(r(jev({ p: { location_offplatform: 0.9 } }))).toMatchObject({ name: "boundary", strike: true, hardship: false, alert: false });
+    expect(r(jev({ p: { location_offplatform: 0.9 } }), facts({ strikesSoFar: 1 }))).toMatchObject({ name: "boundary", strike: true });
+    // below the floor it is not an ask at all
+    expect(r(jev({ p: { location_offplatform: 0.49 } })).name).toBe("reply");
+  });
+
+  test("the strike that reaches the maximum is a hard stop to Trust & Safety, counted as a strike", () => {
+    const out = r(jev({ p: { location_offplatform: 0.9 } }), facts({ strikesSoFar: CFG.maxStrikes - 1 }));
+    expect(out).toMatchObject({ name: "hard_stop", reason: "location_offplatform", strike: true });
+    expect(out.template).toBeUndefined();
+    expect(r(jev({ p: { location_offplatform: 0.9 } }), facts({ strikesSoFar: CFG.maxStrikes + 4 })).name).toBe("hard_stop");
+  });
+
+  test("a minor signal outranks an off-platform ask: a minor hard stop, no strike", () => {
+    const out = r(jev({ p: { location_offplatform: 0.9, minor: 0.9 } }));
+    expect(out).toMatchObject({ name: "hard_stop", reason: "minor", template: "minor_notice" });
+    expect(out.strike).toBeUndefined();
+    expect(r(jev({ p: { location_offplatform: 0.9, self_harm: 0.9 } }))).toMatchObject({ reason: "self_harm", template: "self_harm" });
+    expect(r(jev({ p: { location_offplatform: 0.9, payment_dispute: 0.9 } }))).toMatchObject({ reason: "payment_dispute" });
+  });
+
+  test("a threat is a hard stop with a boundary line; a crisis template or a minor notice replaces the line", () => {
+    expect(r(jev({ p: { threat: 0.9 } }))).toMatchObject({ name: "hard_stop", reason: "threat", boundaryLine: true });
+    expect(r(jev({ p: { threat: 0.9, self_harm: 0.9 } })).boundaryLine).toBeUndefined();
+    expect(r(jev({ p: { threat: 0.9, minor: 0.9 } })).boundaryLine).toBeUndefined();
+    expect(r(jev({ p: { minor: 0.9 } })).boundaryLine).toBeUndefined();
   });
 
   test("hardship is supportive: a reply with no offer, even for buying intent", () => {

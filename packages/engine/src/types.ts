@@ -52,6 +52,8 @@ export interface RouteCfg {
   fitFloor: number;
   maxDeclines: number;
   velocityMaxUnlocks: number;
+  /** `ts.max_strikes`: the boundary strike that pauses the chat for review. */
+  maxStrikes: number;
 }
 
 /** Everything pacing and routing read about the fan, computed against the database clock before the route is decided. */
@@ -83,6 +85,8 @@ export interface Facts extends PitchFacts {
   justUnlocked: boolean;
   /** Her silence before this batch is at least `engine.gap_marker_minutes`: the fan is starting a new session. */
   sessionStart: boolean;
+  /** Boundary strikes this fan already has with this creator inside `ts.strike_window_days`. */
+  strikesSoFar: number;
 }
 
 export type TemplateKey = "self_harm" | "payment_dispute" | "location_offplatform" | "minor_notice";
@@ -97,6 +101,10 @@ export interface Route {
   offerKinds?: ("ppv" | "bundle" | "personal")[];
   /** Where the turn falls back to when an offer cannot be built: deflect for explicit, reply for everything else. */
   fallback?: "reply" | "deflect";
+  /** boundary, and the hard stop that pauses the chat on the last strike: a boundary strike counts against the fan. */
+  strike?: boolean;
+  /** hard_stop: one boundary line in her voice is drafted and verified before the stop; no passing line means a silent stop. */
+  boundaryLine?: boolean;
   /** The fan showed financial hardship or distress: supportive, no pitch, and the cooldown starts. */
   hardship: boolean;
   /** Open a high_value_alert for the creator (the AI keeps replying). */

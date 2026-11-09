@@ -61,11 +61,8 @@
       },
       "row": "threat",
       "sim": {
-        "flagged": true
-      },
-      "pending": {
-        "pr": "4d",
-        "note": "one boundary line in her voice, then flag and hand to T&S"
+        "flagged": true,
+        "filler": true
       }
     },
     {

@@ -109,7 +109,7 @@ message is treated as not that. The safety floors are read as `floor.safety.<key
 | `floor.safety.minor` | `0.3` | the fan may be under 18: hard stop, minor notice, account flagged | `packages/engine/src/cfg.ts` |
 | `floor.safety.self_harm` | `0.3` | crisis: hard stop with the support message | `packages/engine/src/cfg.ts` |
 | `floor.safety.threat` | `0.5` | threat or harassment: hard stop, account flagged | `packages/engine/src/cfg.ts` |
-| `floor.safety.location_offplatform` | `0.5` | meetup, location, contact details or paying outside: hard stop | `packages/engine/src/cfg.ts` |
+| `floor.safety.location_offplatform` | `0.5` | meetup, location, contact details or paying outside: a boundary line and a numbered warning; the `ts.max_strikes`th pauses the chat | `packages/engine/src/cfg.ts` |
 | `floor.safety.payment_dispute` | `0.6` | refund or charge complaint: hard stop | `packages/engine/src/cfg.ts` |
 | `floor.safety.hardship` | `0.5` | money trouble: no hard stop, pitching pauses for `pitch.hardship_cooldown_hours` | `packages/engine/src/cfg.ts`, `lib/analytics/responsible.ts` |
 | `floor.intent` | `0.5` | below this the intent read is "unsure" and the turn goes to Juno, unless the best guess is a buy | `packages/engine/src/cfg.ts` |
@@ -121,6 +121,8 @@ message is treated as not that. The safety floors are read as `floor.safety.<key
 | `pitch.hardship_cooldown_hours` | `72` | no pitching at all after a hardship reading, even on a buy ask | `packages/engine/src/cfg.ts` |
 | `pitch.velocity_max_unlocks` | `3` | this many unlocks in the window stop pitching | `packages/engine/src/cfg.ts` |
 | `pitch.velocity_window_minutes` | `30` | the window those unlocks are counted in | `packages/engine/src/cfg.ts` |
+| `ts.max_strikes` | `3` | boundary strikes (a meetup or off-platform ask) that pause the chat for Trust & Safety review; the fan sees "Warning n of this" | `packages/engine/src/cfg.ts`, `packages/engine/src/route.ts` |
+| `ts.strike_window_days` | `90` | strikes older than this many days do not count | `packages/engine/src/cfg.ts`, `packages/engine/src/facts.ts` |
 
 ### Retrieval
 
