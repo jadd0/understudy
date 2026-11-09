@@ -13,8 +13,31 @@ tsx run it directly. Private to this repository's npm workspace.
 - `@understudy/engine/testing`: `FakeDecider`, `FakeGenerator`, the in-memory `FakeHost`, the fixtures and the
   harness that runs a turn against the test database.
 
-Nothing else inside `src/` is public. `src/boundary.test.ts` fails when code outside the package reaches past
+Nothing else inside `src/` is public. `src/ports/boundary.test.ts` fails when code outside the package reaches past
 the published entries.
+
+## Layout
+
+`src/` is grouped by area; a test sits beside the file it tests.
+
+```
+src/
+  index.ts  chatter.ts  ctx.ts  types.ts      the public entry, the chatter factory, the context, shared types
+  testing.ts  fakes.ts                        the package entries for tests (re-export from testing/)
+  ports/         the seams: clock, config, db, decider, events, generator, retriever, host
+  db/            schema.ts (tables and enums), migrate.ts
+  config/        load.ts: getConfig and loadEngineConfig over the config table
+  turn/          the message turn, in the order it runs
+                 run.ts (runTurn and the attempt loop), inbound.ts (what the fan wrote), debounce.ts,
+                 facts.ts, draft.ts (retry notes), pass.ts (pass types), commit.ts + record.ts + plan.ts
+                 (the one-transaction commit), deliver.ts, cost.ts, result.ts, process.ts
+  routing/       route.ts (Jev's reading to a route), pacing.ts, questions.ts
+  drafting/      prompt.ts, thread.ts, memory.ts, emoji.ts, templates.ts, verify.ts, bubbles.ts
+  retrieval/     retrieve.ts: full-text, vector and hybrid search over persona chunks
+  conversation/  lifecycle: lease.ts, handoff.ts, takeover.ts, escalation.ts, sweep.ts, offer.ts, events.ts,
+                 creator-settings.ts, strikes.ts
+  testing/       fakes/ (decider, generator), fake-host.ts, harness.ts, db.ts, fixtures.ts
+```
 
 ## Ports
 

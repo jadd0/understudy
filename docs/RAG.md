@@ -103,7 +103,7 @@ English/Spanish: an English stemmer would mangle "ur", "pookie" and "meow".
 
 ## 3. At query time
 
-Called from `packages/engine/src/turn.ts` only for routes that write a reply (`reply`, `offer`, `deflect`,
+Called from `packages/engine/src/turn/run.ts` only for routes that write a reply (`reply`, `offer`, `deflect`,
 `ai_disclosure`); a hard stop, a hold for Juno or a template never retrieves.
 
 - **Query text:** the fan messages in this turn's batch, joined with newlines (a burst of three messages is one
@@ -113,7 +113,7 @@ Called from `packages/engine/src/turn.ts` only for routes that write a reply (`r
   (`lib/host/deps.ts`). It is **`vector`** on the dev database since the retrieval eval. The seed default is
   `fts`, so a fresh database works with no Voyage key until the eval has been run.
 
-The three strategies (`packages/engine/src/retrieve.ts`):
+The three strategies (`packages/engine/src/retrieval/retrieve.ts`):
 
 | strategy | how | cost per reply |
 |---|---|---|
@@ -129,13 +129,13 @@ The adapter is `packages/providers/src/voyage/persona-retriever.ts` (`PersonaRet
 | what fails | what happens |
 |---|---|
 | Voyage call (vector/hybrid) errors or times out | logged, and the same turn falls back to `fts`: a weaker list beats none |
-| the whole retrieval throws (database error) | logged; the turn continues with **no** chunks (`turn.ts`), and the card alone carries the reply |
+| the whole retrieval throws (database error) | logged; the turn continues with **no** chunks (`run.ts`), and the card alone carries the reply |
 | no chunk matches (fts with no shared word) | empty list; the prompt simply has no "Things she has said" section |
 | `retrieval.strategy` holds anything but the three names | the engine refuses to build its dependencies, rather than guess |
 
 ## 4. Into the prompt
 
-`packages/engine/src/prompt.ts` splits Haiku's system prompt in two:
+`packages/engine/src/drafting/prompt.ts` splits Haiku's system prompt in two:
 
 - **Cached prefix** (identical on every turn for a creator, sent with `cache_control`, read from cache after the
   first call): the published persona card, the answering rules and the creator's "never talk about"
@@ -152,7 +152,7 @@ unchanged, so nothing has to be re-embedded.
 
 The section heading, verbatim:
 
-<!-- prompt-src: packages/engine/src/prompt.ts -->
+<!-- prompt-src: packages/engine/src/drafting/prompt.ts -->
 ```text
 ## Things she has said or posted (for facts and tone)
 ```

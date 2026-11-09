@@ -1,4 +1,4 @@
-// Publishes a persona card: the engine speaks only with the newest *published* card (packages/engine/src/turn.ts).
+// Publishes a persona card: the engine speaks only with the newest *published* card (packages/engine/src/turn/run.ts).
 //   npm run persona:publish -- --creator junovale --card-version 2
 // In one transaction: if a stored version already has this exact body it is published; otherwise the body is
 // inserted as the next version, published. Earlier versions stay as history. Re-running is a no-op.

@@ -20,7 +20,7 @@ npx tsx scripts/scale/explain.ts --out docs/scaling/explain.json
 `explain.ts` calls the real code (`loadFacts`, `retrieveFts`, `retrieveVector`, `sweep`, `listInbox`, `getHandoffs`)
 while recording the SQL the driver sends, then explains that exact statement inside a transaction that rolls back.
 The lease claim and the inbound load are not exported by the engine, so their statements are read out of
-`lease.ts` and `turn.ts`; the card read and the history read are built with the same drizzle calls as `turn.ts`. A path whose plan has a Seq Scan on a table over 10,000 rows lists it
+`conversation/lease.ts` and `turn/inbound.ts`; the card read and the history read are built with the same drizzle calls as `turn/run.ts` and `turn/inbound.ts`. A path whose plan has a Seq Scan on a table over 10,000 rows lists it
 under `seqScansOnBigTables`.
 
 The seed is deterministic: ids come from the loop counters, so two runs on an empty database give the same rows.
