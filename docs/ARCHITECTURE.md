@@ -5,7 +5,7 @@ The prompts the engine sends are quoted under "Engine prompts", the config rows 
 
 ## The turn
 
-`sendFanMessage` stores the fan's message and schedules `processConversation(conversationId)` with `after()`. The
+`sendFanMessage` checks who may send, hands the message to the engine's `handleMessage` (the chatter `createChatter` built over the app's database, `config` table and host port), and schedules the `process` step it returns with `after()`, which runs `processConversation(conversationId)`. The
 per-minute sweep (`/api/cron/sweep`) calls the same function for anything left behind: it takes conversations by the
 age of their oldest unanswered fan message, oldest first (at most ten), and stops starting new ones once 35 s of the
 function's 60 s have passed (`SWEEP_START_BUDGET_MS`). `processConversation` runs `runTurn` until nothing unanswered is

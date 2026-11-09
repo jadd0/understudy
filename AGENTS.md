@@ -77,7 +77,7 @@ Every module lives in a domain folder; nothing sits loose in `lib/`. A folder's 
 | Folder | Holds |
 |---|---|
 | `lib/auth/` | Auth.js setup (`index.ts`), route guards, onboarding/18+ (`age`, `onboarding`), Turnstile, demo seats |
-| `lib/config/` | `getConfig` over the `config` table (fail closed) |
+| `lib/config/` | `getConfig` over the `config` table (fail closed) and `dbConfigPort`, the engine's view of it |
 | `lib/env/` | validated environment |
 | `lib/wallet/` | ledger, top-up, unlock, tip, cap, high-value score, money parsing |
 | `packages/engine/` | the engine as a workspace package (`@understudy/engine`): the message turn, its ports, retrieval over persona chunks, and the fakes behind `@understudy/engine/testing`. The app imports only the package entry |

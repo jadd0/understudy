@@ -219,8 +219,8 @@ expands the engine part.
 3. **Store.** `sendFanMessage` refuses an empty message, one over `MAX_MESSAGE_CHARS` (2000), a bad id, a user who is
    not a confirmed fan, and a fan restricted as a minor (`restricted`). It creates the conversation on the
    first message (one per creator and fan), inserts the message with `client_msg_id` unique so a retried send returns
-   the saved row instead of a duplicate, clears `fan_typing_until`, and schedules
-   [`processConversation`](../packages/engine/src/process.ts) with Next's `after()`, so the engine runs after the response is
+   the saved row instead of a duplicate, clears `fan_typing_until` (all in the engine's `handleMessage`, behind the host's sender checks), and schedules
+   the returned `process`, which runs [`processConversation`](../packages/engine/src/process.ts), with Next's `after()`, so the engine runs after the response is
    sent. The action then emits `inbox.changed` on the creator's channel so Juno's inbox refreshes.
 4. **Engine turn.** [`runTurn`](../packages/engine/src/turn.ts) takes a lease on the conversation, waits for the fan to settle,
    asks Jev to classify the batch, routes it, drafts with Claude, verifies the draft with code and Jev, and commits.
@@ -498,7 +498,7 @@ event waiting), at most five times,
 so a fan who keeps writing cannot hold one invocation forever. It is safe to call from anywhere at once: a caller that
 cannot take the lease returns immediately.
 
-**Ports.** [`defaultDeps`](../lib/host/deps.ts) wires the production adapters behind
+**Ports.** The engine is built with `createChatter({ db, host, config, deps })` ([`chatter.ts`](../packages/engine/src/chatter.ts)); the app's [`chatter()`](../lib/host/deps.ts) passes its database, `dbConfigPort`, `dbHost` and `defaultDeps()`. `defaultDeps` wires the production adapters behind
 [`packages/engine/src/ports/`](../packages/engine/src/ports/):
 
 | Port | Production | Tests |
