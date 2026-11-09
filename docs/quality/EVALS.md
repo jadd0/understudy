@@ -190,29 +190,38 @@ Turns that missed their expectations
 
 Run on the **test** pairs, the split no other script reads. For each pair the generator writes a reply through a drafter, recorded with each run. The repository's script (`npm run eval:persona`) uses the engine's own prompt path: the card, lines retrieved from her train replies and captions, this reply's style draw (which of her voice markers it may use, drawn at her measured train rates with a seeded generator) and the engine's edge clean-up. A Claude judge then (1) scores that reply 1 to 5 on voice, fact consistency and natural pitch, seeing the card summary and the fan comment but never her real reply, and (2) sees the fan comment and two unlabelled replies, hers and the bot's, once in each order, and says which is hers. Accuracy is the share of all judgements that picked hers; 50% means the two are indistinguishable, and the split by the bot's position shows any position bias. An item that errors is tried once more. The per-marker table compares how often her real replies and the bot's use each marker. Prompts: [PERSONA-PROMPTS.md](../persona/PERSONA-PROMPTS.md) sections 6 and 7. Per-item records: `docs/quality/evals/persona.json`. Results for different card versions or models are never pooled.
 
-Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `examples/app/.env.local`; interrupted runs resume from `data/persona/eval/cache/`).
+Re-run: `npm run eval:persona -- --card-version <N> --gen-model <id> --judge-model <id>` (reads `.env.local`; interrupted runs resume from `data/persona/eval/cache/`).
 
 ### Card v2
 
-Generator `claude-haiku-5-5`, judge `claude-sonnet-5-5`, seed `understudy-2026`, drafter card alone, card sha `088f1042b93ea004`, 50 test pairs. Tokens spent by the run that wrote this: 316322 (cached calls cost nothing).
+Generator `claude-haiku-5-5`, judge `claude-sonnet-5-5`, seed `understudy-2026`, drafter engine prompt, retrieval over train chunks, style draw, card sha `088f1042b93ea004`, 50 test pairs. Tokens spent by the run that wrote this: 10153 (cached calls cost nothing).
 
-**Rubric judge** (49 scored, 1 errors):
+**Rubric judge** (50 scored, 0 errors):
 
 | criterion | scored | na | mean | 1 / 2 / 3 / 4 / 5 |
 |---|---|---|---|---|
-| voice | 49 | 0 | 3.0816 | 0 / 10 / 26 / 12 / 1 |
-| fact_consistency | 49 | 0 | 3.6735 | 0 / 5 / 11 / 28 / 5 |
-| natural_pitch | 2 | 47 | 3.5 | 0 / 0 / 1 / 1 / 0 |
+| voice | 50 | 0 | 2.92 | 1 / 15 / 21 / 13 / 0 |
+| fact_consistency | 50 | 0 | 3.64 | 3 / 4 / 11 / 22 / 10 |
+| natural_pitch | 3 | 47 | 2.6667 | 0 / 1 / 2 / 0 / 0 |
 
-**Blind test** (43 scored, 7 errors): the judge picked her real reply 28 of 43 times, accuracy **65.1%**, 95% Wilson interval 50.2% to 77.6%. Mean confidence 0.6142. The judge answered "A" 69.8% of the time; the bot was in position A 64.0% of the time.
+**Blind test** (100 judgements, 0 pairs with an error): the judge picked her real reply 65 of 100 times, accuracy **65.0%**, 95% Wilson interval 55.3% to 73.6%. Mean confidence 0.6544. The judge answered "A" 73.0% of the time; the bot was in position A 50.0% of the time. Accuracy with the bot in A: 42.0%; with the bot in B: 88.0%.
 
 | her reply length | scored | correct | accuracy | 95% interval |
 |---|---|---|---|---|
-| <=10 | 1 | 1 | 100.0% | 20.6% to 100.0% |
-| 11-30 | 24 | 16 | 66.7% | 46.7% to 82.0% |
-| >30 | 18 | 11 | 61.1% | 38.6% to 79.7% |
+| <=10 | 4 | 4 | 100.0% | 51.0% to 100.0% |
+| 11-30 | 52 | 30 | 57.7% | 44.2% to 70.1% |
+| >30 | 44 | 31 | 70.5% | 55.8% to 81.8% |
 
-Reading: The 95% interval (50.2% to 77.6%) is above 50%: the judge detects the bot better than chance. The judge answered "A" 69.8% of the time, a position bias that pulls accuracy towards 50% regardless of the writing. Buckets with fewer than 20 items (<=10, >30) have wide intervals and should not be read on their own.
+Reading: The 95% interval (55.3% to 73.6%) is above 50%: the judge detects the bot better than chance. The judge answered "A" 73.0% of the time, a position bias that pulls accuracy towards 50% regardless of the writing. Buckets with fewer than 20 items (<=10) have wide intervals and should not be read on their own.
 
-_This run predates the style draw and the both-order judging: the bot was written from the card alone and each pair was judged once. The next run replaces it._
+**Voice markers** (share of replies using each, over the 50 pairs with a generated reply):
+
+| marker | her train replies | her test replies | the bot |
+|---|---|---|---|
+| sign-off "x" | 13.0% | 12.0% | 8.0% |
+| "mate" | 6.6% | 10.0% | 6.0% |
+| "babe" | 5.0% | 6.0% | 0.0% |
+| pet's name | 3.5% | 2.0% | 12.0% |
+| emoji | 5.3% | 6.0% | 22.0% |
+| concrete fact (price or place) | 9.1% | 8.0% | 6.0% |
 <!-- persona:end -->

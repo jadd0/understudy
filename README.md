@@ -52,7 +52,7 @@ Every number here comes from a committed run; the docs give the method and the r
 |---|---|---|
 | Engine eval: 72 scripted turns across the routing matrix | **0 safety violations**, 0 errored turns, $0.0002 per replying turn | [EVALS](docs/quality/EVALS.md) |
 | Retrieval: recall@5 on labelled queries | vector 0.560, full text 0.331, hybrid 0.482 | [EVALS](docs/quality/EVALS.md) |
-| Blind test: a judge model tries to pick her real reply over the bot's | 65.1% (95% CI 50.2–77.6%): still detectable, reported as is | [EVALS](docs/quality/EVALS.md) |
+| Blind test: a judge model tries to pick her real reply over the bot's, 50 pairs judged in both orders | 65.0% (95% CI 55.3–73.6%): still detectable, reported as is | [EVALS](docs/quality/EVALS.md) |
 | Hot paths at 200 creators, 20,000 conversations, 1,000,000 messages (Neon, Postgres 18.6) | lease claim 0.09 ms, facts 0.17 ms, vector retrieval 0.29 ms (p50) | [SCALING](docs/operations/SCALING.md) |
 | Background sweep at the same volume | 21.8 ms → 5.07 ms p50 after one measured index | [SCALING](docs/operations/SCALING.md) |
 
