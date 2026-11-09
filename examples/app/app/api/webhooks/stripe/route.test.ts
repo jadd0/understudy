@@ -26,6 +26,15 @@ beforeEach(() => {
 });
 
 describe("stripe webhook route", () => {
+  test("without Stripe keys the endpoint is 404 and nothing is verified or applied", async () => {
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    expect((await post({ "stripe-signature": sign(SECRET) })).status).toBe(404);
+    expect((await post({})).status).toBe(404);
+    expect(applyCheckoutEvent).not.toHaveBeenCalled();
+    expect(applyPaymentIntentSucceeded).not.toHaveBeenCalled();
+  });
+
   test("a missing signature is 400 and never reaches the handler", async () => {
     expect((await post({})).status).toBe(400);
     expect(applyCheckoutEvent).not.toHaveBeenCalled();

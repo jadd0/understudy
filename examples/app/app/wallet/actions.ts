@@ -6,6 +6,8 @@ import { requireAdultFan } from "@/lib/auth/guards";
 import { setFanCap } from "@/lib/wallet/cap";
 import { InvalidAmount } from "@/lib/wallet/errors";
 import { dollarsToCents } from "@/lib/wallet/money";
+import { stripeConfigured } from "@/lib/env";
+import { StripeNotConfigured } from "@/providers/stripe";
 import { startTopup } from "@/lib/wallet/topup";
 
 async function origin() {
@@ -18,6 +20,7 @@ async function origin() {
 /** A preset button posts `preset` in cents; the custom field posts `custom` in dollars. */
 export async function topUp(formData: FormData) {
   const user = await requireAdultFan();
+  if (!stripeConfigured()) redirect("/wallet?error=topups-off");
   const preset = formData.get("preset");
   const custom = formData.get("custom");
   const cents = typeof preset === "string" && preset !== "" ? Number(preset) : dollarsToCents(String(custom ?? ""));
@@ -28,6 +31,7 @@ export async function topUp(formData: FormData) {
     url = (await startTopup(user!.id!, cents, await origin())).url;
   } catch (e) {
     if (e instanceof InvalidAmount) redirect("/wallet?error=amount");
+    if (e instanceof StripeNotConfigured) redirect("/wallet?error=topups-off");
     console.error("top-up failed", (e as Error).name);
     redirect("/wallet?error=stripe");
   }
