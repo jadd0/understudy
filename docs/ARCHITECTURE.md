@@ -505,17 +505,17 @@ Retry note appended to the per-turn block on the second attempt; a safety retry 
 
 <!-- prompt-src: packages/engine/src/turn/draft.ts -->
 ```text
-const RETRY_NOTE = "\n\n## Retry\nYour previous draft was rejected by a safety check. Write a different reply that follows every rule above.";
-const REASK_LINE =
+export const RETRY_NOTE = "\n\n## Retry\nYour previous draft was rejected by a safety check. Write a different reply that follows every rule above.";
+export const REASK_LINE =
   "Your previous draft asked him something he already answered, or handed his own question back to him. Answer what he asked and use what he told you. Do not write wbu or ask what he is up to. End with a different hook.";
-const OFFER_LINE =
+export const OFFER_LINE =
   "Your previous draft never led into the locked item. The app shows its card right after your message, so after answering him, tease that item: say what it is or why he would want it.";
 /** The retry note when every failure was a quality one: one line per failure, in a fixed order. */
-function qualityNote(failures: readonly VerifyFailure[]): string {
+export function qualityNote(failures: readonly VerifyFailure[]): string {
   const lines = [failures.includes("reasks") ? REASK_LINE : "", failures.includes("offer_unsetup") ? OFFER_LINE : ""].filter(Boolean);
   return `\n\n## Retry\n${lines.join("\n")}`;
 }
-const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
+export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
   money: "It mentioned money, a price or something being free.",
   never_list: "It used a word she never uses.",
   explicit: "It was sexually explicit.",
