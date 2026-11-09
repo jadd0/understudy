@@ -69,10 +69,11 @@ export async function runDemo(opts: DemoOptions): Promise<DemoResult> {
   if (!opts.url) {
     apiKey = apiKey || randomUUID();
     const serverEnv = readEnv({ ...env, UNDERSTUDY_API_KEY: apiKey, PORT: "0", WEBHOOK_URL: undefined }, { fake: opts.fake });
+    // The server migrates on start, so Juno is seeded after it: on an empty database her tables do not exist before.
+    const running = await startServer({ env: serverEnv, fake: opts.fake, config, listen: true });
     const { db, end } = connect(serverEnv.databaseUrl);
     await seedPersona(db, config.creatorId);
     await end();
-    const running = await startServer({ env: serverEnv, fake: opts.fake, config, listen: true });
     base = running.url!;
     stop = running.close;
     out(`server: ${base} (${opts.fake ? "scripted providers" : "live providers"})`);
@@ -176,7 +177,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   })
     .then(() => process.exit(0))
     .catch((e) => {
-      console.error("demo failed:", (e as { code?: string; name?: string }).code ?? (e as Error).name, (e as Error).name === "Error" ? (e as Error).message : "");
+      // Class and code only: a query error's message carries its parameters, which can hold persona or fan text.
+      console.error("demo failed:", (e as Error)?.name ?? "Error", (e as { code?: string }).code ?? "");
       process.exit(1);
     });
 }
