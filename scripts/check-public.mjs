@@ -16,12 +16,14 @@ const SKIP = [
   /\.(png|jpe?g|gif|webp|ico|pdf|woff2?|ttf|otf|mp4|zip)$/i,
 ];
 
-// Paths allowed to hold hits: the docs and the module whose strings generate regions of them,
+// Paths allowed to hold hits: the docs and the files whose strings generate regions of them,
 // both until they are cleaned together, and the three loop scripts whose code opens files under
 // the private directory by name.
 export const ALLOW = [
   /^docs\//,
   /^lib\/sim\/docs\.ts$/,
+  /^data\/sim\/personas\//,
+  /^scripts\/persona\/eval-persona\.mjs$/,
   /^scripts\/(gate\.sh|kit-config\.mjs|verify-pr\.mjs)$/,
 ];
 
