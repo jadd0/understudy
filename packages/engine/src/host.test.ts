@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { FakeDecider } from "@/providers/fake/decider";
-import { DeciderUnavailable } from "@/platform/ports/decider";
+import { FakeDecider } from "./fake/decider";
+import { DeciderUnavailable } from "./ports/decider";
 import { FakeHost } from "./fake-host";
 import { buildOwnedShortlist, buildShortlist, pickOffer, type ShortlistItem } from "./offer";
 
@@ -24,13 +24,13 @@ const HOST_TABLES = [
   /\.(update|insert|delete)\((users|unlocks|wallets|ledgerEntries|catalogueItems)\)/,
   /\bimport\s*\{[^}]*\b(users|unlocks|wallets|ledgerEntries|catalogueItems)\b[^}]*\}\s*from\s*"@\/db\/schema"/,
 ];
-const CREATORS_ALLOWED = new Set(["lib/engine/lease.ts"]);
+const CREATORS_ALLOWED = new Set(["packages/engine/src/lease.ts"]);
 
 describe("the engine's host boundary", () => {
-  test("lib/engine and lib/persona source files import nothing from @/lib/wallet and name no host table", () => {
-    const files = [...sourceFiles("lib/engine"), ...sourceFiles("lib/persona")];
+  test("the engine package source files import nothing from @/lib/wallet and name no host table", () => {
+    const files = sourceFiles("packages/engine/src");
     expect(files.length).toBeGreaterThan(10);
-    expect(files).toContain("lib/engine/turn.ts");
+    expect(files).toContain("packages/engine/src/turn.ts");
     const offenders: string[] = [];
     for (const f of files) {
       // Comments may name a host table in prose; code and SQL may not.
@@ -45,7 +45,7 @@ describe("the engine's host boundary", () => {
   });
 
   test("host.ts imports nothing from the app", () => {
-    const code = readFileSync(join(ROOT, "lib/engine/host.ts"), "utf8");
+    const code = readFileSync(join(ROOT, "packages/engine/src/host.ts"), "utf8");
     expect(code.match(/^import .*$/gm) ?? []).toEqual([]);
   });
 });

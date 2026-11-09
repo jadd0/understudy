@@ -6,8 +6,7 @@ import { defaultEvents } from "@/providers/pusher/events";
 import { embed } from "@/providers/voyage/embed";
 import { parseStrategy, PersonaRetriever } from "@/providers/voyage/persona-retriever";
 import { TypeSafeDecider } from "@/providers/typesafe/decider";
-import { systemClock } from "@/platform/ports/clock";
-import type { Deps } from "./turn";
+import { systemClock, type Deps } from "@understudy/engine";
 
 /** The production wiring: Jev by REST, Claude by its SDK, retrieval by the strategy the eval chose, Pusher for realtime. */
 export async function defaultDeps(): Promise<Deps> {

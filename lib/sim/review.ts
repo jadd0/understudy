@@ -1,4 +1,4 @@
-import type { Question } from "@/platform/ports/decider";
+import type { Question } from "@understudy/engine";
 
 /**
  * Reply review for sim conversations: Jev reads each of Juno's replies with the chat before it and answers a fixed set

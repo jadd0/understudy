@@ -5,7 +5,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { config, creators, personaChunks } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps } from "@/lib/persona/retrieve";
+import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps } from "@understudy/engine";
 import { embed } from "@/providers/voyage/embed";
 import { UNBILLED_LIMITS } from "./load";
 

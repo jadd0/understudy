@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { config as loadEnv } from "dotenv";
 import { describe, expect, test } from "vitest";
-import { defaultDeps } from "@/lib/engine/deps";
+import { defaultDeps } from "@/lib/host/deps";
 import { runThread } from "./runner";
 import { scoreRun } from "./score";
 import { loadThreads } from "./threads";

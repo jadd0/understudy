@@ -103,17 +103,17 @@ English/Spanish: an English stemmer would mangle "ur", "pookie" and "meow".
 
 ## 3. At query time
 
-Called from `lib/engine/turn.ts` only for routes that write a reply (`reply`, `offer`, `deflect`,
+Called from `packages/engine/src/turn.ts` only for routes that write a reply (`reply`, `offer`, `deflect`,
 `ai_disclosure`); a hard stop, a hold for Juno or a template never retrieves.
 
 - **Query text:** the fan messages in this turn's batch, joined with newlines (a burst of three messages is one
   query).
 - **k:** `retrieval.k` config row, **5**.
 - **Strategy:** `retrieval.strategy` config row, read when the engine's dependencies are built
-  (`lib/engine/deps.ts`). It is **`vector`** on the dev database since the retrieval eval. The seed default is
+  (`lib/host/deps.ts`). It is **`vector`** on the dev database since the retrieval eval. The seed default is
   `fts`, so a fresh database works with no Voyage key until the eval has been run.
 
-The three strategies (`lib/persona/retrieve.ts`):
+The three strategies (`packages/engine/src/retrieve.ts`):
 
 | strategy | how | cost per reply |
 |---|---|---|
@@ -122,7 +122,7 @@ The three strategies (`lib/persona/retrieve.ts`):
 | `hybrid` | the top 20 of both, fused by reciprocal rank fusion (k = 60, score = Σ 1/(60 + rank)), top k | both of the above |
 
 The adapter is `providers/voyage/persona-retriever.ts` (`PersonaRetriever`), behind the engine's retriever port
-(`platform/ports/retriever.ts`), so tests swap in a fake and no engine code knows which strategy runs.
+(`packages/engine/src/ports/retriever.ts`), so tests swap in a fake and no engine code knows which strategy runs.
 
 **Failure behaviour.**
 
@@ -135,7 +135,7 @@ The adapter is `providers/voyage/persona-retriever.ts` (`PersonaRetriever`), beh
 
 ## 4. Into the prompt
 
-`lib/engine/prompt.ts` splits Haiku's system prompt in two:
+`packages/engine/src/prompt.ts` splits Haiku's system prompt in two:
 
 - **Cached prefix** (identical on every turn for a creator, sent with `cache_control`, read from cache after the
   first call): the published persona card, the answering rules and the creator's "never talk about"
@@ -152,7 +152,7 @@ unchanged, so nothing has to be re-embedded.
 
 The section heading, verbatim:
 
-<!-- prompt-src: lib/engine/prompt.ts -->
+<!-- prompt-src: packages/engine/src/prompt.ts -->
 ```text
 ## Things she has said or posted (for facts and tone)
 ```

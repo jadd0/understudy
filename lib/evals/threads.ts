@@ -1,7 +1,7 @@
 import { readFileSync, globSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { THREADS } from "@/lib/engine/types";
+import { THREADS } from "@understudy/engine";
 
 /**
  * The rows of the routing matrix in docs/SAFETY.md, in table order. A thread turn names the row it exercises;

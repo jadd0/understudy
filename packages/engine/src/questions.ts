@@ -1,4 +1,4 @@
-import type { Question } from "@/platform/ports/decider";
+import type { Question } from "./ports/decider";
 import { EXPLICITNESS, INTENTS, SAFETY_KEYS, THREADS, type SafetyKey } from "./types";
 
 const yesNo = (key: string, prompt: string): Question => ({

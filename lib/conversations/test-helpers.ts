@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversations, handoffs, messages, users } from "@/db/schema";
-import { addMessage, makeConversation, makeCreator, makeFan } from "@/lib/engine/test-db";
+import { addMessage, makeConversation, makeCreator, makeFan } from "@understudy/engine/testing";
 import type { Viewer } from "./read";
 
 export { addMessage, makeConversation, makeCreator, makeFan };

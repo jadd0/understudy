@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { makeCreator, makeFan } from "@/lib/engine/test-db";
+import { makeCreator, makeFan } from "@understudy/engine/testing";
 import { makeUser } from "@/db/test-helpers";
 import { AnalyticsForbidden, analyticsScope } from "./scope";
 

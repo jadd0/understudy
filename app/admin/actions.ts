@@ -7,8 +7,8 @@ import { getEvents } from "@/lib/conversations/events";
 import { assertVisible, getSnapshot, type Viewer } from "@/lib/conversations/read";
 import { getChanges, getOlderMessages } from "@/lib/conversations/paging";
 import { toResult, windowRead } from "@/lib/conversations/result";
-import { defaultDeps } from "@/lib/engine/deps";
-import { processConversation } from "@/lib/engine/process";
+import { defaultDeps } from "@/lib/host/deps";
+import { processConversation } from "@understudy/engine";
 
 /** The signed-in admin. The id and role come from the session, never from an argument. */
 async function viewer(): Promise<Viewer> {

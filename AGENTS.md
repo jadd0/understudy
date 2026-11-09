@@ -80,9 +80,8 @@ Every module lives in a domain folder; nothing sits loose in `lib/`. A folder's 
 | `lib/config/` | `getConfig` over the `config` table (fail closed) |
 | `lib/env/` | validated environment |
 | `lib/wallet/` | ledger, top-up, unlock, tip, cap, high-value score, money parsing |
-| `lib/engine/` | the message turn |
-| `lib/host/` | the app's side of the engine's `HostPort` (`lib/engine/host.ts`): the database-backed `dbHost` over wallet, ledger, catalogue, unlocks and users |
-| `lib/persona/` | retrieval over persona chunks |
+| `packages/engine/` | the engine as a workspace package (`@understudy/engine`): the message turn, its ports, retrieval over persona chunks, and the fakes behind `@understudy/engine/testing`. The app imports only the package entry |
+| `lib/host/` | the app's side of the engine's `HostPort` (`packages/engine/src/host.ts`): the database-backed `dbHost` over wallet, ledger, catalogue, unlocks and users |
 | `lib/conversations/` | conversation reads and human actions: takeover, hand-back, release |
 | `lib/ui/` | pure view logic shared by components (message grouping) |
 | `lib/evals/` | engine eval: thread schema, runner, scorer, report rendering |

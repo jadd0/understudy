@@ -2,9 +2,8 @@ import { eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, messages, turns, users } from "@/db/schema";
-import { processConversation } from "@/lib/engine/process";
-import { makeCreator, makeFan, setEngineConfig, makePersona } from "@/lib/engine/test-db";
-import { rig } from "@/lib/engine/test-harness";
+import { processConversation } from "@understudy/engine";
+import { makeCreator, makeFan, setEngineConfig, makePersona, rig } from "@understudy/engine/testing";
 import { sendFanMessage, SendRefused } from "./send";
 
 async function setup() {

@@ -1,5 +1,5 @@
-import type { GenerateMessage } from "@/platform/ports/generator";
-import type { Chunk } from "@/platform/ports/retriever";
+import type { GenerateMessage } from "./ports/generator";
+import type { Chunk } from "./ports/retriever";
 import { eventMarker, type OfferOutcome, type PendingEvent } from "./events";
 import { renderProfile, type FanProfile } from "./memory";
 import { claudeHistory, threadBlock, type ChatMessage } from "./thread";

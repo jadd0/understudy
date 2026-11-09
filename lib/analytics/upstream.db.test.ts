@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { runTurn } from "@/lib/engine/turn";
-import { rig, world } from "@/lib/engine/test-harness";
+import { runTurn } from "@understudy/engine";
+import { rig, world } from "@understudy/engine/testing";
 import { makeQuery } from "./query";
 import { getRoutes } from "./routes";
 

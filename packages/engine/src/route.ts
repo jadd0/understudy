@@ -1,5 +1,5 @@
-import type { DeciderResult } from "@/platform/ports/decider";
-import { answerOf } from "@/platform/ports/decider";
+import type { DeciderResult } from "./ports/decider";
+import { answerOf } from "./ports/decider";
 import { canPitch } from "./pacing";
 import {
   EXPLICITNESS,
@@ -18,7 +18,7 @@ import {
   type TemplateKey,
   type ThreadAnswer,
 } from "./types";
-import { DeciderUnavailable } from "@/platform/ports/decider";
+import { DeciderUnavailable } from "./ports/decider";
 
 /** The thread answer, or `unknown` when it is missing or outside the options: it never throws, and `unknown` means no thread line, no pitch and no wait. */
 export function parseThread(result: DeciderResult): ThreadAnswer {
