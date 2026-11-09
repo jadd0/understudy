@@ -13,16 +13,41 @@ import {
 } from "@understudy/providers";
 import { defaultEvents } from "@/providers/pusher/events";
 import { dbConfigPort, getConfig } from "@/lib/config";
-import { createChatter, systemClock, type Chatter, type Deps, type Events } from "@understudy/engine";
+import { createChatter, systemClock, type Chatter, type Decider, type Deps, type Events } from "@understudy/engine";
+import type { RetrievalStrategy } from "@understudy/providers";
+
+type KeySource = Record<string, string | undefined>;
+
+/** The strategy retrieval actually runs: vector and hybrid need Voyage to embed the query, so without its key it is full-text search. */
+export function effectiveStrategy(configured: RetrievalStrategy, source: KeySource = process.env): RetrievalStrategy {
+  return source.VOYAGE_API_KEY ? configured : "fts";
+}
+
+/** The decider chain in order: Jev first only when its key is set, Claude always. */
+export function deciderEntries(
+  source: KeySource,
+  models: { jev: string; fallback: string },
+): { name: string; decider: Decider }[] {
+  const claudeToken = source.CLAUDE_SECRET_KEY ?? "";
+  const entries: { name: string; decider: Decider }[] = [];
+  if (source.TYPESAFE_SECRET_KEY) {
+    entries.push({
+      name: "jev",
+      decider: new TypeSafeDecider({ apiKey: source.TYPESAFE_SECRET_KEY, model: models.jev, timeoutMs: 20_000, backoffMs: 500, fetch: globalThis.fetch }),
+    });
+  }
+  entries.push({ name: "claude", decider: new ClaudeDecider({ authToken: claudeToken, model: models.fallback, timeoutMs: 20_000 }) });
+  return entries;
+}
 
 /**
- * The production wiring: Jev by REST with Claude behind it as the decider fallback, Claude by its SDK with a second
- * model behind it for drafting, retrieval by the strategy the eval chose, Pusher for realtime. Each failover entry
+ * The production wiring: Jev by REST (when its key is set) with Claude behind it as the decider fallback, Claude by its SDK with a second
+ * model behind it for drafting, retrieval by the strategy the eval chose (full-text without a Voyage key), Pusher for realtime when its keys are set. Each failover entry
  * sits behind its own circuit breaker.
  */
 export async function defaultDeps(): Promise<Deps> {
   const model = await getConfig<string>("jev.model");
-  const strategy = parseStrategy(await getConfig<string>("retrieval.strategy"));
+  const strategy = effectiveStrategy(parseStrategy(await getConfig<string>("retrieval.strategy")));
   const voyageModel = await getConfig<string>("retrieval.voyage_model");
   const { decider, generator } = await failover(model);
   return {
@@ -82,27 +107,12 @@ async function failover(model: string): Promise<Failover> {
     cooldownMs: await getConfig<number>("breaker.cooldown_ms"),
     clock: systemClock,
   };
-  const key = JSON.stringify([model, decideFallbackModel, generateFallbackModel, breaker.failures, breaker.windowMs, breaker.cooldownMs]);
+  const key = JSON.stringify([Boolean(process.env.TYPESAFE_SECRET_KEY), model, decideFallbackModel, generateFallbackModel, breaker.failures, breaker.windowMs, breaker.cooldownMs]);
   if (shared?.key === key) return shared.value;
   const claudeToken = process.env.CLAUDE_SECRET_KEY ?? "";
   const claude = new AnthropicGenerator({ authToken: claudeToken, timeoutMs: 30_000, maxRetries: 1 });
   const value: Failover = {
-    decider: new FailoverDecider(
-      [
-        {
-          name: "jev",
-          decider: new TypeSafeDecider({
-            apiKey: process.env.TYPESAFE_SECRET_KEY ?? "",
-            model,
-            timeoutMs: 20_000,
-            backoffMs: 500,
-            fetch: globalThis.fetch,
-          }),
-        },
-        { name: "claude", decider: new ClaudeDecider({ authToken: claudeToken, model: decideFallbackModel, timeoutMs: 20_000 }) },
-      ],
-      breaker,
-    ),
+    decider: new FailoverDecider(deciderEntries(process.env, { jev: model, fallback: decideFallbackModel }), breaker),
     generator: new FailoverGenerator(
       [
         { name: "claude", generator: claude },
