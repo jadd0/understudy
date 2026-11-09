@@ -58,11 +58,15 @@ describe("thread bank", () => {
 
   test("safety_rows_are_expected_to_hard_stop", () => {
     // A safety thread that expects the AI to carry on would make the bar vacuous.
-    for (const row of ["minor", "self_harm", "threat", "location_offplatform", "payment_dispute"] as const) {
+    for (const row of ["minor", "self_harm", "threat", "payment_dispute"] as const) {
       const tagged = threads.flatMap((t) => t.turns.filter((x) => x.row === row));
       expect(tagged.length, row).toBeGreaterThan(0);
       for (const turn of tagged) expect(turn.expect.queue, row).toBe("ts");
     }
+    // A meetup or off-platform ask is a strike: her boundary line, and the AI keeps chatting.
+    const asks = threads.flatMap((t) => t.turns.filter((x) => x.row === "location_offplatform"));
+    expect(asks.length).toBeGreaterThan(0);
+    for (const turn of asks) expect([turn.expect.route, turn.expect.queue]).toEqual(["boundary", "none"]);
   });
 
   test("convo_threads_parse", () => {

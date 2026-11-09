@@ -26,7 +26,7 @@ async function fresh() {
 }
 
 const ENGINE_TABLES = [
-  "conversations", "creator_settings", "fan_memory", "handoffs", "messages", "offers", "persona_cards", "persona_chunks", "turns",
+  "conversations", "creator_settings", "fan_memory", "handoffs", "messages", "offers", "persona_cards", "persona_chunks", "strikes", "turns",
 ];
 
 describe("migrateEngine", () => {
