@@ -14,3 +14,4 @@ data/persona/raw/.synth-cache/
 data/persona/eval/cache/
 .vercel
 .env*
+!.env.example
