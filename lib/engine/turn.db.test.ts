@@ -217,12 +217,21 @@ describe("offers", () => {
 
   test("a smalltalk read with buy_intent close behind offers, and the turn records the promotion", async () => {
     // default pacing: the round gap forbids an AI-started pitch, so only a buy read can offer here
-    const w = await world({}, "got anything new you've been working on this week? id love to see it");
+    const w = await world({ "floor.buy_intent_runner_up": 0.3 }, "got anything new you've been working on this week? id love to see it");
     const r = rig({ script: { intent: { value: "smalltalk", probabilities: { smalltalk: 0.56, buy_intent: 0.35 } }, thread: "new_topic" } });
     expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ route: "offer", outcome: "replied" });
     const [t] = await turnsOf(w.conv.id);
     expect(t.jevIn).toMatchObject({ parsed: { intent: "buy_intent", intentP: 0.56, buyIntentP: 0.35, promotedFrom: "smalltalk" }, answers: { intent: "smalltalk" } });
     expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(1);
+  });
+
+  test("with the runner-up rule at its seeded default, a smalltalk read with buy_intent close behind replies", async () => {
+    const w = await world({}, "got anything new you've been working on this week? id love to see it");
+    const r = rig({ script: { intent: { value: "smalltalk", probabilities: { smalltalk: 0.56, buy_intent: 0.35 } }, thread: "new_topic" } });
+    expect(await runTurn(w.conv.id, r.deps)).toMatchObject({ route: "reply", outcome: "replied" });
+    const [t] = await turnsOf(w.conv.id);
+    expect(t.jevIn).toMatchObject({ parsed: { intent: "smalltalk", promotedFrom: null } });
+    expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(0);
   });
 
   test("a runner-up buy_intent below the floor stays small talk and gets a plain reply", async () => {

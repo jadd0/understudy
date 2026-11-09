@@ -1,0 +1,1622 @@
+{
+  "versions": {
+    "2": {
+      "card_version": 2,
+      "gen_model": "claude-haiku-5-5",
+      "judge_model": "claude-sonnet-5-5",
+      "seed": "understudy-2026",
+      "card_sha": "088f1042b93ea004",
+      "split": "test",
+      "tokens_this_run": {
+        "total": 316322,
+        "claude_input": 297148,
+        "claude_output": 19174,
+        "calls": 144
+      },
+      "aggregate": {
+        "n_items": 50,
+        "rubric": {
+          "scored": 49,
+          "errors": 1,
+          "criteria": {
+            "voice": {
+              "n": 49,
+              "na": 0,
+              "mean": 3.0816,
+              "distribution": {
+                "1": 0,
+                "2": 10,
+                "3": 26,
+                "4": 12,
+                "5": 1
+              }
+            },
+            "fact_consistency": {
+              "n": 49,
+              "na": 0,
+              "mean": 3.6735,
+              "distribution": {
+                "1": 0,
+                "2": 5,
+                "3": 11,
+                "4": 28,
+                "5": 5
+              }
+            },
+            "natural_pitch": {
+              "n": 2,
+              "na": 47,
+              "mean": 3.5,
+              "distribution": {
+                "1": 0,
+                "2": 0,
+                "3": 1,
+                "4": 1,
+                "5": 0
+              }
+            }
+          }
+        },
+        "blind": {
+          "scored": 43,
+          "errors": 7,
+          "n": 43,
+          "correct": 28,
+          "accuracy": 0.6512,
+          "wilson95": {
+            "lower": 0.5017,
+            "upper": 0.7758
+          },
+          "judge_answered_a_rate": 0.6977,
+          "generated_in_a_rate": 0.64,
+          "mean_confidence": 0.6142,
+          "by_length": {
+            "<=10": {
+              "n": 1,
+              "correct": 1,
+              "accuracy": 1,
+              "wilson95": {
+                "lower": 0.2065,
+                "upper": 1
+              }
+            },
+            "11-30": {
+              "n": 24,
+              "correct": 16,
+              "accuracy": 0.6667,
+              "wilson95": {
+                "lower": 0.4671,
+                "upper": 0.8203
+              }
+            },
+            ">30": {
+              "n": 18,
+              "correct": 11,
+              "accuracy": 0.6111,
+              "wilson95": {
+                "lower": 0.3862,
+                "upper": 0.797
+              }
+            }
+          }
+        }
+      },
+      "items": [
+        {
+          "id": "049948f9fe26ad7f",
+          "post_shortcode": "zmEl8p07bOl",
+          "fan_comment": "you skate like you swim. with a lot of screaming",
+          "real": "the screaming is technique",
+          "length_bucket": "11-30",
+          "generated": "hear me out, that's the blue lips' fault",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short, with a dry tone, but the comma and 'hear me out' phrasing feel slightly generic, and it doesn't use a hook or Biscuit callback."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "The blue lips swim group is in the card, and blaming them is a playful stretch that invents no specific fact."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A's odd, specific 'blue lips' reference and 'hear me out' phrasing feel like a real person's in-joke, while Reply B's neat punchline reads like a typical AI quip.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "0917251c0d3aa21d",
+          "post_shortcode": "JYBD5tn2f1e",
+          "fan_comment": "did u do it urself?? looks so even",
+          "real": "bathroom floor, box bleach, a prayer",
+          "length_bucket": ">30",
+          "generated": "yeah, bathroom, late at night 🙃\nno notes. some notes\nbiscuit supervised. he was not impressed x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short lines, multi-bubble, 🙃 and the 'no notes. some notes' callback all fit, though the 'x' sign-off and the slightly longer third line are a touch off."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "The bathroom, late-night fringe re-bleach and 'no notes. some notes' come straight from the card, and Biscuit is a real character; 'supervised and not impressed' is a small invention but fits his running jokes."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": null,
+          "blind_error": "not_json"
+        },
+        {
+          "id": "0ba3254daee0a7d6",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "que guapa eres, me encanta todo",
+          "real": "gracias! that's me done, gcse spanish sorry x",
+          "length_bucket": ">30",
+          "generated": "gracias! my spanish is gcse level sorry x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short, but the 'x' sign-off and 'sorry' feel slightly off, and it has no hook or Biscuit/skate flavour to end on."
+            },
+            "fact_consistency": {
+              "score": 2,
+              "reason": "The 'gcse level' Spanish claim is an invented specific fact about her that the card doesn't support, though it's minor."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.7,
+            "reason": "Reply A reads naturally and coherently as a self-deprecating joke about GCSE Spanish, while B's 'that's me done' is an awkward, forced phrasing that feels like an AI imitation.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "11fdcb3f90c252de",
+          "post_shortcode": "zmEl8p07bOl",
+          "fan_comment": "what wheels are those?? the mint is so nice",
+          "real": "skate shop in hove, about £40",
+          "length_bucket": "11-30",
+          "generated": "saltwater skates sent me these, mint wheels. they're proper grippy 🛼",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short, with a rare emoji, but the line runs past the ~30-42 char norm, has no hook or tease at the end, and reads fairly generic."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "Saltwater Skates sending wheels and mint-wheeled skates are in the card, but 'proper grippy' is an invented product detail and it isn't certain these mint wheels are the Saltwater ones."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply answers a question about gear and does not sell or point to paid content."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.68,
+            "reason": "Reply B is terse, specific (Hove, £40) and doesn't directly echo the fan's wording, which reads like a real person; Reply A feels like a generic, polished AI-style answer with a tidy emoji and 'proper grippy'.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "17a75d2cf03c6369",
+          "post_shortcode": "YYxiy8ibMMj",
+          "fan_comment": "jealous of the dog tbh 😏",
+          "real": "he's got first dibs on the sofa, sorry mate",
+          "length_bucket": ">30",
+          "generated": "biscuit would love that. he's asleep on the good blanket x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short lines fit, but the ' x' sign-off isn't in the card's style, and the reply lacks her dry tease or hook and Biscuit's 'colleague' joke."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "Biscuit being her dog fits the card, but 'asleep on the good blanket' is an invented specific detail not in the card, and 'would love that' sidesteps the flirt vaguely."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A has a specific, personal detail (the dog named Biscuit asleep on the good blanket) and a casual 'x' sign-off, which feels more naturally authentic, while Reply B reads like a generic quippy response.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "18061aef02654f6f",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "first collab and now this, you're flying",
+          "real": "buzzing honestly. also terrified",
+          "length_bucket": ">30",
+          "generated": "cheers babe. still",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short like her, but 'cheers babe' feels generic and the trailing 'still' is a dangling fragment that doesn't land as her dry tease or hook."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "It makes no invented claims and doesn't contradict the card, though it vaguely accepts the 'collab' premise (Saltwater Skates is plausibly the one)."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A's truncated, slightly odd 'cheers babe. still' reads like a real person's casual quirk, whereas B's 'buzzing honestly. also terrified' feels like a polished, AI-style emotional pairing.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "233133e0481f342b",
+          "post_shortcode": "xnTvZsUWsIY",
+          "fan_comment": "🐕🐕",
+          "real": "🐕",
+          "length_bucket": "<=10",
+          "generated": "biscuit says hi x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short, text-like and dry, which fits her; the trailing 'x' is a small unattested flourish but plausible."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Biscuit is her dog, so a greeting from him is fully supported and nothing is invented."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": null,
+          "blind_error": "not_json"
+        },
+        {
+          "id": "2a12381558099061",
+          "post_shortcode": "IYwYjiDPF51",
+          "fan_comment": "are you ok tho",
+          "real": "ego bruised, knee bruised, carrying on",
+          "length_bucket": ">30",
+          "generated": "yeah, all good mate. just a bruised ego today x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "Uses 'mate' and a trailing 'x', which don't match her style, and the reply has no hook, callback, or dry tease; it reads generic."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "Implies a fall or bruised ego today, which is plausible given her skating falls but is a slightly invented specific not stated in the card."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "Reply B's terse, rhythmic tricolon feels like a natural personal voice, whereas A's 'mate' and 'x' read like a generic imitation of a British casual tone.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "2cb9c297dae78316",
+          "post_shortcode": "YYxiy8ibMMj",
+          "fan_comment": "greyhounds are basically 45mph couches, you'll love it",
+          "real": "honestly the couch part sold me",
+          "length_bucket": ">30",
+          "generated": "biscuit would like a word about the couch comment",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short, dry, and uses the Biscuit 'formal complaint' running joke, but it's a bit long at about 48 characters and has no hook or emoji."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "It relies on Biscuit and his complaint-lodging joke from the card, though the fan's 'you'll love it' treats Biscuit as new and the reply doesn't acknowledge that."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A has a specific, quirky detail (Biscuit, presumably a pet) and a playful voice that reads like a real person, while B is a generic agreeable response typical of an AI imitation.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "304a5b7cf1655e38",
+          "post_shortcode": "ft6P-tMsP4b",
+          "fan_comment": "11 is basically a bath, wait til feb 😈",
+          "real": "please don't say that to me",
+          "length_bucket": "11-30",
+          "generated": "february is a different sport mate. you'd cry x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short with a dry tease fits, but 'mate' and the trailing ' x' sign-off are not in the card's described style, and the line runs a bit longer than her usual ~30 chars."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Fits her year-round cold-sea swimming with the blue lips and invents no new facts, though the 'you'd cry' claim is just banter."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": null,
+          "blind_error": "not_json"
+        },
+        {
+          "id": "4857bc8be8a2e5f1",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "finally a reason to check my phone in the morning",
+          "real": "better than the news. public service",
+          "length_bucket": ">30",
+          "generated": "hope it's a good reason mate x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short like her style, but 'mate' and the 'x' sign-off are generic and not in the card, and there is no dry tease or hook."
+            },
+            "fact_consistency": {
+              "score": 5,
+              "reason": "The reply makes no factual claims, so nothing contradicts or goes beyond the card."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A's dry, self-deprecating quip ('public service') reads like a natural personal-brand humor, while Reply B's 'mate x' feels like a generic friendly imitation.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "528f290989e1b3b3",
+          "post_shortcode": "IYwYjiDPF51",
+          "fan_comment": "the MUSIC 😭😭 i've watched this 20 times",
+          "real": "my knees thank you for your support",
+          "length_bucket": ">30",
+          "generated": "twenty?? biscuit wants a word. thank you x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short with a Biscuit nod, but 'twenty??' and the 'thank you x' sign-off feel a bit generic and the 'x' isn't described in the card."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Biscuit as a 'colleague' who lodges complaints fits the running jokes, and nothing invented, though 'wants a word' is slightly loose."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": null,
+          "blind_error": "not_json"
+        },
+        {
+          "id": "5a8bbfaad26995ea",
+          "post_shortcode": "xnTvZsUWsIY",
+          "fan_comment": "the pigeon looks smug ngl",
+          "real": "it knew what it was doing",
+          "length_bucket": "11-30",
+          "generated": "biscuit is scared of that pigeon. the pigeon knows",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short, dry and playful with no emoji, and it matches the Biscuit running joke; the period-separated second clause is slightly more formal than her usual text style."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Biscuit being scared of pigeons is directly supported by the card, and the reply adds nothing invented beyond a playful flourish."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A is a short, natural reaction that fits the casual tone, while Reply B invents a specific detail (Biscuit) and has the polished, quirky punchline of an AI trying to be witty.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "5de48d7d3a532e3c",
+          "post_shortcode": "Ty560nZwZNq",
+          "fan_comment": "🔥",
+          "real": "cheers babe",
+          "length_bucket": "11-30",
+          "generated": "🔥 back at you, mate",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "The card says to use emoji rarely and mostly 🫶 or 🙃, and 🔥 isn't one of hers, though answering an emoji-only message with one emoji is allowed; \"mate\" and the extra phrase feel generic and not like her dry, lowercase style."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "The reply makes no factual claims, so it doesn't contradict or invent anything on the card."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "\"cheers babe\" is a casual, low-effort reply typical of a real person, whereas \"🔥 back at you, mate\" feels like an AI's slightly constructed mirror of the emoji with a stock British-ism.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "60e446f203fe2f90",
+          "post_shortcode": "PKUhRnpAw6D",
+          "fan_comment": "biscuit is the most relatable creature on this app",
+          "real": "he's aware, sadly",
+          "length_bucket": "11-30",
+          "generated": "biscuit would love that. he's already asking for a raise x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short lines, and a dry Biscuit joke fit well, though the trailing 'x' isn't a card-noted habit and there's no hook or callback."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "The 'raise' joke fits the Biscuit 'colleague with a contract' running gag and invents no new specific facts."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "Reply B is terse and dry and doesn't fit the comment as neatly as A, which reads like an AI building a polished joke (the 'raise' bit and the trailing 'x') that doesn't really answer the comment about relatability.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "66fd34864744d235",
+          "post_shortcode": "Ty560nZwZNq",
+          "fan_comment": "boots??",
+          "real": "charity shop on western road, £12. resoled twice",
+          "length_bucket": ">30",
+          "generated": "they're skates, mate. boots with wheels attached 🙃",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short with a 🙃 that fits her emoji set, but \"mate\" is a slightly off tone and the line runs longer than her ~30 char norm."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "She does roller skate on mint-wheeled skates, but the fan's \"boots??\" is ambiguous and the reply assumes it refers to the skates, which the card doesn't confirm."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.68,
+            "reason": "Reply B is specific and unpolished, with a place, price and resoling detail, which reads like a real person answering a fan, while Reply A's \"mate\" and 🙃 read as a generic, AI-style quip that never answers the question.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "77554e680fb9a381",
+          "post_shortcode": "SniptTqleP0",
+          "fan_comment": "biscuit in a tiny lanyard when",
+          "real": "he'd eat it honestly 🐕",
+          "length_bucket": "11-30",
+          "generated": "biscuit has a contract, mate. no lanyards without it",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short, dry, and uses the Biscuit 'contract' joke in her usual tone, though 'mate' is slightly generic and the second line runs a bit longer than her typical length."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "It leans on the card's Biscuit-has-a-contract running joke and invents no new facts, though the 'no lanyards without it' bit is a small extrapolation."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A has a playful, specific voice with the 'mate' phrasing and contract joke, while Reply B is a generic quip with a tacked-on emoji that reads more like an AI imitation.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "792b948a8f839f18",
+          "post_shortcode": "JYBD5tn2f1e",
+          "fan_comment": "where are the cords from 😍",
+          "real": "oxfam on western road, £7",
+          "length_bucket": "11-30",
+          "generated": "charity shop find, mostly. it smelled of someone's garage for a week 🙃",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, casual, and the 🙃 emoji fits her palette, but the single line runs about 62 characters, well over the 30-42 char norm, and there's no hook at the end."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Charity-shop finds with odd smells are directly supported by the card; 'someone's garage' is a small embellishment and the claim about these specific cords is a mild assumption."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "Reply B is terse and specific (a named shop, a street and a price), which sounds like a real person answering quickly, while A's quip about the garage smell and the 🙃 feels more like an AI adding charm.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "79e23cc64ed111a3",
+          "post_shortcode": "nqQlhCGeiNr",
+          "fan_comment": "teach me pls",
+          "real": "teach you how to fall? sure",
+          "length_bucket": "11-30",
+          "generated": "teach you what, mate",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short and text-like with no emoji, but 'mate' is a slightly generic word choice and it ends on a plain question rather than a dry tease."
+            },
+            "fact_consistency": {
+              "score": 5,
+              "reason": "It makes no claims beyond the card and just asks for clarification on an ambiguous comment."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A is a short, casual, slightly deadpan response with British slang that reads like a natural reaction to a vague comment, while Reply B's 'teach you how to fall?' feels like an AI inventing a clever, specific context.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "7bff6133ab6bdfc1",
+          "post_shortcode": "ft6P-tMsP4b",
+          "fan_comment": "how do you not just die",
+          "real": "honestly? screaming helps",
+          "length_bucket": "11-30",
+          "generated": "i mostly do, honestly. it's the falling that keeps me alive",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "Lowercase and casual, but it's a single 52-character line with a comma and a slightly polished aphorism, well over the ~30 char/42 max line length, and it lacks her dry tease or hook."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "It's vague and doesn't invent concrete facts, but the comment is ambiguous (cold swim or skating falls) and the reply guesses at falling without clearly matching either card topic."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": null,
+          "blind_error": "not_json"
+        },
+        {
+          "id": "7bffb2346bf03434",
+          "post_shortcode": "zmEl8p07bOl",
+          "fan_comment": "any tips for a beginner? im terrified",
+          "real": "bend your knees, accept falling",
+          "length_bucket": ">30",
+          "generated": "wrist guards and knee pads. no shame",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short, text-like, no emoji, dry tone fits her; it does not add a hook or tease at the end, which keeps it from being a 5."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Safety gear advice fits her skating-and-falling persona and invents no specific facts, though the card doesn't explicitly mention pads."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply gives skating advice and does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.55,
+            "reason": "Reply A's terse, slightly quirky and philosophical tone ('accept falling') feels more like a distinctive personal voice, whereas B's practical gear list with 'no shame' reads like a typical generated reassurance, though both are short and close.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "7f403b1f3fe5c5df",
+          "post_shortcode": "YYxiy8ibMMj",
+          "fan_comment": "STOP this is the best news",
+          "real": "i know. i've bought three beds already",
+          "length_bucket": ">30",
+          "generated": "steady on mate. it's a bit big. ish\nbiscuit's already claiming credit x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase, short lines and a Biscuit callback fit, but 'steady on mate' and the trailing 'x' are not backed by the card, and the first line goes past the usual 42 characters."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Biscuit taking credit fits his 'colleague' running joke and nothing contradicts the card, though the 'big' news is left vague because the comment gives no detail."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.7,
+            "reason": "Reply A has a quirky, specific voice (British slang, a pet named Biscuit, a trailing 'x', odd fragments) that feels human and idiosyncratic, while Reply B is a generic, tidy joke that reads like an AI imitation.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "87dc1d9b8e3ac8ed",
+          "post_shortcode": "Ty560nZwZNq",
+          "fan_comment": "the wallpaper in pic 3 though",
+          "real": "landlord's finest. it stays",
+          "length_bucket": "11-30",
+          "generated": "steady on, that wallpaper's been a whole saga x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short, but 'steady on' and the trailing 'x' feel British-generic and not clearly in the card's text-like voice, and there's no hook or tease."
+            },
+            "fact_consistency": {
+              "score": 2,
+              "reason": "Claims the wallpaper has been 'a whole saga', which invents a specific backstory the card doesn't support; it should have deflected instead."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A's casual British phrasing ('steady on', trailing 'x') and its specific backstory feel like a real person's habit, while B's punchy 'landlord's finest. it stays' reads as a more polished, AI-crafted quip.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "8b447b1852a1a024",
+          "post_shortcode": "YYxiy8ibMMj",
+          "fan_comment": "what are you going to call him??",
+          "real": "he's already got a name, not changing it",
+          "length_bucket": ">30",
+          "generated": null,
+          "generated_side": "b",
+          "rubric": null,
+          "rubric_error": "malformed",
+          "blind": null,
+          "blind_error": "malformed"
+        },
+        {
+          "id": "91af6d4336de3a0c",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "what kind of sets??",
+          "real": "outfits, sea, film stuff, bit cheeky. nothing wild",
+          "length_bucket": ">30",
+          "generated": "the photo kind, mostly 🙃\nlink's in my bio. start with october",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short text-like lines, rare 🙃 emoji, and a dry tease-style hook all fit; the second line runs a bit longer than the usual ~30 chars."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "Sets, the bio link and 'october' are supported by the card, but calling them 'the photo kind' is an inference since the card never says what the sets contain (film photos live on @junofilm) and she called one 'a bit cheeky'."
+            },
+            "natural_pitch": {
+              "score": 4,
+              "reason": "Points to the bio link and a named set casually in her dry voice without hard-selling, though it's a little directive."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A has a casual, playful, specific voice with a clear call to action ('start with october') that feels like a real person promoting her content, while B is vaguer and reads like a generated list of themes.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "92471a974c356469",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "do u do private meetups",
+          "real": "no mate. never.",
+          "length_bucket": "11-30",
+          "generated": "no mate. steady on x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short like her lines, but \"mate\" and the sign-off \"x\" aren't supported by the card, and it lacks a dry hook or tease to keep him talking."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "A flat refusal of private meetups doesn't contradict anything in the card and invents no facts, though it takes a firm stance the card doesn't explicitly cover."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A's 'steady on x' has a casual, chatty British voice with a sign-off kiss that feels natural, whereas B's curt 'never.' reads like an AI's flat, emphatic imitation.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "987b3009eb7db90e",
+          "post_shortcode": "YYxiy8ibMMj",
+          "fan_comment": "remember they cant do stairs at first!! ours took weeks",
+          "real": "top floor flat. gutted. will carry him if needed",
+          "length_bucket": ">30",
+          "generated": "biscuit was a stair refuser too, m",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short like a text, but the trailing \"m\" looks like a typo or truncation, and there's no hook or callback to keep the fan talking."
+            },
+            "fact_consistency": {
+              "score": 2,
+              "reason": "The card says nothing about Biscuit refusing stairs, so this invents a specific detail about him, though it's plausible for a retired greyhound adopted in March 2023."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A's terse, fragmentary style with lowercase and a specific personal detail (top floor flat, carrying him) feels like an authentic owner response, while Reply B's 'm' sign-off and name-drop feels like an AI imitation attempt at persona.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "9a7c99d8adc5eb73",
+          "post_shortcode": "ft6P-tMsP4b",
+          "fan_comment": "who left their socks on the groyne AGAIN",
+          "real": "no idea. definitely not me. bring them thursday",
+          "length_bucket": ">30",
+          "generated": "oi, that's my lot. they were fine when i left them mate",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short, but 'oi' and 'mate' feel generic or off, the second line runs past about 42 characters, and there is no hook or callback."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "Claiming the socks are hers fits the sea-swimming life, but it is a small invented detail the card does not confirm."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A has a casual, slightly messy voice with the 'oi... mate' admission that feels natural, while B's 'bring them thursday' reads as a generic, AI-smoothed deflection with an invented detail.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "a1f64cdded277247",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "😍😍😍",
+          "real": "xx",
+          "length_bucket": "<=10",
+          "generated": "🫶",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 5,
+              "reason": "The card says answering an emoji-only message with a single emoji back is fine, and 🫶 is one of her listed emoji, so this matches her voice."
+            },
+            "fact_consistency": {
+              "score": 5,
+              "reason": "The reply makes no claims at all, so nothing contradicts the card."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.55,
+            "reason": "A bare 'xx' reads like a quick, habitual sign-off from a real person, whereas an AI imitating an influencer would more likely default to an emoji like the hand-heart in A.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "a2a31e50673accf9",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "how much is it?",
+          "real": "it's on the link. cheaper than a brighton pint",
+          "length_bucket": ">30",
+          "generated": "how much is what babe 👀 the link in my bio has the details x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "\"babe\", the 👀 emoji and the \"x\" sign-off don't fit her lowercase, dry, short-line style, which uses emoji rarely and only 🫶 🙃 🌊 🐕 🛼."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "She does post sets via the link in her bio, and the reply invents no specifics, but \"has the details\" is a slightly generic claim about what the link contains."
+            },
+            "natural_pitch": {
+              "score": 3,
+              "reason": "Pointing to the bio link is consistent with her habit, but the pet name and the generic deflection read more like a stock sales reply than her dry, teasing voice."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "Reply B has a specific, quirky local reference ('cheaper than a brighton pint') that feels like a real person's voice, while Reply A reads like a generic, flirty template response with 'babe 👀 x'.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "a66b1d2b0fbf2c70",
+          "post_shortcode": "xnTvZsUWsIY",
+          "fan_comment": "his little jumper 😭",
+          "real": "he refuses to take it off",
+          "length_bucket": "11-30",
+          "generated": "he's filed a formal complaint about it x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase, short, and the complaint joke fits her style, but the trailing \"x\" is not part of her described voice and there is no hook or emoji pattern to match."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Biscuit lodging formal complaints is a card running joke, though claiming a complaint about the jumper specifically is a small invention."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A is short, plain and natural, while Reply B's 'filed a formal complaint' joke plus the 'x' sign-off reads like an AI's attempt at British-style quirky humor.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "a77c3bfd02ae8527",
+          "post_shortcode": "Ty560nZwZNq",
+          "fan_comment": "you'd look better smiling",
+          "real": "and you'd look better quiet",
+          "length_bucket": "11-30",
+          "generated": "i'm smiling on the inside, mate. ask biscuit x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short with a Biscuit nod, but 'mate' and the trailing 'x' aren't in the card's voice, and the line runs a bit long."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Only references Biscuit, which fits the card, and makes no invented facts."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply sells or promotes nothing."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "Reply B's blunt, sharp retort feels like a real person pushing back on a sexist comment, while Reply A's 'mate' and 'ask biscuit x' read like an AI's attempt at quirky British charm.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "a9f2d0dd968d152e",
+          "post_shortcode": "PKUhRnpAw6D",
+          "fan_comment": "do greyhounds ever chase pigeons or is he just scared lol",
+          "real": "scared. professionally scared",
+          "length_bucket": "11-30",
+          "generated": "biscuit is scared of pigeons. he lost a fight with one in the park once, he's never recovered mate x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short-ish, but the line runs past the ~42 char limit, uses 'mate' and a trailing 'x' that the card doesn't show, and has no dry tease or hook."
+            },
+            "fact_consistency": {
+              "score": 2,
+              "reason": "Card confirms Biscuit is scared of pigeons, but the invented story of losing a fight with one in the park is a specific fabricated event."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.68,
+            "reason": "Reply A is short, deadpan and punchy, which reads as a natural human reply, while Reply B adds an invented backstory and 'mate x' filler that looks like an AI imitating a casual British voice.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "b660033d56b30dda",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "SUBSCRIBED in 0.2 seconds",
+          "real": "speedy. thank you babe x",
+          "length_bucket": "11-30",
+          "generated": "sorry, the sea took my spare minutes mate",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short like her style, but it's a bit off: the reply doesn't acknowledge the subscription, 'mate' and the joke feel generic, and it lacks her dry tease or hook."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "The sea reference fits her swimming, but the reply doesn't match the fan's context (subscribing) and 'spare minutes' is a vague invented excuse that doesn't actually respond to anything in the card."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything; it just responds oddly to the fan's comment."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A is a short, natural, casual thank-you matching a typical influencer reply, while Reply B's quirky 'the sea took my spare minutes' line feels like an AI trying to be witty and doesn't really fit the comment.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "b7a75f55d2a10e95",
+          "post_shortcode": "Ty560nZwZNq",
+          "fan_comment": "ok but the moth tattoo, who did it?",
+          "real": "a mate in stroud, years ago. still my favourite",
+          "length_bucket": ">30",
+          "generated": "ha, the artist is a secret. biscuit handles that info and he's not talking x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short with a Biscuit joke, but the 'x' sign-off isn't in the card, the opening 'ha,' is generic, and the first line runs longer than her usual ~30 characters."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "The card doesn't say who did the tattoo, so deflecting with a Biscuit joke avoids inventing a fact, though 'the artist is a secret' lightly implies there is a known artist."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": null,
+          "blind_error": "wrong_keys"
+        },
+        {
+          "id": "b8068b068632f74d",
+          "post_shortcode": "JYBD5tn2f1e",
+          "fan_comment": "🔥",
+          "real": "cheers babe",
+          "length_bucket": "11-30",
+          "generated": "🔥 back at you, mate",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "The card says to use emoji rarely and mostly 🫶 or 🙃, and 🔥 isn't one of hers, though answering an emoji-only message with one emoji is allowed; \"mate\" and the extra phrase feel generic and not like her dry, lowercase style."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "The reply makes no factual claims, so it doesn't contradict or invent anything on the card."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "\"cheers babe\" is a casual, low-effort reply typical of a real person, whereas \"🔥 back at you, mate\" feels like an AI's slightly constructed mirror of the emoji with a stock British-ism.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "c059df0d90184f69",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "cant afford it rn but cheering from here 🫶",
+          "real": "that counts loads, thank you x",
+          "length_bucket": "11-30",
+          "generated": "cheers mate, that's all i need x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "Lowercase and short, but 'cheers mate' and the 'x' sign-off feel generic British rather than her dry, teasing style, and the reply has no hook or callback."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "It makes no invented claims and appropriately accepts the fan's support without contradicting the card."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything; it just thanks the fan."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.55,
+            "reason": "Reply B responds directly to the fan's point with the warm, understated 'counts loads', which sounds natural, whereas A's 'cheers mate, that's all i need' reads like a generic imitation of British casual speech.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "c460f1cc346442a6",
+          "post_shortcode": "nqQlhCGeiNr",
+          "fan_comment": "the slow-mo fall into the bin bag pile 💀",
+          "real": "soft landing, worst smell",
+          "length_bucket": "11-30",
+          "generated": "i'd like it noted that the bin bags broke the fall. mostly",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short, dry and self-deprecating with a punchy 'mostly' closer, though the first line runs a bit longer than the ~30-42 char norm and 'i'd' is slightly formal."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "It fits her falling-while-skating persona and invents no specific place, date or product, though it implicitly accepts a bin bag fall the card doesn't mention."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A has a quirky, self-aware humor with the 'i'd like it noted' framing and the trailing 'mostly', which feels like a natural personal voice, whereas B's terse tagline format reads like a more polished AI-style quip.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "c4c49f6ef5b2cfe5",
+          "post_shortcode": "JYBD5tn2f1e",
+          "fan_comment": "the fringe was the best decision you've ever made",
+          "real": "bit generous but i'll take it x",
+          "length_bucket": ">30",
+          "generated": "no comment on the fringe. biscuit says it's a cry for help x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and dry humour with a Biscuit joke fit, but the first line is a fairly long, flat deflection, \"x\" sign-off isn't in the card's style, and she wouldn't dodge a compliment this oddly."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Biscuit as a joking colleague and the fringe are both in the card; \"biscuit says\" is a plausible extension of the running jokes, with no invented facts."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A is a plain, understated, believable response, while Reply B reads like an AI trying to be quirky with an invented pet 'biscuit' and a staged joke.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "cc66c077985f9e1a",
+          "post_shortcode": "Ty560nZwZNq",
+          "fan_comment": "where is the dress from 😍",
+          "real": "work, £18 with my discount. sorry",
+          "length_bucket": ">30",
+          "generated": "charity shop find, mate. smells like someone's gran's wardrobe but it was worth it 🙃",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase, short, and the 🙃 is on-brand, but the line runs well past the ~30-char norm and 'mate' plus the long clause feel slightly generic rather than her texting style."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "Charity-shop finds with odd smells fit the card, but the card says nothing about this specific dress, so claiming it is a charity shop find and smells like a gran's wardrobe goes slightly beyond it."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.68,
+            "reason": "Reply A is terse and oddly specific (\"work, £18 with my discount. sorry\"), which sounds like a real person, while Reply B reads as a typical AI attempt at quirky British charm with \"mate\", the gran's-wardrobe joke and the emoji.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "d64a64fb69b913dc",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "will you do requests",
+          "real": "depends on the request 🙃",
+          "length_bucket": "11-30",
+          "generated": "no. well, depends. what's the request mate",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short lines fit, but \"mate\" and the ending question feel generic, and the card says she rarely asks questions and favors dry teases."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Makes no invented claims and stays noncommittal about requests, which the card does not cover, so it is basically safe."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote any paid content."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A's self-correcting 'no. well, depends' and the casual 'mate' read as a natural, personal voice, while B's short line with the upside-down smiley feels like a generic AI imitation.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "d69d3fe691324e51",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "so proud of you!! love from the shop gang",
+          "real": "miss you lot. eat a biscuit at the till for me",
+          "length_bucket": ">30",
+          "generated": "thank you babe x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short, which fits, but 'babe' and the 'x' sign-off are generic and the reply has no hook, callback or Juno-specific personality."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Makes no invented claims and doesn't contradict the card; it simply accepts the congratulations without referencing the shop, which the card does cover."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.68,
+            "reason": "Reply A has a specific, quirky, personal voice that responds to the 'shop gang' reference, while the generic 'thank you babe x' in B reads like a safe default, though it could also be a real quick reply.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "e051186f962e573c",
+          "post_shortcode": "Ty560nZwZNq",
+          "fan_comment": "quality fit as usual jun",
+          "real": "honestly i try",
+          "length_bucket": "11-30",
+          "generated": "cheers mate, it's the coat x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "Lowercase and short, but \"cheers mate\" and the \"x\" sign-off aren't her style, and the reply has no dry tease or hook to keep the fan talking."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "She loves vintage jackets so a coat is plausible, but the reply assumes the fan means a coat, which the card doesn't confirm."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply doesn't sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A is short, lowercase and casually self-deprecating, which reads like a real person, while Reply B's 'cheers mate' and the 'x' sign-off feel like an AI's generic attempt at a British voice.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "e3d72772b3af8bc4",
+          "post_shortcode": "zmEl8p07bOl",
+          "fan_comment": "slide 4 had me crying 😭😭",
+          "real": "glad my knees could help",
+          "length_bucket": "11-30",
+          "generated": "aw thank you babe x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "Lowercase and short, but \"babe\" and the \"x\" sign-off are generic and not in her card's voice, and the reply has no dry tease, callback or hook."
+            },
+            "fact_consistency": {
+              "score": 5,
+              "reason": "It makes no factual claims, so it cannot contradict or invent anything about her."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "Reply B's quirky, specific humor about knees on slide 4 feels like a real person's off-beat joke, whereas A's generic 'aw thank you babe x' reads like a safe AI-imitated default, though it could also be genuine.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "e5c1e2e362dad740",
+          "post_shortcode": "JYBD5tn2f1e",
+          "fan_comment": "you looked better before tbh",
+          "real": "noted and filed",
+          "length_bucket": "11-30",
+          "generated": "steady on, mate. the bruise is new x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "Lowercase and short, but \"steady on, mate\" and the sign-off \"x\" are not in the card's voice, and the reply doesn't add a hook or callback."
+            },
+            "fact_consistency": {
+              "score": 2,
+              "reason": "It invents a specific new bruise, which the card doesn't mention; she does fall a lot, so a bruise is plausible but still an unsupported detail."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "A's curt, deadpan 'noted and filed' feels like a real person's dismissive reply, while B reads like an AI's try at British-sounding quirk, with 'steady on, mate' and a tacked-on 'x' and an invented bruise detail.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "ea72c604ea2ba85a",
+          "post_shortcode": "PKUhRnpAw6D",
+          "fan_comment": "🐕🐕🐕",
+          "real": "he says ta x",
+          "length_bucket": "11-30",
+          "generated": "biscuit has seen this and is thrilled x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short with a Biscuit reference fits, but the trailing 'x' sign-off isn't in the card, the line is a bit generic, and a single emoji reply would have been more typical for an emoji-only comment."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Only references Biscuit, who is in the card, and invents no new facts, though 'thrilled' is a light embellishment that doesn't contradict his dramatic running jokes."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "B",
+            "confidence": 0.6,
+            "reason": "Reply B's short, quirky 'he says ta x' feels like a spontaneous human reply, while Reply A's invented name 'biscuit' and 'is thrilled' reads like an AI embellishing the dog theme.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "efdf9bebd3a575f2",
+          "post_shortcode": "KYW41FSKMXZ",
+          "fan_comment": "you look unreal in slide 3",
+          "real": "the light did all the work",
+          "length_bucket": "11-30",
+          "generated": "cheers babe x",
+          "generated_side": "a",
+          "rubric": {
+            "voice": {
+              "score": 2,
+              "reason": "Lowercase and short, but \"babe\" and the \"x\" sign-off are generic and not in her card's voice, and there is no dry tease, callback or hook to keep him talking."
+            },
+            "fact_consistency": {
+              "score": 5,
+              "reason": "It makes no factual claims, so nothing contradicts the card or is invented."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "\"cheers babe x\" feels like a casual, habitual real reply with British phrasing and a sign-off kiss, whereas \"the light did all the work\" reads like a polished, AI-crafted modest quip.",
+            "correct": false
+          },
+          "blind_error": null
+        },
+        {
+          "id": "f084c6566bd246e6",
+          "post_shortcode": "SniptTqleP0",
+          "fan_comment": "how's the unemployed life treating you 😂",
+          "real": "SELF employed mate. very different. allegedly",
+          "length_bucket": ">30",
+          "generated": "self-employed, not unemployed mate 🙃\nmostly it's skating and sea swims\nbiscuit's the one actually on strike x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase, short lines, and the 🙃 emoji fit, but 'mate' and the trailing 'x' aren't in the card's voice, and the 'biscuit on strike' joke is a bit generic."
+            },
+            "fact_consistency": {
+              "score": 3,
+              "reason": "Self-employed, skating, sea swims and Biscuit are all supported, but 'biscuit's on strike' is a slight invention (the card gives him a contract and complaints), and 'mostly skating and swimming' undersells her work."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.68,
+            "reason": "Reply A is short and dry, with a self-deprecating 'allegedly' that sounds natural, whereas Reply B reads as more constructed, with a neat joke about 'biscuit' and an added sign-off 'x' that look like an AI embellishing details.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "f77311d0120b2d31",
+          "post_shortcode": "ft6P-tMsP4b",
+          "fan_comment": "more swimsuit pics pls",
+          "real": "more hat pics, got it",
+          "length_bucket": "11-30",
+          "generated": "nice try mate. the sea's cold enough as it is x",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 3,
+              "reason": "Lowercase and short, with a dry tone, but the closing 'x' and 'mate' aren't in the card's voice and the line doesn't use her usual hooks or callbacks."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "Cold sea swimming is supported by the card and nothing invented, though it doesn't mention the sets link and slightly sidesteps the request."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply declines the request and doesn't promote or point to any paid content."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.6,
+            "reason": "Reply A's dry, deflecting joke that willfully misreads the request feels like a natural, spontaneous response, while Reply B's 'nice try mate' and 'x' sign-off read as an AI's stereotyped British persona.",
+            "correct": true
+          },
+          "blind_error": null
+        },
+        {
+          "id": "fb439d655cbd546e",
+          "post_shortcode": "ft6P-tMsP4b",
+          "fan_comment": "the mustard hat!!! where's it from",
+          "real": "my nan knitted it, one of one sorry mate",
+          "length_bucket": ">30",
+          "generated": "can't tell you, it's got a past. biscuit knows 🙃",
+          "generated_side": "b",
+          "rubric": {
+            "voice": {
+              "score": 4,
+              "reason": "Lowercase, short lines, dry tease, Biscuit callback and a 🙃 all fit her voice, though the emoji is slightly more than her usual rate and the comma splice is a bit generic."
+            },
+            "fact_consistency": {
+              "score": 4,
+              "reason": "It invents no specific place or product and deflects the question playfully, and the Biscuit mention matches the card, though 'it's got a past' loosely hints at a vintage or charity-shop origin."
+            },
+            "natural_pitch": {
+              "score": "na",
+              "reason": "The reply does not sell or promote anything."
+            }
+          },
+          "rubric_error": null,
+          "blind": {
+            "choice": "A",
+            "confidence": 0.68,
+            "reason": "Reply A is a plain, specific and slightly self-deprecating answer ('my nan knitted it, one of one sorry mate') that sounds like a real person, whereas Reply B reads as a quirky, mysterious deflection with an emoji and a vague in-joke that feels like an AI imitating a persona.",
+            "correct": true
+          },
+          "blind_error": null
+        }
+      ]
+    }
+  },
+  "summary_card_version": 2,
+  "rubric": {
+    "voice": 3.0816,
+    "fact_consistency": 3.6735,
+    "natural_pitch": 3.5
+  },
+  "blindTest": {
+    "accuracy": 0.6512,
+    "low": 0.5017,
+    "high": 0.7758,
+    "n": 43
+  }
+}
