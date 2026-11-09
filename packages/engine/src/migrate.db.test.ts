@@ -38,14 +38,14 @@ describe("migrateEngine", () => {
     );
     expect(tables.rows.map((r) => r.table_name)).toEqual(ENGINE_TABLES);
     const recorded = await pool.query(`select count(*)::int as n from drizzle."${ENGINE_MIGRATIONS_TABLE}"`);
-    expect(recorded.rows[0].n).toBe(4);
+    expect(recorded.rows[0].n).toBe(5);
   });
 
   test("migrate twice is a no-op", async () => {
     const db = drizzle(pool!) as unknown as EngineDb;
     await migrateEngine(db);
     const recorded = await pool!.query(`select count(*)::int as n from drizzle."${ENGINE_MIGRATIONS_TABLE}"`);
-    expect(recorded.rows[0].n).toBe(4);
+    expect(recorded.rows[0].n).toBe(5);
   });
 
   test("no engine table has a foreign key into users, creators or catalogue_items", async () => {

@@ -65,12 +65,14 @@ async function seedCreators(db: SqlClient, o: VolumeOptions, from: number, to: n
     select md5('seed:fan:' || c || ':' || f)::uuid, 'seed-fan-' || c || '-' || f || '@seed.invalid', 'fan', 'Fan ' || c || '-' || f, now() from ${range}, ${fans}`);
 
   // One row per conversation; the message, turn, offer and handoff inserts all read it. Every 100th conversation is
-  // waiting on a creator (an open handoff), and every 50th keeps its last fan message unanswered.
+  // waiting on a creator (an open handoff), every 50th keeps its last fan message unanswered, and every 10th had a
+  // takeover: its last 1 to 5 replies were written by the creator (one in four by an admin) and then handed back.
   await db.query(`drop table if exists seed_conv`);
   await db.query(`create temp table seed_conv as
     select c, f, md5('seed:conv:' || c || ':' || f)::uuid as id, md5('seed:creator:' || c)::uuid as creator_id, md5('seed:fan:' || c || ':' || f)::uuid as fan_id,
       now() - ((1 + abs(hashtext('age' || c || ':' || f)) % 60) || ' days')::interval - interval '1 day' as created,
-      (f % 100 = 0) as handoff, (f % 50 = 7) as unanswered
+      (f % 100 = 0) as handoff, (f % 50 = 7) as unanswered,
+      (f % 10 = 3) as takeover, 1 + abs(hashtext('staff' || c || ':' || f)) % 5 as staff_n
     from ${range}, ${fans}`);
   await db.query(`insert into conversations (id, creator_id, fan_id, mode, created_at)
     select id, creator_id, fan_id, case when handoff then 'handoff_creator' else 'ai' end::conversation_mode, created from seed_conv`);
@@ -85,7 +87,7 @@ async function seedCreators(db: SqlClient, o: VolumeOptions, from: number, to: n
     from seed_conv s, generate_series(1, ${m}, 2) k
     where not (s.unanswered and k = ${lastFan})`);
   await db.query(`insert into messages (id, conversation_id, sender, body, turn_id, status, created_at)
-    select md5('seed:msg:' || s.id || ':' || k)::uuid, s.id, case when k % 2 = 1 then 'fan' else 'ai' end::sender, ${words("s.id::text || k", 9)},
+    select md5('seed:msg:' || s.id || ':' || k)::uuid, s.id, case when k % 2 = 1 then 'fan' when s.takeover and k > ${m} - 2 * s.staff_n then (case when abs(hashtext('who' || s.id || k)) % 4 = 0 then 'admin' else 'creator' end) else 'ai' end::sender, ${words("s.id::text || k", 9)},
       case when k % 2 = 1 and not (s.unanswered and k = ${lastFan}) then md5('seed:turn:' || s.id || ':' || k)::uuid end, 'sent', s.created + (k * interval '3 minutes')
     from seed_conv s, generate_series(1, ${m}) k`);
   await db.query(`insert into offers (id, conversation_id, item_id, price_cents, expires_at, status, created_at, resolved_at)
