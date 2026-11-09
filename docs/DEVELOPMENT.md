@@ -48,7 +48,7 @@ Add a check as a new line in the gate-steps file, never by editing `gate.sh`.
 Each PR is built on its own branch in a worktree under `.claude/worktrees/<branch>` (gitignored):
 `bash scripts/worktree-setup.sh <branch> [<path>] [<base>]`. It links `node_modules` (hard-linked; run
 `npm install` in at most one tree), copies `.env.local`, and writes a code map. The merge policy is
-`merge-when-green` to local main and never push The loop is light: the
+`merge-when-green` to local main and never push. The loop is light: the
 founder and Claude build directly, with no unattended coordinator. Tests use a database per
 branch.
 

@@ -77,7 +77,7 @@ admin must not be open to anyone with the URL. Seats are the addresses in `SEED_
   would make the Auth.js adapter create a default `fan` row that then owns the seat email.
 - **Guessing the password.** There is no attempt counter: every attempt costs a Turnstile solve, and the
   password is four word-and-number parts generated for this demo. A per-IP or per-email lockout needs a
-  table and is residual R4. The `?error=seat` message does reveal that an address is a seat, which is
+  table and is a known gap. The `?error=seat` message does reveal that an address is a seat, which is
   harmless because the seat addresses are handed to reviewers anyway.
 - **Link capture.** The action calls `signIn("resend", { redirect: false })` inside `captureSeatLink`, an
   `AsyncLocalStorage` scope. The provider's `sendVerificationRequest` is wrapped by `seatAwareSender`:

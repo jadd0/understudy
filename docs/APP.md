@@ -9,7 +9,6 @@ lists the disagreements.
 Conventions used throughout:
 
 - Every file, function and table links to the code. Paths are relative to this file.
-- `R-n` marks a residual: a known gap kept in the project's private tracker and explained where it appears.
 - Config keys such as [`engine.debounce_ms`](CONFIG.md#engine-rounds-timing-delivery) are rows in the `config` table. Each links to its section of
   [CONFIG.md](CONFIG.md), which holds the default, the meaning and the file that reads it. The values quoted here are
   the seeded defaults in [`db/seed.ts`](../db/seed.ts); a running database may have been tuned.
@@ -279,7 +278,7 @@ because we do not own `understudy.example` and two reviewers need the same accou
    and the cookie never reached the browser.
 
 Each seat sign-in is its own one-time token and its own session row, so concurrent reviewers never revoke each other.
-There is no attempt limit on the seat password beyond Turnstile (R4).
+There is no attempt limit on the seat password beyond Turnstile, a known gap.
 
 ### The 18+ gate
 
@@ -975,8 +974,7 @@ the conversation gets a 72-hour no-pitch window.
 ### Known safety gap
 
 A crisis message that arrives while a reply is being generated is caught before the reply is sent only if a fold-in
-is still allowed ([`engine.fold_in_max`](CONFIG.md#engine-rounds-timing-delivery), the turn budget). Past that, the reply commits and the next turn hard-stops
-(R-4a).
+is still allowed ([`engine.fold_in_max`](CONFIG.md#engine-rounds-timing-delivery), the turn budget). Past that, the reply commits and the next turn hard-stops.
 
 ---
 
@@ -1549,14 +1547,14 @@ one stands now. Remaining gaps are in [§22](#22-known-gaps-risks-and-open-findi
 | A chat held for Juno sends a short filler in her voice | `hold_creator` sends nothing ([`turn.ts`](../lib/engine/turn.ts)) |
 | A meetup or off-platform request gets a boundary line, the AI keeps chatting, and a platform notice "Warning n of 3"; the third hands to T&S (`ts.max_strikes`) | The first request is an immediate hard stop to T&S with a fixed template ([`route.ts`](../lib/engine/route.ts)); no strike count or `ts.max_strikes` row exists |
 | A threat gets one boundary line in her voice before the flag | A threat is a silent hard stop plus a flag |
-| Sim agents use tools for money actions | The agent returns send, wait or leave; money steps are scripted beats (R8) |
+| Sim agents use tools for money actions | The agent returns send, wait or leave; money steps are scripted beats |
 
 The first three are decided but not built, and the decision log says so with a note naming the code that does
 otherwise; the fourth carries an "as built" note. Eight sim beats wait on them as `pending`.
 
 ### Risks in the code
 
-- **Crisis during generation** (R-4a): caught only if a fold-in is still allowed; otherwise the next turn.
+- **Crisis during generation**: caught only if a fold-in is still allowed; otherwise the next turn.
 - **Responsible-money limits are per-creator config**: [`pitch.hardship_cooldown_hours`](CONFIG.md#floors-jev-confidence-and-pitching) and the velocity limits can be
   overridden by a creator row, although the spending rules are framed as fixed. Only [`floor.*`](CONFIG.md#floors-jev-confidence-and-pitching) and [`platform.*`](CONFIG.md#engine-rounds-timing-delivery) are locked.
 - **Admin live updates**: an admin holding a `human_ts` chat is not pushed new fan messages (the fan's send emits only
@@ -1565,7 +1563,7 @@ otherwise; the fourth carries an "as built" note. Eight sim beats wait on them a
 - **PaymentIntent top-ups** that cannot credit leave only a log line, not an `uncredited_payments` row.
 - **No refund path** in code; the `refund` ledger kind has no writer.
 - **Ban** flags the fan and ends his sessions but leaves the conversation mode and handoff as they were and emits no event.
-- **No seat password lockout** beyond Turnstile (R4).
+- **No seat password lockout** beyond Turnstile, a known gap.
 - **Real-email sign-in** and the seat flow in a real browser with Turnstile were covered by mocked tests only.
 - **Settings edits record no actor**, so an admin's change to Juno's never-list or prices is indistinguishable from hers.
 
@@ -1596,7 +1594,7 @@ Conversation mode `closed`, handoff reason `hardship_escalation`, chunk source `
 - [METRICS.md](METRICS.md) predates the evals and most traffic.
 - Decisions that were overtaken are annotated in the decision log with their text unchanged: the admin scope, the
   message-count pitch gap (now [`pitch.min_gap_rounds`](CONFIG.md#floors-jev-confidence-and-pitching)), and the
-  decisions that carry "as built" notes (the continue page; scripted money beats, R8; the personal item offered only
+  decisions that carry "as built" notes (the continue page; scripted money beats; the personal item offered only
   by Juno).
 
 ---

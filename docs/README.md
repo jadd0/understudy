@@ -17,7 +17,7 @@ An AI chatter for creators, run here on the synthetic creator Juno.
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Setup, commands, the gate, worktrees, decision log | built |
 | [DEPLOY.md](DEPLOY.md) | Vercel deploy: env table, Stripe webhook events, Neon branch, migrate and seed, persona publish, cron and Hobby limit, smoke test, rollback | built |
 | [SAFETY.md](SAFETY.md) | Routing matrix: what the AI handles and what goes to a human | draft |
-| MONETISATION.md | Wallet, ledger, Stripe top-up, unlocks, tips, spend cap, high-value score | built |
+| [MONETISATION.md](MONETISATION.md) | Wallet, ledger, Stripe top-up, unlocks, tips, spend cap, high-value score | built |
 | [CONFIG.md](CONFIG.md) | Every tunable value: each config row (default, what it does, where it is read), the code timing constants, and how to change them | built |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Message engine: the turn, ports, lease and compare-and-set, failure table, every prompt verbatim, every config row | built |
 | [DESIGN.md](DESIGN.md) | UI tokens and components | built |
@@ -44,8 +44,8 @@ An AI chatter for creators, run here on the synthetic creator Juno.
 5. Server-side guards send each role to its own area; a wrong role gets a 404 (`lib/auth/guards.ts`).
 6. One Neon Postgres holds identity, persona, conversation and money tables (`db/schema.ts`).
 7. Each fan message goes through Jev (classify), code (route), Haiku (draft), Jev (check); offers and
-   prices are chosen by code, never the model. Not built yet.
+   prices are chosen by code, never the model.
 8. Fans top up a wallet through Stripe; a signature-checked webhook credits an append-only ledger and
-   unlocks debit under a row lock. In review.
+   unlocks debit under a row lock.
 9. Humans take over through two queues, Juno and Trust & Safety; the strictest owner wins.
 10. Every change passes `bash scripts/gate.sh`; the gate is the only proof (AGENTS.md).
