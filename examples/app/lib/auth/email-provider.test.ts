@@ -29,7 +29,7 @@ describe("emailProvider", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
     const p = emailProvider({ NODE_ENV: "production", RESEND_API_KEY: "re_x", EMAIL_FROM: "Juno <hi@example.com>" });
     expect(p.id).toBe("resend");
-    await p.sendVerificationRequest({ ...params("fan@example.com"), provider: { apiKey: "re_x", from: "Juno <hi@example.com>" } } as never);
+    await p.sendVerificationRequest({ ...(params("fan@example.com") as object), provider: { apiKey: "re_x", from: "Juno <hi@example.com>" } } as never);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(String(fetchSpy.mock.calls[0][0])).toContain("api.resend.com");
     expect(log).not.toHaveBeenCalled();
