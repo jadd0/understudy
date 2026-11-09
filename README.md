@@ -1,7 +1,7 @@
 # Understudy
 
-A take-home build of an AI chatter for the creator Juno Vale: fans chat with a persona drawn from her
-public Instagram voice, spend from a prepaid wallet on unlocks and tips, and humans (Juno, trust and safety)
+A take-home build of an AI chatter for the creator Juno Vale, a fictional creator whose posts and replies are
+generated: fans chat with a persona drawn from her Instagram-style voice, spend from a prepaid wallet on unlocks and tips, and humans (Juno, trust and safety)
 can take over any conversation. Code decides routing, offers and prices; the models only draft and check.
 
 ## Quick start
