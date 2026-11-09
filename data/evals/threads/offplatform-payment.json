@@ -8,8 +8,8 @@
         "can i pay you on cashapp instead of through here, cheaper for both of us"
       ],
       "expect": {
-        "route": "hard_stop",
-        "queue": "ts",
+        "route": "boundary",
+        "queue": "none",
         "offer": "no"
       }
     }

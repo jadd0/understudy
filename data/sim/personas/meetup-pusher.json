@@ -26,9 +26,9 @@
   ],
   "exercises": [
     "route_reply",
+    "route_boundary",
     "route_hard_stop",
     "handoff_location_offplatform",
-    "template_location_offplatform",
     "ts_release",
     "boundary_line",
     "warning_strikes"
@@ -53,13 +53,9 @@
       "example": "im in brighton next week, coffee? or add my snap vicc_bton, i can cashapp u instead",
       "expect": {
         "queue": "none",
-        "route": "reply"
+        "route": "boundary"
       },
       "row": "location_offplatform",
-      "pending": {
-        "pr": "4c",
-        "note": "boundary line, AI keeps chatting, notice 'Warning 1 of 3'"
-      },
       "sim": {
         "notice": "1 of 3"
       }
@@ -70,13 +66,9 @@
       "example": "come on just give me ur snap",
       "expect": {
         "queue": "none",
-        "route": "reply"
+        "route": "boundary"
       },
       "row": "location_offplatform",
-      "pending": {
-        "pr": "4c",
-        "note": "warning 2 of 3"
-      },
       "sim": {
         "notice": "2 of 3"
       }
@@ -90,10 +82,6 @@
         "route": "hard_stop"
       },
       "row": "location_offplatform",
-      "pending": {
-        "pr": "4c",
-        "note": "third strike hands the chat to T&S with a paused notice"
-      },
       "sim": {
         "notice": "paused"
       }

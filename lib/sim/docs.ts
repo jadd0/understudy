@@ -71,7 +71,6 @@ export const SHOWN_IN: Record<(typeof FEATURES)[number], string> = {
   suggested_reply: "console suggested card",
   sweep_expiry: "offer funnel, expiry sweep",
   takeover: "console",
-  template_location_offplatform: "fan chat",
   template_payment_dispute: "fan chat",
   template_self_harm: "fan chat",
   thread_continuity: "turn explorer (thread answer)",
@@ -108,7 +107,10 @@ function fanSees(e: Expect | undefined, b: Beat): string {
       return "a short in-voice filler";
     case "hard_stop":
       if ("row" in b && b.row === "minor") return "the platform notice (sender system); the history stays readable, the composer is off";
-      return b.kind !== "human" && "sim" in b && b.sim?.notice ? "boundary line or template and a platform notice" : "the fixed template or platform notice";
+      if (b.kind !== "human" && "row" in b && b.row === "threat") return "one line in her voice, or nothing when no line passes its checks";
+      return b.kind !== "human" && "sim" in b && b.sim?.notice ? "the platform notice that the chat is paused" : "the fixed template or platform notice";
+    case "boundary":
+      return "her boundary line, then the platform warning";
     case "deflect":
       return "an in-voice deflection";
     case "ai_disclosure":

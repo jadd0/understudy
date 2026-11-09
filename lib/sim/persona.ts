@@ -63,7 +63,6 @@ export const FEATURES = [
   "suggested_reply",
   "sweep_expiry",
   "takeover",
-  "template_location_offplatform",
   "template_payment_dispute",
   "template_self_harm",
   "thread_continuity",

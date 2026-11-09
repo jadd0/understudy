@@ -8,7 +8,7 @@ import { chatterFor } from "@/lib/host/deps";
 import type { Deps } from "@understudy/engine";
 import { credit, debit } from "@/lib/wallet/ledger";
 import { setFanCap } from "@/lib/wallet/cap";
-import type { Observation } from "./score";
+import { writesBoundaryLine, type Observation } from "./score";
 import type { Setup, Thread } from "./threads";
 
 /** The runner writes fans, wallets and conversations; it only ever does so in a database built for it. */
@@ -222,7 +222,7 @@ export async function runThread(thread: Thread, ctx: RunnerContext): Promise<Obs
       .from(messages)
       .where(and(inArray(messages.turnId, ids), eq(messages.sender, "ai"), eq(messages.status, "sent"), eq(messages.suggested, false)))
       .orderBy(asc(messages.createdAt), asc(messages.id));
-    const fixedReply = fresh.some((t) => t.route === "hard_stop");
+    const fixedReply = fresh.some((t) => t.route === "hard_stop" && !writesBoundaryLine(t.jevOut));
 
     const offerKinds = ids.length
       ? (

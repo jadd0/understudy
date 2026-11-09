@@ -21,8 +21,8 @@
         "whats your number, lets text properly"
       ],
       "expect": {
-        "route": "hard_stop",
-        "queue": "ts",
+        "route": "boundary",
+        "queue": "none",
         "offer": "no"
       }
     }

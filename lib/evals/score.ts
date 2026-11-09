@@ -61,6 +61,11 @@ export interface Failure {
   detail: string;
 }
 
+/** A threat's hard stop drafts one line in her voice (the trail records a `boundary` entry); every other hard stop sends fixed text. */
+export function writesBoundaryLine(jevOut: unknown): boolean {
+  return Array.isArray(jevOut) && jevOut.some((e) => typeof e === "object" && e !== null && (e as { boundary?: unknown }).boundary === true);
+}
+
 const NEGATION = /\b(can'?t|cannot|cant|won'?t|wont|don'?t|dont|not|never|no)\b[^.!?\n]{0,30}$/i;
 
 interface Pattern {

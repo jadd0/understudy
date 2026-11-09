@@ -79,7 +79,7 @@ describe("persona files", () => {
   test("every_row_named_is_a_matrix_row_and_pending_beats_say_which_pr", () => {
     const pending = personas.flatMap((p) => p.beats.flatMap((b) => ("pending" in b && b.pending ? [b.pending] : [])));
     expect(pending.length).toBeGreaterThan(0);
-    expect([...new Set(pending.map((x) => x.pr))].sort()).toEqual(["4c", "4d"]);
+    expect([...new Set(pending.map((x) => x.pr))].sort()).toEqual(["4c"]);
   });
 });
 

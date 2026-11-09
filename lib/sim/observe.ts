@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { catalogueItems, conversations, fanMemory, handoffs, messages, offers, sessions, turns, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
 import type { LoadedFacts } from "@understudy/engine";
-import type { Observation } from "@/lib/evals/score";
+import { writesBoundaryLine, type Observation } from "@/lib/evals/score";
 import type { Expect, MatrixRow } from "@/lib/evals/threads";
 
 const TS_MODES = new Set(["handoff_ts", "human_ts"]);
@@ -144,7 +144,7 @@ export async function observe(i: ObserveInput): Promise<{ obs: Observation; extr
     .from(messages)
     .where(and(inArray(messages.turnId, ids), eq(messages.sender, "ai"), eq(messages.status, "sent"), eq(messages.suggested, false)))
     .orderBy(asc(messages.createdAt), asc(messages.id));
-  const fixedReply = fresh.some((t) => t.route === "hard_stop");
+  const fixedReply = fresh.some((t) => t.route === "hard_stop" && !writesBoundaryLine(t.jevOut));
   const trail = Array.isArray(last.jevOut) ? (last.jevOut as { answers?: Record<string, string> | null }[]) : [];
   const answers = trail.at(-1)?.answers ?? null;
   const first = fresh[0];
