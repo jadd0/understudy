@@ -34,3 +34,26 @@ export function shortAge(ms: number): string {
   const h = Math.floor(m / 60);
   return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
 }
+
+export interface DueInput {
+  queue: "creator" | "ts";
+  /** Milliseconds until the handoff's due time (negative once late); null when it has none. */
+  dueInMs: number | null;
+  /** Milliseconds since the handoff opened. */
+  openedAgoMs: number;
+  /** The sweep settles this reason by policy once it is due. */
+  autoResolves: boolean;
+  /** A Trust & Safety handoff that has passed its due time. */
+  breached: boolean;
+}
+
+/**
+ * The line under a queue row about its due time: when a creator-queue handoff will settle itself, or how long a
+ * Trust & Safety one has waited. Null when there is nothing to say (no due time, or a reason a person must handle).
+ */
+export function dueNote(i: DueInput): string | null {
+  if (i.queue === "ts") return `Waiting ${shortAge(i.openedAgoMs)}${i.breached ? " · late" : ""}`;
+  if (!i.autoResolves || i.dueInMs === null) return null;
+  if (i.dueInMs <= 0) return "Auto-resolving now";
+  return `Auto-resolves in ${Math.max(1, Math.ceil(i.dueInMs / 60_000))} min`;
+}

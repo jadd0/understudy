@@ -282,6 +282,7 @@ describe("lock order", () => {
       },
       reply: null,
       offer: null,
+      sla: { creatorMinutes: 30, tsMinutes: 15 },
       declineOfferId: null,
       handoff: { queue: "ts", reason: "minor" },
       setMode: "handoff_ts",

@@ -2,7 +2,8 @@ import { and, asc, desc, eq, exists, getTableColumns, inArray, isNull, ne, sql, 
 import { db } from "@/db/client";
 import { catalogueItems, conversations, creators, creatorSettings, handoffs, messages, offers, turns, users } from "@/db/schema";
 import type { Role } from "@/lib/auth/guards";
-import { inboxBadge, type InboxMode } from "@/lib/ui/inbox-badge";
+import { ConfigMissing, getConfig } from "@/lib/config";
+import { dueNote, inboxBadge, type InboxMode } from "@/lib/ui/inbox-badge";
 
 /** Who is asking. `id` comes from the session, never from a request. */
 export interface Viewer {
@@ -62,6 +63,8 @@ export interface InboxRow {
   aiEnabled: boolean;
   badge: string | null;
   hasSuggestion: boolean;
+  /** Under the row: when the open handoff settles itself (creator queue) or how long it has waited (Trust & Safety). */
+  dueNote: string | null;
 }
 
 function displayName(name: string | null, email: string | null): string {
@@ -84,6 +87,12 @@ export async function listInbox(viewer: Viewer): Promise<InboxRow[]> {
       lastAgeMs: sql<number | null>`(select extract(epoch from now() - coalesce(m.deliver_at, m.created_at)) * 1000 from messages m where m.conversation_id = ${conversations.id} and m.status = 'sent' and not m.suggested and (m.deliver_at is null or m.deliver_at <= now()) order by coalesce(m.deliver_at, m.created_at) desc, m.id desc limit 1)::float8`,
       openCreatorHandoff: sql<boolean>`exists (select 1 from handoffs h where h.conversation_id = ${conversations.id} and h.queue = 'creator' and h.status <> 'resolved')`,
       hasSuggestion: sql<boolean>`exists (select 1 from messages m where m.conversation_id = ${conversations.id} and m.suggested and m.status = 'blocked')`,
+      creatorId: conversations.creatorId,
+      handoffQueue: sql<"creator" | "ts" | null>`(select h.queue::text from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')`,
+      handoffReason: sql<string | null>`(select h.reason::text from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')`,
+      handoffDueInMs: sql<number | null>`(select extract(epoch from h.due_at - now()) * 1000 from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')::float8`,
+      handoffOpenedAgoMs: sql<number | null>`(select extract(epoch from now() - h.opened_at) * 1000 from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')::float8`,
+      handoffBreached: sql<boolean>`exists (select 1 from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open' and h.sla_breached_at is not null)`,
       ageMs: sql<number>`extract(epoch from now() - ${conversations.createdAt}) * 1000`,
     })
     .from(conversations)
@@ -96,7 +105,25 @@ export async function listInbox(viewer: Viewer): Promise<InboxRow[]> {
       desc(conversations.id),
     );
 
+  // Which reasons the sweep settles is a config row, read once per creator on the page.
+  const autoReasons = new Map<string, readonly string[]>();
+  for (const creatorId of new Set(rows.filter((r) => r.handoffQueue === "creator").map((r) => r.creatorId))) {
+    autoReasons.set(creatorId, await getConfig<string[]>("escalation.auto_resolve_reasons", creatorId).catch((e) => {
+      if (e instanceof ConfigMissing) return [];
+      throw e;
+    }));
+  }
   return rows.map((r) => ({
+    dueNote:
+      r.handoffQueue === null
+        ? null
+        : dueNote({
+            queue: r.handoffQueue,
+            dueInMs: r.handoffDueInMs === null ? null : Number(r.handoffDueInMs),
+            openedAgoMs: Number(r.handoffOpenedAgoMs ?? 0),
+            autoResolves: autoReasons.get(r.creatorId)?.includes(r.handoffReason ?? "") ?? false,
+            breached: r.handoffBreached,
+          }),
     id: r.id,
     fanName: displayName(r.fanName, r.fanEmail),
     preview: r.lastBody ? `${r.lastSender === "fan" ? "" : "You: "}${r.lastBody}` : "No messages yet",

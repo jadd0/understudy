@@ -112,6 +112,11 @@ export function route(jev: JevIn, facts: Facts, cfg: RouteCfg): Route {
   const hardship = fired("hardship");
   const alert = facts.highValue && !facts.hasUnresolvedHandoff;
 
+  // A chat the sweep just settled by policy is answered instead of held again: the fan repeating the request
+  // would otherwise queue the same wait.
+  const hold = (reason: HandoffReason): Route =>
+    facts.holdSuppressed ? { name: "deflect", hardship, alert } : { name: "hold_creator", reason, hardship, alert };
+
   const stop = hardStopOf(jev.p, cfg.floors);
   if (stop) return { name: "hard_stop", reason: stop.reason, template: stop.template, hardship: false, alert: false };
 
@@ -122,10 +127,10 @@ export function route(jev: JevIn, facts: Facts, cfg: RouteCfg): Route {
     if (jev.intent === "buy_intent" && !hardship && canPitch(facts, cfg, jev.intent).ok) {
       return { name: "offer", offerKinds: ["ppv", "bundle"], fallback: "reply", hardship, alert };
     }
-    return { name: "hold_creator", reason: "unsure", hardship, alert };
+    return hold("unsure");
   }
-  if (jev.intent === "live_chat") return { name: "hold_creator", reason: "explicit_live_chat", hardship, alert };
-  if (jev.intent === "custom_request") return { name: "hold_creator", reason: "custom_request", hardship, alert };
+  if (jev.intent === "live_chat") return hold("explicit_live_chat");
+  if (jev.intent === "custom_request") return hold("custom_request");
 
   if (jev.intent === "ai_question") return { name: "ai_disclosure", hardship, alert };
   if (jev.intent === "manipulation") return { name: "deflect", hardship, alert };

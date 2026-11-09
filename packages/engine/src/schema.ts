@@ -3,6 +3,7 @@ import {
   type AnyPgColumn,
   bigint,
   boolean,
+  check,
   customType,
   index,
   integer,
@@ -121,6 +122,8 @@ export const conversations = pgTable(
     // Kept for history; declines are now computed from `offers`.
     pitchDeclines: integer("pitch_declines").notNull().default(0),
     noPitchUntil: ts("no_pitch_until"),
+    // After the sweep settles a held chat by policy, the same chat's next hold is a deflect until this passes.
+    holdSuppressedUntil: ts("hold_suppressed_until"),
     // The fan's composer pings this while keys are pressed; the engine holds a turn while it is in the future.
     fanTypingUntil: ts("fan_typing_until"),
     failedTurns: integer("failed_turns").notNull().default(0),
@@ -233,11 +236,19 @@ export const handoffs = pgTable(
     openedAt: ts("opened_at").notNull().defaultNow(),
     claimedAt: ts("claimed_at"),
     resolvedAt: ts("resolved_at"),
+    /** When a creator-queue handoff falls back to policy, or a Trust & Safety one counts as late. */
+    dueAt: ts("due_at"),
+    /** Who closed it: a person, or the sweep's policy once it was due. */
+    resolvedBy: text("resolved_by").$type<"human" | "sla">(),
+    /** Set once when a Trust & Safety handoff passes its due time; the sweep alerts and never resolves it. */
+    slaBreachedAt: ts("sla_breached_at"),
   },
   (t) => [
     uniqueIndex("handoffs_one_unresolved_per_conversation")
       .on(t.conversationId)
       .where(sql`${t.status} <> 'resolved'`),
+    index("handoffs_due_idx").on(t.dueAt).where(sql`${t.status} <> 'resolved'`),
+    check("handoffs_resolved_by_check", sql`${t.resolvedBy} in ('human', 'sla')`),
   ],
 );
 

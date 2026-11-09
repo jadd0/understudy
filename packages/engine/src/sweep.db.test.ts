@@ -115,6 +115,6 @@ describe("GET /api/cron/sweep", () => {
     process.env.CRON_SECRET = "s3cret";
     const res = await call("Bearer s3cret");
     expect(res.status).toBe(200);
-    expect(Object.keys(await res.json()).sort()).toEqual(["conversationsProcessed", "leasesCleared", "offersExpired"]);
+    expect(Object.keys(await res.json()).sort()).toEqual(["conversationsProcessed", "handoffsAutoResolved", "leasesCleared", "offersExpired", "tsBreaches"]);
   });
 });

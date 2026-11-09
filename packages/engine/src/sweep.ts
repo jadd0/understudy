@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { getConfig } from "./cfg";
 import type { EngineCtx } from "./ctx";
+import { runEscalations } from "./escalation";
 import { expireOffers } from "./offer";
 import { processConversation } from "./process";
 import { describeError } from "./turn";
@@ -9,6 +10,8 @@ export interface SweepResult {
   leasesCleared: number;
   conversationsProcessed: number;
   offersExpired: number;
+  handoffsAutoResolved: number;
+  tsBreaches: number;
 }
 
 /** A sweep run is bounded so it fits one function invocation; the next minute takes the rest. */
@@ -23,7 +26,7 @@ export const SWEEP_START_BUDGET_MS = 35_000;
 /**
  * The safety net behind the per-send trigger: (1) expired leases are cleared, (2) AI conversations holding fan
  * messages no turn has answered, older than the debounce and with no live lease, are processed oldest message
- * first, (3) expired open offers are marked. All comparisons use the database clock; the start budget uses the injected clock.
+ * first, (3) expired open offers are marked, (4) handoffs past their due time are settled by policy or stamped late. All comparisons use the database clock; the start budget uses the injected clock.
  */
 export async function sweep(ctx: EngineCtx): Promise<SweepResult> {
   const started = ctx.deps.clock.now();
@@ -55,5 +58,13 @@ export async function sweep(ctx: EngineCtx): Promise<SweepResult> {
       console.error(`engine: sweep ${describeError(e)}`);
     }
   }
-  return { leasesCleared: cleared.rows.length, conversationsProcessed: processed, offersExpired: await expireOffers(ctx) };
+  const offersExpired = await expireOffers(ctx);
+  const escalations = await runEscalations(ctx);
+  return {
+    leasesCleared: cleared.rows.length,
+    conversationsProcessed: processed,
+    offersExpired,
+    handoffsAutoResolved: escalations.autoResolved,
+    tsBreaches: escalations.tsBreaches,
+  };
 }

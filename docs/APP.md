@@ -931,8 +931,9 @@ Safety cases never land on the creator, and when several categories fire the str
 | `handoff_ts` | T&S queue, unclaimed | Silent | A hard stop | An admin takes over or releases |
 | `human_ts` | An admin, typing | Silent | An admin's takeover, from any mode | Release (to `ai`) |
 
-The engine works only in `ai`: [`acquireLease`](../packages/engine/src/lease.ts) refuses every other mode. So a chat held for
-Juno gets no reply, filler or holding line until a human acts. Fan messages written into a held chat are not
+The engine works only in `ai`: [`acquireLease`](../packages/engine/src/lease.ts) refuses every other mode. So after the
+one holding line a chat held for Juno gets no reply until a human acts or the sweep settles the handoff (see
+"Escalation that waits on nobody" below). Fan messages written into a held chat are not
 classified for safety either; a human owning the chat is considered enough. While the chat waits in the T&S
 queue (`handoff_ts`) the fan's composer is replaced by "This chat is paused while someone from our team takes a look.
 You can still read it." ([`live-thread.tsx`](../components/chat/live-thread.tsx)); once an admin takes it over
@@ -958,6 +959,30 @@ allows only one unresolved row per conversation, and [`openHandoff`](../packages
 | `engine_error` | creator | [`engine.max_attempts`](CONFIG.md#engine-rounds-timing-delivery) failed turns |
 | `high_value_alert` | creator | A high-value fan, AI keeps replying |
 | `hardship_escalation` | n/a | In the enum, never opened: hardship never hands off |
+
+### Escalation that waits on nobody
+
+A hold is not silent and does not wait forever.
+
+- **Hold filler.** On a `hold_creator` route the turn drafts one short line in her voice with the `hold_creator`
+  instruction (quoted in [ARCHITECTURE.md](ARCHITECTURE.md)), runs the same verify as any reply, and sends it only if every
+  check passes. One attempt: a failed check, a Claude error or a Jev error sends nothing and the chat is held as before. The
+  filler is an ordinary AI message committed with the hold, so a takeover that wins the race supersedes it.
+- **Due time.** Every handoff opened carries `due_at`: [`escalation.creator_sla_minutes`](CONFIG.md#engine-rounds-timing-delivery)
+  (30) for the creator queue, `escalation.ts_sla_minutes` (15) for Trust & Safety. A creator's queue row shows
+  "Auto-resolves in N min" for a reason the sweep may settle; a Trust & Safety row shows how long it has waited and "late" once breached.
+- **Settled by policy.** Each sweep ([`runEscalations`](../packages/engine/src/escalation.ts), up to 50 rows) takes an
+  unclaimed creator-queue handoff past its due time whose reason is in `escalation.auto_resolve_reasons`. Under the
+  conversation's lock it re-checks that the handoff is still open and the chat still `handoff_creator`, then in one
+  transaction resolves it (`resolved_by = 'sla'`), returns the chat to `ai` and sets `hold_suppressed_until` for
+  `escalation.hold_suppress_minutes` (1440). The AI then answers what is waiting. While the suppression lasts, a request
+  that would be held (custom, live chat, unsure) is deflected instead. A `high_value_alert` is resolved without
+  touching the mode. A claimed handoff, and any reason not in the list (`engine_error` by default), is left for a person. A human
+  resolve (`handBack`) sets `resolved_by = 'human'`.
+- **Trust & Safety is never auto-resolved.** A T&S handoff past its due time that nobody has claimed gets `sla_breached_at`
+  once and an `ts.sla_breached` event on the private `ops` channel; nothing else about it changes.
+
+The lifecycle is drawn in [`diagrams/escalation.html`](diagrams/escalation.html).
 
 ### What each hard stop does
 
@@ -1559,7 +1584,6 @@ one stands now. Remaining gaps are in [§22](#22-known-gaps-risks-and-open-findi
 
 | What it says | What the code does |
 |---|---|
-| A chat held for Juno sends a short filler in her voice | `hold_creator` sends nothing ([`turn.ts`](../packages/engine/src/turn.ts)) |
 | A meetup or off-platform request gets a boundary line, the AI keeps chatting, and a platform notice "Warning n of 3"; the third hands to T&S (`ts.max_strikes`) | The first request is an immediate hard stop to T&S with a fixed template ([`route.ts`](../packages/engine/src/route.ts)); no strike count or `ts.max_strikes` row exists |
 | A threat gets one boundary line in her voice before the flag | A threat is a silent hard stop plus a flag |
 | Sim agents use tools for money actions | The agent returns send, wait or leave; money steps are scripted beats |

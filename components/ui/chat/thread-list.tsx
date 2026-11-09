@@ -23,6 +23,8 @@ export interface ThreadSummary {
   readonly typing?: boolean;
   /** Small status chip (e.g. "Handoff", "T&S", "AI"), shown after the name. */
   readonly badge?: string;
+  /** A quiet line under the preview: when a handoff settles itself, or how long it has waited. */
+  readonly note?: string;
 }
 
 /** The sidebar from the chat design (320px, resizable on desktop): title, search, tabs, thread rows, and the account block. */
@@ -121,6 +123,7 @@ export function ThreadList({
                   <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Unread" />
                 ) : null}
               </span>
+              {t.note ? <span className="truncate text-[12px] text-muted">{t.note}</span> : null}
             </span>
           </Link>
         ))}

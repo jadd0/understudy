@@ -5,7 +5,7 @@ import type { HostPort } from "./host";
 import type { EngineTx } from "./ports/db";
 import { conversations, handoffs, messages, offers, turns } from "./schema";
 import { deliverOffsets, splitBubbles } from "./bubbles";
-import { openHandoff } from "./handoff";
+import { openHandoff, type HandoffSla } from "./handoff";
 import { unrepeatedTemplate } from "./templates";
 import type { HandoffQueue, HandoffReason, RouteName } from "./types";
 
@@ -75,6 +75,8 @@ export interface CommitPlan {
   /** Open a high_value_alert for the creator; the AI keeps replying. */
   alert: boolean;
   hardshipCooldownHours: number | null;
+  /** How long a handoff this turn opens may wait before its due time. */
+  sla: HandoffSla;
   /** Tip rows this turn reacted to: stamped with its turn id like the inbound, but kept out of `inbound_ids`, which counts fan messages. */
   eventMessageIds?: string[];
   typing: { cps: number; maxMs: number; gapMs: number };
@@ -206,9 +208,9 @@ export async function commitTurn(ctx: EngineCtx, lease: Lease, plan: CommitPlan)
       .returning({ id: turns.id });
 
     let handoffId: string | null = null;
-    if (plan.handoff) handoffId = await openHandoff(tx, lease.conversationId, plan.handoff.queue, plan.handoff.reason);
+    if (plan.handoff) handoffId = await openHandoff(tx, lease.conversationId, plan.handoff.queue, plan.handoff.reason, plan.sla);
     if (plan.alert) {
-      const alertId = await openHandoff(tx, lease.conversationId, "creator", "high_value_alert");
+      const alertId = await openHandoff(tx, lease.conversationId, "creator", "high_value_alert", plan.sla);
       handoffId ??= alertId;
     }
     // The template must not follow an older, still-undelivered bubble. Offers are locked before the user row:
@@ -302,7 +304,7 @@ async function recordSuperseded(tx: EngineTx, lease: Lease, plan: CommitPlan, ho
         version: sql`${conversations.version} + 1` as unknown as number,
       })
       .where(eq(conversations.id, lease.conversationId));
-    handoffId = await openHandoff(tx, lease.conversationId, "ts", plan.hardStop.reason);
+    handoffId = await openHandoff(tx, lease.conversationId, "ts", plan.hardStop.reason, plan.sla);
     await supersedeUnseenBubbles(tx, lease.conversationId);
     if (plan.hardStop.flagUser) await host.flagFan(tx, lease.fanId, plan.hardStop.reason);
   }
@@ -348,7 +350,7 @@ export interface FailureResult {
  * with outcome `error`, the lease released and the conversation left in AI mode. Reaching `maxAttempts` failed
  * turns in a row hands the conversation to the creator.
  */
-export async function recordFailure(ctx: EngineCtx, lease: Lease, rec: TurnRecord, maxAttempts: number): Promise<FailureResult> {
+export async function recordFailure(ctx: EngineCtx, lease: Lease, rec: TurnRecord, maxAttempts: number, sla: HandoffSla): Promise<FailureResult> {
   return ctx.db.transaction(async (tx) => {
     const [conv] = await tx
       .update(conversations)
@@ -359,7 +361,7 @@ export async function recordFailure(ctx: EngineCtx, lease: Lease, rec: TurnRecor
     let handoffId: string | null = null;
     let escalated = false;
     if (conv && conv.failedTurns >= maxAttempts && conv.mode === "ai") {
-      handoffId = await openHandoff(tx, lease.conversationId, "creator", "engine_error");
+      handoffId = await openHandoff(tx, lease.conversationId, "creator", "engine_error", sla);
       await tx
         .update(conversations)
         .set({ mode: "handoff_creator", version: sql`${conversations.version} + 1` as unknown as number })
@@ -391,7 +393,7 @@ export async function handBack(ctx: Pick<EngineCtx, "db">, conversationId: strin
     if (!conv) return;
     await tx
       .update(handoffs)
-      .set({ status: "resolved", resolvedAt: sql`now()` })
+      .set({ status: "resolved", resolvedAt: sql`now()`, resolvedBy: "human" })
       .where(and(eq(handoffs.conversationId, conversationId), ne(handoffs.status, "resolved")));
     // Only messages a human already had the chance to answer: those older than the last human message. A fan
     // message written after it, or with no human message at all, is still waiting for the AI.
