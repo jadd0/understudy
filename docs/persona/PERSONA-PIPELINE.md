@@ -254,6 +254,11 @@ From `bank/style.json`. Rates are shares of texts.
 | `:3`, `>.<`, `:)`, `xD`, `rawr` | 0 each | 0 each |
 | top tokens | biscuit 33, sea 20, blue 17, lips 17, day 16, new 16 | mate 40, babe 30, he's 23, honestly 23, thank 21, biscuit 20 |
 
+Voice markers (`bank/style.json`, `markers`; the same 606 train and style-only replies, share of replies
+using each): sign-off "x" 0.1304, "mate" 0.066, "babe" 0.0495, the pet's name 0.0347, an emoji 0.0528, a
+concrete fact (a price, or a capitalised place or shop) 0.0908. The engine draws which of these a reply may
+use at these rates; the pet's name is read from the profile bio ("<name>'s assistant").
+
 Reply counts (`bank/style.json`): 606 text replies used, 23 GIF replies, 128 text replies held out (78
 validation + 50 test). A reply to a comment on Instagram starts with the fan's `@mention`, which is why the
 leading-mention rate is 0.9752 for replies and 0 for captions; the card tells her not to open a DM that way.

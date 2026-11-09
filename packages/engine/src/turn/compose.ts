@@ -4,7 +4,8 @@ import { ownsEverything, type ShortlistItem } from "../conversation/offer";
 import { dropRepeatedEmoji, recentEmoji } from "../drafting/emoji";
 import { loadProfile } from "../drafting/memory";
 import { buildPrompt } from "../drafting/prompt";
-import { qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify";
+import { enforceDraw, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify";
+import { drawStyle, parseRates } from "../drafting/style-draw";
 import type { JevIn, Route } from "../types";
 import { RETRY_NOTE, RETRY_REASONS, qualityNote } from "./draft";
 import type { PassResult } from "./pass";
@@ -61,6 +62,12 @@ export async function composeReply(
   let chosenUnsetup = false;
   let previous: VerifyFailure[] = [];
   const recent = recentEmoji(b.history);
+  // Without stored rates there is no draw and the prompt is unchanged.
+  const styleRates = parseRates(card.markers);
+  // One draw per reply, kept across retries; the fixed-line routes never draw.
+  const styleDraw =
+    styleRates && ["reply", "offer", "deflect"].includes(route.name) ? drawStyle(styleRates, b.batchText, ctx.deps.random ?? Math.random) : null;
+  if (styleDraw) s.trail.push({ style: styleDraw });
   while (attempts < cfg.genAttempts && !ok) {
     attempts++;
     acc.attempts = attempts;
@@ -83,6 +90,7 @@ export async function composeReply(
       offerOutcomes: inputs.offerOutcomes,
       // A cooldown turn never hears "tease that more is coming".
       ownsAll: inputs.ownsAll && !b.facts.noPitchActive,
+      styleDraw: styleDraw && styleRates ? { draw: styleDraw, pet: styleRates.pet } : undefined,
     });
     // Name what failed, so the second draft drops that part instead of rephrasing it (a lobby invite became a voice-note dare).
     const reasons = previous.map((f) => RETRY_REASONS[f]).filter(Boolean);
@@ -133,7 +141,7 @@ export async function composeReply(
     s.trail.push({ attempt: attempts, failures: verdict.failures, answers: verdict.jevOut });
     // A draft that only repeats a question is still safe: if no later attempt does better, it is the one sent.
     if (verdict.ok || qualityOnly(verdict.failures)) {
-      chosen = draft;
+      chosen = styleDraw ? enforceDraw(draft, styleDraw) : draft;
       chosenUnsetup = verdict.failures.includes("offer_unsetup");
     }
     previous = verdict.failures;

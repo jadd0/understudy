@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -73,6 +73,9 @@ export async function seedPersona(db: EngineDb, creatorId: string, dir = default
     // Held-out replies are never retrievable.
     .filter((c) => c.split !== "test" && c.split !== "validation");
   if (chunks.length === 0) throw new Error("chunks.jsonl holds no chunk to load");
+  // Her measured voice-marker rates, when the persona build wrote them: the card then draws a style per reply.
+  const styleFile = path.join(dir, "bank", "style.json");
+  const markers = existsSync(styleFile) ? ((JSON.parse(readFileSync(styleFile, "utf8")) as { markers?: Record<string, unknown> }).markers ?? null) : null;
 
   return db.transaction(async (tx) => {
     const [same] = await tx
@@ -85,11 +88,11 @@ export async function seedPersona(db: EngineDb, creatorId: string, dir = default
     let inserted = false;
     if (same) {
       version = same.version;
-      if (!same.publishedAt) await tx.update(personaCards).set({ publishedAt: sql`now()` }).where(and(eq(personaCards.creatorId, creatorId), eq(personaCards.version, version)));
+      if (!same.publishedAt) await tx.update(personaCards).set({ publishedAt: sql`now()`, markers }).where(and(eq(personaCards.creatorId, creatorId), eq(personaCards.version, version)));
     } else {
       const [latest] = await tx.select({ version: personaCards.version }).from(personaCards).where(eq(personaCards.creatorId, creatorId)).orderBy(desc(personaCards.version)).limit(1);
       version = (latest?.version ?? 0) + 1;
-      await tx.insert(personaCards).values({ creatorId, version, body, neverList: neverTerms(body), publishedAt: sql`now()` as unknown as Date });
+      await tx.insert(personaCards).values({ creatorId, version, body, neverList: neverTerms(body), markers, publishedAt: sql`now()` as unknown as Date });
       inserted = true;
     }
     await tx.delete(personaChunks).where(eq(personaChunks.creatorId, creatorId));

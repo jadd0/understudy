@@ -1,5 +1,5 @@
 {
-  "method": "Figures are measured with mentions and urls removed. Replies exclude the validation and test splits. Rates are shares of texts, rounded to 4 places; length is characters, nearest-rank percentiles.",
+  "method": "Figures are measured with mentions and urls removed. Replies exclude the validation and test splits. Rates are shares of texts, rounded to 4 places; markers are measured on the same replies; length is characters, nearest-rank percentiles.",
   "captions": {
     "n": 220,
     "lowercase_only_rate": 0.9818,
@@ -203,6 +203,16 @@
     "exclamation_rate": 0,
     "with_emoji_rate": 0.1636,
     "leading_mention_rate": 0
+  },
+  "markers": {
+    "n": 606,
+    "pet": "biscuit",
+    "signoff_x": 0.1304,
+    "mate": 0.066,
+    "babe": 0.0495,
+    "pet_name": 0.0347,
+    "emoji": 0.0528,
+    "concrete_fact": 0.0908
   },
   "replies": {
     "n": 606,

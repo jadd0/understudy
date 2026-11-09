@@ -3,6 +3,7 @@
 // Replies feed the figures only when they are train or style_only: validation and test replies
 // are held out, so the card's voice rules cannot be derived from them. Figures are measured on
 // the text with @mentions and urls removed, so who she addressed does not move length or case.
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { isMain, parseArgs, readJson, readJsonl, writeJson } from "./lib/io.mjs";
 import { splitIndex } from "./split.mjs";
@@ -36,6 +37,55 @@ const SPANISH = new Set(
     "buenos buenas dias días noches"
   ).split(" "),
 );
+
+// Voice markers a blind judge can count. Each is tested on the cleaned text of one reply, so a reply
+// counts once however often it uses the marker. A sign-off is a trailing x/xx/xxx (optionally followed
+// by punctuation or an emoji): "xmas" and "xD" are not.
+export const SIGNOFF_X = /(?<![\p{L}\p{N}])x{1,3}(?![\p{L}\p{N}])[\s\p{P}\p{Extended_Pictographic}️]*$/iu;
+export const MATE = /(?<![\p{L}\p{N}])mate(?![\p{L}\p{N}])/iu;
+export const BABE = /(?<![\p{L}\p{N}])babe(?![\p{L}\p{N}])/iu;
+// A price, or a capitalised word that is not the first of its sentence (a shop, a place); the pet's name does not count.
+const PRICE = /[£$€]\s?\d|(?<![\p{L}\p{N}])\d[\d.,]*\s?(?:quid|pounds|p|k)(?![\p{L}\p{N}])/iu;
+const CAPITALISED = /(?<=[\p{L}\p{N},;:] )\p{Lu}[\p{L}]+/gu;
+
+/** The pet's name as it appears in the profile bio ("biscuit's assistant"), lower case, or null. */
+export function petFromProfile(profile) {
+  const m = /([\p{L}]+)['’]s assistant/iu.exec(profile?.bio ?? "");
+  return m ? m[1].toLowerCase() : null;
+}
+
+const escapeRe = (word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Does `text` use the pet's name (whole word, any case)? */
+export function usesPetName(text, pet) {
+  if (!pet) return false;
+  return new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(pet)}(?![\\p{L}\\p{N}])`, "iu").test(text);
+}
+
+/** Whether one reply carries a concrete fact: a price, or a capitalised place or shop name. */
+export function usesConcreteFact(text, pet) {
+  if (PRICE.test(text)) return true;
+  return [...text.matchAll(CAPITALISED)].some((m) => m[0].toLowerCase() !== (pet ?? "") && m[0] !== "I");
+}
+
+/** Share of replies using each marker, on the cleaned text. Rates are shares of texts, 4 places. */
+export function measureMarkers(texts, pet) {
+  const counts = { signoff_x: 0, mate: 0, babe: 0, pet_name: 0, emoji: 0, concrete_fact: 0 };
+  for (const raw of texts) {
+    const text = cleaned(raw);
+    if (SIGNOFF_X.test(text)) counts.signoff_x++;
+    if (MATE.test(text)) counts.mate++;
+    if (BABE.test(text)) counts.babe++;
+    if (usesPetName(text, pet)) counts.pet_name++;
+    if ([...text.matchAll(EMOJI)].length > 0) counts.emoji++;
+    if (usesConcreteFact(text, pet)) counts.concrete_fact++;
+  }
+  return {
+    n: texts.length,
+    pet,
+    ...Object.fromEntries(Object.entries(counts).map(([k, v]) => [k, rate(v, texts.length)])),
+  };
+}
 
 export function percentile(sortedAscending, p) {
   if (sortedAscending.length === 0) return null;
@@ -113,15 +163,16 @@ export function measure(texts) {
   };
 }
 
-export function computeStyle({ captions, replies, splits }) {
+export function computeStyle({ captions, replies, splits, pet = null }) {
   const index = splitIndex(splits);
   const used = replies.filter((r) => ["train", "style_only"].includes(index.get(r.id)));
   const usedText = used.filter((r) => !r.non_text && r.text !== "");
   const heldOut = replies.filter((r) => ["validation", "test"].includes(index.get(r.id)));
   return {
     method:
-      "Figures are measured with mentions and urls removed. Replies exclude the validation and test splits. Rates are shares of texts, rounded to 4 places; length is characters, nearest-rank percentiles.",
+      "Figures are measured with mentions and urls removed. Replies exclude the validation and test splits. Rates are shares of texts, rounded to 4 places; markers are measured on the same replies; length is characters, nearest-rank percentiles.",
     captions: measure(captions.filter((c) => c.voice).map((c) => c.caption)),
+    markers: measureMarkers(usedText.map((r) => r.text), pet),
     replies: {
       ...measure(usedText.map((r) => r.text)),
       counts: {
@@ -138,6 +189,7 @@ export function writeStyle({ bankDir }) {
     captions: readJsonl(join(bankDir, "captions.jsonl")),
     replies: readJsonl(join(bankDir, "replies.jsonl")),
     splits: readJson(join(bankDir, "splits.json")),
+    pet: petFromProfile(existsSync(join(bankDir, "profile.json")) ? readJson(join(bankDir, "profile.json")) : null),
   });
   writeJson(join(bankDir, "style.json"), style);
   return style;

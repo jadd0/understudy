@@ -107,8 +107,13 @@ bank. `v<N>.meta.json` stores the prompt's sha256, so any change to the prompt i
 ## 2. Writing a reply as her (Claude, rapid eval)
 
 For each of the 78 **validation** pairs (rapid eval) and each of the 50 **test** pairs (sections 6
-and 7), through the one shared `generateReply` in `rapid-eval.mjs`. System prompt = the whole card
-(`card/v<N>.md`). `max_tokens` 300. The output has surrounding quotes and any leading `@handle`
+and 7). The rapid eval calls `generateReply` in `rapid-eval.mjs` with the whole card
+(`card/v<N>.md`) as the system prompt. The persona eval (sections 6 and 7, run by `npm run eval:persona`) instead builds the prompt with
+the engine's own prompt builder: the card and rules, the lines retrieved from her train replies and
+captions, and a `Voice for this reply` block listing which voice markers this reply may use. The markers
+are drawn per pair from a seeded generator at her measured train rates (`markers` in `bank/style.json`),
+and the engine's edge clean-up removes a sign-off or address term the draw did not allow. The text of
+that block is in `packages/engine/src/drafting/style-draw.ts` and `prompt.ts`. `max_tokens` 300. The output has surrounding quotes and any leading `@handle`
 stripped. `${comment}` is the fan comment (`replying_to`).
 
 <!-- prompt-src: packages/persona/src/rapid-eval.mjs -->
@@ -215,7 +220,7 @@ recall@5 and MRR against ([EVALS.md](../quality/EVALS.md)).
 
 ## 6. Scoring a reply against the rubric (Claude judge, persona eval)
 
-One call per **test** pair, on the reply written by prompt 2 (cached, so each reply is generated once).
+One call per **test** pair, on the reply written by the engine-path prompt of section 2 (cached, so each reply is generated once).
 `max_tokens` 400, `--judge-model`. The judge sees the card's Identity and Voice rules (the same
 `cardSummary` the rapid eval gives Jev, first 3,500 characters), the fan comment and the generated
 reply. It never sees her real reply, so fact consistency is judged against the card alone.
@@ -256,10 +261,9 @@ never scored or defaulted. Reported per criterion: mean over scored items, numbe
 
 ## 7. Telling her reply from the bot's (Claude judge, blind test)
 
-One call per **test** pair. The judge sees the fan comment and two replies labelled only A and B.
-Which side holds her real reply was drawn up front from the seeded RNG `<seed>:blind` (default seed
-`understudy-2026`) in id order, so it does not depend on call timing, and the draw is stored with the
-item. Both replies have a leading `@handle` and surrounding quotes removed. The judge is not shown
+Two calls per **test** pair, one with her real reply as A and one with it as B, so a judge that
+favours a position cancels out. The judge sees the fan comment and two replies labelled only A and B;
+the position of the bot is stored with each judgement. Both replies have a leading `@handle` and surrounding quotes removed. The judge is not shown
 the card or any example of her writing: it gets only the fact that one reply is hers. `max_tokens`
 400, `--judge-model`. System prompt:
 

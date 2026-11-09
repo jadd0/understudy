@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { and, desc, eq } from "drizzle-orm";
@@ -131,18 +131,27 @@ export async function loadPersona(input: LoadInput): Promise<LoadResult> {
       .orderBy(desc(personaCards.version))
       .limit(1);
     const terms = neverTerms(cardBody);
+    const markers = readMarkers(input.dir);
     if (latest && latest.body === cardBody) {
       // The same card: re-derive its terms so a change to the extraction reaches the stored list.
       await tx
         .update(personaCards)
-        .set({ neverList: terms })
+        .set({ neverList: terms, markers })
         .where(and(eq(personaCards.creatorId, input.creatorId), eq(personaCards.version, latest.version)));
       return { chunks: chunks.length, tokens: totalTokens, cardVersion: latest.version, cardInserted: false };
     }
     const version = (latest?.version ?? 0) + 1;
-    await tx.insert(personaCards).values({ creatorId: input.creatorId, version, body: cardBody, neverList: terms, publishedAt: null });
+    await tx.insert(personaCards).values({ creatorId: input.creatorId, version, body: cardBody, neverList: terms, markers, publishedAt: null });
     return { chunks: chunks.length, tokens: totalTokens, cardVersion: version, cardInserted: true };
   });
+}
+
+/** The voice-marker rates the persona build measured (`bank/style.json`), or null when the bank has none. */
+export function readMarkers(dir: string): Record<string, unknown> | null {
+  const file = path.join(dir, "bank", "style.json");
+  if (!existsSync(file)) return null;
+  const markers = (JSON.parse(readFileSync(file, "utf8")) as { markers?: Record<string, unknown> }).markers;
+  return markers ?? null;
 }
 
 async function main() {
