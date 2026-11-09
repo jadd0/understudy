@@ -2,7 +2,9 @@ import { and, eq } from "drizzle-orm";
 import type { EngineCtx, Deps } from "./ctx";
 import { loadFacts, type FactsCfg, type LoadedFacts } from "./facts";
 import type { HostPort } from "./host";
+import { creatorAi, setCreatorAi } from "./creator-settings";
 import { handBack, supersedeUnseenBubbles } from "./lease";
+import { migrateEngine } from "./migrate";
 import { expireOffers } from "./offer";
 import type { ConfigPort } from "./ports/config";
 import type { EngineDb, EngineTx } from "./ports/db";
@@ -45,6 +47,12 @@ export interface HandledMessage {
 }
 
 export interface Chatter {
+  /** Creates or updates the engine's tables. Run it before the host's own migrations, which point at them. */
+  migrate(): Promise<void>;
+  /** Switches the AI on or off for every conversation of one creator. */
+  setCreatorAi(creatorId: string, on: boolean): Promise<void>;
+  /** Whether the creator's AI is on; a creator never switched is on. */
+  creatorAi(creatorId: string): Promise<boolean>;
   /**
    * Stores a fan's message and returns the step that answers it. Who may send (role, age, flags, whether the
    * creator exists) is the host's check, made before this call. The message is stored even when a human owns the
@@ -82,6 +90,9 @@ export interface ChatterOptions {
 export function createChatter(opts: ChatterOptions): Chatter {
   const ctx: EngineCtx = { db: opts.db, config: opts.config, host: opts.host, deps: opts.deps };
   return {
+    migrate: () => migrateEngine(ctx.db),
+    setCreatorAi: (creatorId, on) => setCreatorAi(ctx.db, creatorId, on),
+    creatorAi: (creatorId) => creatorAi(ctx.db, creatorId),
     handleMessage: (m) => handleMessage(ctx, m),
     processConversation: (id) => processConversation(ctx, id),
     runTurn: (id) => runTurn(ctx, id),

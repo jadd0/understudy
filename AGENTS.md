@@ -8,7 +8,7 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 
 - `npm run dev | build | start`
 - `npm run typecheck | lint | test`
-- `npm run db:generate` (drizzle-kit, writes `drizzle/`), `npm run db:migrate`, `npm run db:seed`
+- `npm run db:generate` (drizzle-kit, writes `packages/engine/drizzle/` then `drizzle/`), `npm run db:migrate` (engine migrations, then the host's), `npm run db:seed`
 - `bash scripts/gate.sh` runs typecheck, lint, test, build, the persona and env checks, the codemap and the public-files check
 
 ## Rules
@@ -46,7 +46,7 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 ## Database in tests
 
 `vitest.global-setup.ts` calls `scripts/test-db.mjs`, which creates `<db>_test_<branch-slug>` in the same
-Neon project if absent, applies `drizzle/`, and points `DATABASE_URL` at it. Tests never touch the dev database.
+Neon project if absent, applies the engine's migrations and then `drizzle/`, and points `DATABASE_URL` at it. Tests never touch the dev database.
 `TEST_DB_SCOPE=<x>` appends `_<x>` to that name: the gate runs 3 shards on `_s1`..`_s3` (`scripts/test-sharded.sh`),
 so set your own scope (e.g. `TEST_DB_SCOPE=adhoc`) for a hand run while a gate may be running on the branch.
 

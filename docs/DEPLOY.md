@@ -159,7 +159,7 @@ node -e 'console.log(new URL(process.env.DATABASE_URL).host)'   # must be the pr
 export SEED_CREATOR_EMAIL='<juno seat address>'
 export SEED_ADMIN_EMAILS='<admin1>,<admin2>'
 
-npm run db:migrate      # applies drizzle/ ; then confirm: psql "$DATABASE_URL" -c '\dt'
+npm run db:migrate      # applies packages/engine/drizzle/, then drizzle/ ; then confirm: psql "$DATABASE_URL" -c '\dt'
 npm run db:seed         # creator (handle junovale), admins, config rows, catalogue; safe to re-run
 ```
 

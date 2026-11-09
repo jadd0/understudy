@@ -17,9 +17,9 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
-import { catalogueItems, creators, users } from "./host-tables";
 
-// The engine's tables. `users`, `creators` and `catalogue_items` are referenced by id only (see ./host-tables).
+// The engine's tables. Host rows (users, creators, catalogue items) are known by id only: those columns carry no
+// foreign key, so the package creates its tables without any host table existing.
 
 const id = () => uuid("id").primaryKey().default(sql`gen_random_uuid()`);
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -75,8 +75,7 @@ export const personaCards = pgTable(
   {
     id: id(),
     creatorId: uuid("creator_id")
-      .notNull()
-      .references(() => creators.id),
+      .notNull(),
     version: integer("version").notNull(),
     body: text("body").notNull(),
     neverList: text("never_list").array().notNull().default(sql`'{}'::text[]`),
@@ -90,8 +89,7 @@ export const personaChunks = pgTable(
   {
     id: id(),
     creatorId: uuid("creator_id")
-      .notNull()
-      .references(() => creators.id),
+      .notNull(),
     source: chunkSourceEnum("source").notNull(),
     sourceUrl: text("source_url"),
     text: text("text").notNull(),
@@ -111,11 +109,9 @@ export const conversations = pgTable(
   {
     id: id(),
     creatorId: uuid("creator_id")
-      .notNull()
-      .references(() => creators.id),
+      .notNull(),
     fanId: uuid("fan_id")
-      .notNull()
-      .references(() => users.id),
+      .notNull(),
     mode: conversationModeEnum("mode").notNull().default("ai"),
     version: integer("version").notNull().default(0),
     leaseToken: uuid("lease_token"),
@@ -168,8 +164,7 @@ export const offers = pgTable("offers", {
     .notNull()
     .references(() => conversations.id),
   itemId: uuid("item_id")
-    .notNull()
-    .references(() => catalogueItems.id),
+    .notNull(),
   priceCents: integer("price_cents").notNull(),
   expiresAt: ts("expires_at").notNull(),
   status: offerStatusEnum("status").notNull().default("open"),
@@ -191,7 +186,7 @@ export const messages = pgTable(
       .notNull()
       .references(() => conversations.id),
     sender: senderEnum("sender").notNull(),
-    senderUserId: uuid("sender_user_id").references(() => users.id),
+    senderUserId: uuid("sender_user_id"),
     body: text("body").notNull(),
     offerId: uuid("offer_id").references(() => offers.id),
     status: messageStatusEnum("status").notNull().default("sent"),
@@ -234,7 +229,7 @@ export const handoffs = pgTable(
     queue: handoffQueueEnum("queue").notNull(),
     reason: handoffReasonEnum("reason").notNull(),
     status: handoffStatusEnum("status").notNull().default("open"),
-    claimedBy: uuid("claimed_by").references(() => users.id),
+    claimedBy: uuid("claimed_by"),
     openedAt: ts("opened_at").notNull().defaultNow(),
     claimedAt: ts("claimed_at"),
     resolvedAt: ts("resolved_at"),
@@ -250,14 +245,19 @@ export const fanMemory = pgTable(
   "fan_memory",
   {
     creatorId: uuid("creator_id")
-      .notNull()
-      .references(() => creators.id),
+      .notNull(),
     fanId: uuid("fan_id")
-      .notNull()
-      .references(() => users.id),
+      .notNull(),
     profile: jsonb("profile").notNull().default(sql`'{}'::jsonb`),
     version: integer("version").notNull().default(0),
     updatedAt: ts("updated_at").notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.creatorId, t.fanId] })],
 );
+
+// The per-creator AI switch. A missing row means on. `creator_id` is a host creator id, with no foreign key.
+export const creatorSettings = pgTable("creator_settings", {
+  creatorId: uuid("creator_id").primaryKey(),
+  aiEnabled: boolean("ai_enabled").notNull().default(true),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});

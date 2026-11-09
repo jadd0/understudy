@@ -6,9 +6,8 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { migrate } from "drizzle-orm/neon-serverless/migrator";
 import ws from "ws";
+import { isPreEngineDatabase, migrateAll } from "./migrate.mjs";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -79,18 +78,25 @@ export async function ensureDb(name, { recreate = false } = {}) {
   return target.toString();
 }
 
-/** Applies the migrations under a session advisory lock, so concurrent test runs never migrate at the same time. */
+/**
+ * Applies the engine's migrations, then the host's, under one session advisory lock, so concurrent test runs never
+ * migrate at the same time. A database built before the engine had its own migrations table is dropped and rebuilt
+ * once: it holds the old combined set, which the two new baselines cannot be applied over.
+ */
 async function applyMigrations(url) {
-  const pool = new Pool({ connectionString: url.toString() });
-  const lock = await pool.connect();
-  try {
-    await lock.query("select pg_advisory_lock(727001)");
-    await migrate(drizzle(pool), { migrationsFolder: path.join(root, "drizzle") });
-  } finally {
-    await lock.query("select pg_advisory_unlock(727001)").catch(() => undefined);
-    lock.release();
-    await pool.end();
+  if (await isPreEngineDatabase(url)) {
+    const name = decodeURIComponent(url.pathname.replace(/^\//, ""));
+    if (!/^[a-z0-9_]+$/.test(name) || name === baseDatabase().name) throw new Error("refusing to rebuild this database");
+    console.error(`test-db: ${name} predates the engine migrations; dropping and recreating it`);
+    const admin = new Pool({ connectionString: baseDatabase().url.toString() });
+    try {
+      await admin.query(`drop database if exists "${name}" with (force)`);
+      await admin.query(`create database "${name}"`);
+    } finally {
+      await admin.end();
+    }
   }
+  await migrateAll(url);
 }
 
 export async function ensureTestDb() {

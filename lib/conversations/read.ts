@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, exists, getTableColumns, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/client";
-import { catalogueItems, conversations, creators, handoffs, messages, offers, turns, users } from "@/db/schema";
+import { catalogueItems, conversations, creators, creatorSettings, handoffs, messages, offers, turns, users } from "@/db/schema";
 import type { Role } from "@/lib/auth/guards";
 import { inboxBadge, type InboxMode } from "@/lib/ui/inbox-badge";
 
@@ -252,9 +252,10 @@ export async function threadMeta(viewer: Viewer, conv: ConversationRow): Promise
   const [[fan], [creator], pending, [h], [pendingTurn]] = await Promise.all([
     db.select({ name: users.name, email: users.email, flaggedAt: users.flaggedAt, flagReason: users.flagReason }).from(users).where(eq(users.id, conv.fanId)),
     db
-      .select({ displayName: creators.displayName, aiEnabled: creators.aiEnabled, image: users.image })
+      .select({ displayName: creators.displayName, aiEnabled: sql<boolean>`coalesce(${creatorSettings.aiEnabled}, true)`, image: users.image })
       .from(creators)
       .leftJoin(users, eq(users.id, creators.userId))
+      .leftJoin(creatorSettings, eq(creatorSettings.creatorId, creators.id))
       .where(eq(creators.id, conv.creatorId)),
     db
       .select({ ms: sql<number>`(extract(epoch from ${messages.deliverAt} - now()) * 1000)::float8` })

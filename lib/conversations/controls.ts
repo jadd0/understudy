@@ -1,7 +1,8 @@
 import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db, withTx } from "@/db/client";
-import { catalogueItems, conversations, creators, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
+import { catalogueItems, conversations, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
+import { chatter } from "@/lib/host/deps";
 import type { Events } from "@understudy/engine";
 import { defaultEvents } from "@/providers/pusher/events";
 import { InvalidAmount } from "@/lib/wallet/errors";
@@ -78,10 +79,10 @@ const isTsSide = (mode: string) => mode === "handoff_ts" || mode === "human_ts";
 
 // ---- creator settings -------------------------------------------------------------------------------------
 
-/** The global AI switch (`creators.ai_enabled`). The engine's lease reads it on every turn. */
+/** The global AI switch, kept by the engine (`creator_settings`). Its lease reads it on every turn. */
 export async function setGlobalAi(viewer: Viewer, on: boolean): Promise<void> {
   const creator = await requireSettingsCreator(viewer);
-  await db.update(creators).set({ aiEnabled: on }).where(eq(creators.id, creator.id));
+  await (await chatter()).setCreatorAi(creator.id, on);
 }
 
 /** One conversation's AI switch. The creator must own it and it must not be on the Trust & Safety side. */

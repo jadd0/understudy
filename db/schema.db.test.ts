@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
@@ -33,6 +35,31 @@ async function seedConversation() {
   const [conv] = await db.insert(conversations).values({ creatorId: creator.id, fanId: fan.id }).returning();
   return { creator, fan, conv };
 }
+
+const createdTables = (dir: string) =>
+  readdirSync(dir)
+    .filter((f) => f.endsWith(".sql"))
+    .flatMap((f) => [...readFileSync(join(dir, f), "utf8").matchAll(/CREATE TABLE "(\w+)"/g)].map((m) => m[1]))
+    .sort();
+
+describe("the two migration sets", () => {
+  test("the host migration set creates no engine table", () => {
+    const host = createdTables(join(process.cwd(), "drizzle"));
+    const engine = createdTables(join(process.cwd(), "packages/engine/drizzle"));
+    expect(engine).toEqual([
+      "conversations", "creator_settings", "fan_memory", "handoffs", "messages", "offers", "persona_cards", "persona_chunks", "turns",
+    ]);
+    expect(host.length).toBeGreaterThan(5);
+    expect(host.filter((t) => engine.includes(t))).toEqual([]);
+  });
+
+  test("creators has no ai_enabled column", async () => {
+    const { rows } = await db.execute(
+      `select column_name from information_schema.columns where table_name = 'creators' and table_schema = 'public' order by column_name` as never,
+    );
+    expect((rows as { column_name: string }[]).map((r) => r.column_name)).toEqual(["display_name", "handle", "id", "user_id"]);
+  });
+});
 
 describe("schema constraints", () => {
   test("extensions vector and pg_trgm are installed", async () => {

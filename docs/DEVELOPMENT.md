@@ -8,7 +8,7 @@ The build contract is `AGENTS.md`.
 1. `npm install`
 2. Copy the keys listed in `.env.example` into `.env.local` (names only here; see
    [AUTH.md](AUTH.md#environment-keys) for what each is for). `.env*.local` is gitignored.
-3. `npm run check:env` checks the file. `npm run db:migrate` applies `drizzle/` to `DATABASE_URL` (Neon `neondb`).
+3. `npm run check:env` checks the file. `npm run db:migrate` applies the engine's migrations and then `drizzle/` to `DATABASE_URL` (Neon `neondb`).
 4. `npm run db:seed` creates the creator (from `SEED_CREATOR_EMAIL`) and admins (`SEED_ADMIN_EMAILS`),
    idempotently; each is skipped with a message if its variable is unset.
 5. `npm run dev`.
@@ -19,7 +19,7 @@ The build contract is `AGENTS.md`.
 |---|---|
 | `npm run dev`, `build`, `start` | Next.js |
 | `npm run typecheck`, `lint`, `test` | `tsc --noEmit`, ESLint, vitest (against the per-branch test database, [DATA-MODEL.md](DATA-MODEL.md#test-database)) |
-| `npm run db:generate` | drizzle-kit writes a migration to `drizzle/` from `db/schema.ts` |
+| `npm run db:generate` | drizzle-kit writes a migration to `packages/engine/drizzle/` from the engine schema, then one to `drizzle/` from `db/host-schema.ts` |
 | `npm run db:migrate`, `db:seed` | apply migrations; seed creator and admins |
 | `bash scripts/gate.sh` | the gate |
 | `npx understudy-persona build --creator junovale --card-model <id> --gen-model <id> --jev-model <id>` | persona build; see [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md#running-it) |
