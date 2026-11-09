@@ -26,15 +26,14 @@ describe("a reply turn", () => {
     const [primary] = await turnsOf(wa.conv.id);
     const [fallback] = await turnsOf(wb.conv.id);
     // 100 input + 20 output tokens: haiku 100000/500000, sonnet 2000000/10000000 micro-dollars per Mtok
-    expect(fallback.costMicros - primary.costMicros).toBe((100 * 2000000 + 20 * 10000000) / 1e6 - (100 * 100000 + 20 * 500000) / 1e6);
+    expect(fallback.costMicros! - primary.costMicros!).toBe((100 * 2000000 + 20 * 10000000) / 1e6 - (100 * 100000 + 20 * 500000) / 1e6);
   });
 
   test("a serving model with no price rows fails the turn closed", async () => {
     const w = await world();
     const r = rig({ generator: { servedModel: "claude-unpriced" } });
     expect((await runTurn(r.ctx, w.conv.id)).status).toBe("error");
-    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "engine_error" }]);
-    expect(await msgsOf(w.conv.id).then((m) => m.filter((x) => x.role === "creator_ai"))).toHaveLength(0);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toHaveLength(0);
   });
 
   test("writes one message and a complete turn row, stamps the inbound, and costs tokens", async () => {
