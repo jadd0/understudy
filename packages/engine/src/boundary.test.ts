@@ -49,13 +49,13 @@ describe("the engine package boundary", () => {
   });
 
   test("nothing outside the package imports a deep path inside it", () => {
-    const files = ["app", "lib", "scripts", "providers", "components", "db", "packages/providers/src"].flatMap((d) => walk(d));
+    const files = ["app", "lib", "scripts", "providers", "components", "db", "examples", "packages/providers/src"].flatMap((d) => walk(d));
     expect(files.length).toBeGreaterThan(100);
     const offenders: string[] = [];
     let viaEntry = 0;
     for (const f of files) {
       for (const spec of specifiersOf(readFileSync(join(ROOT, f), "utf8"))) {
-        if (spec === "@understudy/engine" || spec === "@understudy/engine/testing" || spec === "@understudy/engine/schema") viaEntry++;
+        if (spec === "@understudy/engine" || spec === "@understudy/engine/testing" || spec === "@understudy/engine/schema" || spec === "@understudy/engine/fakes") viaEntry++;
         else if (spec.startsWith("@understudy/engine/") || spec.includes("packages/engine")) offenders.push(`${f}: ${spec}`);
         else if (spec.startsWith(".") && relative(ROOT, join(ROOT, f, "..", spec)).startsWith("packages/engine")) offenders.push(`${f}: ${spec}`);
       }

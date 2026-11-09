@@ -30,6 +30,12 @@ Use three browser profiles (or one normal window plus two private windows) so th
 3. **Admin.** Profile C: `/signin` with an address from `SEED_ADMIN_EMAILS` and the same password. `/admin`
    lists every conversation and its flags; `/analytics` shows the KPIs.
 
+## Headless server
+
+The engine also runs without the Next app: [examples/server](examples/server/README.md) is a Fastify host with an
+HTTP API, server-sent replies, human takeover and a signed webhook. `npm run server:demo -- --fake` plays a scripted
+conversation against Juno with no UI.
+
 ## Docs
 
 All of it is in [docs/](docs/README.md), which has the full index. By topic:
