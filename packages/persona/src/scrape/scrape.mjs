@@ -1,20 +1,25 @@
 // Collects one Instagram account's posts, captions and the owner's own comments into the raw layout
 // normalise.mjs reads:  <out>/<handle>/{posts.jsonl, profile.json, NOTES.md}
 //
-//   IG_SESSIONID=<your sessionid cookie> understudy-persona scrape --handle <you>
+//   IG_SESSIONID=<your sessionid cookie> understudy-persona scrape [--handle <you>]
 //
-// Use it only on an account you own or have written permission to collect. The output holds other
+// It collects the account the session cookie belongs to and no other: the account is asked of
+// Instagram first, and a different --handle is refused before anything is written.
+// Use it only on an account you own. The output holds other
 // people's comments and stays out of git. Run with --help for the flags.
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { isMain, loadEnvFile, parseArgs, writeJson } from "../lib/io.mjs";
 import { ENDPOINTS, InstagramError, createClient } from "./instagram.mjs";
+import { NotOwnAccount, resolveOwnHandle } from "./whoami.mjs";
 import { pairReply } from "./pairing.mjs";
 import { mapHerComment, mapPost, mapProfile, toThreadComment } from "./record.mjs";
 
 // The committed synthetic creators. A scrape never writes over them.
 const SYNTHETIC = ["junovale", "junofilm"];
 const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
+
+export { NotOwnAccount };
 
 export const DEFAULTS = {
   out: "data/persona/raw",
@@ -24,16 +29,17 @@ export const DEFAULTS = {
   threadPages: 1,
 };
 
-export const USAGE = `Usage: IG_SESSIONID=<sessionid cookie> understudy-persona scrape --handle <account> [flags]
+export const USAGE = `Usage: IG_SESSIONID=<sessionid cookie> understudy-persona scrape [--handle <account>] [flags]
 
-Collects an account's posts, captions and your own comment replies into
+Collects the posts, captions and your own comment replies of the account the session belongs to into
 <out>/<handle>/{posts.jsonl, profile.json, NOTES.md}, the layout the persona normalise step reads.
 
-CONSENT: use this only on an account you own or have written permission to collect. The output
-contains other people's comments; keep it out of git (data/persona/raw/ is gitignored).
+OWN ACCOUNT ONLY: the account is asked of Instagram before anything else, and a --handle that is not
+the session's account is refused. Use this only on an account you own. The output contains other
+people's comments; keep it out of git (data/persona/raw/ is gitignored).
 
 Flags
-  --handle <name>            the account to collect (required)
+  --handle <name>            the account to collect; optional, and refused unless it is the session's own
   --out <dir>                output root (default ${DEFAULTS.out})
   --delay-ms <n>             pause between requests (default ${DEFAULTS.delayMs})
   --max-posts <n>            stop after n posts (default: the whole grid)
@@ -45,7 +51,7 @@ Flags
 Reads are GET-only, one at a time. A post that hits a cap is marked more_left_unscanned.`;
 
 function cleanDir(out, handle) {
-  if (!HANDLE.test(handle)) throw new Error("--handle must be an Instagram username");
+  if (!HANDLE.test(handle) || /^\.+$/.test(handle)) throw new Error("--handle must be an Instagram username");
   const dir = resolve(out, handle);
   if (SYNTHETIC.includes(handle.toLowerCase()) || SYNTHETIC.includes(resolve(out).split("/").pop().toLowerCase())) {
     throw new Error(`refusing to write into a synthetic creator's directory (${SYNTHETIC.join(", ")})`);
@@ -125,7 +131,7 @@ function renderNotes({ handle, capturedAt, caps, counts, stoppedBy }) {
   const lines = [
     `# ${handle}: scrape notes`,
     "",
-    `Collected ${capturedAt} by scripts/persona/scrape/scrape.mjs. The endpoints it reads are unverified until a live run.`,
+    `Collected ${capturedAt} by the persona scraper from the account its session belongs to. The endpoints it reads are unverified until a live run.`,
     "",
     ...(stoppedBy ? [`**Incomplete.** The run stopped early: ${stoppedBy}`, ""] : []),
     "| | |",
@@ -144,25 +150,36 @@ function renderNotes({ handle, capturedAt, caps, counts, stoppedBy }) {
 }
 
 /**
- * Runs one scrape. `client` is the GET-only transport. posts.jsonl is appended one post at a time,
- * so a run that stops on a 401 or 429 keeps what it had written.
+ * Runs one scrape of the account the session belongs to. `client` is the GET-only transport. `handle`, when
+ * given, must be that account. posts.jsonl is appended one post at a time, so a run that stops on a 401 or
+ * 429 keeps what it had written. Nothing is written until the account has been identified and its profile
+ * id matches the session's.
  */
-export async function scrape({ client, handle, out = DEFAULTS.out, caps = {}, maxPosts = Infinity, now = () => new Date() }) {
+export async function scrape({ client, handle: requested, out = DEFAULTS.out, caps = {}, maxPosts = Infinity, now = () => new Date() }) {
   const limits = { ...DEFAULTS, ...caps };
+  if (requested !== undefined) cleanDir(out, requested);
+  const own = await resolveOwnHandle(client);
+  if (requested !== undefined && requested.toLowerCase() !== own.username.toLowerCase()) throw new NotOwnAccount(own.username, requested);
+  // From here on the account is the session's, spelled as Instagram spells it.
+  const handle = own.username;
   const dir = cleanDir(out, handle);
   const capturedAt = now().toISOString().slice(0, 10);
   const counts = { posts: 0, capped: 0, replies: 0, exact: 0, threadRoot: 0, topLevel: 0, nonText: 0 };
   let stoppedBy = null;
   let error = null;
 
+  const profileResponse = await client.get(ENDPOINTS.profile(handle));
+  const profile = mapProfile(profileResponse, { capturedAt });
+  if (String(profileResponse.data.user.id) !== own.pk) {
+    throw new InstagramError("the profile's id is not the session's account: refusing to collect it");
+  }
+  const userId = profileResponse.data.user.id;
+
   mkdirSync(dir, { recursive: true });
   const postsPath = join(dir, "posts.jsonl");
   writeFileSync(postsPath, "");
+  writeJson(join(dir, "profile.json"), profile);
   try {
-    const profileResponse = await client.get(ENDPOINTS.profile(handle));
-    const profile = mapProfile(profileResponse, { capturedAt });
-    const userId = profileResponse.data.user.id;
-    writeJson(join(dir, "profile.json"), profile);
 
     const feed = await paginate({
       fetchPage: (cursor) => client.get(ENDPOINTS.feed(userId, cursor)),
@@ -214,11 +231,11 @@ export async function main({ argv, env, fetch: fetchImpl = globalThis.fetch, sle
     return 0;
   }
   try {
-    if (typeof args.handle !== "string") throw new Error("--handle <account> is required (see --help)");
+    if (args.handle !== undefined && typeof args.handle !== "string") throw new Error("--handle needs an account name");
     const sessionId = env.IG_SESSIONID;
     if (!sessionId) throw new Error("IG_SESSIONID is not set: export your instagram.com sessionid cookie as IG_SESSIONID");
     const out = typeof args.out === "string" ? args.out : DEFAULTS.out;
-    cleanDir(out, args.handle);
+    if (args.handle !== undefined) cleanDir(out, args.handle);
     const client = createClient({ fetch: fetchImpl, sessionId, delayMs: intFlag(args["delay-ms"], "--delay-ms", DEFAULTS.delayMs), sleep });
     const result = await scrape({
       client,

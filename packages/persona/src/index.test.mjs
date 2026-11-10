@@ -6,6 +6,7 @@ import * as api from "./index.mjs";
 const NAMES = [
   "synth", "normalise", "writeSplits", "writeStyle", "writeChunks", "draftCard", "rapidEval", "makeQueries",
   "build", "scrape", "evalPersona", "leakCheck", "createClaude", "createJev", "TokenBudget", "STEPS",
+  "readInstagramExport", "exportToRaw", "draftPersona", "resolveOwnHandle", "createClient", "SECTIONS", "ZipError", "NotOwnAccount",
 ];
 
 test("the public entry exports every documented name", () => {
