@@ -2,13 +2,13 @@ import { eq, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { db } from "@/db/client";
 import { conversations, messages, offers, turns } from "@/db/schema";
-import { rig, world } from "../testing/harness";
-import { sweep } from "./sweep";
+import { rig, world } from "../testing/harness.js";
+import { sweep } from "./sweep.js";
 
 vi.mock("@/lib/host/deps", async () => {
-  const { rig: makeRig } = await import("../testing/harness");
+  const { rig: makeRig } = await import("../testing/harness.js");
   const r = makeRig();
-  return { defaultDeps: async () => r.deps, chatter: async () => r.chatter };
+  return { defaultDeps: async () => r.deps, understudy: async () => r.understudy };
 });
 
 // Other test files leave AI-mode conversations behind; the sweep is bounded, so park them.

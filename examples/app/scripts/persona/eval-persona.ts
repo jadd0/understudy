@@ -5,7 +5,7 @@
 // engine's check. Results are recorded in docs/quality/evals/persona.json and docs/quality/EVALS.md like any other run.
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { buildPrompt, drawFailures, drawStyle, enforceDraw, parseRates, qualityNote } from "@understudy/engine";
+import { buildPrompt, drawFailures, drawStyle, enforceDraw, parseRates, qualityNote } from "@jadd0/understudy-engine/internal";
 // The persona package is plain .mjs and takes no dependency on the engine, so the engine path is wired here.
 // @ts-expect-error no declarations for the package's internals
 import { evalPersona, recordResult, retrieveChunks, trainChunks } from "../../../../packages/persona/src/eval-persona.mjs";

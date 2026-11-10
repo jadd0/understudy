@@ -1,4 +1,4 @@
-import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps, type Chunk, type EngineDb, type Retriever } from "@understudy/engine";
+import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps, type Chunk, type EngineDb, type Retriever } from "@jadd0/understudy-engine";
 
 /**
  * Reply chunks read "fan: <comment> / juno: @user <reply>": Instagram puts the @mention in front of every comment

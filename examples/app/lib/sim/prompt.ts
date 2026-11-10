@@ -1,4 +1,4 @@
-import type { GenerateInput, GenerateMessage } from "@understudy/engine";
+import type { GenerateInput, GenerateMessage } from "@jadd0/understudy-engine";
 
 /** The fan, as the sim agent sees it: what was delivered to the chat, nothing the product keeps private. */
 export interface FanViewMessage {

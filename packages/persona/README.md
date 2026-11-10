@@ -1,4 +1,4 @@
-# @understudy/persona
+# @jadd0/understudy-persona
 
 Turns a creator's Instagram posts and replies into an anonymised bank, a persona card and the evals that
 score it. Plain ES modules with a hand-written `index.d.ts`: no build step and no dependencies.
@@ -6,19 +6,17 @@ Needs Node 22 or newer.
 
 ## Install
 
-The package lives in this repository's npm workspace (`packages/persona`), so `npm install` at the root links it:
-
 ```sh
-npm install
+npm install @jadd0/understudy-persona
 npx understudy-persona --help
 ```
 
-It is marked private; nothing is published to npm.
+In this repository's npm workspace (`packages/persona`), `npm install` at the root links it instead.
 
 ## API
 
 ```js
-import { normalise, writeSplits, writeStyle, writeChunks } from "@understudy/persona";
+import { normalise, writeSplits, writeStyle, writeChunks } from "@jadd0/understudy-persona";
 
 normalise({ rawDir: "data/persona/raw", outDir: "data/persona/bank", creator: "junovale" });
 writeSplits({ bankDir: "data/persona/bank", seed: "understudy-2026" });
@@ -74,13 +72,13 @@ Use it only on an account you own. The output contains other people's comments; 
 `readInstagramExport` and `exportToRaw` read the data download Instagram gives an account holder (JSON format, as the
 zip or its folder): the profile, her posts and reels, and the comments she wrote. Direct messages, stories and likes are
 never opened. The zip reader uses node built-ins only. A download has no fan side for her comments, so a card drafted
-from one uses her own lines in place of reply pairs. `@understudy/persona/testing` exports `fixtureFetch`,
+from one uses her own lines in place of reply pairs. `@jadd0/understudy-persona/testing` exports `fixtureFetch`,
 `fakeCardClaude` and `writeZip` for tests.
 
 ## Tests
 
 ```sh
-npm test --workspace @understudy/persona
+npm test --workspace @jadd0/understudy-persona
 ```
 
 The fixtures in `fixtures/` describe invented accounts. The tests never call a model or reach Instagram.

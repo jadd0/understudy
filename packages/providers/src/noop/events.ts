@@ -1,4 +1,4 @@
-import type { Events } from "@understudy/engine";
+import type { Events } from "@jadd0/understudy-engine";
 
 export const noopEvents: Events = {
   async emit() {},

@@ -1,4 +1,4 @@
-// Types for @understudy/persona. Hand-written: the package ships plain ES modules with no build step.
+// Types for @jadd0/understudy-persona. Hand-written: the package ships plain ES modules with no build step.
 
 /** Token usage as the model adapters report it. */
 export interface Usage {

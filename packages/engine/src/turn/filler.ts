@@ -1,10 +1,10 @@
-import { buildPrompt } from "../drafting/prompt";
-import { dropRepeatedEmoji, recentEmoji } from "../drafting/emoji";
-import { EMPTY_PROFILE } from "../drafting/memory";
-import { verifyDraft } from "../drafting/verify";
-import type { JevIn, Route } from "../types";
-import { describeError } from "./result";
-import type { Batch, TurnState } from "./state";
+import { buildPrompt } from "../drafting/prompt.js";
+import { dropRepeatedEmoji, recentEmoji } from "../drafting/emoji.js";
+import { EMPTY_PROFILE } from "../drafting/memory.js";
+import { verifyDraft } from "../drafting/verify.js";
+import type { JevIn, Route } from "../types.js";
+import { describeError } from "./result.js";
+import type { Batch, TurnState } from "./state.js";
 
 /**
  * One short line written outside the reply loop: the filler a held chat sends while the creator is away, or the

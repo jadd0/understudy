@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test, vi } from "vitest";
 import { db } from "@/db/client";
 import { catalogueItems } from "@/db/schema";
-import { makeCreator, makeItem } from "@understudy/engine/testing";
+import { makeCreator, makeItem } from "@jadd0/understudy-engine/testing";
 import { offerableItems } from "@/lib/conversations/read";
 import { eq } from "drizzle-orm";
 

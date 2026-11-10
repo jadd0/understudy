@@ -2,10 +2,10 @@ import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { config } from "@/db/schema";
 import { ENGINE_CONFIG } from "@/db/seed";
-import { loadEngineConfig } from "./load";
-import { SWEEP_START_BUDGET_MS } from "../conversation/sweep";
-import { makeCreator, setEngineConfig } from "../testing/db";
-import { rig } from "../testing/harness";
+import { loadEngineConfig } from "./load.js";
+import { SWEEP_START_BUDGET_MS } from "../conversation/sweep.js";
+import { makeCreator, setEngineConfig } from "../testing/db.js";
+import { rig } from "../testing/harness.js";
 
 describe("loadEngineConfig", () => {
   test("creator_cannot_override_safety_floor", async () => {

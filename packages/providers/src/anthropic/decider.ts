@@ -12,7 +12,7 @@ import {
   type DeciderContext,
   type DeciderResult,
   type Question,
-} from "@understudy/engine";
+} from "@jadd0/understudy-engine";
 import {
   CHOICE_SYSTEM,
   CHOICE_TOOL,
@@ -21,7 +21,7 @@ import {
   choiceMaxTokens,
   choicePrompt,
   parseChoiceAnswers,
-} from "../shared/choice-tool";
+} from "../shared/choice-tool.js";
 
 export interface ClaudeDeciderOptions {
   readonly authToken: string;

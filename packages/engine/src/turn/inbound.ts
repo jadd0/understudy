@@ -1,8 +1,8 @@
 import { and, desc, eq, ne, sql } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import { messages } from "../db/schema";
-import { hasPendingEvents, loadEvents } from "../conversation/events";
-import type { ChatMessage } from "../drafting/thread";
+import type { EngineCtx } from "../ctx.js";
+import { messages } from "../db/schema.js";
+import { hasPendingEvents, loadEvents } from "../conversation/events.js";
+import type { ChatMessage } from "../drafting/thread.js";
 
 interface InboundRow {
   id: string;

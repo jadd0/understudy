@@ -17,9 +17,9 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
-import { conversations, offers } from "@understudy/engine/schema";
+import { conversations, offers } from "@jadd0/understudy-engine/schema";
 
-// The host's tables. The conversation engine owns its own (`@understudy/engine/schema`, with its own migrations);
+// The host's tables. The conversation engine owns its own (`@jadd0/understudy-engine/schema`, with its own migrations);
 // the two columns below that point at an engine table keep their foreign keys, so the engine's migrations run first.
 
 const id = () => uuid("id").primaryKey().default(sql`gen_random_uuid()`);

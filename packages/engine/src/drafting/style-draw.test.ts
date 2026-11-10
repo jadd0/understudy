@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { readFileSync } from "node:fs";
-import { seededRandom } from "../testing/rng";
-import { drawLines, drawStyle, namesPet, parseRates, targetLength, type StyleRates } from "./style-draw";
+import { seededRandom } from "../testing/rng.js";
+import { drawLines, drawStyle, namesPet, parseRates, targetLength, type StyleRates } from "./style-draw.js";
 
 const RATES: StyleRates = { signoff_x: 0.13, mate: 0.07, babe: 0.05, pet_name: 0.035, emoji: 0.2, pet: "biscuit" };
 

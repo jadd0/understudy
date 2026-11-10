@@ -4,8 +4,9 @@ import { db, withTx } from "@/db/client";
 import { catalogueItems, conversations, handoffs, messages, offers, turns, users } from "@/db/schema";
 import { sendFanMessage, SendRefused } from "@/lib/chat/send";
 import { getConfig } from "@/lib/config";
-import { chatterFor } from "@/lib/host/deps";
-import type { Deps } from "@understudy/engine";
+import { engineCtxFor, understudyFor } from "@/lib/host/deps";
+import type { Deps } from "@jadd0/understudy-engine";
+import { loadFacts } from "@jadd0/understudy-engine/internal";
 import { credit, debit } from "@/lib/wallet/ledger";
 import { setFanCap } from "@/lib/wallet/cap";
 import { writesBoundaryLine, type Observation } from "./score";
@@ -147,7 +148,7 @@ export async function runThread(thread: Thread, ctx: RunnerContext): Promise<Obs
     let refused = false;
     for (const [k, text] of turn.say.entries()) {
       try {
-        const sent = await sendFanMessage(fan.id, ctx.creatorId, text, `${ctx.runTag}:${thread.id}:${turnIndex}:${k}`, () => {}, async () => chatterFor(ctx.deps));
+        const sent = await sendFanMessage(fan.id, ctx.creatorId, text, `${ctx.runTag}:${thread.id}:${turnIndex}:${k}`, () => {}, async () => understudyFor(ctx.deps));
         conversationId = sent.conversationId;
       } catch (e) {
         if (e instanceof SendRefused) refused = true;
@@ -174,18 +175,18 @@ export async function runThread(thread: Thread, ctx: RunnerContext): Promise<Obs
     if (!conversationId) throw new Error(`thread ${thread.id}: first message was refused (${refused ? "send refused" : "no conversation"})`);
     const convId = conversationId;
 
-    const facts = refused ? null : await chatterFor(ctx.deps).loadFacts(convId, fan.id, ctx.creatorId, factsCfg);
+    const facts = refused ? null : await loadFacts(engineCtxFor(ctx.deps), convId, fan.id, ctx.creatorId, factsCfg);
     let errorLines: string[] = [];
     if (!refused) {
       // Messages scheduled with say_later arrive while the engine is working, the way a fan types on.
       const later = (turn.say_later ?? []).map(async (l, k) => {
         await wait(l.after_ms);
-        await sendFanMessage(fan.id, ctx.creatorId, l.text, `${ctx.runTag}:${thread.id}:${turnIndex}:later${k}`, () => {}, async () => chatterFor(ctx.deps));
+        await sendFanMessage(fan.id, ctx.creatorId, l.text, `${ctx.runTag}:${thread.id}:${turnIndex}:later${k}`, () => {}, async () => understudyFor(ctx.deps));
       });
       const run = await captureEngineErrors(async () => {
-        const [answered] = await Promise.all([chatterFor(ctx.deps).processConversation(convId), ...later]);
+        const [answered] = await Promise.all([understudyFor(ctx.deps).processConversation(convId), ...later]);
         // One that landed after the turn finished is answered by the next turn, as the live trigger would.
-        return answered + (later.length > 0 ? await chatterFor(ctx.deps).processConversation(convId) : 0);
+        return answered + (later.length > 0 ? await understudyFor(ctx.deps).processConversation(convId) : 0);
       });
       errorLines = run.lines;
     }

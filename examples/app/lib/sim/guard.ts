@@ -1,4 +1,5 @@
-import { inboundQuestions, type Explicitness, type Decider } from "@understudy/engine";
+import type { Decider } from "@jadd0/understudy-engine";
+import { inboundQuestions, type Explicitness } from "@jadd0/understudy-engine/internal";
 
 /**
  * Words no sim fan ever sends, whatever the persona. It is a blocklist, not content: the library holds suggestive

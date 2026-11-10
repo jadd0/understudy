@@ -2,8 +2,8 @@ import { after } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { creators, users } from "@/db/schema";
-import { chatter } from "@/lib/host/deps";
-import { MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS, MessageRefused, type Chatter } from "@understudy/engine";
+import { understudy } from "@/lib/host/deps";
+import { MAX_CLIENT_MSG_ID_CHARS, MAX_MESSAGE_CHARS, MessageRefused, type Understudy } from "@jadd0/understudy-engine";
 
 /** A host page or route that calls `sendFanMessage` re-exports this as its `maxDuration` (seconds). */
 export const ENGINE_MAX_DURATION_S = 60;
@@ -41,7 +41,7 @@ export async function sendFanMessage(
   clientMsgId: string,
   schedule: (task: () => Promise<unknown>) => void = (task) => after(task),
   /** The engine to store through. Callers that run the engine themselves pass their own wiring instead of the production one. */
-  engine: () => Promise<Chatter> = chatter,
+  engine: () => Promise<Understudy> = understudy,
 ): Promise<SendResult> {
   // Cheap input checks first, so a malformed send is refused for that before any lookup.
   const text = body.trim();

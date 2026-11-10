@@ -1,9 +1,9 @@
-import type { HandoffSla } from "../conversation/handoff";
-import { bubbleGap } from "../drafting/bubbles";
-import type { HandoffQueue, HandoffReason, Route, RouteName } from "../types";
-import { template } from "../drafting/templates";
-import { tipRowIds, type JevInRecord, type PassResult } from "./pass";
-import type { TurnState } from "./state";
+import type { HandoffSla } from "../conversation/handoff.js";
+import { bubbleGap } from "../drafting/bubbles.js";
+import type { HandoffQueue, HandoffReason, Route, RouteName } from "../types.js";
+import { template } from "../drafting/templates.js";
+import { tipRowIds, type JevInRecord, type PassResult } from "./pass.js";
+import type { TurnState } from "./state.js";
 
 export interface TurnRecord {
   inboundIds: string[];

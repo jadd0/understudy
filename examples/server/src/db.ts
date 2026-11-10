@@ -1,6 +1,6 @@
 import { neonConfig, Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import type { EngineDb } from "@understudy/engine";
+import type { EngineDb } from "@jadd0/understudy-engine";
 import ws from "ws";
 
 neonConfig.webSocketConstructor = ws;

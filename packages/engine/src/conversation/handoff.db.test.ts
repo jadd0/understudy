@@ -2,8 +2,8 @@ import { eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db, withTx } from "@/db/client";
 import { handoffs } from "@/db/schema";
-import { openHandoff } from "./handoff";
-import { makeConversation, makeCreator, makeFan } from "../testing/db";
+import { openHandoff } from "./handoff.js";
+import { makeConversation, makeCreator, makeFan } from "../testing/db.js";
 
 async function setup() {
   const creator = await makeCreator();

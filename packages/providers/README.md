@@ -1,9 +1,13 @@
-# @understudy/providers
+# @jadd0/understudy-providers
 
-The adapters behind the ports of `@understudy/engine`. A host constructs them and hands them to the engine as its
-`Deps`. The package ships TypeScript source; the entry is `src/index.ts`, and nothing outside the package imports a
-path inside it. It imports nothing from the app and reaches the engine only through `@understudy/engine` and
-`@understudy/engine/schema`.
+The adapters behind the ports of `@jadd0/understudy-engine`. A host constructs them and hands them to the engine as its
+`Deps`. It builds to ES modules with type declarations, needs Node 22 or newer, and the only entry is the package
+root; nothing outside the package imports a path inside it. It imports nothing from the app and reaches the engine
+only through `@jadd0/understudy-engine` and `@jadd0/understudy-engine/schema`.
+
+```sh
+npm install @jadd0/understudy-providers @jadd0/understudy-engine drizzle-orm
+```
 
 | Adapter | Port | Needs |
 |---|---|---|

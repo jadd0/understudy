@@ -1,10 +1,10 @@
 import { sql } from "drizzle-orm";
-import { getConfig } from "../config/load";
-import type { EngineCtx } from "../ctx";
-import { runEscalations } from "./escalation";
-import { expireOffers } from "./offer";
-import { processConversation } from "../turn/process";
-import { describeError } from "../turn/result";
+import { getConfig } from "../config/load.js";
+import type { EngineCtx } from "../ctx.js";
+import { runEscalations } from "./escalation.js";
+import { expireOffers } from "./offer.js";
+import { processConversation } from "../turn/process.js";
+import { describeError } from "../turn/result.js";
 
 export interface SweepResult {
   leasesCleared: number;

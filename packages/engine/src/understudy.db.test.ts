@@ -2,11 +2,11 @@ import { eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, messages, turns } from "@/db/schema";
-import { createChatter, MessageRefused } from "./chatter";
-import type { ConfigPort } from "./ports/config";
-import { FakeHost } from "./testing/fake-host";
-import { makeCreator, makeFan, makePersona, setEngineConfig } from "./testing/db";
-import { rig } from "./testing/harness";
+import { createUnderstudy, MessageRefused } from "./understudy.js";
+import type { ConfigPort } from "./ports/config.js";
+import { FakeHost } from "./testing/fake-host.js";
+import { makeCreator, makeFan, makePersona, setEngineConfig } from "./testing/db.js";
+import { rig } from "./testing/harness.js";
 
 async function setup() {
   await setEngineConfig();
@@ -16,13 +16,13 @@ async function setup() {
 }
 
 const send = (r: ReturnType<typeof rig>, creatorId: string, fanId: string, body: string, clientMsgId: string) =>
-  r.chatter.handleMessage({ creatorId, fanId, body, clientMsgId });
+  r.understudy.handleMessage({ creatorId, fanId, body, clientMsgId });
 
-describe("createChatter", () => {
+describe("createUnderstudy", () => {
   test("handleMessage stores the message and returns a process that answers it", async () => {
     const { creator, fan } = await setup();
     const r = rig();
-    const out = await send(r, creator.id, fan.id, "  hi juno  ", "chatter-1");
+    const out = await send(r, creator.id, fan.id, "  hi juno  ", "understudy-1");
     expect(out.duplicate).toBe(false);
     const stored = await db.select().from(messages).where(eq(messages.id, out.messageId));
     expect(stored.map((m) => [m.sender, m.body, m.senderUserId])).toEqual([["fan", "hi juno", fan.id]]);
@@ -37,8 +37,8 @@ describe("createChatter", () => {
   test("the same client message id returns the saved message and a no-op process", async () => {
     const { creator, fan } = await setup();
     const r = rig();
-    const first = await send(r, creator.id, fan.id, "hello", "chatter-dup");
-    const again = await send(r, creator.id, fan.id, "hello again", "chatter-dup");
+    const first = await send(r, creator.id, fan.id, "hello", "understudy-dup");
+    const again = await send(r, creator.id, fan.id, "hello again", "understudy-dup");
     expect(again).toMatchObject({ conversationId: first.conversationId, messageId: first.messageId, duplicate: true });
     await again.process();
     expect(await db.select().from(turns).where(eq(turns.conversationId, first.conversationId))).toHaveLength(0);
@@ -49,8 +49,8 @@ describe("createChatter", () => {
     const { creator, fan } = await setup();
     const r = rig();
     const code = async (body: string, id: string) => ((await send(r, creator.id, fan.id, body, id).catch((e) => e)) as MessageRefused);
-    expect(await code("   ", "chatter-e")).toMatchObject({ name: "MessageRefused", code: "empty" });
-    expect(await code("x".repeat(2001), "chatter-l")).toMatchObject({ code: "too_long" });
+    expect(await code("   ", "understudy-e")).toMatchObject({ name: "MessageRefused", code: "empty" });
+    expect(await code("x".repeat(2001), "understudy-l")).toMatchObject({ code: "too_long" });
     expect(await code("hi", "")).toMatchObject({ code: "bad_id" });
     expect(await code("hi", "i".repeat(101))).toMatchObject({ code: "bad_id" });
     expect(await db.select().from(conversations).where(eq(conversations.fanId, fan.id))).toHaveLength(0);
@@ -59,9 +59,9 @@ describe("createChatter", () => {
   test("another fan's client message id is not_owner", async () => {
     const { creator, fan } = await setup();
     const r = rig();
-    const first = await send(r, creator.id, fan.id, "mine", "chatter-owned");
+    const first = await send(r, creator.id, fan.id, "mine", "understudy-owned");
     const other = await makeFan();
-    const err = await send(r, creator.id, other.id, "stolen", "chatter-owned").catch((e) => e);
+    const err = await send(r, creator.id, other.id, "stolen", "understudy-owned").catch((e) => e);
     expect(err).toBeInstanceOf(MessageRefused);
     expect(err.code).toBe("not_owner");
     expect(await db.select().from(messages).where(eq(messages.conversationId, first.conversationId))).toHaveLength(1);
@@ -71,7 +71,7 @@ describe("createChatter", () => {
   test("two concurrent sends with one client message id store one row and both return it", async () => {
     const { creator, fan } = await setup();
     const r = rig();
-    const [a, b] = await Promise.all([send(r, creator.id, fan.id, "race", "chatter-race"), send(r, creator.id, fan.id, "race", "chatter-race")]);
+    const [a, b] = await Promise.all([send(r, creator.id, fan.id, "race", "understudy-race"), send(r, creator.id, fan.id, "race", "understudy-race")]);
     expect(a.messageId).toBe(b.messageId);
     expect([a.duplicate, b.duplicate].sort()).toEqual([false, true]);
     await Promise.all([a.process(), b.process()]);
@@ -79,7 +79,7 @@ describe("createChatter", () => {
     expect(await db.select().from(turns).where(eq(turns.conversationId, a.conversationId))).toHaveLength(1);
   });
 
-  test("createChatter uses the db, config and host it is given", async () => {
+  test("createUnderstudy uses the db, config and host it is given", async () => {
     const { creator, fan } = await setup();
     const base = rig();
     const host = new FakeHost({ items: [] });
@@ -92,8 +92,8 @@ describe("createChatter", () => {
         return rows.filter((row) => row.key !== "engine.typing_cps");
       },
     };
-    const chatter = createChatter({ db, config, host, deps: base.deps });
-    const out = await chatter.handleMessage({ creatorId: creator.id, fanId: fan.id, body: "hey", clientMsgId: "chatter-cfg" });
+    const understudy = createUnderstudy({ db, config, host, deps: base.deps });
+    const out = await understudy.handleMessage({ creatorId: creator.id, fanId: fan.id, body: "hey", clientMsgId: "understudy-cfg" });
     await out.process();
     expect(asked.length).toBeGreaterThan(0);
     expect(asked.flat()).toContain("engine.typing_cps");
@@ -103,8 +103,8 @@ describe("createChatter", () => {
 
     // No reply went out. The same conversation on a complete port answers.
     expect(await db.select().from(messages).where(eq(messages.conversationId, out.conversationId))).toHaveLength(1);
-    const okChatter = createChatter({ db, config: base.ctx.config, host, deps: base.deps });
-    expect(await okChatter.processConversation(out.conversationId)).toBe(1);
+    const okUnderstudy = createUnderstudy({ db, config: base.ctx.config, host, deps: base.deps });
+    expect(await okUnderstudy.processConversation(out.conversationId)).toBe(1);
     expect(await db.select().from(messages).where(eq(messages.conversationId, out.conversationId))).toHaveLength(2);
   });
 });

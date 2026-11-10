@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { addMessage, makeConversation, makeCreator, makeFan } from "./test-helpers";
-import { makePersona } from "@understudy/engine/testing";
+import { makePersona } from "@jadd0/understudy-engine/testing";
 import { creatorByHandle, fanCreator } from "./read";
 
 const published = async () => {

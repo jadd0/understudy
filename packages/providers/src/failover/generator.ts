@@ -2,8 +2,8 @@
  * Ordered failover over generators, the same shape as `FailoverDecider`: a breaker per generator, an open one is
  * skipped, `GeneratorError` is the outage (`not_configured`, `gateway_budget` and `gateway_rate_limited` skip the entry without counting a failure), anything else propagates, and all-failed rethrows the last error.
  */
-import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@understudy/engine";
-import { Breaker, PER_CREATOR_CODES, type BreakerOptions } from "./breaker";
+import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@jadd0/understudy-engine";
+import { Breaker, PER_CREATOR_CODES, type BreakerOptions } from "./breaker.js";
 
 export interface NamedGenerator {
   readonly name: string;

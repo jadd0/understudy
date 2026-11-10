@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { config, creators } from "@/db/schema";
 import { ConfigMissing, dbConfigPort, getConfig } from "@/lib/config";
-import { ConfigMissing as EngineConfigMissing } from "@understudy/engine";
+import { ConfigMissing as EngineConfigMissing } from "@jadd0/understudy-engine";
 import { makeUser } from "@/db/test-helpers";
 
 describe("getConfig", () => {
@@ -62,7 +62,7 @@ describe("dbConfigPort", () => {
     expect(await dbConfigPort.rows({ keys: [], prefixes: [] })).toEqual([]);
   });
 
-  test("ConfigMissing from @/lib/config and from @understudy/engine is the same class", async () => {
+  test("ConfigMissing from @/lib/config and from @jadd0/understudy-engine is the same class", async () => {
     expect(ConfigMissing).toBe(EngineConfigMissing);
     const err = await getConfig(`absent-${randomUUID()}`).catch((e) => e);
     expect(err).toBeInstanceOf(EngineConfigMissing);

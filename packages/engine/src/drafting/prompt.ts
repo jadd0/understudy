@@ -1,10 +1,10 @@
-import type { GenerateMessage } from "../ports/generator";
-import type { Chunk } from "../ports/retriever";
-import { eventMarker, type OfferOutcome, type PendingEvent } from "../conversation/events";
-import { renderProfile, type FanProfile } from "./memory";
-import { claudeHistory, threadBlock, type ChatMessage } from "./thread";
-import { drawLines, type StyleDraw } from "./style-draw";
-import type { Route, ThreadAnswer } from "../types";
+import type { GenerateMessage } from "../ports/generator.js";
+import type { Chunk } from "../ports/retriever.js";
+import { eventMarker, type OfferOutcome, type PendingEvent } from "../conversation/events.js";
+import { renderProfile, type FanProfile } from "./memory.js";
+import { claudeHistory, threadBlock, type ChatMessage } from "./thread.js";
+import { drawLines, type StyleDraw } from "./style-draw.js";
+import type { Route, ThreadAnswer } from "../types.js";
 
 export interface PromptInput {
   cardBody: string;

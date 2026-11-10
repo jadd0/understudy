@@ -5,8 +5,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { config, creators, personaChunks } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps } from "@understudy/engine";
-import { embed } from "@understudy/providers";
+import { retrieveFts, retrieveHybrid, retrieveVector, type Hit, type RetrieveDeps } from "@jadd0/understudy-engine";
+import { embed } from "@jadd0/understudy-providers";
 import { UNBILLED_LIMITS } from "./load";
 
 export const STRATEGIES = ["fts", "vector", "hybrid"] as const;

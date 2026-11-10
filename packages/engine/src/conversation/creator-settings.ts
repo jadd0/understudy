@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import type { EngineDb } from "../ports/db";
-import { creatorSettings } from "../db/schema";
+import type { EngineDb } from "../ports/db.js";
+import { creatorSettings } from "../db/schema.js";
 
 /** Switches the AI on or off for every conversation of one creator. Idempotent. Takes no conversation lock. */
 export async function setCreatorAi(db: EngineDb, creatorId: string, on: boolean): Promise<void> {

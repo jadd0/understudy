@@ -7,7 +7,7 @@ import { ensureCreator } from "@/scripts/persona/init";
 import { addItem } from "@/lib/conversations/controls";
 import { listInbox } from "@/lib/conversations/read";
 import { asViewer, makeConversation, makeCreator, makeFan } from "@/lib/conversations/test-helpers";
-import { addMessage, makeItem, makePersona, rig, setEngineConfig, YES } from "@understudy/engine/testing";
+import { addMessage, makeItem, makePersona, rig, setEngineConfig, YES } from "@jadd0/understudy-engine/testing";
 
 const session = { current: null as { user: { id: string } } | null };
 // The action stores through the production wiring and schedules the engine with `after`; here the engine is the fake-provider rig,
@@ -16,7 +16,7 @@ const engine = { rig: null as ReturnType<typeof rig> | null };
 const scheduled: (() => Promise<unknown>)[] = [];
 vi.mock("@/lib/auth", () => ({ auth: async () => session.current }));
 vi.mock("@/lib/conversations/events", () => ({ getEvents: () => ({ emit: async () => {} }) }));
-vi.mock("@/lib/host/deps", () => ({ chatter: async () => engine.rig!.chatter }));
+vi.mock("@/lib/host/deps", () => ({ understudy: async () => engine.rig!.understudy }));
 vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: (task: () => Promise<unknown>) => void scheduled.push(task) }));
 
 const { sendMessage } = await import("@/app/chat/actions");

@@ -2,10 +2,10 @@ import { asc, eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { messages } from "@/db/schema";
-import { template } from "../drafting/templates";
-import { runTurn } from "../turn/run";
-import { addMessage } from "../testing/db";
-import { rig, world, YES } from "../testing/harness";
+import { template } from "../drafting/templates.js";
+import { runTurn } from "../turn/run.js";
+import { addMessage } from "../testing/db.js";
+import { rig, world, YES } from "../testing/harness.js";
 
 describe("commitTurn: hard-stop templates", () => {
   test("a second payment dispute straight after the template gets the other wording", async () => {

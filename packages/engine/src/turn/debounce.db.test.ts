@@ -2,10 +2,10 @@ import { asc, eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { messages, turns } from "@/db/schema";
-import { processConversation } from "./process";
-import { runTurn } from "./run";
-import { addMessage } from "../testing/db";
-import { rig, world, YES } from "../testing/harness";
+import { processConversation } from "./process.js";
+import { runTurn } from "./run.js";
+import { addMessage } from "../testing/db.js";
+import { rig, world, YES } from "../testing/harness.js";
 
 const turnsOf = (id: string) => db.select().from(turns).where(eq(turns.conversationId, id)).orderBy(asc(turns.createdAt), asc(turns.id));
 const setTyping = (convId: string, on: boolean) =>

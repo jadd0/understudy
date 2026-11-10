@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { creators, personaChunks } from "@/db/schema";
-import { ftsQuery, retrieveFts, retrieveHybrid, retrieveVector, type RetrieveDeps } from "./retrieve";
+import { ftsQuery, retrieveFts, retrieveHybrid, retrieveVector, type RetrieveDeps } from "./retrieve.js";
 import { makeUser } from "@/db/test-helpers";
 
 const hot = (n: number) => Array.from({ length: 1024 }, (_, i) => (i === n ? 1 : 0));

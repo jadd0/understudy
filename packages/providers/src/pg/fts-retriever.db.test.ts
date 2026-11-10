@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
-import { personaChunks } from "@understudy/engine/schema";
-import { makeCreator } from "@understudy/engine/testing";
-import { FtsRetriever } from "./fts-retriever";
+import { personaChunks } from "@jadd0/understudy-engine/schema";
+import { makeCreator } from "@jadd0/understudy-engine/testing";
+import { FtsRetriever } from "./fts-retriever.js";
 
 describe("FtsRetriever", () => {
   test("returns the creator's matching chunks only, best first, at most k", async () => {

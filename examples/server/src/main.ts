@@ -1,6 +1,6 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { createChatter, systemClock, type Chatter, type Deps } from "@understudy/engine";
+import { createUnderstudy, systemClock, type Understudy, type Deps } from "@jadd0/understudy-engine";
 import { sql } from "drizzle-orm";
 import { buildServer } from "./app";
 import { createBus, type Bus } from "./bus";
@@ -26,7 +26,7 @@ export interface StartOptions {
 
 export interface Running {
   app: ReturnType<typeof buildServer>;
-  chatter: Chatter;
+  understudy: Understudy;
   bus: Bus;
   config: ConfigFile;
   /** The base URL when listening. */
@@ -46,16 +46,16 @@ export async function startServer(opts: StartOptions): Promise<Running> {
   const bus = createBus({ db, host, webhook });
   const providers = opts.fake ? fakeProviders(db) : await realProviders(db, env, configPort);
   const deps: Deps = { ...providers, events: bus, clock: systemClock };
-  const chatter = createChatter({ db, config: configPort, host, deps });
+  const understudy = createUnderstudy({ db, config: configPort, host, deps });
 
   // The engine's tables first, then the server's own.
-  await chatter.migrate();
+  await understudy.migrate();
   await db.execute(sql.raw(CREATE_FLAGS_TABLE));
 
-  const app = buildServer({ chatter, apiKey: env.apiKey, bus, store: serverStore(db), logger: opts.logger });
+  const app = buildServer({ understudy, apiKey: env.apiKey, bus, store: serverStore(db), logger: opts.logger });
   // The safety net behind the per-send trigger: expired leases, stragglers, expired offers.
   const sweeper = setInterval(() => {
-    chatter.sweep().catch((e) => app.log.error({ errorClass: (e as Error)?.name }, "sweep failed"));
+    understudy.sweep().catch((e) => app.log.error({ errorClass: (e as Error)?.name }, "sweep failed"));
   }, 30_000);
   sweeper.unref();
   let url: string | null = null;
@@ -66,7 +66,7 @@ export async function startServer(opts: StartOptions): Promise<Running> {
   }
   return {
     app,
-    chatter,
+    understudy,
     bus,
     config,
     url,

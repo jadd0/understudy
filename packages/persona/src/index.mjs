@@ -1,4 +1,4 @@
-// Public entry of @understudy/persona. Importing it runs nothing: every stage is a function.
+// Public entry of @jadd0/understudy-persona. Importing it runs nothing: every stage is a function.
 export { synth } from "./synth.mjs";
 export { normalise } from "./normalise.mjs";
 export { writeSplits } from "./split.mjs";

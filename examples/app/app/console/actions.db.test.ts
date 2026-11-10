@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { catalogueItems, creators, messages, users } from "@/db/schema";
 import { consoleCreatorFor } from "@/lib/conversations/read";
 import { convOf, makeAdmin, makeConversation, makeCreator, makeFan } from "@/lib/conversations/test-helpers";
-import { makeItem } from "@understudy/engine/testing";
+import { makeItem } from "@jadd0/understudy-engine/testing";
 
 const session = { current: null as { user: { id: string } } | null };
 const tasks: (() => Promise<unknown>)[] = [];

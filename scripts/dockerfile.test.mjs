@@ -24,7 +24,7 @@ test("no env file is copied and no secret is set in the image", () => {
 
 test("it exposes the server port and runs the server workspace as a non-root user", () => {
   assert.ok(lines.includes("EXPOSE 8787"));
-  assert.ok(lines.some((l) => /^CMD\b.*@understudy\/example-server/.test(l)));
+  assert.ok(lines.some((l) => /^CMD\b.*@jadd0\/understudy-example-server/.test(l)));
   assert.ok(lines.includes("USER node"));
   assert.ok(lines.includes("ENV HOST=0.0.0.0"));
 });

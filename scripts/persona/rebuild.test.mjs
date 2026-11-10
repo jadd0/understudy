@@ -3,7 +3,7 @@ import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { normalise, writeChunks, writeSplits, writeStyle } from "@understudy/persona";
+import { normalise, writeChunks, writeSplits, writeStyle } from "@jadd0/understudy-persona";
 
 const DATA = new URL("../../data/persona", import.meta.url).pathname;
 const BANK = join(DATA, "bank");

@@ -2,8 +2,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { EngineDb } from "@understudy/engine";
-import { personaCards, personaChunks } from "@understudy/engine/schema";
+import type { EngineDb } from "@jadd0/understudy-engine";
+import { personaCards, personaChunks } from "@jadd0/understudy-engine/schema";
 import { connect } from "./db";
 import { readConfigFile } from "./config";
 

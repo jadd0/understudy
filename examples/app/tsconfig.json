@@ -2,7 +2,15 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./*"] }
+    "paths": {
+      "@/*": ["./*"],
+      "@jadd0/understudy-engine": ["../../packages/engine/dist/index"],
+      "@jadd0/understudy-engine/schema": ["../../packages/engine/dist/db/schema"],
+      "@jadd0/understudy-engine/fakes": ["../../packages/engine/dist/fakes"],
+      "@jadd0/understudy-engine/internal": ["../../packages/engine/dist/internal"],
+      "@jadd0/understudy-engine/testing": ["../../packages/engine/src/testing.ts"],
+      "@jadd0/understudy-providers": ["../../packages/providers/dist/index"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.mts", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
   "exclude": ["node_modules"]

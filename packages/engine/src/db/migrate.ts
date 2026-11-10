@@ -2,7 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Pool } from "@neondatabase/serverless";
 import { migrate } from "drizzle-orm/neon-serverless/migrator";
-import type { EngineDb } from "../ports/db";
+import type { EngineDb } from "../ports/db.js";
 
 /** The table that records which engine migrations ran; the host's migrations use drizzle's default table. */
 export const ENGINE_MIGRATIONS_TABLE = "__understudy_engine_migrations";

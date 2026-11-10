@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
-import { personaChunks } from "@understudy/engine/schema";
-import { makeCreator } from "@understudy/engine/testing";
-import { parseStrategy, PersonaRetriever, promptText } from "./persona-retriever";
+import { personaChunks } from "@jadd0/understudy-engine/schema";
+import { makeCreator } from "@jadd0/understudy-engine/testing";
+import { parseStrategy, PersonaRetriever, promptText } from "./persona-retriever.js";
 
 const unit = (i: number) => Array.from({ length: 1024 }, (_, j) => (j === i ? 1 : 0));
 

@@ -5,9 +5,9 @@
  * per creator. Any failure is `GeneratorError(<short code>)`: `http_<status>`, `timeout`, `network`, `malformed`, or
  * `not_configured` when the creator has no key, or `key_lookup_failed` when the key could not be read. There is no retry here; the failover chain is the retry.
  */
-import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@understudy/engine";
-import { count, GatewayHttpError, postChat, type ChatUsage } from "./http";
-import { resolveKey, type GatewayKeyResolver } from "./keys";
+import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@jadd0/understudy-engine";
+import { count, GatewayHttpError, postChat, type ChatUsage } from "./http.js";
+import { resolveKey, type GatewayKeyResolver } from "./keys.js";
 
 export interface GatewayGeneratorOptions {
   /** The gateway's origin, without `/v1`. */

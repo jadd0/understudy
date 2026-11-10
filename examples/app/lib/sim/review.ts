@@ -1,4 +1,4 @@
-import type { Question } from "@understudy/engine";
+import type { Question } from "@jadd0/understudy-engine";
 
 /**
  * Reply review for sim conversations: Jev reads each of Juno's replies with the chat before it and answers a fixed set

@@ -63,7 +63,7 @@ Every number here comes from a committed run; the docs give the method and the r
 
 ```
 packages/
-  engine/      the conversation engine: createChatter(), its ports, its own schema and migrations
+  engine/      the conversation engine: createUnderstudy(), its ports, its own schema and migrations
   providers/   adapters for the ports: Claude, Jev (TypeSafe), failover with circuit breakers, Postgres and Voyage retrieval
   persona/     the persona pipeline and CLI: scrape, build, synth, draft the card, evaluate, leak-check
 examples/
@@ -77,14 +77,20 @@ The packages import nothing from either host, and a test fails the build if one 
 database, its settings, its own tables (wallet, catalogue, users) through one interface, and the model providers:
 
 ```ts
-import { createChatter } from "@understudy/engine";
+import { createUnderstudy } from "@jadd0/understudy-engine";
 
-const chatter = createChatter({ db, config, host, deps });
-await chatter.migrate();
+const understudy = createUnderstudy({ db, config, host, deps });
+await understudy.migrate();
 
-const { process } = await chatter.handleMessage({ creatorId, fanId, body, clientMsgId });
+const { process } = await understudy.handleMessage({ creatorId, fanId, body, clientMsgId });
 await process(); // answer now, or later from a queue
 ```
+
+`packages/engine` and `packages/providers` build to ES modules with declarations (`npm run build:packages`, plain `tsc`);
+`packages/persona` is plain ES modules. All three are set up to publish as `@jadd0/understudy-engine`,
+`@jadd0/understudy-providers` and `@jadd0/understudy-persona`. `npm run pack:smoke` installs their packed tarballs into a
+scratch project and runs the headless quick start in [packages/engine/README.md](packages/engine/README.md#quick-start-headless),
+and `npm run release:dry-run` rehearses the publish without publishing.
 
 ## Minimal setup
 

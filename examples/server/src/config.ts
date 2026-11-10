@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { ConfigPort, ConfigRow } from "@understudy/engine";
+import type { ConfigPort, ConfigRow } from "@jadd0/understudy-engine";
 
 export interface ConfigFile {
   /** The one creator this server speaks for. */

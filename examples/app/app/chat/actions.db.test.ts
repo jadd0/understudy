@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { db } from "@/db/client";
 import { conversations, ledgerEntries, messages, users } from "@/db/schema";
 import { makeConversation, makeCreator as makeBareCreator, makeFan } from "@/lib/conversations/test-helpers";
-import { makePersona, setEngineConfig } from "@understudy/engine/testing";
+import { makePersona, setEngineConfig } from "@jadd0/understudy-engine/testing";
 import { fund } from "@/lib/wallet/test-helpers";
 
 const session = { current: null as { user: { id: string } } | null };

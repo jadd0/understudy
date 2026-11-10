@@ -1,4 +1,4 @@
-// Types for @understudy/persona/testing: fakes for tests that must not reach the network.
+// Types for @jadd0/understudy-persona/testing: fakes for tests that must not reach the network.
 import type { Claude } from "./index";
 
 export interface FetchLogEntry {

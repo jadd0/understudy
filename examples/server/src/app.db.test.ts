@@ -2,8 +2,8 @@ import { createServer, type Server } from "node:http";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { db } from "@/db/client";
-import { conversations, messages } from "@understudy/engine/schema";
-import { makeConversation } from "@understudy/engine/testing";
+import { conversations, messages } from "@jadd0/understudy-engine/schema";
+import { makeConversation } from "@jadd0/understudy-engine/testing";
 import { buildServer } from "./app";
 import { FAKE_REPLIES } from "./providers";
 import { API_KEY, auth, testServer, type TestServer } from "./test-helpers";
@@ -72,9 +72,9 @@ describe("server errors", () => {
   test("a failing engine call answers {code: internal} and neither the response nor the log carries the fan's words", async () => {
     const secret = "SECRETBODY-" + crypto.randomUUID();
     const lines: string[] = [];
-    const chatter = { ...s.chatter, handleMessage: async () => { throw new Error(`Failed query: insert into messages params: ${secret}`); } };
+    const understudy = { ...s.understudy, handleMessage: async () => { throw new Error(`Failed query: insert into messages params: ${secret}`); } };
     const app = buildServer({
-      chatter: chatter as typeof s.chatter,
+      understudy: understudy as typeof s.understudy,
       apiKey: API_KEY,
       bus: s.bus,
       store: { isFlagged: async () => false, modeOf: async () => null },

@@ -2,7 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, ledgerEntries, messages, offers, simRuns, turns, unlocks, users, wallets } from "@/db/schema";
-import { addMessage, makeFan } from "@understudy/engine/testing";
+import { addMessage, makeFan } from "@jadd0/understudy-engine/testing";
 import { assertBalanceEqualsLedger, fund } from "@/lib/wallet/test-helpers";
 import { resetSim } from "./reset";
 import { advanceRun } from "./run";

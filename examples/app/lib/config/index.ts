@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull, like, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import { config } from "@/db/schema";
-import { ConfigMissing, type ConfigPort } from "@understudy/engine";
+import { ConfigMissing, type ConfigPort } from "@jadd0/understudy-engine";
 
 export { ConfigMissing };
 

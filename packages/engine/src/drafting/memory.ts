@@ -1,8 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import { fanMemory } from "../db/schema";
-import type { GenerateUsage } from "../ports/generator";
-import { mentionsMoney } from "./verify";
+import type { EngineCtx } from "../ctx.js";
+import { fanMemory } from "../db/schema.js";
+import type { GenerateUsage } from "../ports/generator.js";
+import { mentionsMoney } from "./verify.js";
 
 /**
  * What the engine remembers about a fan: a fixed schema with short strings and no free text, so a fan cannot

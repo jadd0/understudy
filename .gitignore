@@ -18,3 +18,4 @@ data/persona/eval/cache/
 
 # Private loop state: roadmap, plans, decisions. Never committed.
 /.product
+**/dist

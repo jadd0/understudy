@@ -3,17 +3,17 @@ import { and, eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { db } from "@/db/client";
 import { handoffs, messages } from "@/db/schema";
-import { runEscalations } from "./escalation";
-import { processConversation } from "../turn/process";
-import { addMessage, getConversation } from "../testing/db";
-import { rig, world } from "../testing/harness";
-import { runTurn } from "../turn/run";
-import type { HandoffQueue, HandoffReason } from "../types";
+import { runEscalations } from "./escalation.js";
+import { processConversation } from "../turn/process.js";
+import { addMessage, getConversation } from "../testing/db.js";
+import { rig, world } from "../testing/harness.js";
+import { runTurn } from "../turn/run.js";
+import type { HandoffQueue, HandoffReason } from "../types.js";
 
 vi.mock("@/lib/host/deps", async () => {
-  const { rig: makeRig } = await import("../testing/harness");
+  const { rig: makeRig } = await import("../testing/harness.js");
   const r = makeRig();
-  return { defaultDeps: async () => r.deps, chatter: async () => r.chatter };
+  return { defaultDeps: async () => r.deps, understudy: async () => r.understudy };
 });
 
 const CUSTOM = { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } } };

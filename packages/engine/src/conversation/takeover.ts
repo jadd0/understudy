@@ -1,7 +1,7 @@
 import { and, eq, ne, sql } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import { supersedeUnseenBubbles } from "../turn/commit";
-import { conversations, handoffs, messages } from "../db/schema";
+import type { EngineCtx } from "../ctx.js";
+import { supersedeUnseenBubbles } from "../turn/commit.js";
+import { conversations, handoffs, messages } from "../db/schema.js";
 
 /** Who is acting on a conversation. A creator holds only her own, non-T&S chats; the T&S side holds any. */
 export type HumanActor = { id: string; side: "creator"; creatorId: string } | { id: string; side: "ts" };

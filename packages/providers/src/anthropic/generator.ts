@@ -4,7 +4,7 @@
  * is sent. The system prompt is two blocks: the stable prefix carries `cache_control`, the per-turn suffix does not.
  */
 import Anthropic from "@anthropic-ai/sdk";
-import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@understudy/engine";
+import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@jadd0/understudy-engine";
 
 export interface AnthropicGeneratorOptions {
   readonly authToken: string;
