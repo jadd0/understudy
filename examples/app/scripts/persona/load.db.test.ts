@@ -2,11 +2,11 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { creators, personaCards, personaChunks } from "@/db/schema";
-import { loadPersona, neverList, neverTerms } from "@/scripts/persona/load";
+import { loadPersona, MIN_MARKER_TEXTS, neverList, neverTerms, readMarkers } from "@/scripts/persona/load";
 import { makeUser } from "@/db/test-helpers";
 
 const CARD = "## Identity\nhi\n\n## Never\n- Never give contact details.\n- Never meet up.\n\n## Selling voice\nx\n";
@@ -121,5 +121,73 @@ describe("persona load", () => {
     const bad = async (t: string[]) => ({ embeddings: t.map(() => [1, 2, 3]), totalTokens: 0 });
     await expect(loadPersona({ creatorId, dir: fixture({ card: CARD + "z" }), embedDocuments: bad })).rejects.toThrow();
     expect(await count(creatorId)).toBe(4);
+  });
+  test("with no embedder the chunks are stored with null embeddings", async () => {
+    const creatorId = await mkCreator();
+    const res = await loadPersona({ creatorId, dir: fixture(), embedDocuments: null });
+    expect(res).toMatchObject({ chunks: 4, tokens: 0, cardVersion: 1, cardInserted: true });
+    const rows = await db.select().from(personaChunks).where(eq(personaChunks.creatorId, creatorId));
+    expect(rows).toHaveLength(4);
+    expect(rows.every((r) => r.embedding === null)).toBe(true);
+  });
+
+  test("a load waits for the creator row, so two loads at once run one after the other", async () => {
+    const creatorId = await mkCreator();
+    const dir = fixture();
+    let locked!: () => void;
+    let release!: () => void;
+    const holding = new Promise<void>((resolve) => (locked = resolve));
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const holder = db.transaction(async (tx) => {
+      await tx.execute(sql`select id from creators where id = ${creatorId} for update`);
+      locked();
+      await released;
+    });
+    await holding;
+    let finished = false;
+    const load = loadPersona({ creatorId, dir, embedDocuments: fakeEmbed }).then((r) => ((finished = true), r));
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(finished).toBe(false);
+    expect(await count(creatorId)).toBe(0);
+    release();
+    await holder;
+    expect(await load).toMatchObject({ chunks: 4, cardInserted: true });
+    expect(await count(creatorId)).toBe(4);
+  });
+
+  test("two loads at once leave one set of chunks and one card", async () => {
+    const creatorId = await mkCreator();
+    const ids = Array.from({ length: 250 }, (_, i) => `cap_${i}`);
+    const dir = fixture({ chunkIds: ids });
+    const both = await Promise.all([
+      loadPersona({ creatorId, dir, embedDocuments: null }),
+      loadPersona({ creatorId, dir, embedDocuments: null }),
+    ]);
+    expect(both.map((r) => r.chunks)).toEqual([250, 250]);
+    expect(await count(creatorId)).toBe(250);
+    const cards = await db.select().from(personaCards).where(eq(personaCards.creatorId, creatorId));
+    expect(cards).toHaveLength(1);
+    expect(both.filter((r) => r.cardInserted)).toHaveLength(1);
+  });
+
+  test("voice markers measured on fewer than MIN_MARKER_TEXTS replies are not read, loaded or stored; at the threshold they are", async () => {
+    const styled = (n: number) => {
+      const dir = fixture();
+      writeFileSync(path.join(dir, "bank", "style.json"), JSON.stringify({ markers: { n, lowercase_rate: 0.9 } }));
+      return dir;
+    };
+    const few = styled(MIN_MARKER_TEXTS - 1);
+    expect(readMarkers(few)).toBeNull();
+    const fewCreator = await mkCreator();
+    await loadPersona({ creatorId: fewCreator, dir: few, embedDocuments: null });
+    const [fewCard] = await db.select().from(personaCards).where(eq(personaCards.creatorId, fewCreator));
+    expect(fewCard.markers).toBeNull();
+
+    const enough = styled(MIN_MARKER_TEXTS);
+    expect(readMarkers(enough)).toEqual({ n: MIN_MARKER_TEXTS, lowercase_rate: 0.9 });
+    const enoughCreator = await mkCreator();
+    await loadPersona({ creatorId: enoughCreator, dir: enough, embedDocuments: null });
+    const [enoughCard] = await db.select().from(personaCards).where(eq(personaCards.creatorId, enoughCreator));
+    expect(enoughCard.markers).toEqual({ n: MIN_MARKER_TEXTS, lowercase_rate: 0.9 });
   });
 });

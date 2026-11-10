@@ -401,12 +401,70 @@ Keys `CLAUDE_SECRET_KEY` and `TYPESAFE_SECRET_KEY` come from `examples/app/.env.
 
 Tests: `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` (the `persona` gate step).
 
-**For another creator.** Put the scrape in `data/persona/raw/<handle>/` (a directory per account, each
-with `posts.jsonl` and `profile.json` in the same shape; every directory under `raw/` counts as one of
-her own handles for anonymisation), pass a new `--data` directory so the output does not overwrite this
-one, and run with `--creator <handle>`. A real scrape stays gitignored; commit only the cleaned bank. Set
-`LEAK_CHECK_RAW` to the raw directory so `npx understudy-persona leak-check` can prove no caption, reply or
-handle from it appears anywhere in the tree.
+**For another creator.** Use `npx understudy init` ([below](#onboarding-a-creator-npx-understudy-init)): it builds the
+bank, drafts the card and publishes it for a new creator row. To drive the stages by hand instead, put the
+scrape in a `raw/<handle>/` directory (one per account, each with `posts.jsonl` and `profile.json` in the same shape;
+every directory under `raw/` counts as one of her own handles for anonymisation), pass a new `--data` directory so
+the output does not overwrite this one, and run with `--creator <handle>`. A real scrape stays out of git; commit
+only the cleaned bank. Set `LEAK_CHECK_RAW` to the raw directory so `npx understudy-persona leak-check` can prove no
+caption, reply or handle from it appears anywhere in the tree.
+
+## Onboarding a creator: npx understudy init
+
+One command takes a creator from her own Instagram to a published persona, in two phases with a pause between them so
+she can read and edit the card.
+
+```
+npx understudy init --instagram-export <zip|folder> --email <address> --card-model <id>
+npx understudy init --scrape-own --email <address> --card-model <id>
+npx understudy init --publish <dir>
+```
+
+**Sources, own account only.**
+
+- `--instagram-export` takes Instagram's own data download in JSON format (Settings, Accounts Center, Download your
+  information), as the zip or as the folder it unpacks to. The account is the export's own `Username`; `--handle`, when
+  given, must equal it.
+- `--scrape-own` runs [the scraper](SCRAPER.md) for the account `IG_SESSIONID` belongs to. The scraper asks Instagram
+  who the session is before it reads anything and refuses a different `--handle`.
+- No mode collects a third party's account.
+
+**What an export is read for.** Files are found by path suffix. The profile (`personal_information.json`: username,
+name, biography, website), her posts and reels (`media/posts*.json`, `media/reels.json`, also under `content/`), and the
+comments she wrote (`comments/post_comments*.json`, `comments/reels_comments.json`). Captions are repaired from
+Instagram's habit of writing UTF-8 bytes as Latin-1 characters. Direct messages, stories and likes are listed in the
+archive but never opened. A zip is read in place, with each entry's size and checksum checked; zip64, multi-part,
+encrypted and oddly compressed archives are refused with a message (unzip and pass the folder instead).
+
+**What an export lacks.** It holds the comment she wrote, not the comment it answered, and not the post it sat under.
+So every comment is kept as a top-level comment of her own, only on her own posts, attached to the latest post at or
+before it; comments on other accounts' posts are dropped and counted in `NOTES.md`. With no exact reply pairs the split
+has no train pairs and the card is drafted in lines mode: with fewer than 15 train pairs the prompt carries her own lines
+(`[id] Name: text`, mentions stripped, each wording once) in place of the pairs block and the Examples section is picked
+from those lines. Retrieval chunks are her captions only. The prompt text is in [PERSONA-PROMPTS.md](PERSONA-PROMPTS.md#1-drafting-the-card-claude).
+Init never runs the rapid eval or the query set: an export has no validation pairs.
+
+**Phase 1** refuses before it writes anything or calls a model: a missing `CLAUDE_SECRET_KEY`, a handle that is not the
+account's own, a handle that is taken or is a committed synthetic creator, an email that belongs to a fan, an admin or
+another creator, an `--out` that is inside the repository or not empty. It reads the database only for those checks and
+writes no row. It builds `<out>/raw`, `bank` and `card/v1.md`, runs the leak check, writes `<out>/init.json` and prints
+the card path and the next command. `--out` defaults to `~/.understudy/<handle>`.
+
+**Phase 2** (`--publish <dir>`) publishes the newest `card/v<N>.md`. It first checks that the edited card still has all
+seven sections in order and runs the leak check; then, in order, it creates the user and creator rows (one transaction,
+safe to repeat), loads the chunks, publishes the card and records `published_at` in `init.json`. A run that stopped
+part way can be run again. The new creator has no catalogue and no creator config rows, so the engine answers in words
+and makes no offer until items are added. Until the card is published the engine fails closed.
+
+**Embeddings and markers.** With `VOYAGE_API_KEY` the chunks are embedded; without it they are stored with null
+embeddings and retrieval uses full text; `--publish` refuses that when the `retrieval.strategy` row reads vectors
+(`vector` or `hybrid`), naming both remedies (set the key, or set the row to `fts`), before any write. The
+voice-marker rates are stored with a card only when they were measured on at least 30 of her texts
+(`MIN_MARKER_TEXTS`, applied where the markers are read, so `persona:load` and `persona:publish` agree with `init`);
+otherwise no style draw is applied.
+
+**The leak rule.** Both phases compare the repository tree with `<out>/raw`. A 6-word run copied from her captions or
+comments into any file stops the run; a file that only names an account found in her data is a warning.
 
 
 ### Adding examples and publishing a card
@@ -429,7 +487,8 @@ Stages (columns): Source, Clean, Split, Derive, Card and eval.
 
 Nodes:
 
-- `raw`: Raw export. Two synthetic handles, generated by `synth.mjs`; a real scrape stays gitignored. Stage Source.
+- `raw`: Raw export. Two synthetic handles, generated by `synth.mjs`; a real scrape stays gitignored. Stage Source, middle row.
+- `export`: Instagram export. Her own data download, read by `exportToRaw`. Stage Source, bottom row.
 - `normalise`: Normalise. Anonymises handles, writes `bank/` captions, replies, profile. Stage Clean.
 - `split`: Split. 60/20/20 by post, seed `understudy-2026`. Stage Split.
 - `style`: Style. Measured figures to `style.json`. Stage Derive, top row.
@@ -437,11 +496,15 @@ Nodes:
 - `card`: Draft card. Claude, from style, posts and train pairs; writes `card/v1.md`. Stage Card and eval, top row.
 - `eval`: Rapid eval. Haiku replies, Jev judges, validation split, score 0.9571. Stage Card and eval, middle row.
 - `persona-eval`: Persona eval. Claude rubric judge and blind test, test split, written to `docs/quality/evals/persona.json`. Stage Card and eval, fourth row.
+- `publish`: Init publish. Creates the creator, loads the chunks and publishes the edited card. Stage Card and eval (labelled Card, eval, publish), fifth row.
 - `queries`: Query set. 30 labelled fan questions for the retrieval eval. Stage Card and eval, bottom row.
 
 Edges:
 
 - `raw` to `normalise`: posts, replies.
+- `export` to `normalise`: the raw layout written by `exportToRaw`.
+- `card` to `publish`: the edited card, routed down the right-hand side.
+- `chunks` to `publish`: chunks, routed through the bottom channel.
 - `normalise` to `split`: `replies.jsonl`.
 - `split` to `style`: train and style_only replies.
 - `split` to `chunks`: train and style_only only, no validation or test.

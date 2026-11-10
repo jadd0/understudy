@@ -2,11 +2,12 @@
 // creator's comments, the comments she replied to and descriptions, plus every handle seen in it.
 // The repo is public, so a copied sentence with no name on it must still be caught.
 //   understudy-persona leak-check [--summary]
-// LEAK_CHECK_RAW (read from the environment or .env.local) names the private raw directory, one
+// LEAK_CHECK_RAW (read from the environment or .env.local; a leading ~/ is the home directory) names the private raw directory, one
 // folder per handle with profile.json and posts.jsonl. Unset or missing: the step skips and exits 0
 // so a clone without the scrape still gates. The tree is the current directory. Nothing is written,
 // and a hit prints at most its 6-word shingle.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { isMain, loadEnvFile } from "./lib/io.mjs";
 
@@ -95,14 +96,20 @@ export function leakCheck(rawDir, tree) {
   return { files: perFile.size, hits: total, handles: handles.size, shingles: shingles.size, perFile };
 }
 
+/** A leading `~/` (or a bare `~`) is the home directory: no shell expands it inside a .env file. */
+export function expandHome(path, home = homedir()) {
+  if (path === "~") return home;
+  return path.startsWith("~/") ? join(home, path.slice(2)) : path;
+}
+
 /** Runs the check as the gate step does; returns the exit code. */
-export function main(env, tree, summary, out = console.log) {
+export function main(env, tree, summary, out = console.log, home = homedir()) {
   const raw = env.LEAK_CHECK_RAW;
   if (!raw) {
     out("leak: skipped (LEAK_CHECK_RAW is not set)");
     return 0;
   }
-  const rawDir = resolve(raw);
+  const rawDir = resolve(expandHome(raw, home));
   if (!existsSync(rawDir) || !statSync(rawDir).isDirectory()) {
     out("leak: skipped (LEAK_CHECK_RAW does not point at a directory)");
     return 0;

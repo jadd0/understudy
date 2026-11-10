@@ -1,4 +1,5 @@
 {
+  "/api/v1/accounts/current_user/?edit=true": "current-user",
   "/api/v1/users/web_profile_info/?username=fixturecreator": "profile",
   "/api/v1/feed/user/9001/?count=12": "feed-1",
   "/api/v1/feed/user/9001/?count=12&max_id=feedcursor2": "feed-2",

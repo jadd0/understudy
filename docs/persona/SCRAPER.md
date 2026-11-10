@@ -1,6 +1,7 @@
 # Instagram scraper
 
-**Use this only on an account you own or have written permission to collect.** The output holds other
+**Use this only on an account you own.** The scraper collects the account the session cookie belongs to and no other:
+it asks Instagram who the session is before reading anything, and refuses a `--handle` that is a different account. The output holds other
 people's comments (every fan comment the owner answered). It stays out of git: `data/persona/raw/` is
 gitignored, except the two synthetic creators.
 
@@ -18,7 +19,7 @@ that scrape, so anyone can run it on their own account and feed the result to th
 3. Run:
 
 ```sh
-npx understudy-persona scrape --handle <your_handle>
+npx understudy-persona scrape
 npx understudy-persona normalise --creator <your_handle>
 ```
 
@@ -27,7 +28,7 @@ is missing.
 
 | flag | default | meaning |
 |---|---|---|
-| `--handle` | required | the account to collect |
+| `--handle` | the session's own account | optional; refused (after one request, nothing written) unless it is the session's account |
 | `--out` | `data/persona/raw` | output root; the account lands in `<out>/<handle>/` |
 | `--delay-ms` | 1500 | pause between requests; requests are sequential |
 | `--max-posts` | all | stop after this many posts |
@@ -35,7 +36,10 @@ is missing.
 | `--max-threads` | 30 | reply threads expanded per post |
 | `--thread-pages` | 1 | pages read per reply thread |
 
-It refuses to write into `junovale` or `junofilm`, the committed synthetic creators.
+It refuses to write into `junovale` or `junofilm`, the committed synthetic creators. The profile it then reads must have the
+same id as the session's account. The identity request (`/api/v1/accounts/current_user/?edit=true`) is the mobile API's
+path and is not confirmed to answer on the web origin; a live run on your own account is what proves it. To collect and
+publish a creator in one go, see `npx understudy init --scrape-own` in [PERSONA-PIPELINE.md](PERSONA-PIPELINE.md#onboarding-a-creator-npx-understudy-init).
 
 ## What it writes
 

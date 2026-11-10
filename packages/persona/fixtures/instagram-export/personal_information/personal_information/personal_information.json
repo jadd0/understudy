@@ -1,0 +1,13 @@
+{
+  "profile_user": [
+    {
+      "media_map_data": {},
+      "string_map_data": {
+        "Username": { "href": "", "value": "wren.fixture", "timestamp": 0 },
+        "Name": { "href": "", "value": "Wren Fixture", "timestamp": 0 },
+        "Biography": { "href": "", "value": "invented account for tests\nnot a real person", "timestamp": 0 },
+        "Website": { "href": "", "value": "https://example.test/wren", "timestamp": 0 }
+      }
+    }
+  ]
+}
