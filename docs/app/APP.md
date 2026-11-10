@@ -53,7 +53,7 @@ There are three human actors and one machine actor.
 
 | Actor | Who | Signs in with | Lands on | What they do |
 |---|---|---|---|---|
-| **Fan** | Anyone who signs up | Emailed one-tap link (Resend) behind Turnstile | [`/chat`](../../examples/app/app/chat/page.tsx) | Chats with a creator (`/chat?c=<handle>`; the first creator by handle when none is named; an unknown handle is a 404), unlocks paid messages, tips, tops up a wallet at [`/wallet`](../../examples/app/app/wallet/page.tsx) |
+| **Fan** | Anyone who signs up | Emailed one-tap link (Resend) behind Turnstile | [`/chat`](../../examples/app/app/chat/page.tsx) | Chats with a creator (`/chat?c=<handle>`, any letter case; with no handle, the creator of the fan's most recently active conversation, else the first creator by handle; a handle nobody has, or a creator with no published persona card, is a 404), unlocks paid messages, tips, tops up a wallet at [`/wallet`](../../examples/app/app/wallet/page.tsx), which keeps the handle in `?c=` so "Messages" leads back to the same chat |
 | **Juno** (role `creator`) | The creator | Shared demo seat: email + password + Turnstile | [`/console`](../../examples/app/app/console/%28inbox%29/page.tsx) | Reads the inbox, takes over a chat, edits and sends held drafts, sends offers, hands back to the AI, sets the never-list, prices and AI switches |
 | **Trust & Safety** (role `admin`) | Understudy staff | Shared demo seat, same way | [`/admin`](../../examples/app/app/admin/%28queue%29/page.tsx) | Works the safety queue across every conversation, takes over any chat, releases it, bans fans; can also open the creator console, analytics and the [fan simulator](#14-the-fan-simulator) |
 | **The AI** | The [message engine](#8-the-message-engine) | n/a | n/a | Answers in Juno's voice, pitches catalogue items, and hands the chat to a human when the rules say so |
@@ -215,8 +215,8 @@ expands the engine part.
    `conversations.fan_typing_until` to now plus `TYPING_WINDOW_SECONDS` (3 s) ([`examples/app/lib/chat/typing-window.ts`](../../examples/app/lib/chat/typing-window.ts)).
    The engine uses this to hold its turn while he is still writing.
 2. **Send.** The composer shows his bubble at once and calls [`sendMessage`](../../examples/app/app/chat/actions.ts) with a client
-   message id. The action takes the fan id from the session, never from the client, finds the platform creator
-   ([`primaryCreator`](../../examples/app/lib/conversations/read.ts)), and calls [`sendFanMessage`](../../examples/app/lib/chat/send.ts).
+   message id. The action takes the fan id from the session, never from the client, finds the creator the page bound to the action
+   ([`fanCreator`](../../examples/app/lib/conversations/read.ts): the handle, else the latest conversation's creator, else the first by handle; published persona cards only), and calls [`sendFanMessage`](../../examples/app/lib/chat/send.ts).
 3. **Store.** `sendFanMessage` refuses an empty message, one over `MAX_MESSAGE_CHARS` (2000), a bad id, a user who is
    not a confirmed fan, and a fan restricted as a minor (`restricted`). It creates the conversation on the
    first message (one per creator and fan), inserts the message with `client_msg_id` unique so a retried send returns

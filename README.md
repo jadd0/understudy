@@ -119,7 +119,7 @@ Needs Node, npm and a Postgres database with `pgvector`.
 npm ci
 cp examples/app/.env.example examples/app/.env.local   # DATABASE_URL, AUTH_SECRET, CLAUDE_SECRET_KEY at minimum
 npm run check:env              # names missing or malformed keys, never prints a value
-npm run db:migrate && npm run db:seed && npm run persona:load -- --creator junovale
+npm run db:migrate && npm run db:seed && npm run persona:load -- --creator junovale && npm run persona:publish -- --creator junovale --card-version 1
 npm run dev                    # the app at http://localhost:3000
 ```
 
