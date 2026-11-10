@@ -9,6 +9,7 @@ import { db } from "@/db/client";
 import { users } from "@/db/schema";
 import { MINOR_IN_CHAT, requireChatReader } from "@/lib/auth/guards";
 import { getFanWindowedSnapshot } from "@/lib/conversations/paging";
+import { fanCreator } from "@/lib/conversations/read";
 import { getConfig } from "@/lib/config";
 import { accountName, roleLabel } from "@/lib/ui/account-label";
 import {
@@ -20,6 +21,7 @@ import {
   tipAction,
   unlockOfferAction,
 } from "./actions";
+import { walletHrefFor } from "../wallet/chat-link";
 import { ChatSkeleton } from "./skeleton";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +31,20 @@ export const maxDuration = 60;
 
 type Account = { name: string; roleLabel: string };
 
-export default async function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   // The guard decides before anything streams; the thread itself streams behind the skeleton.
   const user = await requireChatReader();
+  // `?c=<handle>` names the creator; without it the fan talks to the creator of their latest conversation. A repeated `c` names nobody.
+  const { c } = await searchParams;
+  if (Array.isArray(c)) notFound();
+  const handle = c ?? null;
+  // Decided before the thread streams, so a creator nobody can reach is a real 404 and not a page that fails midway.
+  const creator = await fanCreator(user.id, handle);
+  if (!creator) notFound();
   const account: Account = {
     name: accountName(user, "fan"),
     roleLabel: roleLabel("fan"),
@@ -39,7 +52,7 @@ export default async function ChatPage() {
   return (
     <div className="flex min-h-0 flex-1">
       <Suspense fallback={<ChatSkeleton account={account} />}>
-        <ChatThread fanId={user.id} account={account} />
+        <ChatThread fanId={user.id} creator={creator} handle={handle} account={account} />
       </Suspense>
     </div>
   );
@@ -48,9 +61,13 @@ export default async function ChatPage() {
 /** The fan's one thread: restriction, snapshot and tip settings, read on the server and handed to LiveThread. */
 async function ChatThread({
   fanId,
+  creator,
+  handle,
   account,
 }: {
   fanId: string;
+  creator: NonNullable<Awaited<ReturnType<typeof fanCreator>>>;
+  handle: string | null;
   account: Account;
 }) {
   const [row] = await db
@@ -60,15 +77,16 @@ async function ChatThread({
   // A fan restricted as a minor in chat reads their history; sending is refused server-side as well.
   const restricted =
     Boolean(row?.flaggedAt) && row?.flagReason === MINOR_IN_CHAT;
-  const found = await getFanWindowedSnapshot(fanId);
-  if (!found) notFound();
-  const { snapshot, creator } = found;
+  const { snapshot } = await getFanWindowedSnapshot(fanId, creator);
   const tipOptions = restricted
     ? undefined
     : {
         presets: await getConfig<number[]>("wallet.tip_options_cents"),
         minCents: await getConfig<number>("wallet.tip_min_cents"),
       };
+
+  // The wallet needs to know whose chat to send the fan back to.
+  const walletHref = walletHrefFor(creator.handle);
 
   return (
     <LiveThread
@@ -79,7 +97,7 @@ async function ChatThread({
           id: creator.id,
           name: creator.displayName,
           image: creator.image,
-          href: "/chat",
+          href: handle === null ? "/chat" : `/chat?c=${encodeURIComponent(handle)}`,
           active: true,
           online: true,
         },
@@ -93,7 +111,7 @@ async function ChatThread({
       initial={snapshot}
       creatorId={creator.id}
       introLine={`@${creator.handle}`}
-      walletHref="/wallet"
+      walletHref={walletHref}
       tipOptions={tipOptions}
       readOnlyNotice={
         restricted ? "Messaging is turned off for this account." : undefined
@@ -104,7 +122,7 @@ async function ChatThread({
           <>
             {restricted ? null : (
               <Link
-                href="/wallet"
+                href={walletHref}
                 aria-label="Wallet"
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full hover:bg-hover"
               >
@@ -115,13 +133,15 @@ async function ChatThread({
         ),
       }}
       actions={{
-        refresh: refreshChat,
-        older: olderChat,
-        changes: chatChanges,
-        send: sendMessage,
-        typing: restricted ? undefined : pingTyping,
+        // Bound here, on the server, so the thread's client code never types the handle. The creator's own handle is
+        // bound even when the URL named none, so a conversation started elsewhere cannot move the thread under the fan.
+        refresh: refreshChat.bind(null, creator.handle),
+        older: olderChat.bind(null, creator.handle),
+        changes: chatChanges.bind(null, creator.handle),
+        send: sendMessage.bind(null, creator.handle),
+        typing: restricted ? undefined : pingTyping.bind(null, creator.handle),
         unlock: restricted ? undefined : unlockOfferAction,
-        tip: restricted ? undefined : tipAction,
+        tip: restricted ? undefined : tipAction.bind(null, creator.handle),
       }}
     />
   );

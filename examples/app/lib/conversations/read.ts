@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, exists, getTableColumns, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, exists, getTableColumns, inArray, isNotNull, isNull, ne, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/client";
-import { catalogueItems, conversations, creators, creatorSettings, handoffs, messages, offers, turns, users } from "@/db/schema";
+import { catalogueItems, conversations, creators, creatorSettings, handoffs, messages, offers, personaCards, turns, users } from "@/db/schema";
 import type { Role } from "@/lib/auth/guards";
 import { ConfigMissing, getConfig } from "@/lib/config";
 import { dueNote, inboxBadge, type InboxMode } from "@/lib/ui/inbox-badge";
@@ -88,6 +88,7 @@ export async function listInbox(viewer: Viewer): Promise<InboxRow[]> {
       openCreatorHandoff: sql<boolean>`exists (select 1 from handoffs h where h.conversation_id = ${conversations.id} and h.queue = 'creator' and h.status <> 'resolved')`,
       hasSuggestion: sql<boolean>`exists (select 1 from messages m where m.conversation_id = ${conversations.id} and m.suggested and m.status = 'blocked')`,
       creatorId: conversations.creatorId,
+      creatorName: creators.displayName,
       handoffQueue: sql<"creator" | "ts" | null>`(select h.queue::text from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')`,
       handoffReason: sql<string | null>`(select h.reason::text from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')`,
       handoffDueInMs: sql<number | null>`(select extract(epoch from h.due_at - now()) * 1000 from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')::float8`,
@@ -97,6 +98,7 @@ export async function listInbox(viewer: Viewer): Promise<InboxRow[]> {
     })
     .from(conversations)
     .innerJoin(users, eq(users.id, conversations.fanId))
+    .innerJoin(creators, eq(creators.id, conversations.creatorId))
     .where(scopeFor(viewer))
     .orderBy(
       // Admin: chats on the T&S side first, then everything by latest activity.
@@ -136,6 +138,7 @@ export async function listInbox(viewer: Viewer): Promise<InboxRow[]> {
       aiEnabled: r.aiEnabled,
       openCreatorHandoff: r.openCreatorHandoff,
       viewer: viewer.role === "admin" ? "admin" : "creator",
+      creatorName: r.creatorName,
     }),
   }));
 }
@@ -391,9 +394,8 @@ export async function creatorFor(userId: string) {
 }
 
 /**
- * The creator whose console this viewer opens: a creator's own row; for an admin, the platform's creator
- * that fans talk to (`primaryCreator`: one today, the first by unique handle, since `creators` has no created_at);
- * null for a fan. Nothing from the request picks it, so an admin cannot be steered to another creator by URL.
+ * The creator whose console this viewer opens: a creator's own row; for an admin, the platform's default creator
+ * (`primaryCreator`: the first by unique handle, since `creators` has no created_at); null for a fan. Nothing from the request picks it, so an admin cannot be steered to another creator by URL.
  */
 export async function consoleCreatorFor(viewer: Viewer) {
   if (viewer.role === "creator") return creatorFor(viewer.id);
@@ -442,24 +444,69 @@ export async function getSnapshot(viewer: Viewer, conversationId: string): Promi
   return { thread, suggested, labels: Object.fromEntries(labels.map((l) => [l.messageId, turnLabelText(l)])) };
 }
 
-/** The platform's creator. There is one today; a fan talks to her. */
-/** The platform's one creator, with her profile photo (her user's `image`). */
+/** The one order a creator's catalogue is listed in: the place she set, then title and id for items that tie. */
+export const catalogueOrder = () => [asc(catalogueItems.position), asc(catalogueItems.title), asc(catalogueItems.id)] as const;
+
+/** The items a creator can offer from the console: active ones, in the order she set (ties by title). */
+export async function offerableItems(creatorId: string) {
+  return db
+    .select({ id: catalogueItems.id, title: catalogueItems.title, kind: catalogueItems.kind, priceCents: catalogueItems.priceCents })
+    .from(catalogueItems)
+    .where(and(eq(catalogueItems.creatorId, creatorId), eq(catalogueItems.active, true)))
+    .orderBy(...catalogueOrder());
+}
+
+const creatorWithImage = () =>
+  db.select({ ...getTableColumns(creators), image: users.image }).from(creators).leftJoin(users, eq(users.id, creators.userId));
+
+/** The platform's default creator (the first by unique handle), with the profile photo (the creator user's `image`). */
 export async function primaryCreator() {
-  const [row] = await db
-    .select({ ...getTableColumns(creators), image: users.image })
-    .from(creators)
-    .leftJoin(users, eq(users.id, creators.userId))
-    .orderBy(asc(creators.handle))
+  const [row] = await creatorWithImage().orderBy(asc(creators.handle)).limit(1);
+  return row ?? null;
+}
+
+/** A creator a fan can reach: one whose persona card is published. Without it the engine has no voice to answer in. */
+const hasPublishedCard = () =>
+  exists(db.select({ one: sql`1` }).from(personaCards).where(and(eq(personaCards.creatorId, creators.id), isNotNull(personaCards.publishedAt))));
+
+/** The creator with this handle (any letter case), or null. The handle is only ever bound as a query parameter. */
+export async function creatorByHandle(handle: string, reachableOnly = false) {
+  // Handles are unique by exact text only, so two that differ in case can exist: the exact one wins.
+  const [row] = await creatorWithImage()
+    .where(and(sql`lower(${creators.handle}) = lower(${handle})`, reachableOnly ? hasPublishedCard() : undefined))
+    .orderBy(desc(sql`${creators.handle} = ${handle}`), asc(creators.handle))
     .limit(1);
   return row ?? null;
 }
 
 /**
- * A fan's one thread with the platform's creator, found from the session's user id. Before the first message
- * there is no conversation row, so the snapshot is empty (conversation id "") and the page still renders.
+ * The creator a fan is talking to, or null when there is nobody to talk to. With a `handle` it is that creator (any
+ * letter case); an unknown handle names nobody. Without one it is the creator of the fan's most recently active
+ * conversation, and for a fan with no conversation yet the first creator by handle. Only creators with a published
+ * persona card count. The handle comes from the fan's URL, so it only chooses whom the fan writes to; the conversation
+ * is still found from the session's own user id.
  */
-export async function getFanSnapshot(fanId: string): Promise<{ snapshot: Snapshot; creator: { id: string; displayName: string; handle: string; image: string | null } } | null> {
-  const creator = await primaryCreator();
+export async function fanCreator(fanId: string, handle?: string | null) {
+  if (handle !== undefined && handle !== null) return creatorByHandle(handle, true);
+  const [recent] = await creatorWithImage()
+    .innerJoin(conversations, and(eq(conversations.creatorId, creators.id), eq(conversations.fanId, fanId)))
+    .where(hasPublishedCard())
+    .orderBy(
+      desc(sql`coalesce((select max(${messages.createdAt}) from ${messages} where ${messages.conversationId} = ${conversations.id}), ${conversations.createdAt})`),
+      asc(creators.handle),
+    )
+    .limit(1);
+  if (recent) return recent;
+  const [first] = await creatorWithImage().where(hasPublishedCard()).orderBy(asc(creators.handle)).limit(1);
+  return first ?? null;
+}
+
+/**
+ * A fan's one thread with a creator (the named one, else the default), found from the session's user id. Before the
+ * first message there is no conversation row, so the snapshot is empty (conversation id "") and the page still renders.
+ */
+export async function getFanSnapshot(fanId: string, handle?: string | null): Promise<{ snapshot: Snapshot; creator: { id: string; displayName: string; handle: string; image: string | null } } | null> {
+  const creator = await fanCreator(fanId, handle);
   if (!creator) return null;
   const [conv] = await db
     .select({ id: conversations.id })

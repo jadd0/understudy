@@ -7,8 +7,9 @@ import { consoleCreatorFor } from "@/lib/conversations/read";
 import { chatter } from "@/lib/host/deps";
 import { saveGlobalAi } from "../actions";
 import {
-  CataloguePrices,
-  CataloguePricesSkeleton,
+  AddItemForm,
+  CatalogueEditor,
+  CatalogueEditorSkeleton,
   HINTS,
   latestCard,
   NeverList,
@@ -25,11 +26,18 @@ const SAVED: Record<string, string> = {
   ai: "AI switch saved. The next message uses it.",
   never: "Never-list saved. The next message is checked against it.",
   price: "Price saved. The next offer uses it; offers already open keep their price.",
+  item_added: "Item added at the end of the catalogue.",
+  item_retired: "Item retired. It will not be offered again.",
+  item_restored: "Item restored.",
+  item_moved: "Order saved.",
 };
 const ERRORS: Record<string, string> = {
   ai: "Could not save the AI switch.",
   never: "Could not save the list: each term is at most 80 characters and there are at most 100.",
   price: "Enter a price as dollars and cents, above $0 (for example 14.99).",
+  item_price: "Enter the price as dollars and cents, above $0 (for example 14.99).",
+  item: "Could not add the item: a kind, a title of at most 80 characters, a teaser of at most 200 and a price above $0 are needed.",
+  item_edit: "Could not change that item.",
 };
 
 export default async function ConsoleSettingsPage({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
@@ -61,10 +69,11 @@ export default async function ConsoleSettingsPage({ searchParams }: { searchPara
         </Suspense>
       </Section>
 
-      <Section title="Catalogue prices" hint={HINTS.prices}>
-        <Suspense fallback={<CataloguePricesSkeleton />}>
-          <CataloguePrices creatorId={creator.id} />
+      <Section title="Catalogue" hint={HINTS.catalogue}>
+        <Suspense fallback={<CatalogueEditorSkeleton />}>
+          <CatalogueEditor creatorId={creator.id} />
         </Suspense>
+        <AddItemForm />
       </Section>
 
       <Section title="Persona card" hint={HINTS.card}>

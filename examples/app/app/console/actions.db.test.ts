@@ -91,3 +91,53 @@ describe("console actions", () => {
     expect(await consoleCreatorFor({ id: (await makeFan()).id, role: "fan" })).toBeNull();
   });
 });
+
+describe("catalogue actions", () => {
+  const itemsOf = (creatorId: string) => db.select().from(catalogueItems).where(eq(catalogueItems.creatorId, creatorId));
+
+  test("add_item_action_parses_dollars_to_cents", async () => {
+    const w = await world();
+    as({ id: w.creator.userId });
+    expect(await digest(actions.addItemAction(form({ kind: "ppv", title: "Sunset set", teaser: "golden", price: "9.99" })))).toMatch(/NEXT_REDIRECT.*saved=item_added/);
+    expect(await digest(actions.addItemAction(form({ kind: "bundle", title: "Whole dollars", price: "12" })))).toMatch(/saved=item_added/);
+    expect(await digest(actions.addItemAction(form({ kind: "personal", title: "Largest", price: "9999999.99" })))).toMatch(/saved=item_added/);
+    const rows = await itemsOf(w.creator.id);
+    expect(rows.map((r) => [r.title, r.priceCents]).sort()).toEqual([["Largest", 999_999_999], ["Sunset set", 999], ["Whole dollars", 1200]]);
+    // text that is not a price, a sign, an exponent, a third decimal and a blank are refused before anything is written
+    for (const price of ["abc", "", "-1", "1e9", "9.999", "$5", "10000000"]) {
+      expect(await digest(actions.addItemAction(form({ kind: "ppv", title: "Nope", price })))).toMatch(/error=item_price;/);
+    }
+    // "0" is a price the parser reads and the control refuses; a good price with a bad kind or title is refused too
+    expect(await digest(actions.addItemAction(form({ kind: "ppv", title: "Free", price: "0" })))).toMatch(/error=item;/);
+    expect(await digest(actions.addItemAction(form({ kind: "free", title: "Nope", price: "5" })))).toMatch(/error=item;/);
+    expect(await digest(actions.addItemAction(form({ kind: "ppv", title: "  ", price: "5" })))).toMatch(/error=item;/);
+    expect(await itemsOf(w.creator.id)).toHaveLength(3);
+    expect(rows.every((r) => Number.isInteger(r.priceCents))).toBe(true);
+  });
+
+  test("retire, restore and move go through the creator's own session and refuse a fan or another creator's item", async () => {
+    const w = await world();
+    const mine = await makeItem(w.creator.id, { title: "Mine" });
+    const other = await world();
+    const theirs = await makeItem(other.creator.id, { title: "Theirs" });
+    const activeOf = async (id: string) => (await db.select().from(catalogueItems).where(eq(catalogueItems.id, id)))[0].active;
+
+    as({ id: w.creator.userId });
+    expect(await digest(actions.retireItemAction(form({ itemId: mine.id })))).toMatch(/saved=item_retired/);
+    expect(await activeOf(mine.id)).toBe(false);
+    expect(await digest(actions.restoreItemAction(form({ itemId: mine.id })))).toMatch(/saved=item_restored/);
+    expect(await activeOf(mine.id)).toBe(true);
+    expect(await digest(actions.moveItemAction(form({ itemId: mine.id, direction: "up" })))).toMatch(/saved=item_moved/);
+    // someone else's item, and an id that is not an item at all
+    expect(await digest(actions.retireItemAction(form({ itemId: theirs.id })))).toMatch(/error=item_edit/);
+    expect(await digest(actions.moveItemAction(form({ itemId: theirs.id, direction: "down" })))).toMatch(/error=item_edit/);
+    expect(await digest(actions.retireItemAction(form({ itemId: "not-a-uuid" })))).toMatch(/error=item_edit;/);
+    expect(await activeOf(theirs.id)).toBe(true);
+
+    as(w.fan);
+    expect(await digest(actions.retireItemAction(form({ itemId: mine.id })))).toMatch(NOT_FOUND);
+    expect(await digest(actions.addItemAction(form({ kind: "ppv", title: "Sneaky", price: "5" })))).toMatch(NOT_FOUND);
+    expect(await activeOf(mine.id)).toBe(true);
+  });
+});
+

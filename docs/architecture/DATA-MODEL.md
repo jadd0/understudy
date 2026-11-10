@@ -78,7 +78,7 @@ ai_disclosure).
 
 | table | column | purpose |
 |---|---|---|
-| `catalogue_items` | creator_id, kind, title, teaser, price_cents, active | what can be offered; prices are seeded and edited by the creator in console settings, never model text |
+| `catalogue_items` | creator_id, kind, title, teaser, price_cents, active, position | what can be offered; items are added, priced, reordered and retired by the creator in console settings, never model text; `position` orders the console list and offer picker (ties by title), not the engine's shortlist |
 | `offers` | conversation_id, item_id, price_cents, expires_at, status, turn_id, created_at, resolved_at | a priced, expiring offer made by the engine (with `turn_id`) or by the creator from her console (no `turn_id`); the price is copied from the catalogue |
 | `wallets` | fan_id (pk), balance_cents | stored balance |
 | | daily_cap_cents, pending_cap_cents, pending_cap_at, updated_at | the fan's own daily cap (null means the platform default) and a raise waiting for `pending_cap_at` |

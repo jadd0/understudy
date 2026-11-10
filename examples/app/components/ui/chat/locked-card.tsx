@@ -1,7 +1,7 @@
 import { IconLock } from "../icons";
 
 /**
- * A paid message attached under one of Juno's bubbles. The design has no paid card, so this one
+ * A paid message attached under one of the creator's bubbles. The design has no paid card, so this one
  * is built only from its tokens: bubble radius, surface fill, ink pill button, accent-free so the
  * price never competes with the fan's own blue bubbles.
  */

@@ -1,13 +1,13 @@
 import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db, withTx } from "@/db/client";
-import { catalogueItems, conversations, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
+import { catalogueItems, catalogueKindEnum, conversations, creators, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
 import { chatter, chatterWithEvents } from "@/lib/host/deps";
 import type { Events } from "@understudy/engine";
 import { defaultEvents } from "@/providers/pusher/events";
 import { InvalidAmount } from "@/lib/wallet/errors";
 import { handBack, humanActorOf, takeover, TakeoverRefused } from "./actions";
-import { assertVisible, consoleCreatorFor, ConversationNotFound, creatorFor, type Viewer } from "./read";
+import { assertVisible, catalogueOrder, consoleCreatorFor, ConversationNotFound, creatorFor, type Viewer } from "./read";
 
 /** The viewer's role does not allow this action on this row. Pages answer it with a 404. */
 export class Forbidden extends Error {
@@ -37,6 +37,10 @@ export const MAX_BODY_CHARS = 2000;
 export const CREATOR_OFFER_BODY = "Here's something for you.";
 export const MAX_NEVER_TERMS = 100;
 export const MAX_NEVER_TERM_CHARS = 80;
+export const MAX_ITEM_TITLE_CHARS = 80;
+export const MAX_ITEM_TEASER_CHARS = 200;
+/** The largest price a catalogue integer column holds. */
+const MAX_PRICE_CENTS = 2_147_483_647;
 
 async function requireCreator(viewer: Viewer) {
   if (viewer.role !== "creator") throw new Forbidden();
@@ -126,13 +130,107 @@ export async function setNeverList(viewer: Viewer, terms: readonly string[]): Pr
  */
 export async function setItemPrice(viewer: Viewer, itemId: string, cents: number): Promise<void> {
   const creator = await requireSettingsCreator(viewer);
-  if (!Number.isSafeInteger(cents) || cents <= 0 || cents > 2_147_483_647) throw new InvalidAmount();
+  if (!Number.isSafeInteger(cents) || cents <= 0 || cents > MAX_PRICE_CENTS) throw new InvalidAmount();
   const updated = await db
     .update(catalogueItems)
     .set({ priceCents: cents })
     .where(and(eq(catalogueItems.id, itemId), eq(catalogueItems.creatorId, creator.id)))
     .returning({ id: catalogueItems.id });
   if (updated.length === 0) throw new Forbidden();
+}
+
+/**
+ * Adds an item to the end of the creator's catalogue and returns its id. The price is whole cents above zero; the
+ * title is required, the teaser optional (blank is stored as none).
+ */
+export async function addItem(
+  viewer: Viewer,
+  input: { kind: string; title: string; teaser: string; cents: number },
+): Promise<string> {
+  const creator = await requireSettingsCreator(viewer);
+  const kind = catalogueKindEnum.enumValues.find((k) => k === input.kind);
+  if (!kind) throw new InvalidInput("kind");
+  const title = String(input.title ?? "").trim();
+  if (!title || title.length > MAX_ITEM_TITLE_CHARS) throw new InvalidInput("title");
+  const teaser = String(input.teaser ?? "").trim();
+  if (teaser.length > MAX_ITEM_TEASER_CHARS) throw new InvalidInput("teaser");
+  if (!Number.isSafeInteger(input.cents) || input.cents <= 0 || input.cents > MAX_PRICE_CENTS) throw new InvalidAmount();
+  return withTx(async (tx) => {
+    // The same lock a move takes, so the next place is read after any add or move ahead of this one has committed.
+    await lockCatalogue(tx, creator.id);
+    const [row] = await tx
+      .insert(catalogueItems)
+      .values({
+        creatorId: creator.id,
+        kind,
+        title,
+        teaser: teaser || null,
+        priceCents: input.cents,
+        position: sql`coalesce((select max(${catalogueItems.position}) from ${catalogueItems} where ${catalogueItems.creatorId} = ${creator.id}), -1) + 1`,
+      })
+      .returning({ id: catalogueItems.id });
+    return row.id;
+  });
+}
+
+type Tx = Parameters<Parameters<typeof withTx>[0]>[0];
+
+/**
+ * Serialises everything that numbers a creator's catalogue (adding an item, moving one). The creator row is taken
+ * first, so two adds to an empty shelf queue too, then her item rows in id order. Each statement after the lock is
+ * its own, so it sees what the transaction ahead of it committed.
+ */
+async function lockCatalogue(tx: Tx, creatorId: string): Promise<void> {
+  await tx.select({ id: creators.id }).from(creators).where(eq(creators.id, creatorId)).for("no key update");
+  await tx.select({ id: catalogueItems.id }).from(catalogueItems).where(eq(catalogueItems.creatorId, creatorId)).orderBy(catalogueItems.id).for("no key update");
+}
+
+/**
+ * Retires an item (inactive: the engine never offers it and the console offer picker hides it) or restores it.
+ * Nothing deletes a row, because offers and unlocks point at it; an offer already open on a retired item can still
+ * be unlocked.
+ */
+export async function setItemActive(viewer: Viewer, itemId: string, active: boolean): Promise<void> {
+  const creator = await requireSettingsCreator(viewer);
+  const updated = await db
+    .update(catalogueItems)
+    .set({ active })
+    .where(and(eq(catalogueItems.id, itemId), eq(catalogueItems.creatorId, creator.id)))
+    .returning({ id: catalogueItems.id });
+  if (updated.length === 0) throw new Forbidden();
+}
+
+/**
+ * Moves an active item one place up or down among the creator's active items, then renumbers all of the creator's
+ * items 0..n-1 (retired ones keep their relative place). The creator's rows are locked first, in id order, so two
+ * moves at once queue up and each reads the other's result; the lock is on catalogue rows only. At either end
+ * nothing moves. A retired item has no place in the live list, so moving one does nothing.
+ */
+export async function moveItem(viewer: Viewer, itemId: string, direction: "up" | "down"): Promise<void> {
+  const creator = await requireSettingsCreator(viewer);
+  if (direction !== "up" && direction !== "down") throw new InvalidInput("direction");
+  await withTx(async (tx) => {
+    // The ordered read comes after the lock, as its own statement, so it sees what a move that held the lock committed.
+    await lockCatalogue(tx, creator.id);
+    const rows = await tx
+      .select({ id: catalogueItems.id, position: catalogueItems.position, active: catalogueItems.active })
+      .from(catalogueItems)
+      .where(eq(catalogueItems.creatorId, creator.id))
+      .orderBy(...catalogueOrder());
+    const at = rows.findIndex((r) => r.id === itemId);
+    if (at === -1) throw new Forbidden();
+    const order = rows.map((r) => r.id);
+    if (rows[at].active) {
+      const step = direction === "up" ? -1 : 1;
+      let other = at + step;
+      while (other >= 0 && other < rows.length && !rows[other].active) other += step;
+      if (other >= 0 && other < rows.length) [order[at], order[other]] = [order[other], order[at]];
+    }
+    const byId = new Map(rows.map((r) => [r.id, r.position]));
+    for (const [i, id] of order.entries()) {
+      if (byId.get(id) !== i) await tx.update(catalogueItems).set({ position: i }).where(eq(catalogueItems.id, id));
+    }
+  });
 }
 
 // ---- the human side of a conversation ---------------------------------------------------------------------

@@ -3,7 +3,7 @@ import { db } from "@/db/client";
 import { conversations, messages } from "@/db/schema";
 import { decodeOlder, decodeSync, encodeOlder, encodeSync, isUuid } from "./cursor";
 import {
-  ConversationNotFound, primaryCreator, scopeFor, selectThreadRows, rowLabel, suggestedIn, threadMeta, toThreadMessage, turnLabelText,
+  ConversationNotFound, fanCreator, scopeFor, selectThreadRows, rowLabel, suggestedIn, threadMeta, toThreadMessage, turnLabelText,
   type Snapshot, type Viewer,
 } from "./read";
 import { MESSAGE_PAGE_SIZE, type OlderPage, type ThreadChanges, type WindowedSnapshot } from "./window";
@@ -124,14 +124,19 @@ export async function getChanges(viewer: Viewer, conversationId: string, since: 
 
 // ---- the fan's one thread, found from the session ----------------------------------------------------------------
 
-async function fanThread(fanId: string) {
-  const creator = await primaryCreator();
-  if (!creator) return null;
+type FanCreator = NonNullable<Awaited<ReturnType<typeof fanCreator>>>;
+
+async function threadWith(fanId: string, creator: FanCreator) {
   const [conv] = await db
     .select({ id: conversations.id })
     .from(conversations)
     .where(and(eq(conversations.creatorId, creator.id), eq(conversations.fanId, fanId)));
   return { creator, conversationId: conv?.id ?? null };
+}
+
+async function fanThread(fanId: string, handle?: string | null) {
+  const creator = await fanCreator(fanId, handle);
+  return creator ? threadWith(fanId, creator) : null;
 }
 
 /** Before his first message a fan has no conversation row: an empty thread, as `getFanSnapshot` shows it. */
@@ -144,13 +149,12 @@ function emptyFanMeta(fanId: string, creator: { id: string; displayName: string;
   };
 }
 
-/** The windowed form of `getFanSnapshot`. */
+/** The windowed form of `getFanSnapshot`, for a creator the caller has already found with `fanCreator`. */
 export async function getFanWindowedSnapshot(
   fanId: string,
-): Promise<{ snapshot: WindowedSnapshot; creator: { id: string; displayName: string; handle: string; image: string | null } } | null> {
-  const found = await fanThread(fanId);
-  if (!found) return null;
-  const { creator, conversationId } = found;
+  creator: FanCreator,
+): Promise<{ snapshot: WindowedSnapshot; creator: { id: string; displayName: string; handle: string; image: string | null } }> {
+  const { conversationId } = await threadWith(fanId, creator);
   const info = { id: creator.id, displayName: creator.displayName, handle: creator.handle, image: creator.image };
   if (conversationId) return { snapshot: await getWindowedSnapshot({ id: fanId, role: "fan" }, conversationId), creator: info };
   return {
@@ -164,15 +168,15 @@ export async function getFanWindowedSnapshot(
   };
 }
 
-export async function getFanOlderMessages(fanId: string, before: unknown): Promise<OlderPage> {
-  const found = await fanThread(fanId);
+export async function getFanOlderMessages(fanId: string, handle: string | null | undefined, before: unknown): Promise<OlderPage> {
+  const found = await fanThread(fanId, handle);
   // No conversation yet: nothing is older, and there is no conversation for an older cursor to name.
   if (!found?.conversationId) return { messages: [], olderCursor: null, labels: {} };
   return getOlderMessages({ id: fanId, role: "fan" }, found.conversationId, before);
 }
 
-export async function getFanChanges(fanId: string, since: unknown): Promise<ThreadChanges> {
-  const found = await fanThread(fanId);
+export async function getFanChanges(fanId: string, handle: string | null | undefined, since: unknown): Promise<ThreadChanges> {
+  const found = await fanThread(fanId, handle);
   if (!found) throw new ConversationNotFound();
   if (found.conversationId) return getChanges({ id: fanId, role: "fan" }, found.conversationId, since);
   decodeSync(since);
