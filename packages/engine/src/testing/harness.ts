@@ -1,15 +1,15 @@
 // Fakes and a world builder for the engine's tests. Not imported by product code.
 import { db } from "@/db/client";
-import { FakeDecider, type Scripted } from "./fakes/decider";
-import { FakeGenerator, type FakeGeneratorOptions } from "./fakes/generator";
+import { FakeDecider, type Scripted } from "./fakes/decider.js";
+import { FakeGenerator, type FakeGeneratorOptions } from "./fakes/generator.js";
 import { dbConfigPort } from "@/lib/config";
 import { dbHost } from "@/lib/host/engine-host";
-import { FtsRetriever } from "@understudy/providers";
-import type { Events } from "../ports/events";
-import { createChatter, type Chatter } from "../chatter";
-import type { Deps, EngineCtx } from "../ctx";
-import { setCreatorAi as setCreatorAiSwitch } from "../conversation/creator-settings";
-import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "./db";
+import { FtsRetriever } from "@jadd0/understudy-providers";
+import type { Events } from "../ports/events.js";
+import { createUnderstudy, type Understudy } from "../understudy.js";
+import type { Deps, EngineCtx } from "../ctx.js";
+import { setCreatorAi as setCreatorAiSwitch } from "../conversation/creator-settings.js";
+import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "./db.js";
 
 const NO = { value: "no", probabilities: { yes: 0.02, no: 0.98 } };
 
@@ -49,8 +49,8 @@ export interface Rig {
   deps: Deps;
   /** The engine context over the test database, for tests that call engine functions directly. */
   ctx: EngineCtx;
-  /** The same wiring as `createChatter` gives a host. */
-  chatter: Chatter;
+  /** The same wiring as `createUnderstudy` gives a host. */
+  understudy: Understudy;
   decider: FakeDecider;
   generator: FakeGenerator;
   sleeps: number[];
@@ -107,7 +107,7 @@ export function rig(opts: {
   return {
     deps,
     ctx: { db, config: dbConfigPort, host: dbHost, deps },
-    chatter: createChatter({ db, config: dbConfigPort, host: dbHost, deps }),
+    understudy: createUnderstudy({ db, config: dbConfigPort, host: dbHost, deps }),
     decider,
     generator,
     sleeps,

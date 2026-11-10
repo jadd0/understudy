@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { beforeAll, describe, expect, test } from "vitest";
 import { db } from "@/db/client";
-import { makeConversation, makeCreator, makeFan } from "@understudy/engine/testing";
-import { offers } from "@understudy/engine/schema";
+import { makeConversation, makeCreator, makeFan } from "@jadd0/understudy-engine/testing";
+import { offers } from "@jadd0/understudy-engine/schema";
 import { readCatalogue, ServerHost } from "./host";
 import path from "node:path";
 import { SERVER_DIR } from "./seed";

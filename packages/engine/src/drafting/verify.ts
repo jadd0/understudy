@@ -1,8 +1,8 @@
-import { answerOf, type Decider, type DeciderResult } from "../ports/decider";
-import { LEADS_TO_OFFER_QUESTION, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "../routing/questions";
-import { MARKER_PATTERN, type JevLine } from "./thread";
-import { namesPet, type StyleDraw, type StyleRates } from "./style-draw";
-import type { RouteName } from "../types";
+import { answerOf, type Decider, type DeciderResult } from "../ports/decider.js";
+import { LEADS_TO_OFFER_QUESTION, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "../routing/questions.js";
+import { MARKER_PATTERN, type JevLine } from "./thread.js";
+import { namesPet, type StyleDraw, type StyleRates } from "./style-draw.js";
+import type { RouteName } from "../types.js";
 
 export type VerifyFailure =
   | "empty"

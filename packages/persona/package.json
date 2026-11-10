@@ -1,19 +1,40 @@
 {
-  "name": "@understudy/persona",
+  "name": "@jadd0/understudy-persona",
   "version": "0.1.0",
   "description": "Persona pipeline and Instagram scraper: turn a creator's posts and replies into an anonymised bank, a persona card and its evals.",
   "type": "module",
-  "private": true,
   "license": "MIT",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jadd0/understudy.git",
+    "directory": "packages/persona"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
-    ".": { "types": "./src/index.d.ts", "default": "./src/index.mjs" },
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.mjs"
+    },
     "./cli": "./src/cli.mjs",
-    "./testing": { "types": "./src/testing.d.ts", "default": "./src/testing.mjs" }
+    "./testing": {
+      "types": "./src/testing.d.ts",
+      "default": "./src/testing.mjs"
+    }
   },
   "types": "./src/index.d.ts",
-  "bin": { "understudy-persona": "./src/cli.mjs" },
-  "files": ["src", "fixtures", "README.md"],
+  "bin": {
+    "understudy-persona": "./src/cli.mjs"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.mjs",
+    "fixtures"
+  ],
   "scripts": {
     "test": "node --test \"src/**/*.test.mjs\""
   }

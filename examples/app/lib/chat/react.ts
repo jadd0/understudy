@@ -1,8 +1,8 @@
 import { after } from "next/server";
 import { db } from "@/db/client";
 import { messages } from "@/db/schema";
-import { chatter } from "@/lib/host/deps";
-import { TIP_ROW_PREFIX } from "@understudy/engine";
+import { understudy } from "@/lib/host/deps";
+import { TIP_ROW_PREFIX } from "@jadd0/understudy-engine";
 import { formatCents } from "@/lib/wallet/money";
 import { tip } from "@/lib/wallet/tip";
 import { unlockOffer, type UnlockResult } from "@/lib/wallet/unlock";
@@ -12,7 +12,7 @@ const afterResponse: Schedule = (task) => after(task);
 
 /** Runs the engine on the conversation after the response, as a fan message does: she reacts to the tip or unlock. */
 function scheduleTurn(conversationId: string, schedule: Schedule) {
-  schedule(async () => (await chatter()).processConversation(conversationId));
+  schedule(async () => (await understudy()).processConversation(conversationId));
 }
 
 export interface ChatTipResult {

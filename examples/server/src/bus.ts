@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import type { EngineDb, Events, HostPort } from "@understudy/engine";
-import { messages, offers } from "@understudy/engine/schema";
+import type { EngineDb, Events, HostPort } from "@jadd0/understudy-engine";
+import { messages, offers } from "@jadd0/understudy-engine/schema";
 import type { Webhook } from "./webhook";
 
 export type Listener = (event: string, data: unknown) => void;

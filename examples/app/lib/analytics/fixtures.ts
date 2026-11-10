@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { conversations, handoffs, ledgerEntries, messages, offers, turns, unlocks, users, wallets } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NOW, makeUser } from "@/db/test-helpers";
-import { makeConversation, makeCreator, makeFan, makeItem, setEngineConfig } from "@understudy/engine/testing";
+import { makeConversation, makeCreator, makeFan, makeItem, setEngineConfig } from "@jadd0/understudy-engine/testing";
 import { parseRange } from "./range";
 import { makeQuery } from "./query";
 

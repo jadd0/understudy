@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Breaker } from "./breaker";
+import { Breaker } from "./breaker.js";
 
 function make(over: Partial<{ failures: number; windowMs: number; cooldownMs: number }> = {}) {
   const clock = { t: 1_000_000, now() { return this.t; } };

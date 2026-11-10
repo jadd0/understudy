@@ -2,14 +2,14 @@ import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { config, fanMemory, handoffs, ledgerEntries, messages, offers, personaCards, sessions, strikes, turns, users, wallets } from "@/db/schema";
-import { processConversation } from "./process";
-import { PAID_LINE } from "../drafting/thread";
-import { runTurn } from "./run";
-import { loadFacts } from "./facts";
-import { addMessage, getConversation, seedChat, setEngineConfig } from "../testing/db";
+import { processConversation } from "./process.js";
+import { PAID_LINE } from "../drafting/thread.js";
+import { runTurn } from "./run.js";
+import { loadFacts } from "./facts.js";
+import { addMessage, getConversation, seedChat, setEngineConfig } from "../testing/db.js";
 import { ConfigMissing } from "@/lib/config";
-import type { ConfigPort } from "../ports/config";
-import { deferred, isMemoryCall, rig, setCreatorAi, world, YES } from "../testing/harness";
+import type { ConfigPort } from "../ports/config.js";
+import { deferred, isMemoryCall, rig, setCreatorAi, world, YES } from "../testing/harness.js";
 
 const turnsOf = (conversationId: string) =>
   db.select().from(turns).where(eq(turns.conversationId, conversationId)).orderBy(asc(turns.createdAt), asc(turns.id));

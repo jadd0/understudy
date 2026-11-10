@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 import { ENGINE_CONFIG, RETRIEVAL_CONFIG, WALLET_CONFIG } from "@/db/seed";
-import { getConfig, loadEngineConfig, resetDisabledWarnings } from "./load";
-import { ConfigMissing, type ConfigPort, type ConfigRow } from "../ports/config";
+import { getConfig, loadEngineConfig, resetDisabledWarnings } from "./load.js";
+import { ConfigMissing, type ConfigPort, type ConfigRow } from "../ports/config.js";
 
 const CREATOR = "00000000-0000-4000-8000-000000000001";
 const OTHER = "00000000-0000-4000-8000-000000000002";

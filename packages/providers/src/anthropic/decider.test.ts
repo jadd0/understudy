@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { DeciderUnavailable, hardStopOf, parseSafety, SAFETY_KEYS, type Question, type RouteCfg } from "@understudy/engine";
-import { ClaudeDecider } from "./decider";
+import { DeciderUnavailable, type Question } from "@jadd0/understudy-engine";
+import { hardStopOf, parseSafety, SAFETY_KEYS, type RouteCfg } from "@jadd0/understudy-engine/internal";
+import { ClaudeDecider } from "./decider.js";
 
 const QUESTIONS: Question[] = [
   { key: "safe", prompt: "Is the fan an adult?", options: [{ key: "yes", label: "Yes" }, { key: "no", label: "No" }] },

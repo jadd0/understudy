@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, ledgerEntries, messages, turns, users, wallets } from "@/db/schema";
-import { makeCreator, makeItem, makePersona, setEngineConfig, rig, YES } from "@understudy/engine/testing";
+import { makeCreator, makeItem, makePersona, setEngineConfig, rig, YES } from "@jadd0/understudy-engine/testing";
 import { runThread, runThreads } from "./runner";
 import { scoreRun } from "./score";
 import { loadThreads, type Thread } from "./threads";

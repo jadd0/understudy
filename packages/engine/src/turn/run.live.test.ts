@@ -8,8 +8,8 @@ import { conversations, turns } from "@/db/schema";
 import { dbConfigPort } from "@/lib/config";
 import { defaultDeps } from "@/lib/host/deps";
 import { dbHost } from "@/lib/host/engine-host";
-import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "../testing/db";
-import { runTurn } from "./run";
+import { addMessage, makeConversation, makeCreator, makeFan, makeItem, makePersona, setEngineConfig } from "../testing/db.js";
+import { runTurn } from "./run.js";
 
 loadEnv({ path: "examples/app/.env.local", quiet: true });
 

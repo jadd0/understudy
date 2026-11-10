@@ -1,7 +1,7 @@
 import { getConfig } from "@/lib/config";
 import { defaultDeps } from "@/lib/host/deps";
-import type { Deps, Generator } from "@understudy/engine";
-import { AnthropicGenerator, embed } from "@understudy/providers";
+import type { Deps, Generator } from "@jadd0/understudy-engine";
+import { AnthropicGenerator, embed } from "@jadd0/understudy-providers";
 import { LiveSimStripe, type SimStripe } from "./stripe";
 
 export interface SimDeps {

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, test, vi } from "vitest";
-import type { EngineDb } from "@understudy/engine";
+import type { EngineDb } from "@jadd0/understudy-engine";
 import { jsonConfigPort, readConfigFile } from "./config";
 import { readEnv } from "./env";
 import { realProviders, resetGatewayUrlWarning } from "./providers";

@@ -1,4 +1,4 @@
-import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "../../ports/generator";
+import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "../../ports/generator.js";
 
 export interface FakeGeneratorOptions {
   /** Replies in order; the last one repeats. A function sees the input. */

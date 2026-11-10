@@ -1,4 +1,4 @@
-import { mentionsMoney } from "@understudy/engine";
+import { mentionsMoney } from "@jadd0/understudy-engine/internal";
 import { MATRIX_ROWS, type Expect, type MatrixRow, type RouteName } from "./threads";
 
 /** What the runner saw on one fan turn. The scorer reads nothing else. */

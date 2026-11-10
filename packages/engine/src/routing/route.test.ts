@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vitest";
-import type { DeciderResult } from "../ports/decider";
-import { hardStopOf, parseInbound, promoteBuyRunnerUp, route } from "./route";
-import { INTENTS } from "../types";
-import { THREADS } from "../types";
-import { CALM, CFG, facts, jev, PITCHABLE } from "../testing/fixtures";
+import type { DeciderResult } from "../ports/decider.js";
+import { hardStopOf, parseInbound, promoteBuyRunnerUp, route } from "./route.js";
+import { INTENTS } from "../types.js";
+import { THREADS } from "../types.js";
+import { CALM, CFG, facts, jev, PITCHABLE } from "../testing/fixtures.js";
 
 const r = (j = jev(), f = facts()) => route(j, f, CFG);
 

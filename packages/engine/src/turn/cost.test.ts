@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
 import { ENGINE_CONFIG, RETRIEVAL_CONFIG, WALLET_CONFIG } from "@/db/seed";
-import { loadEngineConfig } from "../config/load";
-import { CostLedger, costMicros } from "./cost";
-import type { ConfigPort } from "../ports/config";
+import { loadEngineConfig } from "../config/load.js";
+import { CostLedger, costMicros } from "./cost.js";
+import type { ConfigPort } from "../ports/config.js";
 
 const HAIKU = { input: 100000, output: 500000, cacheRead: 10000, cacheWrite: 125000 };
 const JEV = { input: 42000, output: 0, cacheRead: 0, cacheWrite: 0 };

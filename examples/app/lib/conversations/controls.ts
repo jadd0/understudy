@@ -2,8 +2,8 @@ import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db, withTx } from "@/db/client";
 import { catalogueItems, catalogueKindEnum, conversations, creators, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import { chatter, chatterWithEvents } from "@/lib/host/deps";
-import type { Events } from "@understudy/engine";
+import { understudy, understudyWithEvents } from "@/lib/host/deps";
+import type { Events } from "@jadd0/understudy-engine";
 import { defaultEvents } from "@/providers/pusher/events";
 import { InvalidAmount } from "@/lib/wallet/errors";
 import { handBack, humanActorOf, takeover, TakeoverRefused } from "./actions";
@@ -86,7 +86,7 @@ const isTsSide = (mode: string) => mode === "handoff_ts" || mode === "human_ts";
 /** The global AI switch, kept by the engine (`creator_settings`). Its lease reads it on every turn. */
 export async function setGlobalAi(viewer: Viewer, on: boolean): Promise<void> {
   const creator = await requireSettingsCreator(viewer);
-  await (await chatter()).setCreatorAi(creator.id, on);
+  await (await understudy()).setCreatorAi(creator.id, on);
 }
 
 /** One conversation's AI switch. The creator must own it and it must not be on the Trust & Safety side. */
@@ -260,7 +260,7 @@ async function insertHumanMessage(viewer: Viewer, conversationId: string, body: 
   if (!text || text.length > MAX_BODY_CHARS) throw new InvalidInput("body");
   let id: string;
   try {
-    id = await chatterWithEvents(events).humanReply(conversationId, await humanActorOf(viewer.id), text, { clientMsgId });
+    id = await understudyWithEvents(events).humanReply(conversationId, await humanActorOf(viewer.id), text, { clientMsgId });
   } catch (e) {
     if (e instanceof TakeoverRefused) throw new Forbidden();
     throw e;

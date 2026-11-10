@@ -5,7 +5,7 @@ import { conversations } from "@/db/schema";
 import { sendFanMessage } from "./send";
 import { markFanTyping } from "./typing";
 import { TYPING_WINDOW_SECONDS } from "./typing-window";
-import { makeConversation, makeCreator, makeFan } from "@understudy/engine/testing";
+import { makeConversation, makeCreator, makeFan } from "@jadd0/understudy-engine/testing";
 
 const typingOf = async (id: string) => (await db.select().from(conversations).where(eq(conversations.id, id)))[0].fanTypingUntil;
 

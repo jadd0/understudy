@@ -1,7 +1,7 @@
-import { disabledChecks, inboundQuestions } from "../routing/questions";
-import { parseInbound, promoteBuyRunnerUp } from "../routing/route";
-import type { JevIn } from "../types";
-import type { Batch, Classified, TurnState } from "./state";
+import { disabledChecks, inboundQuestions } from "../routing/questions.js";
+import { parseInbound, promoteBuyRunnerUp } from "../routing/route.js";
+import type { JevIn } from "../types.js";
+import type { Batch, Classified, TurnState } from "./state.js";
 
 /** Asks Jev the inbound questions about the new messages and parses the answers. */
 export async function classifyInbound(s: TurnState, b: Batch, askFit: boolean): Promise<Classified> {

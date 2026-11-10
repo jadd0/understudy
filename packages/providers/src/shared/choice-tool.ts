@@ -6,7 +6,7 @@
  * certainty; `confidence` is the probability of the chosen option. A choice that is not within 0.05 of the
  * highest-probability option, or any missing, non-numeric or negative probability, is malformed.
  */
-import { DeciderUnavailable, type Answer, type DeciderState, type Question } from "@understudy/engine";
+import { DeciderUnavailable, type Answer, type DeciderState, type Question } from "@jadd0/understudy-engine";
 
 export const CHOICE_TOOL = "answer_questions";
 export const CHOICE_TOOL_DESCRIPTION = "Record the chosen option key for every question.";

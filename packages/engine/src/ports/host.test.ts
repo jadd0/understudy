@@ -1,10 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { FakeDecider } from "../testing/fakes/decider";
-import { DeciderUnavailable } from "./decider";
-import { FakeHost } from "../testing/fake-host";
-import { buildOwnedShortlist, buildShortlist, pickOffer, type ShortlistItem } from "../conversation/offer";
+import { FakeDecider } from "../testing/fakes/decider.js";
+import { DeciderUnavailable } from "./decider.js";
+import { FakeHost } from "../testing/fake-host.js";
+import { buildOwnedShortlist, buildShortlist, pickOffer, type ShortlistItem } from "../conversation/offer.js";
 
 const ROOT = process.cwd();
 const sourceFiles = (dir: string): string[] =>

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { embed } from "./embed";
+import { embed } from "./embed.js";
 
 const vec = (n: number) => Array.from({ length: 1024 }, (_, i) => (i === n ? 1 : 0));
 const ok = (n: number) =>

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { dropRepeatedEmoji, emojiIn, recentEmoji, recentEmojiLine } from "./emoji";
+import { dropRepeatedEmoji, emojiIn, recentEmoji, recentEmojiLine } from "./emoji.js";
 
 const m = (sender: "ai" | "fan" | "creator" | "system", body: string) => ({ sender, body });
 

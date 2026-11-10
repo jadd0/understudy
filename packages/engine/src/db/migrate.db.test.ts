@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { afterAll, describe, expect, test } from "vitest";
-import { ENGINE_MIGRATIONS_TABLE, migrateEngine } from "./migrate";
-import type { EngineDb } from "../ports/db";
+import { ENGINE_MIGRATIONS_TABLE, migrateEngine } from "./migrate.js";
+import type { EngineDb } from "../ports/db.js";
 
 // An empty database of its own, so no host table exists when the engine migrates.
 const name = `understudy_test_migrate_${randomUUID().slice(0, 8)}`;

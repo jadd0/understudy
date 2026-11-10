@@ -1,4 +1,4 @@
-# @understudy/engine
+# @jadd0/understudy-engine
 
 The conversation engine: the message turn (lease, debounce, routing, pacing, offers, prompt, verification and
 commit), retrieval over persona chunks, the sweep that picks up unanswered conversations, and the ports it talks
@@ -7,10 +7,10 @@ tsx run it directly. Private to this repository's npm workspace.
 
 ## Entry points
 
-- `@understudy/engine`: `createChatter` and the `Chatter` it returns, `handBack` and `supersedeUnseenBubbles` (which
+- `@jadd0/understudy-engine`: `createUnderstudy` and the `Understudy` it returns, `handBack` and `supersedeUnseenBubbles` (which
   need only a database), the retrieval functions, the port interfaces and the engine's types.
-- `@understudy/engine/schema`: the engine's tables and enums.
-- `@understudy/engine/testing`: `FakeDecider`, `FakeGenerator`, the in-memory `FakeHost`, the fixtures and the
+- `@jadd0/understudy-engine/schema`: the engine's tables and enums.
+- `@jadd0/understudy-engine/testing`: `FakeDecider`, `FakeGenerator`, the in-memory `FakeHost`, the fixtures and the
   harness that runs a turn against the test database.
 
 Nothing else inside `src/` is public. `src/ports/boundary.test.ts` fails when code outside the package reaches past
@@ -22,7 +22,7 @@ the published entries.
 
 ```
 src/
-  index.ts  chatter.ts  ctx.ts  types.ts      the public entry, the chatter factory, the context, shared types
+  index.ts  understudy.ts  ctx.ts  types.ts      the public entry, the understudy factory, the context, shared types
   testing.ts  fakes.ts                        the package entries for tests (re-export from testing/)
   ports/         the seams: clock, config, db, decider, events, generator, retriever, host
   examples/app/db/            schema.ts (tables and enums), migrate.ts
@@ -56,9 +56,9 @@ The adapters for the real services are not in this package; the host passes them
 ## Usage sketch
 
 ```ts
-import { createChatter, systemClock } from "@understudy/engine";
+import { createUnderstudy, systemClock } from "@jadd0/understudy-engine";
 
-const chatter = createChatter({
+const understudy = createUnderstudy({
   db,     // a drizzle client over the Neon WebSocket pool
   config, // implements ConfigPort over your `config` table; a missing row fails closed (ConfigMissing)
   host,   // implements HostPort over your wallet, ledger and catalogue
@@ -72,34 +72,34 @@ const chatter = createChatter({
 });
 
 // Store a fan's message; the host decides when to run the step that answers it.
-const { process, conversationId } = await chatter.handleMessage({ creatorId, fanId, body, clientMsgId });
+const { process, conversationId } = await understudy.handleMessage({ creatorId, fanId, body, clientMsgId });
 await process();
 
-await chatter.sweep(); // the safety net, from a cron
+await understudy.sweep(); // the safety net, from a cron
 ```
 
 `handleMessage` throws `MessageRefused` (`empty`, `too_long`, `bad_id`, `not_owner`) and stores nothing. Who may
 send is the host's check, made before the call.
 
 In tests, build the same wiring from `FakeDecider`, `FakeGenerator`, `FakeHost` and `rig()` from
-`@understudy/engine/testing`, which also returns a ready chatter.
+`@jadd0/understudy-engine/testing`, which also returns a ready understudy.
 
 ## Tables and migrations
 
 The engine owns its tables (`conversations`, `messages`, `turns`, `offers`, `handoffs`, `fan_memory`, `persona_cards`,
-`persona_chunks`, `creator_settings`), defined in `@understudy/engine/schema`. They live in the `public` Postgres
+`persona_chunks`, `creator_settings`), defined in `@jadd0/understudy-engine/schema`. They live in the `public` Postgres
 schema and know host rows (users, creators, catalogue items) by id only: those columns carry no foreign key, so the
 package creates its tables on a database that has none of the host's.
 
 The package ships its own migrations in `examples/app/drizzle/`, recorded in `drizzle.__understudy_engine_migrations`. A host
-applies them with `chatter.migrate()` (or `migrateEngine(db)` from `@understudy/engine/migrate`) before its own
+applies them with `understudy.migrate()` (or `migrateEngine(db)` from `@jadd0/understudy-engine/migrate`) before its own
 migrations, because the host's tables may point foreign keys at the engine's. Both calls take a session advisory lock
 and are safe to repeat. Maintainers regenerate them with `npx drizzle-kit generate` in the package folder.
 
 ## The AI switch
 
 `creator_settings` holds one row per creator that has switched the AI off or on. A creator with no row is on.
-`chatter.setCreatorAi(creatorId, on)` upserts it and `chatter.creatorAi(creatorId)` reads it; the lease's claim reads
+`understudy.setCreatorAi(creatorId, on)` upserts it and `understudy.creatorAi(creatorId)` reads it; the lease's claim reads
 the table in the same statement that takes the conversation.
 
 ## Known limitation

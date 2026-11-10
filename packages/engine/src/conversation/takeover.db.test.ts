@@ -2,9 +2,9 @@ import { eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { handoffs, messages } from "@/db/schema";
-import { humanReply, takeOver, TakeoverRefused, type HumanActor } from "./takeover";
-import { getConversation, makeConversation, makeCreator, makeFan } from "../testing/db";
-import { rig } from "../testing/harness";
+import { humanReply, takeOver, TakeoverRefused, type HumanActor } from "./takeover.js";
+import { getConversation, makeConversation, makeCreator, makeFan } from "../testing/db.js";
+import { rig } from "../testing/harness.js";
 
 const creatorActor = (creatorId: string): HumanActor => ({ id: crypto.randomUUID(), side: "creator", creatorId });
 const tsActor = (): HumanActor => ({ id: crypto.randomUUID(), side: "ts" });
@@ -67,13 +67,13 @@ describe("humanReply", () => {
     const creator = await makeCreator();
     const conv = await makeConversation(creator.id, (await makeFan()).id);
     const actor = creatorActor(creator.id);
-    await r.chatter.takeOver(conv.id, actor);
-    const id = await r.chatter.humanReply(conv.id, actor, "  hi there  ", { clientMsgId: "cm-1" });
+    await r.understudy.takeOver(conv.id, actor);
+    const id = await r.understudy.humanReply(conv.id, actor, "  hi there  ", { clientMsgId: "cm-1" });
     const [m] = await db.select().from(messages).where(eq(messages.id, id));
     expect(m).toMatchObject({ sender: "creator", senderUserId: actor.id, body: "hi there", clientMsgId: "cm-1" });
     expect(r.emitted).toContainEqual({ channel: `conversation:${conv.id}`, event: "message.created", payload: { messageId: id, deliverInMs: 0 } });
     // A retry with the same client id returns the saved row and writes nothing new.
-    expect(await r.chatter.humanReply(conv.id, actor, "hi there", { clientMsgId: "cm-1" })).toBe(id);
+    expect(await r.understudy.humanReply(conv.id, actor, "hi there", { clientMsgId: "cm-1" })).toBe(id);
     expect((await db.select().from(messages).where(eq(messages.conversationId, conv.id))).filter((x) => x.sender === "creator")).toHaveLength(1);
   });
 
@@ -83,11 +83,11 @@ describe("humanReply", () => {
     const a = await makeConversation(creator.id, (await makeFan()).id);
     const b = await makeConversation(creator.id, (await makeFan()).id);
     const actor = creatorActor(creator.id);
-    await r.chatter.takeOver(a.id, actor);
-    await r.chatter.takeOver(b.id, actor);
-    const first = await r.chatter.humanReply(a.id, actor, "in a", { clientMsgId: "shared-id" });
+    await r.understudy.takeOver(a.id, actor);
+    await r.understudy.takeOver(b.id, actor);
+    const first = await r.understudy.humanReply(a.id, actor, "in a", { clientMsgId: "shared-id" });
     r.emitted.length = 0;
-    await expect(r.chatter.humanReply(b.id, actor, "in b", { clientMsgId: "shared-id" })).rejects.toMatchObject({ code: "not_allowed" });
+    await expect(r.understudy.humanReply(b.id, actor, "in b", { clientMsgId: "shared-id" })).rejects.toMatchObject({ code: "not_allowed" });
     expect(r.emitted).toEqual([]);
     expect(await db.select().from(messages).where(eq(messages.conversationId, b.id))).toHaveLength(0);
     expect(first).toEqual(expect.any(String));
@@ -100,16 +100,16 @@ describe("humanReply", () => {
     const conv = await makeConversation(creator.id, (await makeFan()).id);
     const mine = creatorActor(creator.id);
     // Not taken over yet: the AI holds it.
-    await expect(r.chatter.humanReply(conv.id, mine, "hello")).rejects.toMatchObject({ code: "not_allowed" });
-    await r.chatter.takeOver(conv.id, mine);
-    await expect(r.chatter.humanReply(conv.id, creatorActor(other.id), "hello")).rejects.toMatchObject({ code: "not_allowed" });
-    await expect(r.chatter.humanReply(conv.id, tsActor(), "hello")).rejects.toMatchObject({ code: "not_allowed" });
-    await expect(r.chatter.humanReply(crypto.randomUUID(), mine, "hello")).rejects.toMatchObject({ code: "not_found" });
+    await expect(r.understudy.humanReply(conv.id, mine, "hello")).rejects.toMatchObject({ code: "not_allowed" });
+    await r.understudy.takeOver(conv.id, mine);
+    await expect(r.understudy.humanReply(conv.id, creatorActor(other.id), "hello")).rejects.toMatchObject({ code: "not_allowed" });
+    await expect(r.understudy.humanReply(conv.id, tsActor(), "hello")).rejects.toMatchObject({ code: "not_allowed" });
+    await expect(r.understudy.humanReply(crypto.randomUUID(), mine, "hello")).rejects.toMatchObject({ code: "not_found" });
     // A T&S take-over moves the chat off the creator's side: her actor no longer holds it.
     const ts = tsActor();
-    await r.chatter.takeOver(conv.id, ts);
-    await expect(r.chatter.humanReply(conv.id, mine, "hello")).rejects.toBeInstanceOf(TakeoverRefused);
-    expect(await r.chatter.humanReply(conv.id, ts, "support here")).toEqual(expect.any(String));
+    await r.understudy.takeOver(conv.id, ts);
+    await expect(r.understudy.humanReply(conv.id, mine, "hello")).rejects.toBeInstanceOf(TakeoverRefused);
+    expect(await r.understudy.humanReply(conv.id, ts, "support here")).toEqual(expect.any(String));
     expect((await db.select().from(messages).where(eq(messages.conversationId, conv.id))).map((m) => m.sender)).toEqual(["admin"]);
   });
 
@@ -118,8 +118,8 @@ describe("humanReply", () => {
     const creator = await makeCreator();
     const conv = await makeConversation(creator.id, (await makeFan()).id);
     const actor = creatorActor(creator.id);
-    await r.chatter.takeOver(conv.id, actor);
-    await expect(r.chatter.humanReply(conv.id, actor, "   ")).rejects.toBeInstanceOf(RangeError);
+    await r.understudy.takeOver(conv.id, actor);
+    await expect(r.understudy.humanReply(conv.id, actor, "   ")).rejects.toBeInstanceOf(RangeError);
     await expect(humanReply(r.ctx, conv.id, actor, "x".repeat(2001))).rejects.toBeInstanceOf(RangeError);
     expect(await db.select().from(messages).where(eq(messages.conversationId, conv.id))).toHaveLength(0);
   });

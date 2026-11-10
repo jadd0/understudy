@@ -16,7 +16,7 @@ import { eq, sql } from "drizzle-orm";
 import { db, type Tx } from "@/db/client";
 import { creators, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import { embed, type EmbedResult } from "@understudy/providers";
+import { embed, type EmbedResult } from "@jadd0/understudy-providers";
 import {
   HANDLE,
   MIN_PAIRS,
@@ -33,7 +33,7 @@ import {
   resolveOwnHandle,
   scrape,
   type Claude,
-} from "@understudy/persona";
+} from "@jadd0/understudy-persona";
 import { latestCardVersion, loadPersona, readMarkers, UNBILLED_LIMITS } from "./load";
 import { publishCard } from "./publish-card";
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DeciderUnavailable, type Decider, type DeciderResult, type Question } from "@understudy/engine";
-import { FailoverDecider } from "./decider";
+import { DeciderUnavailable, type Decider, type DeciderResult, type Question } from "@jadd0/understudy-engine";
+import { FailoverDecider } from "./decider.js";
 
 const Q: Question[] = [{ key: "q", prompt: "p", options: [{ key: "a", label: "A" }] }];
 const OK = (model: string): DeciderResult => ({

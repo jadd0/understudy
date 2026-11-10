@@ -3,8 +3,8 @@ import { db } from "@/db/client";
 import { conversations, messages, personaCards, users } from "@/db/schema";
 import { ban, handBackConversation, releaseConversation, sendAsCreator, sendSuggested, setConversationAi, setGlobalAi, setNeverList, takeOverConversation } from "@/lib/conversations/controls";
 import type { Viewer } from "@/lib/conversations/read";
-import { chatter } from "@/lib/host/deps";
-import type { Events } from "@understudy/engine";
+import { understudy } from "@/lib/host/deps";
+import type { Events } from "@jadd0/understudy-engine";
 import type { Beat } from "./persona";
 
 type HumanBeat = Extract<Beat, { kind: "human" }>;
@@ -51,7 +51,7 @@ export interface HumanCtx {
 }
 
 /** The creator's AI switch, read through the engine. */
-const creatorAiOn = async (creatorId: string) => (await chatter()).creatorAi(creatorId);
+const creatorAiOn = async (creatorId: string) => (await understudy()).creatorAi(creatorId);
 
 export type HumanResult = { ok: true } | { ok: false; code: string };
 

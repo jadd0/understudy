@@ -7,9 +7,9 @@ import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { catalogueItems, creators, messages, offers, personaCards, personaChunks, turns, users } from "@/db/schema";
 import { NOW, makeUser } from "@/db/test-helpers";
-import { addMessage, makeConversation, makeFan, makeItem, rig, setEngineConfig, YES } from "@understudy/engine/testing";
-import { NotOwnAccount } from "@understudy/persona";
-import { fakeCardClaude, fixtureFetch, writeZip, type CardCall } from "@understudy/persona/testing";
+import { addMessage, makeConversation, makeFan, makeItem, rig, setEngineConfig, YES } from "@jadd0/understudy-engine/testing";
+import { NotOwnAccount } from "@jadd0/understudy-persona";
+import { fakeCardClaude, fixtureFetch, writeZip, type CardCall } from "@jadd0/understudy-persona/testing";
 import { ensureCreator, initDraft, initPublish, type InitDeps } from "./init";
 import { loadPersona, MIN_MARKER_TEXTS } from "./load";
 
@@ -461,7 +461,7 @@ describe("a creator made by init in the engine", () => {
     const quiet = console.error;
     console.error = () => {};
     try {
-      expect(await rig({ script: { offer_pick: "o1" } }).chatter.processConversation(conv.id)).toBe(0);
+      expect(await rig({ script: { offer_pick: "o1" } }).understudy.processConversation(conv.id)).toBe(0);
     } finally {
       console.error = quiet;
     }
@@ -470,7 +470,7 @@ describe("a creator made by init in the engine", () => {
     expect(await db.select().from(messages).where(and(eq(messages.conversationId, conv.id), eq(messages.sender, "ai")))).toHaveLength(0);
 
     await initPublish(drafted.out, deps);
-    expect(await rig({ script: { offer_pick: "o1" } }).chatter.processConversation(conv.id)).toBe(1);
+    expect(await rig({ script: { offer_pick: "o1" } }).understudy.processConversation(conv.id)).toBe(1);
     const turn = (await turnsOf()).at(-1)!;
     expect(turn).toMatchObject({ route: "reply", outcome: "replied", offerId: null });
     expect(await db.select().from(offers).where(eq(offers.conversationId, conv.id))).toHaveLength(0);
@@ -485,7 +485,7 @@ describe("a creator made by init in the engine", () => {
     const fan = await makeFan();
     const conv = await makeConversation(creatorId, fan.id);
     await addMessage(conv.id, "fan", "hey, how are you?", { ageSeconds: 5 });
-    expect(await rig({ script: { offer_pick: "o1", pitch_fit: YES } }).chatter.processConversation(conv.id)).toBe(1);
+    expect(await rig({ script: { offer_pick: "o1", pitch_fit: YES } }).understudy.processConversation(conv.id)).toBe(1);
     const [offer] = await db.select().from(offers).where(eq(offers.conversationId, conv.id));
     expect(offer).toMatchObject({ itemId: item.id, priceCents: 1500 });
   });

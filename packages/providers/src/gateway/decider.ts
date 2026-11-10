@@ -6,9 +6,9 @@
  * is `http_400` here and sends the chain to the next decider). The request carries the creator's own gateway key. Any
  * failure is `DeciderUnavailable(<short code>)`: never a body, because a body can echo fan text.
  */
-import { DeciderUnavailable, type Decider, type DeciderContext, type DeciderResult, type Question } from "@understudy/engine";
-import { count, GatewayHttpError, postChat, type ChatUsage } from "./http";
-import { resolveKey, type GatewayKeyResolver } from "./keys";
+import { DeciderUnavailable, type Decider, type DeciderContext, type DeciderResult, type Question } from "@jadd0/understudy-engine";
+import { count, GatewayHttpError, postChat, type ChatUsage } from "./http.js";
+import { resolveKey, type GatewayKeyResolver } from "./keys.js";
 import {
   CHOICE_SYSTEM,
   CHOICE_TOOL,
@@ -17,7 +17,7 @@ import {
   choiceMaxTokens,
   choicePrompt,
   parseChoiceAnswers,
-} from "../shared/choice-tool";
+} from "../shared/choice-tool.js";
 
 export interface GatewayDeciderOptions {
   /** The gateway's origin, without `/v1`. */

@@ -5,7 +5,7 @@ The prompts the engine sends are quoted under "Engine prompts", the config rows 
 
 ## The turn
 
-`sendFanMessage` checks who may send, hands the message to the engine's `handleMessage` (the chatter `createChatter` built over the app's database, `config` table and host port), and schedules the `process` step it returns with `after()`, which runs `processConversation(conversationId)`. The
+`sendFanMessage` checks who may send, hands the message to the engine's `handleMessage` (the understudy `createUnderstudy` built over the app's database, `config` table and host port), and schedules the `process` step it returns with `after()`, which runs `processConversation(conversationId)`. The
 per-minute sweep (`/api/cron/sweep`) calls the same function for anything left behind: it takes conversations by the
 age of their oldest unanswered fan message, oldest first (at most ten), and stops starting new ones once 35 s of the
 function's 60 s have passed (`SWEEP_START_BUDGET_MS`). `processConversation` runs `runTurn` until nothing unanswered is
@@ -87,7 +87,7 @@ One turn (`packages/engine/src/turn/run.ts`):
 
 `examples/server` runs the same engine headless: `ServerHost` (no wallet: a fixed cap, nothing owned) behind `HostPort`,
 an in-process `Events` bus that waits each bubble's `deliverInMs` and then writes it to open server-sent streams and
-the signed webhook, and Fastify routes over `Chatter` (`handleMessage`, `takeOver`, `humanReply`, `handBack`). Takeover
+the signed webhook, and Fastify routes over `Understudy` (`handleMessage`, `takeOver`, `humanReply`, `handBack`). Takeover
 and the human reply live in the engine, so the app and the server share one permission rule: a creator actor holds only
 her own chats that are not on the Trust & Safety side; a T&S actor holds any. Diagram: `docs/server/server.html`.
 

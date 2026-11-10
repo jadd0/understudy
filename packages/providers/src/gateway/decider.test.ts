@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { DeciderUnavailable, type Question } from "@understudy/engine";
-import { GatewayDecider } from "./decider";
-import { envKeyResolver, type GatewayKeyResolver } from "./keys";
+import { DeciderUnavailable, type Question } from "@jadd0/understudy-engine";
+import { GatewayDecider } from "./decider.js";
+import { envKeyResolver, type GatewayKeyResolver } from "./keys.js";
 
 const BASE = "http://gateway.test";
 const QUESTIONS: Question[] = [

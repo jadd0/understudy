@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { bubbleGap, deliverOffsets, splitBubbles } from "./bubbles";
+import { bubbleGap, deliverOffsets, splitBubbles } from "./bubbles.js";
 
 describe("splitBubbles", () => {
   test("one line is one bubble; up to three lines are three; more are folded into the third", () => {

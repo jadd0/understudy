@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import type { Facts } from "../types";
+import type { EngineCtx } from "../ctx.js";
+import type { Facts } from "../types.js";
 
 /** What the database knows about the fan; whether this batch starts a new session depends on the batch and is added by the turn. */
 export type LoadedFacts = Omit<Facts, "sessionStart">;

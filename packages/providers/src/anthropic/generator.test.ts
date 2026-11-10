@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AnthropicGenerator, thinkingOff } from "./generator";
+import { AnthropicGenerator, thinkingOff } from "./generator.js";
 
 describe("AnthropicGenerator", () => {
   it("sends Bearer auth, a cached prefix, no temperature, and maps usage", async () => {

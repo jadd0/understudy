@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import type { Generator } from "@understudy/engine";
+import type { Generator } from "@jadd0/understudy-engine";
 import { deciderEntries, effectiveStrategy, gatewayWiring, generatorEntries, resetGatewayUrlWarning, type GatewayWiring } from "@/lib/host/deps";
 
 const models = { jev: "jev-1", fallback: "claude-x" };

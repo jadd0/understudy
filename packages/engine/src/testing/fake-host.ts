@@ -1,5 +1,5 @@
 // An in-memory HostPort for the engine's pure tests. Not imported by product code.
-import type { FlagReason, HostFanFacts, HostItem, HostPort, HostTx, ShortlistItem, ShortlistQuery } from "../ports/host";
+import type { FlagReason, HostFanFacts, HostItem, HostPort, HostTx, ShortlistItem, ShortlistQuery } from "../ports/host.js";
 
 export interface FakeHostOptions {
   facts?: Partial<HostFanFacts>;

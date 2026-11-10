@@ -2,10 +2,10 @@ import { eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { fanMemory, offers, personaCards } from "@/db/schema";
-import { TypeSafeDecider } from "@understudy/providers";
-import { addMessage } from "../testing/db";
-import { rig, world } from "../testing/harness";
-import { runTurn } from "./run";
+import { TypeSafeDecider } from "@jadd0/understudy-providers";
+import { addMessage } from "../testing/db.js";
+import { rig, world } from "../testing/harness.js";
+import { runTurn } from "./run.js";
 
 const CARD_SENTINEL = "ZEBRA-CARD-SENTINEL";
 const MEMORY_SENTINEL = "kayak-sentinel";

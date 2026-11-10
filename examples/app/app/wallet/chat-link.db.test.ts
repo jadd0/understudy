@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { makeCreator as makeBareCreator, makeFan } from "@/lib/conversations/test-helpers";
-import { makePersona, setEngineConfig } from "@understudy/engine/testing";
+import { makePersona, setEngineConfig } from "@jadd0/understudy-engine/testing";
 
 const session = { current: null as { user: { id: string } } | null };
 vi.mock("@/lib/auth", () => ({ auth: async () => session.current }));

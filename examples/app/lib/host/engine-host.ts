@@ -4,7 +4,7 @@ import { users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
 import { capAllows } from "@/lib/wallet/cap";
 import { isHighValue } from "@/lib/wallet/score";
-import type { HostPort, ShortlistKind, ShortlistQuery } from "@understudy/engine";
+import type { HostPort, ShortlistKind, ShortlistQuery } from "@jadd0/understudy-engine";
 
 const kindFilterOf = (kinds?: ShortlistKind[]) =>
   kinds && kinds.length > 0 ? sql`and c.kind in (${sql.join(kinds.map((k) => sql`${k}::catalogue_kind`), sql`, `)})` : sql``;

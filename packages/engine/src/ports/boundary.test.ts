@@ -55,8 +55,8 @@ describe("the engine package boundary", () => {
     let viaEntry = 0;
     for (const f of files) {
       for (const spec of specifiersOf(readFileSync(join(ROOT, f), "utf8"))) {
-        if (spec === "@understudy/engine" || spec === "@understudy/engine/testing" || spec === "@understudy/engine/schema" || spec === "@understudy/engine/fakes") viaEntry++;
-        else if (spec.startsWith("@understudy/engine/") || spec.includes("packages/engine")) offenders.push(`${f}: ${spec}`);
+        if (spec === "@jadd0/understudy-engine" || spec === "@jadd0/understudy-engine/testing" || spec === "@jadd0/understudy-engine/schema" || spec === "@jadd0/understudy-engine/fakes") viaEntry++;
+        else if (spec.startsWith("@jadd0/understudy-engine/") || spec.includes("packages/engine")) offenders.push(`${f}: ${spec}`);
         else if (spec.startsWith(".") && relative(ROOT, join(ROOT, f, "..", spec)).startsWith("packages/engine")) offenders.push(`${f}: ${spec}`);
       }
     }

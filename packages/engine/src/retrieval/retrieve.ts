@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { EngineDb } from "../ports/db";
+import type { EngineDb } from "../ports/db.js";
 
 export type Hit = { chunkId: string; text: string; score: number };
 export type RetrieveDeps = {

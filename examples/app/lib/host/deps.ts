@@ -13,11 +13,11 @@ import {
   PersonaRetriever,
   TypeSafeDecider,
   withModel,
-} from "@understudy/providers";
+} from "@jadd0/understudy-providers";
 import { defaultEvents } from "@/providers/pusher/events";
 import { dbConfigPort, getConfig } from "@/lib/config";
-import { createChatter, systemClock, type Chatter, type Decider, type Deps, type Events, type Generator } from "@understudy/engine";
-import type { GatewayKeyResolver, RetrievalStrategy } from "@understudy/providers";
+import { createUnderstudy, systemClock, type Understudy, type Decider, type Deps, type Events, type Generator } from "@jadd0/understudy-engine";
+import type { GatewayKeyResolver, RetrievalStrategy } from "@jadd0/understudy-providers";
 
 type KeySource = Record<string, string | undefined>;
 
@@ -131,13 +131,13 @@ export async function defaultDeps(): Promise<Deps> {
 }
 
 /** The engine over the app's database, settings and host tables, driving the given providers. */
-export function chatterFor(deps: Deps): Chatter {
-  return createChatter({ db, config: dbConfigPort, host: dbHost, deps });
+export function understudyFor(deps: Deps): Understudy {
+  return createUnderstudy({ db, config: dbConfigPort, host: dbHost, deps });
 }
 
 /**
- * The providers of `defaultDeps`, resolved on first use. Storing a message needs no provider and no setting, so a
- * chatter built only to store never reads the model rows; one that answers reads them once, fresh for that send.
+ * The providers of `defaultDeps`, resolved on first use. Storing a message needs no provider and no setting, so an
+ * understudy built only to store never reads the model rows; one that answers reads them once, fresh for that send.
  */
 function lazyDeps(): Deps {
   let resolved: Promise<Deps> | undefined;
@@ -152,13 +152,13 @@ function lazyDeps(): Deps {
 }
 
 /** The production engine. Built on every call, so a changed model row applies to the next send. */
-export async function chatter(): Promise<Chatter> {
-  return chatterFor(lazyDeps());
+export async function understudy(): Promise<Understudy> {
+  return understudyFor(lazyDeps());
 }
 
 /** The engine for a caller that only stores or flips state, reporting to the events it is handed instead of Pusher. */
-export function chatterWithEvents(events: Events): Chatter {
-  return chatterFor({ ...lazyDeps(), events });
+export function understudyWithEvents(events: Events): Understudy {
+  return understudyFor({ ...lazyDeps(), events });
 }
 
 type Failover = Pick<Deps, "decider" | "generator">;

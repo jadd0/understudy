@@ -2,9 +2,9 @@ import { asc, eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { messages, personaCards, turns } from "@/db/schema";
-import { runTurn } from "./run";
-import { seededRandom } from "../testing/rng";
-import { isMemoryCall, rig, world } from "../testing/harness";
+import { runTurn } from "./run.js";
+import { seededRandom } from "../testing/rng.js";
+import { isMemoryCall, rig, world } from "../testing/harness.js";
 
 const RATES = { n: 100, pet: "biscuit", signoff_x: 0, mate: 0, babe: 0, pet_name: 0, emoji: 0, concrete_fact: 0.1 };
 

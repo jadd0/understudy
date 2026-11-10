@@ -1,20 +1,40 @@
 {
-  "name": "@understudy/providers",
+  "name": "@jadd0/understudy-providers",
   "version": "0.1.0",
   "description": "The adapters behind the engine's ports: Claude, Jev, failover, Postgres full-text and Voyage retrieval, and a no-op event sink.",
   "type": "module",
-  "private": true,
   "license": "MIT",
-  "exports": {
-    ".": "./src/index.ts"
+  "engines": {
+    "node": ">=22"
   },
-  "types": "./src/index.ts",
-  "files": ["src", "README.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jadd0/understudy.git",
+    "directory": "packages/providers"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0"
   },
   "peerDependencies": {
-    "@understudy/engine": "*",
-    "drizzle-orm": "*"
+    "@jadd0/understudy-engine": "^0.1.0",
+    "drizzle-orm": "^0.45.4"
   }
 }

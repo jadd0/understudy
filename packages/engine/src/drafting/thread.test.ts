@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { claudeHistory, gapLabel, gapMarker, isSessionStart, jevLines, lastRounds, sessionGapMs, threadBlock, PAID_LINE, type ChatMessage } from "./thread";
+import { claudeHistory, gapLabel, gapMarker, isSessionStart, jevLines, lastRounds, sessionGapMs, threadBlock, PAID_LINE, type ChatMessage } from "./thread.js";
 
 const T0 = Date.UTC(2026, 10, 3, 12, 0, 0);
 const min = (n: number) => T0 + n * 60_000;

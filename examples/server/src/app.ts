@@ -1,11 +1,11 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import Fastify, { type FastifyInstance } from "fastify";
-import { MessageRefused, TakeoverRefused, type Chatter, type HumanActor } from "@understudy/engine";
+import { MessageRefused, TakeoverRefused, type Understudy, type HumanActor } from "@jadd0/understudy-engine";
 import type { Bus } from "./bus";
 import type { ServerStore } from "./host";
 
 export interface ServerOptions {
-  chatter: Chatter;
+  understudy: Understudy;
   /** The one key every route but `/health` needs, sent as `authorization: Bearer <key>`. */
   apiKey: string;
   bus: Bus;
@@ -87,7 +87,7 @@ export function buildServer(opts: ServerOptions): FastifyInstance {
       if (await opts.store.isFlagged(m.fanId)) return reply.code(403).send({ code: "restricted" });
       let handled;
       try {
-        handled = await opts.chatter.handleMessage(m);
+        handled = await opts.understudy.handleMessage(m);
       } catch (e) {
         if (e instanceof MessageRefused) return reply.code(422).send({ code: e.code });
         throw e;
@@ -147,7 +147,7 @@ export function buildServer(opts: ServerOptions): FastifyInstance {
       const actor = actorOf(req.body);
       if (!actor) return reply.code(400).send({ code: "creator_id_required" });
       try {
-        await opts.chatter.takeOver(req.params.id, actor);
+        await opts.understudy.takeOver(req.params.id, actor);
       } catch (e) {
         return refusal(e, reply);
       }
@@ -163,7 +163,7 @@ export function buildServer(opts: ServerOptions): FastifyInstance {
       const actor = actorOf(req.body);
       if (!actor) return reply.code(400).send({ code: "creator_id_required" });
       try {
-        const messageId = await opts.chatter.humanReply(req.params.id, actor, req.body.body, { clientMsgId: req.body.clientMsgId ?? null });
+        const messageId = await opts.understudy.humanReply(req.params.id, actor, req.body.body, { clientMsgId: req.body.clientMsgId ?? null });
         return reply.code(201).send({ messageId });
       } catch (e) {
         if (e instanceof RangeError) return reply.code(422).send({ code: "bad_body" });
@@ -177,7 +177,7 @@ export function buildServer(opts: ServerOptions): FastifyInstance {
     { schema: { params: { type: "object", properties: { id: uuid } } } },
     async (req, reply) => {
       if ((await opts.store.modeOf(req.params.id)) === null) return reply.code(404).send({ code: "not_found" });
-      await opts.chatter.handBack(req.params.id);
+      await opts.understudy.handBack(req.params.id);
       await announceMode(req.params.id);
       return reply.code(204).send();
     },

@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import type { EngineTx } from "../ports/db";
-import { answerOf, DeciderUnavailable, type Decider, type DeciderState } from "../ports/decider";
-import type { HostPort, ShortlistItem } from "../ports/host";
-import { offerPickQuestion } from "../routing/questions";
+import type { EngineCtx } from "../ctx.js";
+import type { EngineTx } from "../ports/db.js";
+import { answerOf, DeciderUnavailable, type Decider, type DeciderState } from "../ports/decider.js";
+import type { HostPort, ShortlistItem } from "../ports/host.js";
+import { offerPickQuestion } from "../routing/questions.js";
 
 export type { ShortlistItem };
 
