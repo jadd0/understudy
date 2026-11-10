@@ -17,9 +17,12 @@ const alive = (pid: number) => {
   }
 };
 const until = async (cond: () => boolean, what: string) => {
-  for (let i = 0; i < 100 && !cond(); i++) await new Promise((r) => setTimeout(r, 50));
+  for (let i = 0; i < 60 && !cond(); i++) await new Promise((r) => setTimeout(r, 50));
   if (!cond()) throw new Error(`timed out waiting for ${what}`);
 };
+
+/** Fails unless the supervisor is gone well inside its 5 s grace for a child that ignores SIGTERM. */
+const promptly = <T>(p: Promise<T>) => Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("the supervisor did not exit promptly")), 3000))]);
 
 /** Runs `supervise` in its own process over a sleeper (which records its pid) and a second command. */
 function drive(name: string, second: string[]) {
@@ -47,16 +50,16 @@ describe("supervise", () => {
     const children = run.pids();
     expect(children.every(alive)).toBe(true);
     run.proc.kill("SIGTERM");
-    expect(await run.exited).toBe(143);
+    expect(await promptly(run.exited)).toBe(143);
     await until(() => children.every((pid) => !alive(pid)), "the children to exit");
   });
 
   test("one child exiting non-zero stops the others and is the exit code", async () => {
-    const run = drive("exit", ["-e", `setTimeout(() => process.exit(3), 2000)`]);
+    const run = drive("exit", ["-e", `setTimeout(() => process.exit(3), 1500)`]);
     await until(() => run.pids().length === 1, "the sleeper to start");
     const [sleeper] = run.pids();
     expect(alive(sleeper)).toBe(true);
-    expect(await run.exited).toBe(3);
+    expect(await promptly(run.exited)).toBe(3);
     await until(() => !alive(sleeper), "the sleeper to exit");
   });
 });
