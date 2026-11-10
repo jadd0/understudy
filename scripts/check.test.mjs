@@ -23,6 +23,7 @@ test("check.sh runs these steps in this order and stops at the first failure", (
     "db-up",
     "test",
     "build",
+    "packages",
     "persona",
     "env",
     "public",
@@ -41,8 +42,8 @@ test("check.sh needs no private file and no gate machinery", () => {
   }
 });
 
-test("the leak step requires both private inputs", () => {
-  assert.match(script, /^step leak npm run --silent persona:leak -- --require$/m);
+test("the leak step is the gate's: it skips an unset private input, and does not pass --require", () => {
+  assert.match(script, /^step leak npm run --silent persona:leak$/m);
 });
 
 // The private steps file is the gate's definition; every gate step must exist here too, so a check added to the

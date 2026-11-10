@@ -54,7 +54,7 @@ Three checks hold the line, and the gate runs all of them:
   request number a stranger could not follow, and a **link check** fails on any relative link that does not resolve.
 
 A check that cannot run because its input is missing used to pass. It now fails when asked to require its inputs, and
-`npm run check` asks. Nothing is proven by a scan of an empty directory.
+the maintainers ask. Nothing is proven by a scan of an empty directory.
 
 ## From app to library
 

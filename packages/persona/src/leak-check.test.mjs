@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { expandHome, leakCheck, loadNames, main, nameCheck } from "./leak-check.mjs";
+import { expandHome, leakCheck, loadNames, main, maskNames, nameCheck } from "./leak-check.mjs";
 
 const RAW = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "raw");
 
@@ -173,9 +173,10 @@ test("a name hit exits 1 and prints file:line and a length, never the term", () 
   const out = run({ LEAK_CHECK_NAMES: namesFile(TERMS) }, dir);
   assert.equal(out.code, 1);
   assert.ok(out.lines.includes("docs/a.md:2 (15 chars)"), out.lines.join("\n"));
-  assert.ok(out.lines.includes("docs/zorbleton.md (path, 9 chars)"), out.lines.join("\n"));
+  assert.ok(out.lines.includes("docs/*********.md (path, 9 chars)"), out.lines.join("\n"));
   assert.equal(out.lines.at(-1), "names: 2 hits");
-  assert.ok(!/zorbleton|quillan|fenwick/i.test(out.lines.filter((l) => !l.includes("docs/zorbleton.md")).join("\n")));
+  assert.ok(!/zorbleton|quillan|fenwick/i.test(out.lines.join("\n")), "a printed line holds a term");
+  assert.equal(maskNames("a/Quillan-Fenwick/zorbleton.md", ["Zorbleton", "Quillan Fenwick"]), "a/***************/*********.md");
 });
 
 test("the names check runs with no raw directory, and a clean tree passes", () => {

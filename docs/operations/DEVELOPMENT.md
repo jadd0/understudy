@@ -67,7 +67,8 @@ Add a check as a new line in the gate-steps file, never by editing `gate.sh`.
 
 The steps file is private to the maintainers. Without it, `npm run check` ([check.sh](../../scripts/check.sh)) runs the
 same checks in the same order from the public tree, with no lock, stamp or logs, and stops at the first failure. Its
-leak step needs `LEAK_CHECK_RAW` and `LEAK_CHECK_NAMES` and fails without them.
+leak step reads `LEAK_CHECK_RAW` and `LEAK_CHECK_NAMES` and skips what an unset one would check;
+`npm run persona:leak -- --require` fails instead.
 
 ## Worktrees
 

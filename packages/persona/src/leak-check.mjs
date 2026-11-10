@@ -10,7 +10,7 @@
 // appear in a public file; `#` starts a comment, terms under 3 characters are ignored, a leading ~/ is the home
 // directory). The tree's file contents and paths are matched against it, case-insensitively and on word
 // boundaries, with a space or hyphen inside a term optional. A hit prints file:line and the matched text's length,
-// never the term. Both checks need their variable to run unless --require is given: then an unset or empty input
+// never the term (a path that holds one is printed with the match starred out). Both checks need their variable to run unless --require is given: then an unset or empty input
 // (no raw directory, no names file, no terms, no shingles) exits 2 instead of passing.
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -131,6 +131,12 @@ export function nameRegex(terms) {
   return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alt.join("|")})(?![\\p{L}\\p{N}])`, "iu");
 }
 
+/** `text` with every match of a term replaced by asterisks of the same length, so a path can be printed safely. */
+export function maskNames(text, terms) {
+  const re = nameRegex(terms);
+  return text.replace(new RegExp(re.source, "giu"), (m) => "*".repeat(m.length));
+}
+
 /** The files to scan for names: the tracked files when `tree` is a git checkout, else a walk. Never `.env*`. */
 function namedFiles(tree) {
   const files = existsSync(join(tree, ".git"))
@@ -209,7 +215,7 @@ export function main(env, tree, summary, out = console.log, home = homedir(), { 
   } else {
     const r = nameCheck(terms, tree);
     for (const [f, hits] of [...r.perFile].sort((a, b) => b[1].length - a[1].length)) {
-      for (const h of hits.slice(0, 5)) out(h.line === 0 ? `${f} (path, ${h.length} chars)` : `${f}:${h.line} (${h.length} chars)`);
+      for (const h of hits.slice(0, 5)) out(h.line === 0 ? `${maskNames(f, terms)} (path, ${h.length} chars)` : `${f}:${h.line} (${h.length} chars)`);
     }
     out(`names: ${r.hits} hits`);
     if (r.hits > 0 && code === 0) code = 1;

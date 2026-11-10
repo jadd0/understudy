@@ -32,7 +32,7 @@ that proxy; any other host is taken to be a Neon database.
 Claude is the only key.
 
 ```bash
-CLAUDE_SECRET_KEY=<your Anthropic key> DATABASE_URL=postgres://postgres:postgres@localhost:5437/understudy npm run server:demo
+CLAUDE_SECRET_KEY=<key> DATABASE_URL=postgres://postgres:postgres@localhost:5437/understudy npm run server:demo
 ```
 
 **C. The app.** The Next.js app (fan chat, creator console, admin, wallet) runs on a Neon database; its pooled
@@ -174,15 +174,17 @@ npm run check
 
 `npm run check` runs typecheck, lint, the test suite against a throwaway local database, the build, the persona and
 environment checks, the public-file and link checks, the Dockerfile checks, this README's own commands and the leak
-check. It stops at the first failure and needs no private files, except that the leak check needs two:
+check. It stops at the first failure and needs no private files. The leak check is the one step that reads two of
+them, and skips what an unset one would check, saying so:
 
 - `LEAK_CHECK_RAW` names a private directory holding a raw scrape of a real account. No sentence of it, and no handle
   in it, may appear in any tracked file.
 - `LEAK_CHECK_NAMES` names a private text file of names (a company, a creator) that no tracked file or path may
   contain, one per line.
 
-Both go in `examples/app/.env.local` (see `examples/app/.env.example`). A check that cannot run because its input is
-missing fails; it never passes on nothing. The leak check prints a file and line for a hit, never the text.
+Both go in `examples/app/.env.local` (see `examples/app/.env.example`). `npm run persona:leak -- --require` is the
+strict form: it exits 2 when either is unset or empty, or when the raw directory holds no text, so a check that cannot
+run never passes on nothing. The leak check prints a file and line for a hit, never the text.
 [DEVELOPMENT.md](docs/operations/DEVELOPMENT.md) has the rest.
 
 ## Docs
