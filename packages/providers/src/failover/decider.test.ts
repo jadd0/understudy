@@ -65,4 +65,23 @@ describe("FailoverDecider", () => {
     await expect(d.ask(Q, { state: {} })).rejects.toBeInstanceOf(TypeError);
     expect(b.calls).toBe(0);
   });
+
+  it("not_configured_skips_without_opening_the_breaker", async () => {
+    const a = fake(() => new DeciderUnavailable("not_configured"));
+    const b = fake(() => OK("b"));
+    const { d, lines } = build([["gateway", a], ["claude", b]]);
+    // The breaker opens at 2 failures: five calls that each skip the entry still reach it every time.
+    for (let i = 0; i < 5; i++) expect((await d.ask(Q, { state: {} })).model).toBe("b");
+    expect([a.calls, b.calls]).toEqual([5, 5]);
+    expect(lines).toHaveLength(5);
+    expect(lines[0]).toBe("provider: gateway unavailable (not_configured), using claude");
+  });
+
+  it("passes the creator id to the decider it calls", async () => {
+    const seen: (string | undefined)[] = [];
+    const a: Decider = { ask: async (_q, context) => (seen.push(context.creatorId), OK("a")) };
+    const { d } = build([["jev", a]]);
+    await d.ask(Q, { state: {}, creatorId: "creator-1" });
+    expect(seen).toEqual(["creator-1"]);
+  });
 });

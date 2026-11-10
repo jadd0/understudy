@@ -1,6 +1,6 @@
 /**
  * Ordered failover over generators, the same shape as `FailoverDecider`: a breaker per generator, an open one is
- * skipped, `GeneratorError` is the outage, anything else propagates, and all-failed rethrows the last error.
+ * skipped, `GeneratorError` is the outage (`not_configured` skips the entry without counting a failure), anything else propagates, and all-failed rethrows the last error.
  */
 import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@understudy/engine";
 import { Breaker, type BreakerOptions } from "./breaker";
@@ -35,7 +35,9 @@ export class FailoverGenerator implements Generator {
           breaker.release();
           throw e;
         }
-        breaker.failure();
+        // No key for this creator says nothing about the provider's health: skip it without counting a failure.
+        if (e.code === "not_configured") breaker.release();
+        else breaker.failure();
         last = e;
         const next = this.list[i + 1]?.name ?? "nothing";
         this.log(`provider: ${this.list[i].name} unavailable (${e.code}), using ${next}`);

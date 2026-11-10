@@ -73,4 +73,29 @@ describe("FailoverGenerator", () => {
     await expect(g.generate(INPUT)).rejects.toBeInstanceOf(RangeError);
     expect(b.calls).toBe(0);
   });
+
+  it("not_configured_skips_without_opening_the_breaker", async () => {
+    const a = fake(() => new GeneratorError("not_configured"));
+    const b = fake(() => OK("b"));
+    const { g, lines } = build([["gateway", a], ["claude", b]]);
+    // The breaker opens at 2 failures: five calls that each skip the entry still reach it every time.
+    for (let i = 0; i < 5; i++) expect((await g.generate(INPUT)).text).toBe("b");
+    expect([a.calls, b.calls]).toEqual([5, 5]);
+    expect(lines).toHaveLength(5);
+    expect(lines[0]).toBe("provider: gateway unavailable (not_configured), using claude");
+  });
+
+  it("every entry without a key rethrows not_configured", async () => {
+    const a = fake(() => new GeneratorError("not_configured"));
+    const b = fake(() => new GeneratorError("not_configured"));
+    const { g } = build([["gateway", a], ["claude", b]]);
+    await expect(g.generate(INPUT)).rejects.toMatchObject({ code: "not_configured" });
+  });
+
+  it("withModel keeps the creator id", async () => {
+    const seen: (string | undefined)[] = [];
+    const inner: Generator = { generate: async (i) => (seen.push(i.creatorId), OK("x")) };
+    await withModel(inner, "m2").generate({ ...INPUT, creatorId: "creator-1" });
+    expect(seen).toEqual(["creator-1"]);
+  });
 });
