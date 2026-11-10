@@ -4,8 +4,11 @@ import {
   AnthropicGenerator,
   ClaudeDecider,
   embed,
+  envKeyResolver,
   FailoverDecider,
   FailoverGenerator,
+  GatewayDecider,
+  GatewayGenerator,
   parseStrategy,
   PersonaRetriever,
   TypeSafeDecider,
@@ -13,8 +16,8 @@ import {
 } from "@understudy/providers";
 import { defaultEvents } from "@/providers/pusher/events";
 import { dbConfigPort, getConfig } from "@/lib/config";
-import { createChatter, systemClock, type Chatter, type Decider, type Deps, type Events } from "@understudy/engine";
-import type { RetrievalStrategy } from "@understudy/providers";
+import { createChatter, systemClock, type Chatter, type Decider, type Deps, type Events, type Generator } from "@understudy/engine";
+import type { GatewayKeyResolver, RetrievalStrategy } from "@understudy/providers";
 
 type KeySource = Record<string, string | undefined>;
 
@@ -23,13 +26,34 @@ export function effectiveStrategy(configured: RetrievalStrategy, source: KeySour
   return source.VOYAGE_API_KEY ? configured : "fts";
 }
 
-/** The decider chain in order: Jev first only when its key is set, Claude always. */
+/**
+ * The llm-gateway path, present only when a switch is on and `GATEWAY_URL` is set. Each switch is its own: the
+ * gateway can carry the drafts without carrying the decisions, and the other way round.
+ */
+export interface GatewayWiring {
+  readonly baseUrl: string;
+  readonly keyFor: GatewayKeyResolver;
+  readonly timeoutMs: number;
+  readonly generate: boolean;
+  readonly decide: boolean;
+  /** A model on an OpenAI-format upstream: the gateway refuses tools for the others. */
+  readonly decideModel: string;
+}
+
+/** The decider chain in order: the gateway first when it is on, Jev when its key is set, Claude always. */
 export function deciderEntries(
   source: KeySource,
   models: { jev: string; fallback: string },
+  gateway: GatewayWiring | null = null,
 ): { name: string; decider: Decider }[] {
   const claudeToken = source.CLAUDE_SECRET_KEY ?? "";
   const entries: { name: string; decider: Decider }[] = [];
+  if (gateway?.decide) {
+    entries.push({
+      name: "gateway",
+      decider: new GatewayDecider({ baseUrl: gateway.baseUrl, keyFor: gateway.keyFor, model: gateway.decideModel, timeoutMs: gateway.timeoutMs }),
+    });
+  }
   if (source.TYPESAFE_SECRET_KEY) {
     entries.push({
       name: "jev",
@@ -38,6 +62,53 @@ export function deciderEntries(
   }
   entries.push({ name: "claude", decider: new ClaudeDecider({ authToken: claudeToken, model: models.fallback, timeoutMs: 20_000 }) });
   return entries;
+}
+
+/** The generator chain in order: the gateway first when it is on, then Claude, then Claude on its fallback model. */
+export function generatorEntries(
+  claude: Generator,
+  fallbackModel: string,
+  gateway: GatewayWiring | null = null,
+): { name: string; generator: Generator }[] {
+  const entries: { name: string; generator: Generator }[] = [];
+  if (gateway?.generate) {
+    entries.push({ name: "gateway", generator: new GatewayGenerator({ baseUrl: gateway.baseUrl, keyFor: gateway.keyFor, timeoutMs: gateway.timeoutMs }) });
+  }
+  entries.push({ name: "claude", generator: claude }, { name: "claude-fallback", generator: withModel(claude, fallbackModel) });
+  return entries;
+}
+
+let warnedNoUrl = false;
+
+/** Lets a test see the warning again; the flag otherwise lasts the process. */
+export function resetGatewayUrlWarning(): void {
+  warnedNoUrl = false;
+}
+
+/**
+ * The gateway switches are platform rows, read without a creator id so a creator's row cannot turn them on. A switch
+ * on with no `GATEWAY_URL` is off, with one warning per process (this runs on every send): the chains stay what they were.
+ */
+export async function gatewayWiring(source: KeySource, read: <T>(key: string) => Promise<T> = getConfig): Promise<GatewayWiring | null> {
+  const generate = (await read<boolean>("gateway.generate.enabled")) === true;
+  const decide = (await read<boolean>("gateway.decide.enabled")) === true;
+  if (!generate && !decide) return null;
+  const baseUrl = source.GATEWAY_URL?.trim();
+  if (!baseUrl) {
+    if (!warnedNoUrl) {
+      warnedNoUrl = true;
+      console.warn("gateway: switched on but GATEWAY_URL is not set, using the direct providers");
+    }
+    return null;
+  }
+  return {
+    baseUrl,
+    keyFor: envKeyResolver(dbConfigPort, source),
+    timeoutMs: await read<number>("gateway.timeout_ms"),
+    generate,
+    decide,
+    decideModel: await read<string>("gateway.decide_model"),
+  };
 }
 
 /**
@@ -107,19 +178,23 @@ async function failover(model: string): Promise<Failover> {
     cooldownMs: await getConfig<number>("breaker.cooldown_ms"),
     clock: systemClock,
   };
-  const key = JSON.stringify([Boolean(process.env.TYPESAFE_SECRET_KEY), model, decideFallbackModel, generateFallbackModel, breaker.failures, breaker.windowMs, breaker.cooldownMs]);
+  const gateway = await gatewayWiring(process.env);
+  const key = JSON.stringify([
+    Boolean(process.env.TYPESAFE_SECRET_KEY),
+    model,
+    decideFallbackModel,
+    generateFallbackModel,
+    breaker.failures,
+    breaker.windowMs,
+    breaker.cooldownMs,
+    gateway && [gateway.baseUrl, gateway.timeoutMs, gateway.generate, gateway.decide, gateway.decideModel],
+  ]);
   if (shared?.key === key) return shared.value;
   const claudeToken = process.env.CLAUDE_SECRET_KEY ?? "";
   const claude = new AnthropicGenerator({ authToken: claudeToken, timeoutMs: 30_000, maxRetries: 1 });
   const value: Failover = {
-    decider: new FailoverDecider(deciderEntries(process.env, { jev: model, fallback: decideFallbackModel }), breaker),
-    generator: new FailoverGenerator(
-      [
-        { name: "claude", generator: claude },
-        { name: "claude-fallback", generator: withModel(claude, generateFallbackModel) },
-      ],
-      breaker,
-    ),
+    decider: new FailoverDecider(deciderEntries(process.env, { jev: model, fallback: decideFallbackModel }, gateway), breaker),
+    generator: new FailoverGenerator(generatorEntries(claude, generateFallbackModel, gateway), breaker),
   };
   shared = { key, value };
   return value;

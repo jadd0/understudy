@@ -39,6 +39,7 @@ export async function draftFiller(s: TurnState, b: Batch, route: Route, thread: 
       messages: built.messages,
       maxTokens: cfg.maxTokens,
       model: cfg.generateModel,
+      creatorId: s.lease.creatorId,
     });
     acc.msGen = (acc.msGen ?? 0) + (clock.now() - t0);
     s.addCost("generate", cfg.prices[cfg.generateModel], gen.usage);
@@ -55,6 +56,7 @@ export async function draftFiller(s: TurnState, b: Batch, route: Route, thread: 
         stopReason: gen.stopReason,
         paid: b.facts.hasUnlocked,
         boundary,
+        creatorId: s.lease.creatorId,
       },
       () => clock.now(),
     );

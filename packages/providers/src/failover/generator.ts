@@ -1,9 +1,9 @@
 /**
  * Ordered failover over generators, the same shape as `FailoverDecider`: a breaker per generator, an open one is
- * skipped, `GeneratorError` is the outage, anything else propagates, and all-failed rethrows the last error.
+ * skipped, `GeneratorError` is the outage (`not_configured`, `gateway_budget` and `gateway_rate_limited` skip the entry without counting a failure), anything else propagates, and all-failed rethrows the last error.
  */
 import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@understudy/engine";
-import { Breaker, type BreakerOptions } from "./breaker";
+import { Breaker, PER_CREATOR_CODES, type BreakerOptions } from "./breaker";
 
 export interface NamedGenerator {
   readonly name: string;
@@ -35,7 +35,10 @@ export class FailoverGenerator implements Generator {
           breaker.release();
           throw e;
         }
-        breaker.failure();
+        // No key, a spent gateway budget (402) or a gateway rate limit (429) belong to one creator, not to the provider: skip the
+        // entry without counting a failure, so one creator cannot open the breaker every creator shares.
+        if (PER_CREATOR_CODES.has(e.code)) breaker.release();
+        else breaker.failure();
         last = e;
         const next = this.list[i + 1]?.name ?? "nothing";
         this.log(`provider: ${this.list[i].name} unavailable (${e.code}), using ${next}`);

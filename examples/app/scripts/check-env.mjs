@@ -3,7 +3,8 @@
 // file defaults to the app's own .env.local (examples/app/.env.local). --production also requires every key the deployed app needs at runtime
 // (the schema leaves provider keys optional so local work does not need them) and an https AUTH_URL.
 // It also names any safety check switched off in the server config or the app seed (or --safety-config), as information only.
-// It also prints what is on and, for each optional service that is off, what the app does without it.
+// It also prints what is on and, for each optional service that is off, what the app does without it, and one gateway
+// line: the switches are config rows, so it reads them from the seed and the server config (a database row can differ).
 // Exit 0 when nothing is wrong, 1 otherwise. A value is never printed, only the key name and the rule it broke.
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
@@ -134,8 +135,22 @@ export function scanDisabledSafety(files) {
   return found;
 }
 
+/** Which gateway switches a config text turns on, by explicit `true`: `generate`, `decide`. Pure over `text`. */
+export function enabledGatewaySwitches(text) {
+  return [...text.matchAll(/"gateway\.(generate|decide)\.enabled"\s*:\s*true\b/g)].map((m) => m[1]);
+}
+
+/** One line on the llm-gateway: off, on for which calls, or switched on with nothing to send to. Names only. */
+export function gatewayLine(values, switches) {
+  const on = [...new Set(switches)].sort((a, b) => (a === "generate" ? -1 : b === "generate" ? 1 : 0));
+  const url = Boolean(values.GATEWAY_URL);
+  if (on.length === 0) return `gateway: off${url ? " (GATEWAY_URL is set, both switches are false in the seed and server config)" : ""}`;
+  if (!url) return `gateway: switched on for ${on.join(", ")} in the config but GATEWAY_URL is not set: calls go to Claude and Jev directly`;
+  return `gateway: on for ${on.join(", ")}${values.GATEWAY_KEY ? "" : " (GATEWAY_KEY is not set: only creators with their own gateway.key_env have a key)"}`;
+}
+
 /** The status table: each required key ok / missing / malformed, then each optional service on or off with its fallback. Names only. */
-export async function statusLines(values, problems) {
+export async function statusLines(values, problems, switches = []) {
   const { providerStatus } = await import(`../lib/env/index.ts?table=${loads++}`);
   const lines = ["required:"];
   for (const key of REQUIRED) {
@@ -147,6 +162,7 @@ export async function statusLines(values, problems) {
   for (const s of providerStatus(values)) {
     lines.push(`  ${s.name.padEnd(34)} ${s.on ? "on" : `off - without it: ${s.fallback}`}`);
   }
+  lines.push(`  ${gatewayLine(values, switches)}`);
   return lines;
 }
 
@@ -162,9 +178,16 @@ async function main(argv) {
   }
   const values = parseEnv(text);
   const problems = await checkEnv(values, { production });
-  for (const line of await statusLines(values, problems)) console.log(line);
   const override = argv.find((a) => a.startsWith("--safety-config="))?.slice("--safety-config=".length);
   const safetyFiles = override ? [override] : SAFETY_CONFIG_FILES.map((p) => fileURLToPath(new URL(p, import.meta.url)));
+  const switches = safetyFiles.flatMap((f) => {
+    try {
+      return enabledGatewaySwitches(readFileSync(f, "utf8"));
+    } catch {
+      return [];
+    }
+  });
+  for (const line of await statusLines(values, problems, switches)) console.log(line);
   for (const { file, check } of scanDisabledSafety(safetyFiles)) console.log(`check-env: safety check ${check} is disabled in ${file}`);
   if (problems.length === 0) {
     console.log(`check-env: ${file} OK${production ? " (production)" : ""}`);

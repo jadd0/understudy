@@ -10,7 +10,7 @@ export async function classifyInbound(s: TurnState, b: Batch, askFit: boolean): 
   const t0 = clock.now();
   const inboundResult = await s.ctx.deps.decider.ask(
     inboundQuestions({ offerResponse: b.openOffer !== null, pitchFit: askFit, paid: b.facts.hasUnlocked, disabled: disabledChecks(cfg.route.enabled) }),
-    { state: b.jevState },
+    { state: b.jevState, creatorId: s.lease.creatorId },
   );
   s.acc.msJevIn = (s.acc.msJevIn ?? 0) + (clock.now() - t0);
   s.addCost("jev_in", cfg.prices[cfg.jevModel], { ...inboundResult.usage });

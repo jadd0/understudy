@@ -59,6 +59,11 @@ tokens (`_per_mtok`). Times carry their unit in the name.
 | `breaker.failures` | `3` | failures inside the window that open a provider's circuit breaker | `examples/app/lib/host/deps.ts` |
 | `breaker.window_ms` | `60000` | the window those failures are counted in | `examples/app/lib/host/deps.ts` |
 | `breaker.cooldown_ms` | `30000` | how long an open breaker skips its provider before letting one call through | `examples/app/lib/host/deps.ts` |
+| `gateway.generate.enabled` | `false` | sends drafts and memory calls through llm-gateway first, Claude direct behind it; a platform row (a creator's row is ignored) | `examples/app/lib/host/deps.ts` |
+| `gateway.decide.enabled` | `false` | sends the choice questions through llm-gateway first, Jev and Claude behind it; a platform row (a creator's row is ignored) | `examples/app/lib/host/deps.ts` |
+| `gateway.decide_model` | `"gpt-5-mini"` | the model the gateway is asked for the choice questions: it must route to an OpenAI-format upstream, because the gateway refuses tools on its Anthropic and Gemini routes | `examples/app/lib/host/deps.ts` |
+| `gateway.key_env` | `"GATEWAY_KEY"` | the name of the environment variable that holds the gateway key; set it per creator to give that creator their own gateway tenant | `packages/providers/src/gateway/keys.ts` |
+| `gateway.timeout_ms` | `30000` | how long one gateway call may take before it counts as a failure and the next provider is tried | `examples/app/lib/host/deps.ts` |
 | `price.claude-haiku-5-5.input_per_mtok` | `100000` | input price, for turn cost | read as `price.<model>.*` in `packages/engine/src/config/load.ts` |
 | `price.claude-haiku-5-5.output_per_mtok` | `500000` | output price | as above |
 | `price.claude-haiku-5-5.cache_read_per_mtok` | `10000` | cache read price | as above |

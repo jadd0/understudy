@@ -16,7 +16,7 @@ export { ConfigMissing } from "./ports/config";
 export type { ConfigPort, ConfigRow } from "./ports/config";
 export type { EngineDb, EngineTx } from "./ports/db";
 export { DeciderUnavailable, TypeSafeNotConfigured } from "./ports/decider";
-export type { Answer, Decider, DeciderResult, DeciderState, Question } from "./ports/decider";
+export type { Answer, Decider, DeciderContext, DeciderResult, DeciderState, Question } from "./ports/decider";
 export type { Events } from "./ports/events";
 export { GeneratorError } from "./ports/generator";
 export type { GenerateInput, GenerateMessage, GenerateResult, GenerateUsage, Generator } from "./ports/generator";
