@@ -6,14 +6,12 @@ Needs Node 22 or newer.
 
 ## Install
 
-The package lives in this repository's npm workspace (`packages/persona`), so `npm install` at the root links it:
-
 ```sh
-npm install
+npm install @jadd0/understudy-persona
 npx understudy-persona --help
 ```
 
-It is marked private; nothing is published to npm.
+In this repository's npm workspace (`packages/persona`), `npm install` at the root links it instead.
 
 ## API
 
