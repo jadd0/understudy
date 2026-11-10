@@ -343,6 +343,31 @@ describe("ensureCreator", () => {
     expect(await creatorRows(handle)).toHaveLength(1);
   });
 
+  test("two transactions at once share one user and one creator", async () => {
+    const input = { email: newEmail(), handle: newHandle(), displayName: "Wren" };
+    let release!: () => void;
+    let ensured!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const firstDone = new Promise<void>((resolve) => (ensured = resolve));
+    const first = db.transaction(async (tx) => {
+      const made = await ensureCreator(tx, input);
+      ensured();
+      await gate;
+      return made;
+    });
+    await firstDone;
+    // The first transaction has inserted both rows and not committed: the second waits on them.
+    let secondFinished = false;
+    const second = db.transaction((tx) => ensureCreator(tx, input)).then((made) => ((secondFinished = true), made));
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(secondFinished).toBe(false);
+    release();
+    const [a, b] = await Promise.all([first, second]);
+    expect(b).toEqual(a);
+    expect(await userRows(input.email)).toHaveLength(1);
+    expect(await creatorRows(input.handle)).toHaveLength(1);
+  });
+
   test("refuses a user who is not a creator and a user who already runs another handle", async () => {
     const fan = await makeUser({ role: "fan" });
     await expect(db.transaction((tx) => ensureCreator(tx, { email: fan.email!, handle: newHandle(), displayName: "x" }))).rejects.toThrow(/fan or admin/);
