@@ -40,7 +40,10 @@ adapter you pass in (`createClaude()`, `createJev()`), so tests inject a fake.
 | `rapidEval(opts)` | Jev on the validation split: can it tell her real reply from the generated one |
 | `makeQueries(opts)` | a labelled retrieval query set |
 | `build(args)`, `STEPS` | run all of the above in order; a step whose output exists is skipped |
-| `scrape(opts)` | collect an account's posts and the owner's own replies over an injected GET-only client |
+| `scrape(opts)` | collect the session's own account, its posts and the owner's own replies, over an injected GET-only client; a different `handle` throws `NotOwnAccount` |
+| `resolveOwnHandle(client)`, `createClient(opts)` | which account a session belongs to; the GET-only transport |
+| `readInstagramExport(path)`, `exportToRaw(opts)` | read Instagram's own data download (zip or folder) and write the raw layout; direct messages are never opened; `ZipError` for archives it refuses |
+| `draftPersona(opts)`, `SECTIONS` | normalise, split, style, chunks and the card for a raw directory, with no evaluation; the card's seven sections |
 | `evalPersona(opts)` | Claude judge scores and blind test over the test split |
 | `leakCheck(rawDir, tree)` | find raw captions, replies or handles in a tree of files |
 | `createClaude(opts)`, `createJev(opts)` | the two model adapters |
@@ -61,11 +64,18 @@ Model ids are always flags; keys come from the environment (`CLAUDE_SECRET_KEY`,
 
 ## Scraping
 
-`understudy-persona scrape --handle <account>` reads an Instagram account with a logged-in session cookie
-(`IG_SESSIONID`), GET requests only, one at a time.
+`understudy-persona scrape` reads the Instagram account a logged-in session cookie (`IG_SESSIONID`) belongs to, GET
+requests only, one at a time. A `--handle` is optional and refused unless it is that account.
 
-Consent: use it only on an account you own or have written permission to collect. The output contains other people's
-comments; keep it out of version control.
+Use it only on an account you own. The output contains other people's comments; keep it out of version control.
+
+## Instagram export
+
+`readInstagramExport` and `exportToRaw` read the data download Instagram gives an account holder (JSON format, as the
+zip or its folder): the profile, her posts and reels, and the comments she wrote. Direct messages, stories and likes are
+never opened. The zip reader uses node built-ins only. A download has no fan side for her comments, so a card drafted
+from one uses her own lines in place of reply pairs. `@understudy/persona/testing` exports `fixtureFetch`,
+`fakeCardClaude` and `writeZip` for tests.
 
 ## Tests
 

@@ -175,7 +175,10 @@ export interface ScrapeCaps {
 }
 export interface ScrapeOptions {
   client: InstagramClient;
-  handle: string;
+  /** Optional; when given it must be the session's own account. */
+  handle?: string;
+  /** The session's account when the caller already resolved it with `resolveOwnHandle` on this client; not asked twice. */
+  own?: { username: string; pk: string };
   out?: string;
   caps?: ScrapeCaps;
   maxPosts?: number;
@@ -194,7 +197,7 @@ export interface ScrapeResult {
   };
   [key: string]: unknown;
 }
-/** Collects one account's posts and the owner's own replies into the raw layout. */
+/** Collects the session's own account, its posts and the owner's own replies, into the raw layout. */
 export function scrape(options: ScrapeOptions): Promise<ScrapeResult>;
 
 export interface EvalPersonaOptions {
@@ -228,3 +231,84 @@ export interface LeakReport {
 }
 /** Scans `tree` for any caption, reply or handle of the raw scrape at `rawDir`. */
 export function leakCheck(rawDir: string, tree: string): LeakReport;
+
+/** The seven markdown sections of a persona card, in order. */
+export const SECTIONS: readonly ["Identity", "Voice rules", "Examples", "Not known", "Never", "Selling voice", "AI honesty"];
+
+export interface DraftPersonaOptions {
+  /** A directory holding `raw/<handle>/`; `bank/` and `card/` are written beside it. */
+  dir: string;
+  handle: string;
+  claude: Claude;
+  cardModel: string;
+  budget?: TokenBudget;
+  seed?: string;
+}
+export interface DraftPersonaResult {
+  counts: Record<string, number>;
+  /** Exact train reply pairs found; under `MIN_PAIRS` the card is drafted from her own lines. */
+  pairs: number;
+  chunks: number;
+  /** Replies the voice-marker rates were measured on. */
+  markerTexts: number;
+  exampleIds: number;
+  warnings: string[];
+  tokens: number;
+}
+/** Reply pairs the card needs before it is drafted from pairs; fewer and it is drafted from her own lines. */
+export const MIN_PAIRS: number;
+/** What Instagram allows in a username. */
+export const HANDLE: RegExp;
+/** The committed synthetic creators. */
+export const SYNTHETIC_HANDLES: readonly string[];
+/** Normalises, splits, measures and chunks the raw records, then drafts `card/v1.md`. No evaluation, no database. */
+export function draftPersona(options: DraftPersonaOptions): Promise<DraftPersonaResult>;
+
+/** The profile, posts and comments an Instagram data download holds for its own account. */
+export interface InstagramExport {
+  profile: { username: string; name: string; biography: string; website: string };
+  posts: { shortcode: string; type: string; time: number; caption: string }[];
+  comments: { owner: string; text: string; time: number; nonText: boolean }[];
+  /** Every file whose contents were opened; direct messages never appear here. */
+  filesRead: string[];
+}
+/** Reads a data download (a zip, or the folder it unpacks to). Writes nothing. */
+export function readInstagramExport(path: string): InstagramExport;
+
+export interface ExportToRawOptions {
+  input: string;
+  /** The result of `readInstagramExport(input)`, when the caller already read it; the download is then not read again. */
+  data?: InstagramExport;
+  rawRoot: string;
+  /** When given, must be the export's own account. */
+  handle?: string;
+  now?: () => Date;
+}
+/** Writes `<rawRoot>/<username>/{posts.jsonl, profile.json, NOTES.md}` for the export's own account. */
+export function exportToRaw(options: ExportToRawOptions): {
+  dir: string;
+  username: string;
+  displayName: string;
+  counts: { posts: number; comments: number; gif: number; other_accounts: number; duplicates: number };
+  filesRead: string[];
+};
+
+/** Raised for a zip the reader refuses (zip64, encrypted, damaged, unsafe names). */
+export class ZipError extends Error {}
+/** Raised when a handle other than the session's (or the export's) own account is asked for. */
+export class NotOwnAccount extends Error {
+  /** `source` is "session" (the default) or "export", and words the message. */
+  constructor(owner: string, requested: string, source?: "session" | "export");
+  owner: string;
+  requested: string;
+}
+
+/** The account a session cookie belongs to. */
+export function resolveOwnHandle(client: InstagramClient): Promise<{ username: string; pk: string }>;
+/** The GET-only Instagram transport over an injected fetch. */
+export function createClient(options: {
+  fetch?: typeof fetch;
+  sessionId: string;
+  delayMs?: number;
+  sleep?: (ms: number) => Promise<void>;
+}): InstagramClient;

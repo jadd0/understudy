@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { leakCheck, main } from "./leak-check.mjs";
+import { expandHome, leakCheck, main } from "./leak-check.mjs";
 
 const RAW = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "raw");
 
@@ -87,4 +87,18 @@ test("the scan skips .git, node_modules, .next, .claude, package-lock.json, bina
   const visible = withRaw({ ...skipped, "docs/seen.md": leak });
   const v = leakCheck(join(visible, "private-raw"), visible);
   assert.deepEqual([...v.perFile.keys()], ["docs/seen.md"]);
+});
+
+test("a LEAK_CHECK_RAW starting with ~/ is read from the home directory, not skipped", () => {
+  const home = mkdtempSync(join(tmpdir(), "leak-home-"));
+  cpSync(RAW, join(home, ".understudy", "raw"), { recursive: true });
+  assert.equal(expandHome("~/.understudy/raw", home), join(home, ".understudy", "raw"));
+  assert.equal(expandHome("~", home), home);
+  assert.equal(expandHome("/abs/~/x", home), "/abs/~/x");
+  const dir = tree({ "src/x.ts": "// thanks to carol_fan for the idea" });
+  const lines = [];
+  const code = main({ LEAK_CHECK_RAW: "~/.understudy/raw" }, dir, false, (l) => lines.push(l), home);
+  assert.equal(code, 1);
+  assert.ok(!lines.some((l) => l.startsWith("leak: skipped")), lines.join("\n"));
+  assert.match(lines.at(-1), /^leak: files=1 hits=1 /);
 });

@@ -104,6 +104,35 @@ placeholder is not there exactly once, `EXAMPLE_IDS` has duplicates, fewer than 
 ids, or an id outside the train pairs. It warns on a cited `(src: …)` shortcode that is not in the
 bank. `v<N>.meta.json` stores the prompt's sha256, so any change to the prompt is visible.
 
+**Lines mode.** With fewer than 15 train pairs (an Instagram data download holds the comments she wrote but not the
+comments they answered, so it has none) the same user prompt is sent with two exact swaps, each of which must match once
+or the run stops. The paragraph that asks for `EXAMPLE_IDS` becomes, with `${min}` and `${max}` set to `min(15, n)` and
+`min(20, n)` for `n` lines of hers:
+
+<!-- prompt-src: packages/persona/src/draft-card.mjs -->
+```text
+After the card, on its own final line, write EXAMPLE_IDS: followed by ${min} to ${max} comma-separated line ids from the list of her lines below, chosen to show her range (greeting, thanks, flirt, banter, one-word answers, a question back). Prefer lines that are friendly or flirty and not explicit.
+```
+
+With no lines at all it is:
+
+<!-- prompt-src: packages/persona/src/draft-card.mjs -->
+```text
+After the card, on its own final line, write EXAMPLE_IDS: and nothing after it, because her lines list below is empty.
+```
+
+and the pairs header is replaced by this one, followed by one `[id] ${personaName}: <text>` line per line of hers (train and
+style-only text replies, leading `@mentions` removed, each wording once):
+
+<!-- prompt-src: packages/persona/src/draft-card.mjs -->
+```text
+=== HER LINES (her own comments; the comment each answered is not known) ===
+```
+
+The rendered Examples section is then `**${personaName}:** <text>` per chosen line; with no lines it is a single line saying
+there are no examples. The pairs prompt above is unchanged. `v<N>.meta.json` records `input.example_mode: "lines"` and
+`line_ids` in this mode only.
+
 ## 2. Writing a reply as her (Claude, rapid eval)
 
 For each of the 78 **validation** pairs (rapid eval) and each of the 50 **test** pairs (sections 6

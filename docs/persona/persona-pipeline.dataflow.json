@@ -6,7 +6,7 @@
     "quality_profile": "standard",
     "viewBox": [
       1100,
-      640
+      720
     ]
   },
   "stages": [
@@ -23,7 +23,7 @@
       "label": "Derive"
     },
     {
-      "label": "Card and eval"
+      "label": "Card, eval, publish"
     }
   ],
   "nodes": [
@@ -104,6 +104,23 @@
       "stage": 4,
       "row": 3,
       "tag": "persona.json"
+    },
+    {
+      "id": "export",
+      "type": "external",
+      "label": "Instagram export",
+      "sublabel": "her own data download",
+      "stage": 0,
+      "row": 2
+    },
+    {
+      "id": "publish",
+      "type": "database",
+      "label": "Init publish",
+      "sublabel": "creator, chunks, card",
+      "stage": 4,
+      "row": 4,
+      "tag": "edited card"
     }
   ],
   "flows": [
@@ -167,6 +184,44 @@
       "to": "persona-eval",
       "label": "test pairs only",
       "variant": "security",
+      "route": "bottom-channel"
+    },
+    {
+      "id": "f-export",
+      "from": "export",
+      "to": "normalise",
+      "label": "exportToRaw",
+      "variant": "security"
+    },
+    {
+      "id": "f-publish",
+      "from": "card",
+      "to": "publish",
+      "label": "edited card",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "right",
+      "via": [
+        [
+          1052,
+          157
+        ],
+        [
+          1052,
+          613
+        ]
+      ],
+      "labelAt": [
+        1052,
+        385
+      ]
+    },
+    {
+      "id": "f-publish-chunks",
+      "from": "chunks",
+      "to": "publish",
+      "label": "chunks",
+      "variant": "default",
       "route": "bottom-channel"
     }
   ]

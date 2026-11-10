@@ -140,10 +140,11 @@ Use three browser profiles so the sessions stay apart.
 
 ## Status
 
-The engine, both hosts and everything above are built and tested. In progress:
+The engine, both hosts and everything above are built and tested, including one-command onboarding of a creator from her
+own Instagram data export or session (`npx understudy init`, [persona](docs/persona/PERSONA-PIPELINE.md#onboarding-a-creator-npx-understudy-init)).
+In progress:
 
 - **Minimal mode:** Postgres and one model key, every other service optional.
-- **One-command onboarding:** `npx understudy init` from your own Instagram data export.
 - **Any creator in the app:** no demo creator in the code, plus a catalogue editor.
 - **A gateway adapter** for a self-hosted, OpenAI-compatible LLM gateway with per-creator budgets.
 - **npm packages** for the engine, providers and persona pipeline.

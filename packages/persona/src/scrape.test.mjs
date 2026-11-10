@@ -2,24 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { ENDPOINTS, InstagramError, ORIGIN, createClient } from "./scrape/instagram.mjs";
+import { fixtureFetch } from "./testing.mjs";
 
 const FIX = new URL("../fixtures/instagram/", import.meta.url).pathname;
 const ROUTES = JSON.parse(readFileSync(`${FIX}routes.json`, "utf8"));
 const SESSION = "SECRET-SESSION-VALUE";
 
-/** A fetch that serves the recorded fixtures by URL and throws on anything else: no test reaches the network. */
-function fakeFetch(log = [], overrides = {}) {
-  return async (url, init) => {
-    log.push({ url, init });
-    const parsed = new URL(url);
-    const key = parsed.pathname + parsed.search;
-    if (overrides[key]) return overrides[key](url, init);
-    const file = ROUTES[key];
-    if (!file) throw new Error(`no fixture for ${key}`);
-    const body = readFileSync(`${FIX}${file}.json`, "utf8");
-    return new Response(body, { status: 200, headers: { "content-type": "application/json" } });
-  };
-}
+const fakeFetch = (log = [], overrides = {}) => fixtureFetch({ routes: ROUTES, dir: FIX, log, overrides });
 
 const noSleep = async () => {};
 
@@ -287,5 +276,65 @@ test("the CLI runs a fixture scrape, the cookie never reaches output, and --help
   }
   const help = execFileSync("node", [new URL("./scrape/scrape.mjs", import.meta.url).pathname, "--help"], { encoding: "utf8", env: { PATH: process.env.PATH } });
   assert.match(help, /--handle/);
-  assert.match(help, /you own or have written permission/);
+  assert.match(help, /OWN ACCOUNT ONLY/);
+  assert.match(help, /only on an account you own/);
+});
+
+// ---- identity: the session's own account and no other ----
+import { NotOwnAccount } from "./scrape/scrape.mjs";
+
+test("a handle that is not the session's account is refused after one request, nothing written", async () => {
+  const log = [];
+  const out = mkdtempSync(join(tmpdir(), "scrape-"));
+  const client = createClient({ fetch: fakeFetch(log), sessionId: SESSION, delayMs: 0, sleep: noSleep });
+  await assert.rejects(() => scrape({ client, handle: "somebody.else", out, now: NOW }), (error) => {
+    assert.ok(error instanceof NotOwnAccount);
+    assert.equal(error.message, "the session belongs to @fixturecreator; refusing @somebody.else");
+    return true;
+  });
+  assert.equal(log.length, 1);
+  assert.match(log[0].url, /current_user/);
+  assert.deepEqual(readdirSync(out), []);
+
+  const errors = [];
+  const code = await main({ argv: ["--handle", "somebody.else", "--out", out, "--delay-ms", "0"], env: { IG_SESSIONID: SESSION }, fetch: fakeFetch(), sleep: noSleep, stderr: (m) => errors.push(m) });
+  assert.equal(code, 1);
+  assert.match(errors.join("\n"), /refusing @somebody\.else/);
+  assert.deepEqual(readdirSync(out), []);
+});
+
+test("the handle is compared without regard to case and the session's spelling is used", async () => {
+  const out = mkdtempSync(join(tmpdir(), "scrape-"));
+  const client = createClient({ fetch: fakeFetch(), sessionId: SESSION, delayMs: 0, sleep: noSleep });
+  const result = await scrape({ client, handle: "FixtureCreator", out, maxPosts: 1, now: NOW });
+  assert.equal(result.dir, join(out, "fixturecreator"));
+});
+
+test("with no --handle the session's own account is scraped", async () => {
+  const out = mkdtempSync(join(tmpdir(), "scrape-"));
+  const client = createClient({ fetch: fakeFetch(), sessionId: SESSION, delayMs: 0, sleep: noSleep });
+  const { dir, counts } = await scrape({ client, out, now: NOW });
+  assert.equal(dir, join(out, "fixturecreator"));
+  assert.equal(counts.posts, 4);
+  assert.equal(JSON.parse(readFileSync(join(dir, "profile.json"), "utf8")).handle, "fixturecreator");
+});
+
+test("a profile id that differs from the session's pk is refused before anything is written", async () => {
+  const out = mkdtempSync(join(tmpdir(), "scrape-"));
+  const wrongId = fakeFetch([], {
+    "/api/v1/accounts/current_user/?edit=true": async () => new Response(JSON.stringify({ user: { pk: "1234", username: "fixturecreator" } }), { status: 200 }),
+  });
+  const client = createClient({ fetch: wrongId, sessionId: SESSION, delayMs: 0, sleep: noSleep });
+  await assert.rejects(() => scrape({ client, out, now: NOW }), /not the session's account/);
+  assert.deepEqual(readdirSync(out), []);
+});
+
+test("a response that does not name an account stops the run before any write", async () => {
+  const out = mkdtempSync(join(tmpdir(), "scrape-"));
+  for (const body of [{}, { user: { pk: "9001", username: "not a handle!" } }, { user: { username: "fixturecreator" } }]) {
+    const anonymous = fakeFetch([], { "/api/v1/accounts/current_user/?edit=true": async () => new Response(JSON.stringify(body), { status: 200 }) });
+    const client = createClient({ fetch: anonymous, sessionId: SESSION, delayMs: 0, sleep: noSleep });
+    await assert.rejects(() => scrape({ client, out, now: NOW }), /refresh IG_SESSIONID/);
+  }
+  assert.deepEqual(readdirSync(out), []);
 });

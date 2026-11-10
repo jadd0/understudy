@@ -1,5 +1,5 @@
 // Publishes a persona card: the engine speaks only with the newest *published* card (packages/engine/src/turn/run.ts).
-//   npm run persona:publish -- --creator junovale --card-version 2
+//   npm run persona:publish -- --creator junovale --card-version 2 [--dir <persona directory, default data/persona>]
 // In one transaction: if a stored version already has this exact body it is published; otherwise the body is
 // inserted as the next version, published. Earlier versions stay as history. Re-running is a no-op.
 import { readFileSync } from "node:fs";
@@ -64,8 +64,9 @@ async function main() {
   console.log(`database host: ${new URL(process.env.DATABASE_URL ?? "").host}`);
   const [creator] = await db.select({ id: creators.id }).from(creators).where(eq(creators.handle, handle));
   if (!creator) throw new Error(`no creator with handle ${handle}; run npm run db:seed first`);
-  const body = readFileSync(path.resolve("data/persona/card", `v${fileVersion}.md`), "utf8");
-  const res = await publishCard(creator.id, body, readMarkers("data/persona"));
+  const dir = path.resolve(arg("dir") ?? "data/persona");
+  const body = readFileSync(path.join(dir, "card", `v${fileVersion}.md`), "utf8");
+  const res = await publishCard(creator.id, body, readMarkers(dir));
   console.log(
     `card file v${fileVersion} → stored version ${res.version}: ${res.alreadyPublished ? "already published" : res.inserted ? "inserted and published" : "published"}`,
   );

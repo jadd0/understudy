@@ -13,6 +13,9 @@ const USER_AGENT =
 // Endpoint paths. The reels tab is served by a POST endpoint on the web app, so a reel that
 // appears only there (not in the profile grid) is out of scope: this client never POSTs.
 export const ENDPOINTS = {
+  // Names the account a session belongs to. The path is the one the mobile API serves; the web origin is
+  // not confirmed to answer it, so a live run on your own account is what proves it.
+  currentUser: () => "/api/v1/accounts/current_user/?edit=true",
   profile: (handle) => `/api/v1/users/web_profile_info/?username=${encodeURIComponent(handle)}`,
   feed: (userId, maxId) => `/api/v1/feed/user/${userId}/?count=12${maxId ? `&max_id=${encodeURIComponent(maxId)}` : ""}`,
   info: (mediaId) => `/api/v1/media/${mediaId}/info/`,

@@ -41,6 +41,7 @@ your `.env.local`. The headless server is `npm run server:dev` (`examples/server
 | `npm run db:migrate`, `db:seed` | apply migrations; seed creator and admins |
 | `bash scripts/gate.sh` | the gate |
 | `npx understudy-persona build --creator junovale --card-model <id> --gen-model <id> --jev-model <id>` | persona build; see [PERSONA-PIPELINE.md](../persona/PERSONA-PIPELINE.md#running-it) |
+| `npx understudy init (--instagram-export <zip\|folder> \| --scrape-own) --email <address> --card-model <id>`, then `npx understudy init --publish <dir>` | onboard a creator from her own Instagram; see [PERSONA-PIPELINE.md](../persona/PERSONA-PIPELINE.md#onboarding-a-creator-npx-understudy-init) |
 | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` | persona tests only |
 
 ## The gate
