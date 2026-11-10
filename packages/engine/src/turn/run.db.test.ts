@@ -161,6 +161,22 @@ describe("the creator id on provider calls", () => {
   });
 });
 
+describe("the creator id on a hold's filler", () => {
+  test("the filler's draft and its verify carry the creator id", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } } },
+      replies: ["saw this one, i'll come back to you on it"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
+    const drafts = r.generator.calls.filter((c) => !isMemoryCall(c));
+    expect(drafts.some((c) => c.system.turn.includes("do not promise anything"))).toBe(true);
+    expect(r.decider.calls.some((c) => c.keys.includes("promises_price_or_free"))).toBe(true);
+    expect(drafts.map((c) => c.creatorId)).toEqual(drafts.map(() => w.creator.id));
+    expect(r.decider.calls.map((c) => c.creatorId)).toEqual(r.decider.calls.map(() => w.creator.id));
+  });
+});
+
 describe("offers", () => {
   test("an offer turn copies the price from the catalogue, never shows it to the model, and records the offer", async () => {
     const w = await world({ "pitch.min_gap_rounds": 0 });
