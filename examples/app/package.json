@@ -7,8 +7,8 @@
   "license": "MIT",
   "bin": { "understudy": "scripts/understudy.mjs" },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "npm run --prefix ../.. build:packages && next dev",
+    "build": "npm run --prefix ../.. build:packages && next build",
     "start": "next start"
   },
   "dependencies": {

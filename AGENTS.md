@@ -6,9 +6,10 @@ Next.js 16 App Router, TypeScript (strict), Tailwind 4, Drizzle ORM on `@neondat
 (WebSocket `Pool`, so transactions are interactive), Auth.js v5 (`next-auth@beta`) with the Resend
 provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 
-- `npm run dev | build | start` (the Next app in `examples/app/`; run from the repository root)
+- `npm run dev | build | start` (the Next app in `examples/app/`; run from the repository root; `dev` and `build` build the packages first, because the app resolves them to their `dist`)
+- `npm run build:packages` builds `packages/engine` and `packages/providers` to ES modules with declarations (plain `tsc`); `npm run pack:smoke` installs the three packed tarballs into a scratch project and runs the headless quick start; `npm run release:dry-run` rehearses the publish and never publishes
 - `npm run typecheck | lint | test`
-- `npm run db:generate` (drizzle-kit, writes `packages/engine/drizzle/` then `examples/app/drizzle/`), `npm run db:migrate` (engine migrations, then the host's), `npm run db:seed`
+- `npm run db:generate` (builds the packages, then drizzle-kit, writes `packages/engine/drizzle/` then `examples/app/drizzle/`), `npm run db:migrate` (engine migrations, then the host's), `npm run db:seed`
 - `bash scripts/gate.sh` runs typecheck, lint, test, build, the persona and env checks, the codemap and the public-files check
 
 ## Rules

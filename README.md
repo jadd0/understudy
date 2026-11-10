@@ -86,6 +86,12 @@ const { process } = await understudy.handleMessage({ creatorId, fanId, body, cli
 await process(); // answer now, or later from a queue
 ```
 
+`packages/engine` and `packages/providers` build to ES modules with declarations (`npm run build:packages`, plain `tsc`);
+`packages/persona` is plain ES modules. All three are set up to publish as `@jadd0/understudy-engine`,
+`@jadd0/understudy-providers` and `@jadd0/understudy-persona`. `npm run pack:smoke` installs their packed tarballs into a
+scratch project and runs the headless quick start in [packages/engine/README.md](packages/engine/README.md#quick-start-headless),
+and `npm run release:dry-run` rehearses the publish without publishing.
+
 ## Minimal setup
 
 The app needs three values: `DATABASE_URL` (Postgres with `pgvector`), `AUTH_SECRET` and `CLAUDE_SECRET_KEY`. The

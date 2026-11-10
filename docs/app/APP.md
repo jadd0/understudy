@@ -114,7 +114,8 @@ providers above, `drizzle-orm`, `next-auth`, `zod`, `ws` and nothing else at run
 
 | Command | What it does |
 |---|---|
-| `npm run dev` / `build` / `start` | Next.js |
+| `npm run dev` / `build` / `start` | Next.js (`dev` and `build` build the engine and providers packages first) |
+| `npm run build:packages` / `pack:smoke` / `release:dry-run` | Build the two packages to `dist/`; install their packed tarballs into a scratch project and run the headless quick start; rehearse the publish without publishing |
 | `npm run typecheck` / `lint` / `test` | `tsc --noEmit`, ESLint, vitest |
 | `bash scripts/gate.sh` | The full gate ([§18](#18-testing-and-the-gate)) |
 | `npm run db:generate` / `db:migrate` / `db:seed` | drizzle-kit generate (engine set, then host set), the two-set migrate, and the idempotent seed |
@@ -1457,11 +1458,12 @@ order, stopping at the first failure:
 | lint | `npm run lint` |
 | test | [`scripts/test-sharded.sh`](../../scripts/test-sharded.sh): vitest in 3 parallel shards |
 | build | `npm run build` |
+| packages | `npm run --silent build:packages && node --test scripts/pack-smoke.test.mjs scripts/release.test.mjs` |
 | persona | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` |
 | env | `node --test examples/app/scripts/check-env.test.mjs` |
 | codemap | `node scripts/codemap.mjs` |
 
-AGENTS.md names only the first four; the last three are also part of the gate. A pass writes a stamp keyed on the tree
+AGENTS.md names only the first four; the rest are also part of the gate. A pass writes a stamp keyed on the tree
 ([`scripts/gate-stamp.mjs`](../../scripts/gate-stamp.mjs)) so the same tree is never gated twice, and
 [`scripts/with-gate-lock.sh`](../../scripts/with-gate-lock.sh) limits how many gates run at once across worktrees.
 
