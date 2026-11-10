@@ -114,7 +114,8 @@ providers above, `drizzle-orm`, `next-auth`, `zod`, `ws` and nothing else at run
 
 | Command | What it does |
 |---|---|
-| `npm run dev` / `build` / `start` | Next.js (`dev` and `build` build the engine and providers packages first) |
+| `npm run build` / `start` | Next.js (`build` builds the engine and providers packages first) |
+| `npm run dev` / `watch:packages` | Build the packages, then keep `tsc -w` on them beside `next dev` (or the watchers alone) |
 | `npm run build:packages` / `pack:smoke` / `release:dry-run` | Build the two packages to `dist/`; install their packed tarballs into a scratch project and run the headless quick start; rehearse the publish without publishing |
 | `npm run typecheck` / `lint` / `test` | `tsc --noEmit`, ESLint, vitest |
 | `bash scripts/gate.sh` | The full gate ([§18](#18-testing-and-the-gate)) |
