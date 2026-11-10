@@ -28,7 +28,7 @@ export function Composer({
   onSend: (text: string) => void | Promise<void>;
   disabled?: boolean;
   placeholder?: string;
-  /** The wider screen names the person ("Message Juno…"); the phone keeps the short form. */
+  /** The wider screen names the person ("Message <name>…"); the phone keeps the short form. */
   desktopPlaceholder?: string;
   /** Renders the tip panel while it is open; omitted when the viewer may not tip. */
   tipPanel?: (close: () => void, closing: boolean) => ReactNode;

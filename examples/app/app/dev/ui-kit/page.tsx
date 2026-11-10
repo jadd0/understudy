@@ -42,14 +42,14 @@ export default function UiKitPage() {
           { label: "Requests", href: "#" },
         ]}
         threads={[
-          { id: "a", name: "Juno", preview: "hmm maybe i have smth for u 🤭", time: "2m", href: "#", active: true, online: true },
+          { id: "a", name: "Mira", preview: "hmm maybe i have smth for u 🤭", time: "2m", href: "#", active: true, online: true },
           { id: "b", name: "Marco D", preview: "You: ok deal", time: "18m", href: "#", unread: true, badge: "Handoff" },
           { id: "c", name: "Leo Hart", preview: "lol", time: "1h", href: "#", badge: "AI" },
         ]}
       />
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatHeader
-          name="Juno"
+          name="Mira"
           online
           typing
           backHref="#"
@@ -63,10 +63,10 @@ export default function UiKitPage() {
         />
         <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-3 pt-1 pb-2 md:px-6 md:pt-2">
           <div className="mx-auto max-w-[760px]">
-            <ChatIntro name="Juno" line="junovale · 🌊 brighton" />
+            <ChatIntro name="Mira" line="mira.example · 🌊 brighton" />
             <MessageList
               rows={rows}
-              otherName="Juno"
+              otherName="Mira"
               typing
               renderExtra={(key) =>
                 key === "7" ? (

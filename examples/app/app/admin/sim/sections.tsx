@@ -65,7 +65,7 @@ function groups(personas: Persona[]): { title: string; hint: string; items: Pers
     { title: "Edge cases", hint: "Abuse, AI questions, disputes, caps and the rest.", items: personas.filter((p) => !special(p) && p.weight < 5) },
     {
       title: "Special",
-      hint: "The scripted minor, and personas that change Juno's real AI switch or never-list while they run.",
+      hint: "The scripted minor, and personas that change the demo creator's real AI switch or never-list while they run.",
       items: personas.filter(special),
     },
   ].filter((g) => g.items.length > 0);
@@ -80,7 +80,7 @@ export function SimFrame({ toggle, children }: { toggle: ReactNode; children: Re
         <div className="flex min-w-0 flex-col gap-1.5">
           <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Fan simulator</h1>
           <p className="max-w-[60ch] text-[14px] leading-relaxed text-muted-2">
-            Each spawn makes a fresh sim fan that talks to Juno through the real send path.
+            Each spawn makes a fresh sim fan that talks to the demo creator through the real send path.
           </p>
         </div>
         {toggle}
@@ -117,7 +117,7 @@ export function SpawnBatch() {
             <input name="include_minor" type="checkbox" /> Include the scripted minor
           </label>
           <label className={CHECK}>
-            <input name="include_shared" type="checkbox" /> Include personas that change Juno&apos;s real settings
+            <input name="include_shared" type="checkbox" /> Include personas that change the demo creator&apos;s real settings
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-2">

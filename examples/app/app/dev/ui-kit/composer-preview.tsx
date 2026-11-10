@@ -6,16 +6,16 @@ import { Composer } from "@/components/ui/chat/composer";
 export function ComposerPreview() {
   return (
     <Composer
-      label="Message Juno"
+      label="Message Mira"
       onSend={() => {}}
-      desktopPlaceholder="Message Juno…"
+      desktopPlaceholder="Message Mira…"
       tipPanel={(close, closing) => (
         <TipSheet
           presets={[200, 500, 1000]}
           minCents={200}
           onTip={async () => ({ ok: true })}
           walletHref="#"
-          name="Juno"
+          name="Mira"
           onClose={close}
           closing={closing}
         />

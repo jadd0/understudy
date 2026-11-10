@@ -49,7 +49,7 @@ async function spawnMany(slugs: string[], mode: "demo" | "auto", seed?: string, 
   revalidatePath("/admin/sim");
 }
 
-/** The "allow shared-state personas" box: personas that change Juno's real AI switch or never-list run only when it is ticked. */
+/** The "allow shared-state personas" box: personas that change the demo creator's real AI switch or never-list run only when it is ticked. */
 const sharedOk = (f: FormData) => f.get("include_shared") === "on";
 
 const modeOf = (v: FormDataEntryValue | null): "demo" | "auto" => (v === "demo" ? "demo" : "auto");
