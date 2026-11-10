@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "dev": "npm run build:packages && next dev examples/app",
+    "dev": "node scripts/dev.mjs",
+    "watch:packages": "node scripts/dev.mjs watch",
     "build": "npm run build:packages && next build examples/app",
     "start": "next start examples/app",
     "lint": "eslint .",
