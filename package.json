@@ -16,6 +16,7 @@
     "start": "next start examples/app",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "check": "bash scripts/check.sh",
     "db:generate": "npm exec --workspace @understudy/engine -- drizzle-kit generate && npm exec --workspace @understudy/example-app -- drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=examples/app/.env.local examples/app/scripts/migrate.mjs",
     "db:seed": "tsx --env-file-if-exists=examples/app/.env.local examples/app/db/seed.ts",
