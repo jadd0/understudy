@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
-import { db } from "@/db/client";
+import { db, withTx } from "@/db/client";
 import { makeUser } from "@/db/test-helpers";
 import { catalogueItems, creators, ledgerEntries, offers, unlocks } from "@/db/schema";
 import { dbHost } from "@/lib/host/engine-host";
@@ -179,6 +179,33 @@ describe("moveItem", () => {
     const rows = await listed(v.creator.id);
     expect(rows).toHaveLength(3);
     expect(rows.map((r) => r.position)).toEqual([0, 1, 2]);
+  });
+});
+
+describe("a move waits for a mover that is already running", () => {
+  test("a move that starts while another transaction holds the creator's rows reads what that one committed", async () => {
+    const w = await shelf();
+    let release!: () => void;
+    const hold = new Promise<void>((r) => (release = r));
+    let locked!: () => void;
+    const holding = new Promise<void>((r) => (locked = r));
+    // A second live transaction, standing in for another tab's move: it takes the rows, moves C up (A, C, B), and holds.
+    const other = withTx(async (tx) => {
+      await tx.select({ id: catalogueItems.id }).from(catalogueItems).where(eq(catalogueItems.creatorId, w.creator.id)).orderBy(catalogueItems.id).for("no key update");
+      for (const [i, item] of [w.a, w.c, w.b].entries()) await tx.update(catalogueItems).set({ position: i }).where(eq(catalogueItems.id, item.id));
+      locked();
+      await hold;
+    });
+    await holding;
+    let settled = false;
+    const mine = moveItem(w.viewer, w.c.id, "up").then(() => void (settled = true));
+    await new Promise((r) => setTimeout(r, 400));
+    expect(settled).toBe(false);
+    release();
+    await Promise.all([other, mine]);
+    // C moved up twice in turn, not once twice over
+    expect(await titles(w.creator.id)).toEqual(["C", "A", "B"]);
+    expect(isPermutation((await listed(w.creator.id)).map((r) => r.position))).toBe(true);
   });
 });
 
