@@ -1,0 +1,7 @@
+{
+  "participants": [{ "name": "moth_fan" }, { "name": "Wren Fixture" }],
+  "messages": [
+    { "sender_name": "moth_fan", "timestamp_ms": 1704200000000, "content": "private dm text that must never be read" }
+  ],
+  "title": "moth_fan"
+}

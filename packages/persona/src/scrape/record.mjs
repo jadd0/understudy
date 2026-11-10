@@ -8,8 +8,16 @@ function unique(values) {
   return [...new Set(values)];
 }
 
-function isoSeconds(unixSeconds) {
+export function isoSeconds(unixSeconds) {
   return new Date(unixSeconds * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+/** Hashtags and @mentions in a caption, each once, in order of appearance. */
+export function tagsOf(caption) {
+  return {
+    hashtags: unique([...caption.matchAll(HASHTAG)].map((match) => match[1])),
+    mentions: unique([...caption.matchAll(MENTION)].map((match) => `@${match[1]}`)),
+  };
 }
 
 export function mapProfile(webProfile, { capturedAt }) {
@@ -56,8 +64,7 @@ export function mapPost(item, { handle, index, userId }) {
     ...record,
     pinned: (item.timeline_pinned_user_ids ?? []).map(String).includes(String(userId)),
     found_in: "profile_grid",
-    hashtags: unique([...caption.matchAll(HASHTAG)].map((match) => match[1])),
-    mentions: unique([...caption.matchAll(MENTION)].map((match) => `@${match[1]}`)),
+    ...tagsOf(caption),
     tagged_users: (item.usertags?.in ?? []).map((tag) => tag.user.username),
     collab_coauthors: coauthors,
     location: item.location?.name ?? null,
