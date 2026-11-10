@@ -88,6 +88,7 @@ export async function listInbox(viewer: Viewer): Promise<InboxRow[]> {
       openCreatorHandoff: sql<boolean>`exists (select 1 from handoffs h where h.conversation_id = ${conversations.id} and h.queue = 'creator' and h.status <> 'resolved')`,
       hasSuggestion: sql<boolean>`exists (select 1 from messages m where m.conversation_id = ${conversations.id} and m.suggested and m.status = 'blocked')`,
       creatorId: conversations.creatorId,
+      creatorName: creators.displayName,
       handoffQueue: sql<"creator" | "ts" | null>`(select h.queue::text from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')`,
       handoffReason: sql<string | null>`(select h.reason::text from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')`,
       handoffDueInMs: sql<number | null>`(select extract(epoch from h.due_at - now()) * 1000 from handoffs h where h.conversation_id = ${conversations.id} and h.status = 'open')::float8`,
@@ -97,6 +98,7 @@ export async function listInbox(viewer: Viewer): Promise<InboxRow[]> {
     })
     .from(conversations)
     .innerJoin(users, eq(users.id, conversations.fanId))
+    .innerJoin(creators, eq(creators.id, conversations.creatorId))
     .where(scopeFor(viewer))
     .orderBy(
       // Admin: chats on the T&S side first, then everything by latest activity.
@@ -136,6 +138,7 @@ export async function listInbox(viewer: Viewer): Promise<InboxRow[]> {
       aiEnabled: r.aiEnabled,
       openCreatorHandoff: r.openCreatorHandoff,
       viewer: viewer.role === "admin" ? "admin" : "creator",
+      creatorName: r.creatorName,
     }),
   }));
 }
@@ -391,9 +394,8 @@ export async function creatorFor(userId: string) {
 }
 
 /**
- * The creator whose console this viewer opens: a creator's own row; for an admin, the platform's creator
- * that fans talk to (`primaryCreator`: one today, the first by unique handle, since `creators` has no created_at);
- * null for a fan. Nothing from the request picks it, so an admin cannot be steered to another creator by URL.
+ * The creator whose console this viewer opens: a creator's own row; for an admin, the platform's default creator
+ * (`primaryCreator`: the first by unique handle, since `creators` has no created_at); null for a fan. Nothing from the request picks it, so an admin cannot be steered to another creator by URL.
  */
 export async function consoleCreatorFor(viewer: Viewer) {
   if (viewer.role === "creator") return creatorFor(viewer.id);
@@ -442,24 +444,37 @@ export async function getSnapshot(viewer: Viewer, conversationId: string): Promi
   return { thread, suggested, labels: Object.fromEntries(labels.map((l) => [l.messageId, turnLabelText(l)])) };
 }
 
-/** The platform's creator. There is one today; a fan talks to her. */
-/** The platform's one creator, with her profile photo (her user's `image`). */
+const creatorWithImage = () =>
+  db.select({ ...getTableColumns(creators), image: users.image }).from(creators).leftJoin(users, eq(users.id, creators.userId));
+
+/** The platform's default creator (the first by unique handle), with the profile photo (the creator user's `image`). */
 export async function primaryCreator() {
-  const [row] = await db
-    .select({ ...getTableColumns(creators), image: users.image })
-    .from(creators)
-    .leftJoin(users, eq(users.id, creators.userId))
-    .orderBy(asc(creators.handle))
-    .limit(1);
+  const [row] = await creatorWithImage().orderBy(asc(creators.handle)).limit(1);
+  return row ?? null;
+}
+
+/** The creator with this handle, or null. The handle is only ever bound as a query parameter. */
+export async function creatorByHandle(handle: string) {
+  const [row] = await creatorWithImage().where(eq(creators.handle, handle)).limit(1);
   return row ?? null;
 }
 
 /**
- * A fan's one thread with the platform's creator, found from the session's user id. Before the first message
- * there is no conversation row, so the snapshot is empty (conversation id "") and the page still renders.
+ * The creator a fan is talking to: the one named by `handle`, or the default creator when none is named, or null
+ * for a handle nobody has. The handle comes from the fan's URL, so it only chooses whom the fan writes to; the
+ * conversation is still found from the session's own user id.
  */
-export async function getFanSnapshot(fanId: string): Promise<{ snapshot: Snapshot; creator: { id: string; displayName: string; handle: string; image: string | null } } | null> {
-  const creator = await primaryCreator();
+export async function fanCreator(handle?: string | null) {
+  if (handle === undefined || handle === null) return primaryCreator();
+  return creatorByHandle(handle);
+}
+
+/**
+ * A fan's one thread with a creator (the named one, else the default), found from the session's user id. Before the
+ * first message there is no conversation row, so the snapshot is empty (conversation id "") and the page still renders.
+ */
+export async function getFanSnapshot(fanId: string, handle?: string | null): Promise<{ snapshot: Snapshot; creator: { id: string; displayName: string; handle: string; image: string | null } } | null> {
+  const creator = await fanCreator(handle);
   if (!creator) return null;
   const [conv] = await db
     .select({ id: conversations.id })

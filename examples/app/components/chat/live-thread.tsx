@@ -718,7 +718,7 @@ function StaffBar({
                 h && !h.claimedByYou && h.status === "claimed"
                 ? "Another Trust & Safety member may be replying. Take over to make it yours."
                 : "You are replying as Trust & Safety."
-              : "You are replying as Juno. The AI is paused."
+              : `You are replying as ${snap.thread.conversation.creatorName}. The AI is paused.`
             : reason
               ? `Needs a person: ${reason}.`
               : mode === "ai"

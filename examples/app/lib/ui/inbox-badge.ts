@@ -5,21 +5,23 @@ export type InboxFilter = "all" | "needs" | "ai";
 export interface BadgeInput {
   mode: InboxMode;
   aiEnabled: boolean;
-  /** An unresolved creator-queue handoff (an alert counts: the AI keeps replying but Juno should look). */
+  /** An unresolved creator-queue handoff (an alert counts: the AI keeps replying but the creator should look). */
   openCreatorHandoff: boolean;
   viewer: "creator" | "admin";
+  /** The conversation's creator, named to an admin who sees every creator's chats. */
+  creatorName: string;
 }
 
 export function inboxBadge(i: BadgeInput): string | null {
   // An admin sees every conversation: T&S ones are marked, the rest show who is answering.
   if (i.viewer === "admin" && (i.mode === "handoff_ts" || i.mode === "human_ts")) return "T&S";
-  if (i.mode === "human_creator") return i.viewer === "admin" ? "Juno" : "You";
+  if (i.mode === "human_creator") return i.viewer === "admin" ? i.creatorName : "You";
   if (i.openCreatorHandoff || i.mode === "handoff_creator") return "Handoff";
   if (i.mode === "ai") return i.aiEnabled ? "AI" : "AI off";
   return null;
 }
 
-/** "Needs you" is everything waiting on Juno; "AI" is what the AI is currently answering. */
+/** "Needs you" is everything waiting on the creator; "AI" is what the AI is currently answering. */
 export function matchesFilter(badge: string | null, filter: InboxFilter): boolean {
   if (filter === "all") return true;
   if (filter === "needs") return badge === "Handoff";

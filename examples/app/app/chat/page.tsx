@@ -29,9 +29,17 @@ export const maxDuration = 60;
 
 type Account = { name: string; roleLabel: string };
 
-export default async function ChatPage() {
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   // The guard decides before anything streams; the thread itself streams behind the skeleton.
   const user = await requireChatReader();
+  // `?c=<handle>` names the creator; without it the fan talks to the default creator. A repeated `c` names nobody.
+  const { c } = await searchParams;
+  if (Array.isArray(c)) notFound();
+  const handle = c ?? null;
   const account: Account = {
     name: accountName(user, "fan"),
     roleLabel: roleLabel("fan"),
@@ -39,7 +47,7 @@ export default async function ChatPage() {
   return (
     <div className="flex min-h-0 flex-1">
       <Suspense fallback={<ChatSkeleton account={account} />}>
-        <ChatThread fanId={user.id} account={account} />
+        <ChatThread fanId={user.id} handle={handle} account={account} />
       </Suspense>
     </div>
   );
@@ -48,9 +56,11 @@ export default async function ChatPage() {
 /** The fan's one thread: restriction, snapshot and tip settings, read on the server and handed to LiveThread. */
 async function ChatThread({
   fanId,
+  handle,
   account,
 }: {
   fanId: string;
+  handle: string | null;
   account: Account;
 }) {
   const [row] = await db
@@ -60,7 +70,7 @@ async function ChatThread({
   // A fan restricted as a minor in chat reads their history; sending is refused server-side as well.
   const restricted =
     Boolean(row?.flaggedAt) && row?.flagReason === MINOR_IN_CHAT;
-  const found = await getFanWindowedSnapshot(fanId);
+  const found = await getFanWindowedSnapshot(fanId, handle);
   if (!found) notFound();
   const { snapshot, creator } = found;
   const tipOptions = restricted
@@ -79,7 +89,7 @@ async function ChatThread({
           id: creator.id,
           name: creator.displayName,
           image: creator.image,
-          href: "/chat",
+          href: handle === null ? "/chat" : `/chat?c=${encodeURIComponent(handle)}`,
           active: true,
           online: true,
         },
@@ -115,13 +125,14 @@ async function ChatThread({
         ),
       }}
       actions={{
-        refresh: refreshChat,
-        older: olderChat,
-        changes: chatChanges,
-        send: sendMessage,
-        typing: restricted ? undefined : pingTyping,
+        // Bound here, on the server, so the thread's client code never types the handle.
+        refresh: refreshChat.bind(null, handle),
+        older: olderChat.bind(null, handle),
+        changes: chatChanges.bind(null, handle),
+        send: sendMessage.bind(null, handle),
+        typing: restricted ? undefined : pingTyping.bind(null, handle),
         unlock: restricted ? undefined : unlockOfferAction,
-        tip: restricted ? undefined : tipAction,
+        tip: restricted ? undefined : tipAction.bind(null, handle),
       }}
     />
   );
