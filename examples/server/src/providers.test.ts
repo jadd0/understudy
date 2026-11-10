@@ -24,7 +24,7 @@ describe("the server's provider chains", () => {
 
   test("gateway_off_keeps_todays_chains", async () => {
     // A URL and a key in the environment change nothing while the switches are false.
-    for (const env of [{}, { GATEWAY_URL: "http://gateway.test", GATEWAY_KEY: "gw_key" }]) {
+    for (const env of [{}, { GATEWAY_URL: "http://gateway.test", GATEWAY_KEY: "gw_key" }] as Record<string, string>[]) {
       expect(await chains({}, env)).toEqual({ decide: ["claude"], generate: ["claude", "claude-fallback"] });
       expect(await chains({}, { ...env, TYPESAFE_SECRET_KEY: "t" })).toEqual({ decide: ["jev", "claude"], generate: ["claude", "claude-fallback"] });
     }
