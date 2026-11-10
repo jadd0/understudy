@@ -66,8 +66,8 @@ because the platform cannot legally deny it.
 | | |
 |---|---|
 | Fan chat, desktop: the top navigation bar, the thread list, Juno's header, a locked offer card, the pill composer with Tip, and the fan's account menu. | ![Fan chat at 1440 px](screens/chat-1440.png) |
-| Juno's console on a custom request held for her: inbox badges (Handoff, AI, You), the suggested reply to edit and send, and the staff bar (AI for this chat, Take over, Hand back to AI). | ![Console thread at 1440 px](screens/console-thread-1440.png) |
-| The Trust & Safety queue on a minor hard stop ("i'm 16 btw"): Take over, Release to AI, Ban. | ![Admin at 1440 px](screens/admin-1440.png) |
+| Juno's console on a custom request held for her: inbox badges (Handoff, AI, You), the request in the thread, the auto-resolve countdown, and the staff bar (AI for this chat, Take over, Hand back to AI). | ![Console thread at 1440 px](screens/console-thread-1440.png) |
+| The Trust & Safety queue on a minor hard stop ("i'm 16 btw"): the notice the fan sees, then Take over and Ban (a minor stop is never released to the AI). | ![Admin at 1440 px](screens/admin-1440.png) |
 
 These screenshots were retaken on 4 November against the current app, with demo data in a scratch database. The phone
 layouts, the tip sheet, the dark theme, the account menu, the analytics pages and `/admin/sim` are in
@@ -1585,7 +1585,7 @@ one stands now. Remaining gaps are in [§22](#22-known-gaps-risks-and-open-findi
 | [ANALYTICS.md](../quality/ANALYTICS.md) | Dashboard | Current |
 | [DESIGN.md](DESIGN.md), [DEVELOPMENT.md](../operations/DEVELOPMENT.md), [PERSONA.md](../persona/PERSONA.md), [README.md](../README.md) | Design system, workflow, index | Not re-audited line by line here |
 
-**Screenshots** in [`docs/app/screens/`](screens/) were retaken on 4 November against the current app.
+**Screenshots** in [`docs/app/screens/`](screens/) were retaken on 10 November against the current app, with Juno and fans driven through the live engine.
 
 ---
 
