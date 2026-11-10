@@ -287,6 +287,7 @@ export function exportToRaw(options: ExportToRawOptions): {
 export class ZipError extends Error {}
 /** Raised when a handle other than the session's (or the export's) own account is asked for. */
 export class NotOwnAccount extends Error {
+  constructor(owner: string, requested: string);
   owner: string;
   requested: string;
 }

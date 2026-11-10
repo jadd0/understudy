@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "license": "MIT",
+  "bin": { "understudy": "scripts/understudy.mjs" },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

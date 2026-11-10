@@ -11,6 +11,14 @@ import { isoSeconds, tagsOf } from "../scrape/record.mjs";
 import { NotOwnAccount } from "../scrape/whoami.mjs";
 import { EXPORT_ENTRY_MAX_BYTES, openZip } from "./zip.mjs";
 
+/** A download that cannot be used, with what to do about it. */
+export class ExportError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ExportError";
+  }
+}
+
 const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
 // The committed synthetic creators. An export never writes over them.
 const SYNTHETIC = ["junovale", "junofilm"];
@@ -64,7 +72,7 @@ export function openExport(path) {
   try {
     stat = statSync(path);
   } catch {
-    throw new Error("the export path does not exist or cannot be read");
+    throw new ExportError("the export path does not exist or cannot be read");
   }
   const reads = [];
   let names;
@@ -74,10 +82,10 @@ export function openExport(path) {
     names = walkFolder(path);
     const listed = new Set(names);
     readBuffer = (name) => {
-      if (!listed.has(name)) throw new Error(`no file named ${JSON.stringify(name)} in the export`);
+      if (!listed.has(name)) throw new ExportError(`no file named ${JSON.stringify(name)} in the export`);
       const full = join(path, ...name.split("/"));
       const info = lstatSync(full);
-      if (!info.isFile() || info.size > EXPORT_ENTRY_MAX_BYTES) throw new Error(`${JSON.stringify(name)} is not a readable file of a safe size`);
+      if (!info.isFile() || info.size > EXPORT_ENTRY_MAX_BYTES) throw new ExportError(`${JSON.stringify(name)} is not a readable file of a safe size`);
       return readFileSync(full);
     };
   } else {
@@ -94,7 +102,7 @@ export function openExport(path) {
       try {
         return JSON.parse(readBuffer(name).toString("utf8"));
       } catch (error) {
-        if (error instanceof SyntaxError) throw new Error(`${JSON.stringify(name)} is not valid JSON`);
+        if (error instanceof SyntaxError) throw new ExportError(`${JSON.stringify(name)} is not valid JSON`);
         throw error;
       }
     },
@@ -151,19 +159,19 @@ export function readInstagramExport(path) {
   try {
     const { names } = archive;
     if (!names.some((n) => n.endsWith(".json")) && names.some((n) => n.endsWith(".html"))) {
-      throw new Error("this export is in HTML format: request the download again and choose JSON as the format");
+      throw new ExportError("this export is in HTML format: request the download again and choose JSON as the format");
     }
     const profileName = names.find((n) => PROFILE_FILE.test(n));
-    if (!profileName) throw new Error("the export has no personal_information file: it is not an Instagram JSON download");
+    if (!profileName) throw new ExportError("the export has no personal_information file: it is not an Instagram JSON download");
     const info = archive.readJson(profileName).profile_user?.[0];
     const fields = info?.string_map_data ?? {};
     const username = stringOf(fields.Username).trim();
-    if (!HANDLE.test(username) || /^\.+$/.test(username)) throw new Error("the export's personal_information file has no username");
+    if (!HANDLE.test(username) || /^\.+$/.test(username)) throw new ExportError("the export's personal_information file has no username");
 
     const postFiles = names.filter((n) => POSTS_FILE.test(n));
     const reelFiles = names.filter((n) => REELS_FILE.test(n));
     if (postFiles.length + reelFiles.length === 0) {
-      throw new Error("the export has no posts file: if the download came in several parts, merge them into one folder and pass the folder");
+      throw new ExportError("the export has no posts file: if the download came in several parts, merge them into one folder and pass the folder");
     }
     const used = new Set();
     const posts = [];
@@ -175,7 +183,7 @@ export function readInstagramExport(path) {
         }
       }
     }
-    if (posts.length === 0) throw new Error("the export holds no posts");
+    if (posts.length === 0) throw new ExportError("the export holds no posts");
 
     const comments = [];
     for (const name of names.filter((n) => COMMENTS_FILE.test(n))) {
@@ -230,7 +238,7 @@ export function exportToRaw({ input, rawRoot, handle, now = () => new Date() }) 
   const { username } = data.profile;
   if (handle !== undefined && handle.toLowerCase() !== username.toLowerCase()) throw new NotOwnAccount(username, handle);
   if (SYNTHETIC.includes(username.toLowerCase())) {
-    throw new Error(`refusing to write into a synthetic creator's directory (${SYNTHETIC.join(", ")})`);
+    throw new ExportError(`refusing to write into a synthetic creator's directory (${SYNTHETIC.join(", ")})`);
   }
 
   const posts = data.posts.slice().sort((a, b) => a.time - b.time || (a.shortcode < b.shortcode ? -1 : 1));

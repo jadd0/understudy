@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { creators, personaCards, personaChunks } from "@/db/schema";
 import { getConfig } from "@/lib/config";
@@ -24,7 +24,8 @@ export type LoadInput = {
   creatorId: string;
   /** `data/persona` directory of the creator being loaded. */
   dir: string;
-  embedDocuments: (texts: string[]) => Promise<EmbedResult>;
+  /** Embeds the chunk texts; `null` stores the chunks without embeddings, and retrieval falls back to full text. */
+  embedDocuments: ((texts: string[]) => Promise<EmbedResult>) | null;
 };
 export type LoadResult = { chunks: number; tokens: number; cardVersion: number; cardInserted: boolean };
 
@@ -88,7 +89,8 @@ export function neverTerms(card: string): string[] {
 }
 
 /**
- * One transaction replaces the creator's chunks, so loading twice leaves the same rows. The newest card file
+ * One transaction replaces the creator's chunks, so loading twice leaves the same rows; the creator's row is
+ * locked first, so two loads at once run one after the other and leave one set. The newest card file
  * (`card/v<N>.md`, highest N) is inserted as the next version, unpublished, unless the newest stored version
  * already has the same body. Publishing is a separate, deliberate step (`publish-card.ts`).
  */
@@ -105,12 +107,16 @@ export async function loadPersona(input: LoadInput): Promise<LoadResult> {
     throw new Error(`held-out reply in chunks.jsonl (${leaked.length}); nothing written`);
   if (new Set(chunks.map((c) => c.id)).size !== chunks.length) throw new Error("duplicate chunk id; nothing written");
 
-  const { embeddings, totalTokens } = await input.embedDocuments(chunks.map((c) => c.text));
+  const { embeddings, totalTokens }: { embeddings: (number[] | null)[]; totalTokens: number } = input.embedDocuments
+    ? await input.embedDocuments(chunks.map((c) => c.text))
+    : { embeddings: chunks.map(() => null), totalTokens: 0 };
   if (embeddings.length !== chunks.length) throw new Error("embedding count mismatch; nothing written");
 
   const cardBody = readFileSync(path.join(input.dir, "card", `v${latestCardVersion(path.join(input.dir, "card"))}.md`), "utf8");
 
   return db.transaction(async (tx) => {
+    // Serialise loads for one creator: without the lock two runs both delete nothing and both insert.
+    await tx.execute(sql`select id from creators where id = ${input.creatorId} for update`);
     await tx.delete(personaChunks).where(eq(personaChunks.creatorId, input.creatorId));
     for (let i = 0; i < chunks.length; i += 100) {
       await tx.insert(personaChunks).values(
@@ -155,16 +161,19 @@ export function readMarkers(dir: string): Record<string, unknown> | null {
 }
 
 async function main() {
-  const i = process.argv.indexOf("--creator");
-  const handle = i >= 0 ? process.argv[i + 1] : undefined;
-  if (!handle) throw new Error("usage: npm run persona:load -- --creator <handle>");
+  const flag = (name: string) => {
+    const i = process.argv.indexOf(`--${name}`);
+    return i >= 0 ? process.argv[i + 1] : undefined;
+  };
+  const handle = flag("creator");
+  if (!handle) throw new Error("usage: npm run persona:load -- --creator <handle> [--dir <persona directory, default data/persona>]");
   console.log(`database host: ${new URL(process.env.DATABASE_URL ?? "").host}`);
   const [creator] = await db.select({ id: creators.id }).from(creators).where(eq(creators.handle, handle));
   if (!creator) throw new Error(`no creator with handle ${handle}; run npm run db:seed first`);
   const model = await getConfig<string>("retrieval.voyage_model");
   const res = await loadPersona({
     creatorId: creator.id,
-    dir: path.resolve("data/persona"),
+    dir: path.resolve(flag("dir") ?? "data/persona"),
     embedDocuments: (texts) => embed(texts, "document", { model, ...UNBILLED_LIMITS }),
   });
   console.log(`model: ${model}`);
