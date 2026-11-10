@@ -14,5 +14,5 @@
     "noEmitOnError": true
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/testing.ts", "src/testing/**", "src/internal.ts"]
+  "exclude": ["src/**/*.test.ts", "src/testing.ts", "src/testing/**"]
 }
