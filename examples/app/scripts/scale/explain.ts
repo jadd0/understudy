@@ -11,7 +11,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
-import { createUnderstudy, retrieveFts, retrieveVector, type Deps } from "@jadd0/understudy-engine";
+import { retrieveFts, retrieveVector, type Deps } from "@jadd0/understudy-engine";
 import { loadFacts } from "@jadd0/understudy-engine/internal";
 import { messages, personaCards } from "@jadd0/understudy-engine/schema";
 import { Client, Pool, neonConfig } from "@neondatabase/serverless";
@@ -104,8 +104,7 @@ async function main() {
   const out = process.argv.includes("--out") ? process.argv[process.argv.indexOf("--out") + 1] : "docs/operations/scaling/explain.json";
 
   const { db } = await import("@/db/client");
-  const { dbConfigPort } = await import("@/lib/config");
-  const { dbHost } = await import("@/lib/host/engine-host");
+  const { engineCtxFor, understudyFor } = await import("@/lib/host/deps");
   const { listInbox } = await import("@/lib/conversations/read");
   const { getHandoffs } = await import("@/lib/analytics/handoffs");
   const { makeQuery } = await import("@/lib/analytics/query");
@@ -124,7 +123,7 @@ async function main() {
   // budget, so it scans for work and processes none.
   let reads = 0;
   const deps = { clock: { now: () => (reads++ === 0 ? 0 : 1e9), sleep: async () => undefined } } as unknown as Deps;
-  const understudy = createUnderstudy({ db, config: dbConfigPort, host: dbHost, deps });
+  const understudy = understudyFor(deps);
   const vector = Array.from({ length: 1024 }, (_, i) => Math.sin(i));
   const retrieveDeps = { db, embedQuery: async () => vector };
 
@@ -142,7 +141,7 @@ async function main() {
     {
       name: "facts",
       source: "loadFacts (packages/engine/src/turn/facts.ts)",
-      run: () => loadFacts({ db, config: dbConfigPort, host: dbHost, deps }, convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60, strikeWindowDays: 90 }),
+      run: () => loadFacts(engineCtxFor(deps), convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60, strikeWindowDays: 90 }),
       pick: (c) => /no_pitch_active/.test(c.text),
     },
     {

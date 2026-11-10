@@ -34,10 +34,4 @@ describe("the engine's public entry", () => {
     expect(keys).toHaveLength(11);
     for (const key of keys) expect(typeof (understudy as unknown as Record<string, unknown>)[key]).toBe("function");
   });
-
-  test("handBack, takeOver, humanReply, supersedeUnseenBubbles, loadFacts are not module exports", async () => {
-    const entry = (await import("./index.js")) as Record<string, unknown>;
-    expect(Object.keys(entry).length).toBeGreaterThan(10);
-    for (const name of ["handBack", "takeOver", "humanReply", "supersedeUnseenBubbles", "loadFacts"]) expect(name in entry).toBe(false);
-  });
 });

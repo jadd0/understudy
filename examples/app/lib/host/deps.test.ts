@@ -1,6 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
 import type { Generator } from "@jadd0/understudy-engine";
-import { deciderEntries, effectiveStrategy, gatewayWiring, generatorEntries, resetGatewayUrlWarning, type GatewayWiring } from "@/lib/host/deps";
+import { db } from "@/db/client";
+import { dbConfigPort } from "@/lib/config";
+import { dbHost } from "@/lib/host/engine-host";
+import type { Deps } from "@jadd0/understudy-engine";
+import { deciderEntries, effectiveStrategy, engineCtxFor, gatewayWiring, generatorEntries, resetGatewayUrlWarning, type GatewayWiring } from "@/lib/host/deps";
 
 const models = { jev: "jev-1", fallback: "claude-x" };
 const CLAUDE = { CLAUDE_SECRET_KEY: "c" };
@@ -104,5 +108,16 @@ describe("retrieval strategy", () => {
 
   test("with a Voyage key the configured strategy stands", () => {
     for (const s of ["fts", "vector", "hybrid"] as const) expect(effectiveStrategy(s, { VOYAGE_API_KEY: "v" })).toBe(s);
+  });
+});
+
+describe("the engine context", () => {
+  test("engineCtxFor is the app's database, settings and host around the providers it is handed", () => {
+    const deps = { clock: { now: () => 0 } } as unknown as Deps;
+    const ctx = engineCtxFor(deps);
+    expect(ctx.db).toBe(db);
+    expect(ctx.config).toBe(dbConfigPort);
+    expect(ctx.host).toBe(dbHost);
+    expect(ctx.deps).toBe(deps);
   });
 });

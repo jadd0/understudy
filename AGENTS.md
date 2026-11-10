@@ -84,7 +84,7 @@ Every module lives in a domain folder; nothing sits loose in `examples/app/lib/`
 | `examples/app/lib/config/` | `getConfig` over the `config` table (fail closed) and `dbConfigPort`, the engine's view of it |
 | `examples/app/lib/env/` | validated environment |
 | `examples/app/lib/wallet/` | ledger, top-up, unlock, tip, cap, high-value score, money parsing |
-| `packages/engine/` | the engine as a workspace package (`@jadd0/understudy-engine`): the message turn, its ports, retrieval over persona chunks, and the fakes behind `@jadd0/understudy-engine/testing`. The app imports only the package entry |
+| `packages/engine/` | the engine as a workspace package (`@jadd0/understudy-engine`): the message turn, its ports, retrieval over persona chunks, and the fakes behind `@jadd0/understudy-engine/testing`. The app imports the package entries, plus the workspace-only `@jadd0/understudy-engine/internal` in its sim, evals, host and script code (built, never published) |
 | `packages/providers/` | the adapters behind the engine's ports as a workspace package (`@jadd0/understudy-providers`): Claude, Jev, failover, Postgres full-text and Voyage retrieval, a no-op event sink. It imports nothing from the app; retrievers take their database as a constructor argument |
 | `examples/server/` | the engine's second host (`@jadd0/understudy-example-server`): a Fastify API with server-sent replies, takeover, hand-back and a signed webhook, no wallet and no UI. Same rules as any other consumer: it imports only the package entries |
 | `examples/app/lib/host/` | the app's side of the engine's `HostPort` (`packages/engine/src/ports/host.ts`): the database-backed `dbHost` over wallet, ledger, catalogue, unlocks and users |

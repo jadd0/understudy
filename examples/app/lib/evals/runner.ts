@@ -3,9 +3,8 @@ import { and, asc, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { db, withTx } from "@/db/client";
 import { catalogueItems, conversations, handoffs, messages, offers, turns, users } from "@/db/schema";
 import { sendFanMessage, SendRefused } from "@/lib/chat/send";
-import { dbConfigPort, getConfig } from "@/lib/config";
-import { understudyFor } from "@/lib/host/deps";
-import { dbHost } from "@/lib/host/engine-host";
+import { getConfig } from "@/lib/config";
+import { engineCtxFor, understudyFor } from "@/lib/host/deps";
 import type { Deps } from "@jadd0/understudy-engine";
 import { loadFacts } from "@jadd0/understudy-engine/internal";
 import { credit, debit } from "@/lib/wallet/ledger";
@@ -176,7 +175,7 @@ export async function runThread(thread: Thread, ctx: RunnerContext): Promise<Obs
     if (!conversationId) throw new Error(`thread ${thread.id}: first message was refused (${refused ? "send refused" : "no conversation"})`);
     const convId = conversationId;
 
-    const facts = refused ? null : await loadFacts({ db, config: dbConfigPort, host: dbHost, deps: ctx.deps }, convId, fan.id, ctx.creatorId, factsCfg);
+    const facts = refused ? null : await loadFacts(engineCtxFor(ctx.deps), convId, fan.id, ctx.creatorId, factsCfg);
     let errorLines: string[] = [];
     if (!refused) {
       // Messages scheduled with say_later arrive while the engine is working, the way a fan types on.

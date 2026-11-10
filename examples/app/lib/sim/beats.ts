@@ -2,9 +2,8 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db, withTx } from "@/db/client";
 import { offers, wallets } from "@/db/schema";
 import { sendFanMessage, SendRefused } from "@/lib/chat/send";
-import { dbConfigPort, getConfig } from "@/lib/config";
-import { understudyFor } from "@/lib/host/deps";
-import { dbHost } from "@/lib/host/engine-host";
+import { getConfig } from "@/lib/config";
+import { engineCtxFor, understudyFor } from "@/lib/host/deps";
 import { loadFacts } from "@jadd0/understudy-engine/internal";
 import { setFanCap } from "@/lib/wallet/cap";
 import { ledgerSum } from "@/lib/wallet/ledger";
@@ -154,7 +153,7 @@ export async function messageBeat(env: BeatEnv, index: number, beat: Kind<"say" 
     velocityWindowMinutes: await getConfig<number>("pitch.velocity_window_minutes"),
     strikeWindowDays: await getConfig<number>("ts.strike_window_days"),
   };
-  const facts = refused ? null : await loadFacts({ db, config: dbConfigPort, host: dbHost, deps: deps.engine }, convId, env.fanId, env.creatorId, factsCfg);
+  const facts = refused ? null : await loadFacts(engineCtxFor(deps.engine), convId, env.fanId, env.creatorId, factsCfg);
   let engineErrorLine: string | null = null;
   if (!refused) {
     const run = await captureEngineErrors(() => understudyFor(deps.engine).processConversation(convId));
