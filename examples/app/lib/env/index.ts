@@ -17,6 +17,9 @@ const schema = z.object({
   SEED_ADMIN_EMAILS: optional,
   DEMO_SEAT_PASSWORD: optional,
   TYPESAFE_SECRET_KEY: optional,
+  // llm-gateway: the origin without /v1, and the default key (the `gateway.key_env` row can name another variable per creator).
+  GATEWAY_URL: optional,
+  GATEWAY_KEY: optional,
   VOYAGE_API_KEY: optional,
   STRIPE_SECRET_KEY: optional,
   STRIPE_WEBHOOK_SECRET: optional,

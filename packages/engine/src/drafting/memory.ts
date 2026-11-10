@@ -120,6 +120,7 @@ export async function extractMemory(
     messages: [{ role: "user", content: args.fanText }],
     maxTokens: args.maxTokens,
     model: args.model,
+    creatorId: args.creatorId,
   });
   const found = sanitizeProfile(parseJsonObject(result.text));
   for (let attempt = 0; attempt < 2; attempt++) {

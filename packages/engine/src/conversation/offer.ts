@@ -47,10 +47,11 @@ export async function pickOffer(
   decider: Decider,
   shortlist: ShortlistItem[],
   state: DeciderState,
+  creatorId?: string,
 ): Promise<{ item: ShortlistItem; usage: { inputTokens: number; outputTokens: number } | null; model: string | null; answer: string | null }> {
   if (shortlist.length === 0) throw new DeciderUnavailable("malformed");
   if (shortlist.length === 1) return { item: shortlist[0], usage: null, model: null, answer: null };
-  const result = await decider.ask([offerPickQuestion(shortlist)], { state });
+  const result = await decider.ask([offerPickQuestion(shortlist)], { state, creatorId });
   const value = answerOf(result, "offer_pick").value;
   const match = /^o(\d+)$/.exec(value);
   const item = match ? shortlist[Number(match[1]) - 1] : undefined;

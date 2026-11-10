@@ -67,6 +67,7 @@ a stream.
 | `DATABASE_URL`, `UNDERSTUDY_API_KEY` | required |
 | `CLAUDE_SECRET_KEY` | required unless `--fake` |
 | `TYPESAFE_SECRET_KEY` | optional; Jev decides first when set, Claude behind it |
+| `GATEWAY_URL`, `GATEWAY_KEY` | optional; llm-gateway goes first when the `gateway.*.enabled` rows in `config.json` are true (see `packages/providers/README.md`) |
 | `WEBHOOK_URL`, `WEBHOOK_SECRET` | optional, together |
 | `PORT` | default 8787 |
 

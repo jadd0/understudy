@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { checkEnv, disabledSafetyChecks, PRODUCTION_REQUIRED, statusLines } from "./check-env.mjs";
+import { checkEnv, disabledSafetyChecks, enabledGatewaySwitches, gatewayLine, PRODUCTION_REQUIRED, statusLines } from "./check-env.mjs";
 import { providerStatus } from "../lib/env/index.ts";
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "check-env.mjs");
@@ -139,4 +139,31 @@ test("--production on the minimal set exits 1 naming the sign-in, Turnstile and 
     assert.match(run.stderr, new RegExp(`check-env: ${key} `), key);
   }
   assert.ok(!(run.stdout + run.stderr).includes(SECRET));
+});
+
+test("the gateway line says off, on for which calls, or on with no URL, and never prints a value", async () => {
+  const text = '{ "gateway.generate.enabled": true, "gateway.decide.enabled": false, "gateway.timeout_ms": 30000 }';
+  assert.deepEqual(enabledGatewaySwitches(text), ["generate"]);
+  assert.deepEqual(enabledGatewaySwitches('"gateway.decide.enabled": true, "gateway.generate.enabled":true'), ["decide", "generate"]);
+  assert.deepEqual(enabledGatewaySwitches('"gateway.generate.enabled": false'), []);
+
+  assert.equal(gatewayLine(MINIMAL, []), "gateway: off");
+  assert.match(gatewayLine({ ...MINIMAL, GATEWAY_URL: "http://gw.test" }, []), /^gateway: off \(GATEWAY_URL is set/);
+  assert.equal(gatewayLine({ ...MINIMAL, GATEWAY_URL: "http://gw.test", GATEWAY_KEY: SECRET }, ["decide", "generate"]), "gateway: on for generate, decide");
+  assert.match(gatewayLine({ ...MINIMAL, GATEWAY_URL: "http://gw.test" }, ["generate"]), /^gateway: on for generate \(GATEWAY_KEY is not set/);
+  assert.equal(
+    gatewayLine({ ...MINIMAL, GATEWAY_KEY: SECRET }, ["generate", "decide"]),
+    "gateway: switched on for generate, decide in the config but GATEWAY_URL is not set: calls go to Claude and Jev directly",
+  );
+
+  const dir = mkdtempSync(join(tmpdir(), "check-env-gw-"));
+  const config = join(dir, "config.json");
+  writeFileSync(config, '{"rows":{"gateway.generate.enabled":true,"gateway.decide.enabled":true}}');
+  const withoutUrl = runWith({ ...MINIMAL, GATEWAY_KEY: SECRET }, `--safety-config=${config}`);
+  assert.equal(withoutUrl.status, 0);
+  assert.match(withoutUrl.stdout, /gateway: switched on for generate, decide in the config but GATEWAY_URL is not set/);
+  const withUrl = runWith({ ...MINIMAL, GATEWAY_URL: "http://gw.test", GATEWAY_KEY: SECRET }, `--safety-config=${config}`);
+  assert.match(withUrl.stdout, /gateway: on for generate, decide\n/);
+  assert.ok(!(withoutUrl.stdout + withoutUrl.stderr + withUrl.stdout + withUrl.stderr).includes(SECRET));
+  assert.match(runWith(MINIMAL).stdout, /\n {2}gateway: off\n/);
 });
