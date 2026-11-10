@@ -6,6 +6,12 @@ Each folder holds one area's documents and the diagrams that explain them: the i
 
 ## Index
 
+### CASE-STUDY.md: how the project came to be
+
+| doc | what it covers | status |
+|---|---|---|
+| [CASE-STUDY.md](CASE-STUDY.md) | From a take-home brief to a library: what the review named, how the repository went public, the move from app to packages, the voice evidence, and what is still open | built |
+
 ### app/ — The Next app: screens, sign-in, money, realtime, console, UI
 
 | doc | what it covers | status |
@@ -112,4 +118,4 @@ One line per flow: name, diagram, the code that implements it.
 8. Fans top up a wallet through Stripe; a signature-checked webhook credits an append-only ledger and
    unlocks debit under a row lock.
 9. Humans take over through two queues, Juno and Trust & Safety; the strictest owner wins.
-10. Every change passes `bash scripts/gate.sh`; the gate is the only proof (AGENTS.md).
+10. Every change passes `bash scripts/gate.sh`; the gate is the only proof (AGENTS.md). `npm run check` runs every check.

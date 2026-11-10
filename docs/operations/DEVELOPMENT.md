@@ -11,6 +11,9 @@ The build contract is `AGENTS.md`.
 3. `npm run check:env` checks the file. `npm run db:migrate` applies the engine's migrations and then `examples/app/drizzle/` to `DATABASE_URL` (Neon `neondb`).
 4. `npm run db:seed` creates the creator (from `SEED_CREATOR_EMAIL`) and admins (`SEED_ADMIN_EMAILS`),
    idempotently; each is skipped with a message if its variable is unset.
+   Then load and publish Juno's persona: `npm run persona:load -- --creator junovale` and
+   `npm run persona:publish -- --creator junovale --card-version 2` ([APP.md](../app/APP.md#running-it-locally), step 4).
+   Only a creator with a published card can be reached, so without them `/chat?c=junovale` is a 404.
 5. `npm run dev`. Run the Next scripts from the repository root: the app reads `data/` and `docs/quality/evals/` relative to the working directory, and the root scripts start Next with the repository root as that directory.
 
 ## Minimal setup
@@ -61,6 +64,10 @@ the files in `gate_inputs` (`examples/app/.env.local`, `node_modules/.package-lo
 | persona | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` (includes the split-hygiene tests over committed data) |
 
 Add a check as a new line in the gate-steps file, never by editing `gate.sh`.
+
+The steps file is private to the maintainers. Without it, `npm run check` ([check.sh](../../scripts/check.sh)) runs the
+same checks in the same order from the public tree, with no lock, stamp or logs, and stops at the first failure. Its
+leak step needs `LEAK_CHECK_RAW` and `LEAK_CHECK_NAMES` and fails without them.
 
 ## Worktrees
 
