@@ -457,8 +457,11 @@ part way can be run again. The new creator has no catalogue and no creator confi
 and makes no offer until items are added. Until the card is published the engine fails closed.
 
 **Embeddings and markers.** With `VOYAGE_API_KEY` the chunks are embedded; without it they are stored with null
-embeddings and retrieval uses full text. The voice-marker rates are stored with the card only when they were measured
-on at least 30 of her texts (`MIN_MARKER_TEXTS`); otherwise no style draw is applied.
+embeddings and retrieval uses full text; `--publish` refuses that when the `retrieval.strategy` row reads vectors
+(`vector` or `hybrid`), naming both remedies (set the key, or set the row to `fts`), before any write. The
+voice-marker rates are stored with a card only when they were measured on at least 30 of her texts
+(`MIN_MARKER_TEXTS`, applied where the markers are read, so `persona:load` and `persona:publish` agree with `init`);
+otherwise no style draw is applied.
 
 **The leak rule.** Both phases compare the repository tree with `<out>/raw`. A 6-word run copied from her captions or
 comments into any file stops the run; a file that only names an account found in her data is a warning.

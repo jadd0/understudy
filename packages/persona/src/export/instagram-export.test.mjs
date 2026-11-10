@@ -230,3 +230,12 @@ test("a comment lands on the latest post at or before it, and one before every p
     ["exp_1001", "before all"], ["exp_1001", "on first"], ["exp_1001", "just before second"], ["exp_1002", "on second"],
   ]);
 });
+
+test("exportToRaw given the data it was read as does not open the download again", () => {
+  const data = readInstagramExport(FIXTURE);
+  const out = join(scratch, "raw-handed-data");
+  const result = exportToRaw({ input: join(scratch, "no-such-download"), data, rawRoot: out, handle: "wren.fixture", now: NOW });
+  assert.equal(result.counts.posts, 5);
+  assert.equal(result.filesRead, data.filesRead);
+  assert.throws(() => exportToRaw({ input: join(scratch, "no-such-download"), rawRoot: join(scratch, "raw-unread"), now: NOW }), /does not exist/);
+});
