@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/button";
 import { IconBack } from "@/components/ui/icons";
 import { Skeleton, SkeletonGroup, SkeletonLine } from "@/components/ui/skeleton";
 import { formatCents } from "@/lib/wallet/money";
-import { saveNeverList, savePrice } from "../actions";
+import { Field } from "@/components/ui/field";
+import { MAX_ITEM_TEASER_CHARS, MAX_ITEM_TITLE_CHARS } from "@/lib/conversations/controls";
+import { addItemAction, moveItemAction, restoreItemAction, retireItemAction, saveNeverList, savePrice } from "../actions";
 
 /*
  * Console settings: the frame, and the sections that stream. The page renders the frame and the AI switch
- * (its value comes with the creator row the guard step already read); the never-list, prices and persona card
+ * (its value comes with the creator row the guard step already read); the never-list, catalogue and persona card
  * stream behind their skeletons. loading.tsx renders the same frame with every skeleton.
  */
 
@@ -58,8 +60,8 @@ export function Section({ title, hint, children }: { title: string; hint?: strin
 export const HINTS = {
   ai: "Off means every conversation waits for you. Each conversation also has its own switch in the thread.",
   never: "One term per line. A reply that contains a term is rejected and held for you instead.",
-  prices: "In dollars. A new price applies to offers made from now on.",
-  card: "How Juno sounds. Read-only here; it changes through a new card version.",
+  catalogue: "What you can offer. Prices are in dollars and a new price applies to offers made from now on. A retired item is never offered again; an offer already open on it can still be unlocked.",
+  card: "How the creator sounds. Read-only here; it changes through a new card version.",
 };
 
 /** The AI switch row while the creator row loads (loading.tsx only; the page has the row before it renders). */
@@ -103,43 +105,113 @@ export function NeverListSkeleton() {
   );
 }
 
-export async function CataloguePrices({ creatorId }: { creatorId: string }) {
-  const items = await db.select().from(catalogueItems).where(eq(catalogueItems.creatorId, creatorId)).orderBy(asc(catalogueItems.title));
+export async function CatalogueEditor({ creatorId }: { creatorId: string }) {
+  const items = await db
+    .select()
+    .from(catalogueItems)
+    .where(eq(catalogueItems.creatorId, creatorId))
+    .orderBy(asc(catalogueItems.position), asc(catalogueItems.title), asc(catalogueItems.id));
+  const live = items.filter((i) => i.active);
+  const retired = items.filter((i) => !i.active);
   return (
-    <ul className="flex flex-col gap-2">
-      {items.map((i) => (
-        <li key={i.id}>
-          <form action={savePrice} className="flex flex-wrap items-center gap-3 rounded-row border border-line px-4 py-3">
-            <input type="hidden" name="itemId" value={i.id} />
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-[15px] font-medium">{i.title}</span>
-              <span className="text-[13px] text-muted">
-                {i.kind} · now {formatCents(i.priceCents)}
+    <div className="flex flex-col gap-6">
+      {live.length === 0 ? <p className="text-[14px] text-muted">No items yet. Add one below.</p> : null}
+      <ul className="flex flex-col gap-2">
+        {live.map((i, n) => (
+          <li key={i.id}>
+            <form action={savePrice} className="flex flex-wrap items-center gap-3 rounded-row border border-line px-4 py-3">
+              <input type="hidden" name="itemId" value={i.id} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[15px] font-medium">{i.title}</span>
+                <span className="text-[13px] text-muted">
+                  {i.kind} · now {formatCents(i.priceCents)}
+                </span>
               </span>
-            </span>
-            <label htmlFor={`price-${i.id}`} className="sr-only">
-              Price for {i.title} in dollars
-            </label>
-            <span className="text-muted">$</span>
-            <input
-              id={`price-${i.id}`}
-              name="price"
-              inputMode="decimal"
-              defaultValue={(i.priceCents / 100).toFixed(2)}
-              className="h-11 w-24 rounded-field border border-transparent bg-surface px-3 text-[16px] tabular-nums outline-none focus:border-line-focus focus:bg-ground md:text-[15px]"
-            />
-            <Button variant="secondary">Save</Button>
-          </form>
-        </li>
-      ))}
-    </ul>
+              <label htmlFor={`price-${i.id}`} className="sr-only">
+                Price for {i.title} in dollars
+              </label>
+              <span className="text-muted">$</span>
+              <input
+                id={`price-${i.id}`}
+                name="price"
+                inputMode="decimal"
+                defaultValue={(i.priceCents / 100).toFixed(2)}
+                className="h-11 w-24 rounded-field border border-transparent bg-surface px-3 text-[16px] tabular-nums outline-none focus:border-line-focus focus:bg-ground md:text-[15px]"
+              />
+              <Button variant="secondary">Save</Button>
+              <span className="flex basis-full flex-wrap items-center gap-2">
+                <Button variant="quiet" type="submit" formAction={moveItemAction} name="direction" value="up" disabled={n === 0} aria-label={`Move ${i.title} up`}>
+                  Up
+                </Button>
+                <Button variant="quiet" type="submit" formAction={moveItemAction} name="direction" value="down" disabled={n === live.length - 1} aria-label={`Move ${i.title} down`}>
+                  Down
+                </Button>
+                <Button variant="quiet" type="submit" formAction={retireItemAction} aria-label={`Retire ${i.title}`}>
+                  Retire
+                </Button>
+              </span>
+            </form>
+          </li>
+        ))}
+      </ul>
+
+      {retired.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-[14px] font-semibold text-muted-2">Retired</h3>
+          <ul className="flex flex-col gap-2">
+            {retired.map((i) => (
+              <li key={i.id}>
+                <form action={restoreItemAction} className="flex flex-wrap items-center gap-3 rounded-row border border-line px-4 py-3">
+                  <input type="hidden" name="itemId" value={i.id} />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-[15px] font-medium text-muted-2">{i.title}</span>
+                    <span className="text-[13px] text-muted">
+                      {i.kind} · {formatCents(i.priceCents)}
+                    </span>
+                  </span>
+                  <Button variant="secondary" aria-label={`Restore ${i.title}`}>
+                    Restore
+                  </Button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
-/** Price rows in their bordered frames: title and kind lines, the $ field and the Save button. */
-export function CataloguePricesSkeleton({ rows = 4 }: { rows?: number }) {
+/** The new-item form; it needs no data, so it renders at once beside the streaming list. */
+export function AddItemForm() {
   return (
-    <SkeletonGroup label="Loading catalogue prices" className="flex flex-col gap-2">
+    <form action={addItemAction} className="flex flex-col gap-3 rounded-row border border-line px-4 py-4">
+      <h3 className="text-[15px] font-semibold">Add item</h3>
+      <label htmlFor="item-kind" className="flex flex-col gap-1.5">
+        <span className="text-[13px] font-medium text-ink-2">Kind</span>
+        <select
+          id="item-kind"
+          name="kind"
+          defaultValue="ppv"
+          className="h-11 rounded-field border border-transparent bg-surface px-3 text-[16px] outline-none focus:border-line-focus focus:bg-ground md:text-[15px]"
+        >
+          <option value="ppv">ppv</option>
+          <option value="bundle">bundle</option>
+          <option value="personal">personal</option>
+        </select>
+      </label>
+      <Field id="item-title" name="title" label="Title" required maxLength={MAX_ITEM_TITLE_CHARS} autoComplete="off" />
+      <Field id="item-teaser" name="teaser" label="Teaser (optional)" maxLength={MAX_ITEM_TEASER_CHARS} autoComplete="off" />
+      <Field id="item-price" name="price" label="Price in dollars" inputMode="decimal" required placeholder="9.99" autoComplete="off" />
+      <Button className="w-fit">Add item</Button>
+    </form>
+  );
+}
+
+/** Item rows in their bordered frames: title and kind lines, the $ field and the Save button, then the move and retire row. */
+export function CatalogueEditorSkeleton({ rows = 4 }: { rows?: number }) {
+  return (
+    <SkeletonGroup label="Loading catalogue" className="flex flex-col gap-2">
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex flex-wrap items-center gap-3 rounded-row border border-line px-4 py-3">
           <span className="flex min-w-0 flex-1 flex-col">
@@ -148,6 +220,11 @@ export function CataloguePricesSkeleton({ rows = 4 }: { rows?: number }) {
           </span>
           <Skeleton className="h-11 w-[108px] rounded-field" />
           <Skeleton className="h-11 w-[84px] rounded-full" />
+          <span className="flex basis-full gap-2">
+            <Skeleton className="h-11 w-[68px] rounded-full" />
+            <Skeleton className="h-11 w-[84px] rounded-full" />
+            <Skeleton className="h-11 w-[92px] rounded-full" />
+          </span>
         </div>
       ))}
     </SkeletonGroup>

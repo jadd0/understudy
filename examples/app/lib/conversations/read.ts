@@ -444,6 +444,15 @@ export async function getSnapshot(viewer: Viewer, conversationId: string): Promi
   return { thread, suggested, labels: Object.fromEntries(labels.map((l) => [l.messageId, turnLabelText(l)])) };
 }
 
+/** The items a creator can offer from the console: active ones, in the order she set (ties by title). */
+export async function offerableItems(creatorId: string) {
+  return db
+    .select({ id: catalogueItems.id, title: catalogueItems.title, kind: catalogueItems.kind, priceCents: catalogueItems.priceCents })
+    .from(catalogueItems)
+    .where(and(eq(catalogueItems.creatorId, creatorId), eq(catalogueItems.active, true)))
+    .orderBy(asc(catalogueItems.position), asc(catalogueItems.title), asc(catalogueItems.id));
+}
+
 const creatorWithImage = () =>
   db.select({ ...getTableColumns(creators), image: users.image }).from(creators).leftJoin(users, eq(users.id, creators.userId));
 

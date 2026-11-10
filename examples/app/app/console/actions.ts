@@ -5,8 +5,8 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { requireConsole } from "@/lib/auth/guards";
 import {
-  discardSuggested, handBackConversation, releaseConversation, sendAsCreator, sendOfferAsCreator, sendSuggested, setConversationAi, setGlobalAi, setItemPrice,
-  setNeverList, takeOverConversation,
+  addItem, discardSuggested, handBackConversation, moveItem, releaseConversation, sendAsCreator, sendOfferAsCreator, sendSuggested, setConversationAi,
+  setGlobalAi, setItemActive, setItemPrice, setNeverList, takeOverConversation,
 } from "@/lib/conversations/controls";
 import { getEvents } from "@/lib/conversations/events";
 import { getSnapshot, type Viewer } from "@/lib/conversations/read";
@@ -51,7 +51,7 @@ export async function handBackAction(conversationId: string) {
   const v = await viewer();
   return toResult(async () => {
     await handBackConversation(v, conversationId, getEvents());
-    // Fan messages after Juno's last reply are answered now, not at the next sweep.
+    // Fan messages after the creator's last reply are answered now, not at the next sweep.
     after(async () => (await chatter()).processConversation(conversationId));
   });
 }
@@ -112,4 +112,34 @@ export async function savePrice(formData: FormData) {
   if (cents === null) redirect("/console/settings?error=price");
   const r = await toResult(() => setItemPrice(v, String(formData.get("itemId") ?? ""), cents));
   redirect(r.ok ? "/console/settings?saved=price" : "/console/settings?error=price");
+}
+
+/** The "Add item" form: the price is typed in dollars and converted here, once, to whole cents. */
+export async function addItemAction(formData: FormData) {
+  const v = await viewer();
+  const cents = dollarsToCents(String(formData.get("price") ?? ""));
+  if (cents === null) redirect("/console/settings?error=item_price");
+  const r = await toResult(() =>
+    addItem(v, { kind: String(formData.get("kind") ?? ""), title: String(formData.get("title") ?? ""), teaser: String(formData.get("teaser") ?? ""), cents }),
+  );
+  redirect(r.ok ? "/console/settings?saved=item_added" : "/console/settings?error=item");
+}
+
+export async function retireItemAction(formData: FormData) {
+  const v = await viewer();
+  const r = await toResult(() => setItemActive(v, String(formData.get("itemId") ?? ""), false));
+  redirect(r.ok ? "/console/settings?saved=item_retired" : "/console/settings?error=item_edit");
+}
+
+export async function restoreItemAction(formData: FormData) {
+  const v = await viewer();
+  const r = await toResult(() => setItemActive(v, String(formData.get("itemId") ?? ""), true));
+  redirect(r.ok ? "/console/settings?saved=item_restored" : "/console/settings?error=item_edit");
+}
+
+export async function moveItemAction(formData: FormData) {
+  const v = await viewer();
+  const direction = formData.get("direction") === "up" ? "up" : "down";
+  const r = await toResult(() => moveItem(v, String(formData.get("itemId") ?? ""), direction));
+  redirect(r.ok ? "/console/settings?saved=item_moved" : "/console/settings?error=item_edit");
 }

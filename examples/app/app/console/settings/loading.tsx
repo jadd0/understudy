@@ -1,6 +1,7 @@
 import {
+  AddItemForm,
   AiSwitchSkeleton,
-  CataloguePricesSkeleton,
+  CatalogueEditorSkeleton,
   HINTS,
   NeverListSkeleton,
   PersonaCardSkeleton,
@@ -17,8 +18,9 @@ export default function Loading() {
       <Section title="Never talk about" hint={HINTS.never}>
         <NeverListSkeleton />
       </Section>
-      <Section title="Catalogue prices" hint={HINTS.prices}>
-        <CataloguePricesSkeleton />
+      <Section title="Catalogue" hint={HINTS.catalogue}>
+        <CatalogueEditorSkeleton />
+        <AddItemForm />
       </Section>
       <Section title="Persona card" hint={HINTS.card}>
         <PersonaCardSkeleton />

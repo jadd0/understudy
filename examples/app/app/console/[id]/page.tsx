@@ -1,14 +1,11 @@
 import { Suspense } from "react";
-import { and, asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { db } from "@/db/client";
-import { catalogueItems } from "@/db/schema";
 import { LiveThread } from "@/components/chat/live-thread";
 import { ThreadSkeleton } from "@/components/chat/thread-skeleton";
 import { Inbox } from "@/components/console/inbox";
 import { accountName, roleLabel } from "@/lib/ui/account-label";
 import { requireConsole } from "@/lib/auth/guards";
-import { assertVisible, consoleCreatorFor, ConversationNotFound, type Viewer } from "@/lib/conversations/read";
+import { assertVisible, consoleCreatorFor, ConversationNotFound, offerableItems, type Viewer } from "@/lib/conversations/read";
 import { getWindowedSnapshot } from "@/lib/conversations/paging";
 import {
   conversationAiAction, discardSuggestedAction, handBackAction, olderThread, refreshThread, releaseAction, replyAction, sendOfferAction, sendSuggestedAction, takeoverAction, threadChanges,
@@ -50,11 +47,7 @@ async function ConsoleThread({ viewer, id }: { viewer: Viewer & { role: "creator
   const [snapshot, offerItems] = await Promise.all([
     snapshotP,
     creator && viewer.role === "creator"
-      ? db
-          .select({ id: catalogueItems.id, title: catalogueItems.title, kind: catalogueItems.kind, priceCents: catalogueItems.priceCents })
-          .from(catalogueItems)
-          .where(and(eq(catalogueItems.creatorId, creator.id), eq(catalogueItems.active, true)))
-          .orderBy(asc(catalogueItems.title))
+      ? offerableItems(creator.id)
       : [],
   ]);
   return (
