@@ -7,9 +7,8 @@
  * failure is `DeciderUnavailable(<short code>)`: never a body, because a body can echo fan text.
  */
 import { DeciderUnavailable, type Decider, type DeciderContext, type DeciderResult, type Question } from "@understudy/engine";
-import { resolveKey } from "./generator";
-import { GatewayHttpError, postChat } from "./http";
-import type { GatewayKeyResolver } from "./keys";
+import { count, GatewayHttpError, postChat, type ChatUsage } from "./http";
+import { resolveKey, type GatewayKeyResolver } from "./keys";
 import {
   CHOICE_SYSTEM,
   CHOICE_TOOL,
@@ -31,12 +30,9 @@ export interface GatewayDeciderOptions {
 }
 
 interface ChatResponse {
-  model?: unknown;
   choices?: { message?: { tool_calls?: { function?: { name?: unknown; arguments?: unknown } }[] } }[];
-  usage?: { prompt_tokens?: unknown; completion_tokens?: unknown };
+  usage?: ChatUsage;
 }
-
-const count = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 0);
 
 export class GatewayDecider implements Decider {
   constructor(private readonly options: GatewayDeciderOptions) {
@@ -44,10 +40,9 @@ export class GatewayDecider implements Decider {
   }
 
   async ask(questions: readonly Question[], context: DeciderContext): Promise<DeciderResult> {
-    const key = await resolveKey(this.options.keyFor, context.creatorId);
-    if (!key) throw new DeciderUnavailable("not_configured");
     let json: ChatResponse;
     try {
+      const key = await resolveKey(this.options.keyFor, context.creatorId);
       json = (await postChat(
         this.options.baseUrl,
         key,
@@ -81,7 +76,8 @@ export class GatewayDecider implements Decider {
     }
     return {
       answers: parseChoiceAnswers(input, questions),
-      model: typeof json.model === "string" && json.model !== "" ? json.model : this.options.model,
+      // The model asked for, not the id the gateway reports.
+      model: this.options.model,
       usage: { inputTokens: count(json.usage?.prompt_tokens), outputTokens: count(json.usage?.completion_tokens) },
     };
   }

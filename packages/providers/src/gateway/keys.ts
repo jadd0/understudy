@@ -1,4 +1,5 @@
 import type { ConfigPort } from "@understudy/engine";
+import { GatewayHttpError } from "./http";
 
 /**
  * The gateway key for a creator, or null when there is none. A creator id of `undefined` is a call that belongs to no
@@ -22,6 +23,25 @@ export function envKeyResolver(config: ConfigPort, env: Record<string, string | 
     const row = (creatorId ? matching.find((r) => r.creatorId === creatorId) : undefined) ?? matching.find((r) => r.creatorId === null);
     if (!row || typeof row.value !== "string" || row.value === "") return null;
     const key = env[row.value];
-    return key && key.trim() !== "" ? key : null;
+    const trimmed = key?.trim();
+    return trimmed ? trimmed : null;
   };
+}
+
+/**
+ * The key for this call. No key is `GatewayHttpError("not_configured")`: the creator has no tenant on the gateway,
+ * which says nothing about the gateway's health. A resolver that throws (the settings are unreadable) is
+ * `GatewayHttpError("key_lookup_failed")`, a failure the breaker counts; only the error's class is logged, because a
+ * message can carry connection details.
+ */
+export async function resolveKey(keyFor: GatewayKeyResolver, creatorId: string | undefined): Promise<string> {
+  let key: string | null;
+  try {
+    key = await keyFor(creatorId);
+  } catch (e) {
+    console.warn(`gateway: key lookup failed (${e instanceof Error ? e.name : typeof e})`);
+    throw new GatewayHttpError("key_lookup_failed");
+  }
+  if (!key || key.trim() === "") throw new GatewayHttpError("not_configured");
+  return key;
 }

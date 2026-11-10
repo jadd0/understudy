@@ -63,9 +63,10 @@ Setup:
 
 The gateway entry goes first in its failover chain and the direct providers stay behind it. A gateway outage, a 402 when
 a creator's budget is spent, a 429, or a creator with no key therefore ends in the path that runs today, not in a missing
-reply. An error carries `http_<status>`, `timeout`, `network`, `malformed` or `not_configured` and never a response body or a
-key. A creator with no key (`not_configured`) is skipped without counting against the entry's circuit breaker. Every
-other failure counts against it, and the breaker is shared by all creators.
+reply. An error carries `http_<status>`, `timeout`, `network`, `malformed`, `not_configured` or `key_lookup_failed` and never a response body or a
+key. The signals that belong to one creator are skipped without counting against the entry's circuit breaker: no key
+(`not_configured`), a spent budget (`http_402`) and a rate limit (`http_429`). Every other failure, including
+`key_lookup_failed` (the key could not be read), counts against it, and the breaker is shared by all creators.
 
 What is lost on this path. Read from the gateway's Anthropic adapter (`packages/gateway/src/providers/anthropic.ts` in
 llm-gateway) and its provider notes:

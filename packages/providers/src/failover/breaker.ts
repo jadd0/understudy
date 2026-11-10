@@ -10,6 +10,9 @@ export interface BreakerOptions {
   readonly clock: { now(): number };
 }
 
+/** Failure codes that describe one creator's situation (no key, budget spent, rate limited), not the provider's health. */
+export const PER_CREATOR_CODES: ReadonlySet<string> = new Set(["not_configured", "http_402", "http_429"]);
+
 type State = "closed" | "open" | "half_open";
 
 export class Breaker {

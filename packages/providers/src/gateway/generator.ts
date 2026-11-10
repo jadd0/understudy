@@ -3,11 +3,11 @@
  * suffix are joined into one `system` message (the OpenAI format has no cache marker, so nothing is cached by this
  * path). The request carries the creator's own gateway key, so the gateway's budget, rate limit and request log are
  * per creator. Any failure is `GeneratorError(<short code>)`: `http_<status>`, `timeout`, `network`, `malformed`, or
- * `not_configured` when the creator has no key. There is no retry here; the failover chain is the retry.
+ * `not_configured` when the creator has no key, or `key_lookup_failed` when the key could not be read. There is no retry here; the failover chain is the retry.
  */
 import { GeneratorError, type GenerateInput, type GenerateResult, type Generator } from "@understudy/engine";
-import { GatewayHttpError, postChat } from "./http";
-import type { GatewayKeyResolver } from "./keys";
+import { count, GatewayHttpError, postChat, type ChatUsage } from "./http";
+import { resolveKey, type GatewayKeyResolver } from "./keys";
 
 export interface GatewayGeneratorOptions {
   /** The gateway's origin, without `/v1`. */
@@ -18,23 +18,11 @@ export interface GatewayGeneratorOptions {
 }
 
 interface ChatResponse {
-  model?: unknown;
   choices?: { message?: { content?: unknown }; finish_reason?: unknown }[];
-  usage?: { prompt_tokens?: unknown; completion_tokens?: unknown; prompt_tokens_details?: { cached_tokens?: unknown } };
+  usage?: ChatUsage;
 }
 
 const FINISH: Record<string, string> = { stop: "end_turn", length: "max_tokens", content_filter: "refusal" };
-
-const count = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 0);
-
-/** The key for this call, or `not_configured`. A resolver that throws (the settings are unreadable) is no key either. */
-export async function resolveKey(keyFor: GatewayKeyResolver, creatorId: string | undefined): Promise<string | null> {
-  try {
-    return await keyFor(creatorId);
-  } catch {
-    return null;
-  }
-}
 
 export class GatewayGenerator implements Generator {
   constructor(private readonly options: GatewayGeneratorOptions) {
@@ -42,10 +30,9 @@ export class GatewayGenerator implements Generator {
   }
 
   async generate(input: GenerateInput): Promise<GenerateResult> {
-    const key = await resolveKey(this.options.keyFor, input.creatorId);
-    if (!key) throw new GeneratorError("not_configured");
     let json: ChatResponse;
     try {
+      const key = await resolveKey(this.options.keyFor, input.creatorId);
       json = (await postChat(
         this.options.baseUrl,
         key,
@@ -74,7 +61,8 @@ export class GatewayGenerator implements Generator {
     return {
       text: content ?? "",
       stopReason: finish === null ? null : (FINISH[finish] ?? finish),
-      model: typeof json.model === "string" && json.model !== "" ? json.model : input.model,
+      // The model asked for, not the id the gateway reports: a dated or aliased id has no price row.
+      model: input.model,
       usage: {
         // Cached tokens are priced at their own rate, so they leave the input count.
         inputTokens: prompt - cached,

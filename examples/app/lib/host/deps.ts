@@ -78,9 +78,16 @@ export function generatorEntries(
   return entries;
 }
 
+let warnedNoUrl = false;
+
+/** Lets a test see the warning again; the flag otherwise lasts the process. */
+export function resetGatewayUrlWarning(): void {
+  warnedNoUrl = false;
+}
+
 /**
  * The gateway switches are platform rows, read without a creator id so a creator's row cannot turn them on. A switch
- * on with no `GATEWAY_URL` is off, with one warning: the chains stay what they were.
+ * on with no `GATEWAY_URL` is off, with one warning per process (this runs on every send): the chains stay what they were.
  */
 export async function gatewayWiring(source: KeySource, read: <T>(key: string) => Promise<T> = getConfig): Promise<GatewayWiring | null> {
   const generate = (await read<boolean>("gateway.generate.enabled")) === true;
@@ -88,7 +95,10 @@ export async function gatewayWiring(source: KeySource, read: <T>(key: string) =>
   if (!generate && !decide) return null;
   const baseUrl = source.GATEWAY_URL?.trim();
   if (!baseUrl) {
-    console.warn("gateway: switched on but GATEWAY_URL is not set, using the direct providers");
+    if (!warnedNoUrl) {
+      warnedNoUrl = true;
+      console.warn("gateway: switched on but GATEWAY_URL is not set, using the direct providers");
+    }
     return null;
   }
   return {

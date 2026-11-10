@@ -11,6 +11,16 @@ export class GatewayHttpError extends Error {
   }
 }
 
+/** The usage block of a chat completion, as far as either adapter reads it. */
+export interface ChatUsage {
+  prompt_tokens?: unknown;
+  completion_tokens?: unknown;
+  prompt_tokens_details?: { cached_tokens?: unknown };
+}
+
+/** A token count from a response field: a finite non-negative number, else 0. */
+export const count = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 0);
+
 export interface PostChatOptions {
   readonly timeoutMs: number;
   readonly fetch?: typeof fetch;

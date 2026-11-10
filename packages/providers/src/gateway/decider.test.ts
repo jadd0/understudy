@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { DeciderUnavailable, type Question } from "@understudy/engine";
 import { GatewayDecider } from "./decider";
 import { envKeyResolver, type GatewayKeyResolver } from "./keys";
@@ -59,7 +59,8 @@ describe("GatewayDecider", () => {
     const { f } = fakeFetch(() => json(toolAnswer(GOOD)));
     const out = await build(f).ask(QUESTIONS, { state: { new_messages: ["show me something"] }, creatorId: "c1" });
     expect(out.answers).toEqual([{ key: "intent", value: "buy_intent", confidence: 0.9, probabilities: { smalltalk: 0.1, buy_intent: 0.9 } }]);
-    expect(out.model).toBe("gpt-5-mini-2026-01-01");
+    // The model asked for, not the dated id the gateway reports.
+    expect(out.model).toBe("gpt-5-mini");
     expect(out.usage).toEqual({ inputTokens: 210, outputTokens: 31 });
   });
 
@@ -124,6 +125,20 @@ describe("GatewayDecider", () => {
     const { f, seen } = fakeFetch(() => json(toolAnswer(GOOD)));
     await expect(build(f, async () => null).ask(QUESTIONS, { state: "s" })).rejects.toMatchObject({ reason: "not_configured" });
     expect(seen).toHaveLength(0);
+  });
+
+  it("a resolver that throws is key_lookup_failed, not not_configured, and sends nothing", async () => {
+    const { f, seen } = fakeFetch(() => json(toolAnswer(GOOD)));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const broken = build(f, async () => {
+        throw new Error("db down");
+      });
+      await expect(broken.ask(QUESTIONS, { state: "s" })).rejects.toMatchObject({ name: "DeciderUnavailable", reason: "key_lookup_failed" });
+      expect(seen).toHaveLength(0);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("a gateway that refuses tools for a claude model is http_400 without the body", async () => {

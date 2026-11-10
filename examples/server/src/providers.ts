@@ -26,6 +26,13 @@ async function row<T>(config: ConfigPort, key: string): Promise<T> {
   return r.value as T;
 }
 
+let warnedNoUrl = false;
+
+/** Lets a test see the warning again; the flag otherwise lasts the process. */
+export function resetGatewayUrlWarning(): void {
+  warnedNoUrl = false;
+}
+
 /**
  * Claude drafts and decides; Jev decides first only when its key is set, and llm-gateway goes ahead of both when its
  * switch row is on and `GATEWAY_URL` is set. Each entry sits behind its own breaker. Retrieval is Postgres full text,
@@ -47,7 +54,10 @@ export async function realProviders(
   const gatewayGenerate = (await row<boolean>(config, "gateway.generate.enabled")) === true;
   const gatewayDecide = (await row<boolean>(config, "gateway.decide.enabled")) === true;
   const gateway = (gatewayGenerate || gatewayDecide) && env.gatewayUrl ? env.gatewayUrl : null;
-  if ((gatewayGenerate || gatewayDecide) && !gateway) console.warn("gateway: switched on but GATEWAY_URL is not set, using the direct providers");
+  if ((gatewayGenerate || gatewayDecide) && !gateway && !warnedNoUrl) {
+    warnedNoUrl = true;
+    console.warn("gateway: switched on but GATEWAY_URL is not set, using the direct providers");
+  }
   const keyFor = envKeyResolver(config, source);
   const gatewayTimeoutMs = gateway ? await row<number>(config, "gateway.timeout_ms") : 0;
   const deciders = [];

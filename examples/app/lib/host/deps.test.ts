@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import type { Generator } from "@understudy/engine";
-import { deciderEntries, effectiveStrategy, gatewayWiring, generatorEntries, type GatewayWiring } from "@/lib/host/deps";
+import { deciderEntries, effectiveStrategy, gatewayWiring, generatorEntries, resetGatewayUrlWarning, type GatewayWiring } from "@/lib/host/deps";
 
 const models = { jev: "jev-1", fallback: "claude-x" };
 const CLAUDE = { CLAUDE_SECRET_KEY: "c" };
@@ -63,11 +63,23 @@ describe("gatewayWiring", () => {
   });
 
   test("a switch on with no GATEWAY_URL is off, with a warning that names no value", async () => {
+    resetGatewayUrlWarning();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       expect(await gatewayWiring({ GATEWAY_KEY: "gw_secret" }, read({ "gateway.generate.enabled": true, "gateway.decide.enabled": true }))).toBeNull();
       expect(warn).toHaveBeenCalledTimes(1);
       expect(String(warn.mock.calls[0][0])).not.toContain("gw_secret");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("the missing GATEWAY_URL warning is logged once per process, not on every send", async () => {
+    resetGatewayUrlWarning();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      for (let i = 0; i < 3; i++) expect(await gatewayWiring({}, read({ "gateway.generate.enabled": true }))).toBeNull();
+      expect(warn).toHaveBeenCalledTimes(1);
     } finally {
       warn.mockRestore();
     }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { GeneratorError, type GenerateInput } from "@understudy/engine";
 import { GatewayGenerator } from "./generator";
 import { envKeyResolver, type GatewayKeyResolver } from "./keys";
@@ -92,9 +92,9 @@ describe("GatewayGenerator", () => {
     expect(plain.usage).toEqual({ inputTokens: 120, outputTokens: 9, cacheReadTokens: 0, cacheWriteTokens: 0 });
   });
 
-  it("names the model the gateway says served the call", async () => {
-    const { f } = fakeFetch(() => json(completion({ model: "claude-haiku-5-5-20260101" })));
-    expect((await build(f).generate(INPUT)).model).toBe("claude-haiku-5-5-20260101");
+  it("names the model that was asked for, not the dated id the gateway reports", async () => {
+    const { f } = fakeFetch(() => json(completion({ model: "claude-haiku-5-5-20261001" })));
+    expect((await build(f).generate(INPUT)).model).toBe("claude-haiku-5-5");
   });
 
   it("maps_finish_reason", async () => {
@@ -144,12 +144,32 @@ describe("GatewayGenerator", () => {
     // no platform row and no creator row at all
     const none = build(f, envKeyResolver(ROWS([]), { GATEWAY_KEY: "gw_platform" }));
     await expect(none.generate({ ...INPUT, creatorId: "creator-b" })).rejects.toMatchObject({ code: "not_configured" });
-    // a resolver that cannot read the settings is no key either
-    const broken = build(f, async () => {
-      throw new Error("db down");
-    });
-    await expect(broken.generate(INPUT)).rejects.toMatchObject({ code: "not_configured" });
+    // a blank key from a custom resolver is no key either
+    await expect(build(f, async () => "   ").generate(INPUT)).rejects.toMatchObject({ code: "not_configured" });
     expect(seen).toHaveLength(0);
+  });
+
+  it("a resolver that throws is key_lookup_failed, a distinct code, with no request and no message in the error", async () => {
+    const { f, seen } = fakeFetch(() => json(completion()));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const broken = build(f, async () => {
+        throw new Error("db down postgres://secret@host");
+      });
+      const err = await broken.generate(INPUT).catch((e: unknown) => e);
+      expect(err).toMatchObject({ name: "GeneratorError", code: "key_lookup_failed" });
+      expect(String((err as Error).message)).not.toContain("secret");
+      expect(warn.mock.calls.flat().join(" ")).not.toContain("secret");
+      expect(seen).toHaveLength(0);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("the key sent is the trimmed key", async () => {
+    const { f, seen } = fakeFetch(() => json(completion()));
+    await build(f, envKeyResolver(ROWS([{ key: "gateway.key_env", value: "GATEWAY_KEY", creatorId: null }]), { GATEWAY_KEY: "  gw_padded\n" })).generate(INPUT);
+    expect(seen.map((s) => s.headers.authorization)).toEqual(["Bearer gw_padded"]);
   });
 
   it("http_402_429_502_504_map_to_codes_without_body", async () => {

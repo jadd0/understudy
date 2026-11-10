@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from "vitest";
 import type { EngineDb } from "@understudy/engine";
 import { jsonConfigPort, readConfigFile } from "./config";
 import { readEnv } from "./env";
-import { realProviders } from "./providers";
+import { realProviders, resetGatewayUrlWarning } from "./providers";
 import { SERVER_DIR } from "./seed";
 
 const file = readConfigFile(path.join(SERVER_DIR, "config.json"));
@@ -42,6 +42,7 @@ describe("the server's provider chains", () => {
   });
 
   test("switches on with no GATEWAY_URL leave today's chains and warn once", async () => {
+    resetGatewayUrlWarning();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       expect(await chains({ "gateway.generate.enabled": true, "gateway.decide.enabled": true }, { GATEWAY_KEY: "gw_secret" })).toEqual({
@@ -50,6 +51,17 @@ describe("the server's provider chains", () => {
       });
       expect(warn).toHaveBeenCalledTimes(1);
       expect(String(warn.mock.calls[0][0])).not.toContain("gw_secret");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("the missing GATEWAY_URL warning is logged once per process, not on every build", async () => {
+    resetGatewayUrlWarning();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      for (let i = 0; i < 3; i++) await chains({ "gateway.generate.enabled": true }, {});
+      expect(warn).toHaveBeenCalledTimes(1);
     } finally {
       warn.mockRestore();
     }
