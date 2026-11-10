@@ -36,6 +36,8 @@ test("each package is publishable: version, licence, repository, files, README a
     assert.equal(manifest.publishConfig?.access, "public");
     assert.equal(manifest.repository?.directory, `packages/${dir}`);
     assert.ok(Array.isArray(manifest.files) && manifest.files.length > 0, `${name} lists files`);
+    // npm drops a bin entry written with a leading `./` when it publishes.
+    for (const [bin, target] of Object.entries(manifest.bin ?? {})) assert.ok(!target.startsWith("./"), `${name} bin ${bin} -> ${target}`);
     assert.ok(read(`packages/${dir}/README.md`).length > 200, `${name} has a README`);
     assert.equal(read(`packages/${dir}/LICENSE`), read("LICENSE"), `${name} LICENSE differs from the root one`);
   }

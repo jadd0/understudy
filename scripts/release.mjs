@@ -42,6 +42,11 @@ function main() {
     process.exit(1);
   }
 
+  if (/auto-corrected/.test(dry.stderr ?? "")) {
+    console.error("release: npm changed a package.json while publishing; run `npm pkg fix` and commit the result");
+    process.exit(1);
+  }
+
   console.log("\nrelease: dry run only: nothing was published.");
   console.log("To publish for real, run these yourself:");
   console.log("  npm login");

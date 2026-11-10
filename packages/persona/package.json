@@ -28,7 +28,7 @@
   },
   "types": "./src/index.d.ts",
   "bin": {
-    "understudy-persona": "./src/cli.mjs"
+    "understudy-persona": "src/cli.mjs"
   },
   "files": [
     "src",
