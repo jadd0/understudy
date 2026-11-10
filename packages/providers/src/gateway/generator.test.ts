@@ -172,7 +172,7 @@ describe("GatewayGenerator", () => {
     expect(seen.map((s) => s.headers.authorization)).toEqual(["Bearer gw_padded"]);
   });
 
-  it("http_402_429_502_504_map_to_codes_without_body", async () => {
+  it("402_429_502_504_map_to_codes_without_body", async () => {
     const SENTINEL = "SENTINEL-fan-text";
     const codes: string[] = [];
     for (const status of [402, 429, 502, 504]) {
@@ -186,7 +186,7 @@ describe("GatewayGenerator", () => {
       expect(shown).not.toContain(SENTINEL);
       expect(shown).not.toContain("gw_topsecret");
     }
-    expect(codes).toEqual(["http_402", "http_429", "http_502", "http_504"]);
+    expect(codes).toEqual(["gateway_budget", "gateway_rate_limited", "http_502", "http_504"]);
   });
 
   it("a network failure, a timeout and a body that is not JSON are codes", async () => {

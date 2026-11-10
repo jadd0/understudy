@@ -157,7 +157,7 @@ describe("GatewayDecider", () => {
       const { f } = fakeFetch(() => json({ error: { message: "SENTINEL" } }, status));
       reasons.push(((await build(f).ask(QUESTIONS, { state: "s" }).catch((e: unknown) => e)) as DeciderUnavailable).reason);
     }
-    expect(reasons).toEqual(["http_402", "http_429", "http_502", "http_504"]);
+    expect(reasons).toEqual(["gateway_budget", "gateway_rate_limited", "http_502", "http_504"]);
     const down = (async () => {
       throw new TypeError("fetch failed");
     }) as typeof fetch;

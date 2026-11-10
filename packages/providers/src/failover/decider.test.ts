@@ -66,7 +66,7 @@ describe("FailoverDecider", () => {
     expect(b.calls).toBe(0);
   });
 
-  it.each(["not_configured", "http_402", "http_429"])("%s_skips_without_opening_the_breaker", async (code) => {
+  it.each(["not_configured", "gateway_budget", "gateway_rate_limited"])("%s_skips_without_opening_the_breaker", async (code) => {
     const a = fake(() => new DeciderUnavailable(code));
     const b = fake(() => OK("b"));
     const { d, lines } = build([["gateway", a], ["claude", b]]);
@@ -75,6 +75,15 @@ describe("FailoverDecider", () => {
     expect([a.calls, b.calls]).toEqual([5, 5]);
     expect(lines).toHaveLength(5);
     expect(lines[0]).toBe(`provider: gateway unavailable (${code}), using claude`);
+  });
+
+  it.each(["http_402", "http_429"])("a direct claude entry's %s still opens its breaker", async (code) => {
+    const a = fake(() => new DeciderUnavailable(code));
+    const b = fake(() => OK("b"));
+    const { d, lines } = build([["claude", a], ["fallback", b]]);
+    for (let i = 0; i < 5; i++) expect((await d.ask(Q, { state: {} })).model).toBe("b");
+    expect([a.calls, b.calls]).toEqual([2, 5]);
+    expect(lines[0]).toBe(`provider: claude unavailable (${code}), using fallback`);
   });
 
   it.each(["http_500", "key_lookup_failed"])("%s still opens the breaker", async (code) => {
