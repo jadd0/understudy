@@ -23,6 +23,9 @@ const specifiersOf = (src: string): string[] =>
 // providers to build a world; it is not part of the package's runtime surface.
 const isTestSupport = (f: string) => /\.test\.tsx?$/.test(f) || /(^|\/)testing\/(?!fakes\/)[^/]+\.ts$/.test(f) || f.endsWith("/testing.ts");
 
+/** The engine's entries: three published, two for the workspace's own tests and apps. */
+const ENTRIES = new Set(["@jadd0/understudy-engine", "@jadd0/understudy-engine/schema", "@jadd0/understudy-engine/fakes", "@jadd0/understudy-engine/testing", "@jadd0/understudy-engine/internal"]);
+
 describe("the engine package boundary", () => {
   test("the package imports nothing from the app", () => {
     const files = walk(PKG).filter((f) => !isTestSupport(f));
@@ -55,13 +58,23 @@ describe("the engine package boundary", () => {
     let viaEntry = 0;
     for (const f of files) {
       for (const spec of specifiersOf(readFileSync(join(ROOT, f), "utf8"))) {
-        if (spec === "@jadd0/understudy-engine" || spec === "@jadd0/understudy-engine/testing" || spec === "@jadd0/understudy-engine/schema" || spec === "@jadd0/understudy-engine/fakes") viaEntry++;
+        if (ENTRIES.has(spec)) viaEntry++;
         else if (spec.startsWith("@jadd0/understudy-engine/") || spec.includes("packages/engine")) offenders.push(`${f}: ${spec}`);
         else if (spec.startsWith(".") && relative(ROOT, join(ROOT, f, "..", spec)).startsWith("packages/engine")) offenders.push(`${f}: ${spec}`);
       }
     }
     expect(viaEntry).toBeGreaterThan(20);
     expect(offenders).toEqual([]);
+  });
+
+  test("the headless server's runtime code imports only published entries", () => {
+    const files = walk("examples/server/src").filter((f) => !/\.test\.tsx?$/.test(f));
+    expect(files.length).toBeGreaterThan(5);
+    expect(files).toContain("examples/server/src/main.ts");
+    const published = new Set(["@jadd0/understudy-engine", "@jadd0/understudy-engine/schema", "@jadd0/understudy-engine/fakes"]);
+    const engineSpecs = files.flatMap((f) => specifiersOf(readFileSync(join(ROOT, f), "utf8")).filter((s) => s.startsWith("@jadd0/understudy-engine")).map((s) => ({ f, s })));
+    expect(engineSpecs.length).toBeGreaterThan(5);
+    expect(engineSpecs.filter(({ s }) => !published.has(s))).toEqual([]);
   });
 
   test("the old homes are gone", () => {
