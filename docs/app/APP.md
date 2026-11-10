@@ -53,7 +53,7 @@ There are three human actors and one machine actor.
 
 | Actor | Who | Signs in with | Lands on | What they do |
 |---|---|---|---|---|
-| **Fan** | Anyone who signs up | Emailed one-tap link (Resend) behind Turnstile | [`/chat`](../../examples/app/app/chat/page.tsx) | Chats with Juno, unlocks paid messages, tips, tops up a wallet at [`/wallet`](../../examples/app/app/wallet/page.tsx) |
+| **Fan** | Anyone who signs up | Emailed one-tap link (Resend) behind Turnstile | [`/chat`](../../examples/app/app/chat/page.tsx) | Chats with a creator (`/chat?c=<handle>`; the first creator by handle when none is named; an unknown handle is a 404), unlocks paid messages, tips, tops up a wallet at [`/wallet`](../../examples/app/app/wallet/page.tsx) |
 | **Juno** (role `creator`) | The creator | Shared demo seat: email + password + Turnstile | [`/console`](../../examples/app/app/console/%28inbox%29/page.tsx) | Reads the inbox, takes over a chat, edits and sends held drafts, sends offers, hands back to the AI, sets the never-list, prices and AI switches |
 | **Trust & Safety** (role `admin`) | Understudy staff | Shared demo seat, same way | [`/admin`](../../examples/app/app/admin/%28queue%29/page.tsx) | Works the safety queue across every conversation, takes over any chat, releases it, bans fans; can also open the creator console, analytics and the [fan simulator](#14-the-fan-simulator) |
 | **The AI** | The [message engine](#8-the-message-engine) | n/a | n/a | Answers in Juno's voice, pitches catalogue items, and hands the chat to a human when the rules say so |

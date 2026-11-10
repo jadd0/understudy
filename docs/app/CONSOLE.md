@@ -2,14 +2,14 @@
 
 ## Who sees what
 
-| | Juno (`/console`) | Admin (`/admin`) | Fan (`/chat`) |
+| | Creator (`/console`) | Admin (`/admin`) | Fan (`/chat`) |
 |---|---|---|---|
-| Conversations | her own, except any on the Trust & Safety side | every conversation, T&S ones first | their own with Juno |
-| Settings | AI switch, never-list, prices, persona card (read-only) | the same page for the platform creator, through `/console/settings`; no actor is recorded | none |
+| Conversations | her own, except any on the Trust & Safety side | every conversation, T&S ones first | their own with the creator they open (`/chat?c=<handle>`) |
+| Settings | AI switch, never-list, catalogue (add, price, reorder, retire), persona card (read-only) | the same page for the platform creator, through `/console/settings`; no actor is recorded | none |
 | Actions | take over, reply, edit and send a suggestion, discard, hand back, per-chat AI switch, send an offer | take over (any chat), reply, edit and send a suggestion, discard, release, ban (on `/admin/[id]` only) | send, unlock, tip, typing pings |
 | Turn labels (route, outcome, ms, cost) | on hover over an AI bubble | same | never |
 
-Navigation lives in the top bar (`examples/app/components/ui/app-shell.tsx`, links from `examples/app/lib/ui/app-nav.ts`): Juno gets Inbox,
+Navigation lives in the top bar (`examples/app/components/ui/app-shell.tsx`, links from `examples/app/lib/ui/app-nav.ts`): a creator gets Inbox,
 Settings and Analytics; an admin gets Safety queue, Console, Simulator and Analytics. The inbox header shows only the
 seat label.
 
@@ -38,6 +38,9 @@ Proof: `examples/app/lib/conversations/read.db.test.ts` (`creator_never_lists_ts
 | Per-conversation AI switch | `conversations.ai_enabled` | same lease check |
 | Never-talk-about list | `persona_cards.never_list` on her newest published version | each turn loads the newest published card and verifies the draft against it |
 | Catalogue price | `catalogue_items.price_cents` (integer cents, above zero) | the next offer copies it; an open offer keeps the price it copied |
+| Catalogue item added | a new `catalogue_items` row for her creator (kind ppv, bundle or personal; title up to 80 characters; teaser up to 200; the price typed in dollars and converted to cents once, in the action) at the end of her order | the shortlist reads active rows only, ordered by price, so a new item is offered like any other |
+| Catalogue order | `catalogue_items.position`; a move swaps an item with its neighbour among the active ones and renumbers every item of hers 0..n-1 in one transaction that locks only her catalogue rows | the console list and the offer picker (`position`, then title); the engine's shortlist keeps its own price order |
+| Catalogue retire and restore | `catalogue_items.active` (rows are never deleted: offers and unlocks point at them) | the shortlist and the offer picker skip a retired item; an offer already open on it can still be unlocked until it expires |
 | Persona card | read-only here (newest published version) | the engine reads the newest published version |
 
 None of these is a `config` row: the engine reads the tables above, so they take effect on the next message with no

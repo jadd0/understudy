@@ -9,6 +9,7 @@ import { db } from "@/db/client";
 import { users } from "@/db/schema";
 import { MINOR_IN_CHAT, requireChatReader } from "@/lib/auth/guards";
 import { getFanWindowedSnapshot } from "@/lib/conversations/paging";
+import { creatorByHandle } from "@/lib/conversations/read";
 import { getConfig } from "@/lib/config";
 import { accountName, roleLabel } from "@/lib/ui/account-label";
 import {
@@ -40,6 +41,8 @@ export default async function ChatPage({
   const { c } = await searchParams;
   if (Array.isArray(c)) notFound();
   const handle = c ?? null;
+  // Decided before the thread streams, so a handle nobody has is a real 404 and not a page that fails midway.
+  if (handle !== null && !(await creatorByHandle(handle))) notFound();
   const account: Account = {
     name: accountName(user, "fan"),
     roleLabel: roleLabel("fan"),
