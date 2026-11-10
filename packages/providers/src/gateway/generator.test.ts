@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GeneratorError, type GenerateInput } from "@understudy/engine";
 import { GatewayGenerator } from "./generator";
-import { envKeyResolver } from "./keys";
+import { envKeyResolver, type GatewayKeyResolver } from "./keys";
 
 const BASE = "http://gateway.test";
 const INPUT: GenerateInput = {
@@ -53,7 +53,7 @@ const ROWS = (rows: { key: string; value: unknown; creatorId: string | null }[])
     rows.filter((r) => q.keys.includes(r.key) && (r.creatorId === null || r.creatorId === q.creatorId)),
 });
 
-const build = (f: typeof fetch, keyFor = async () => "gw_key" as string | null) => new GatewayGenerator({ baseUrl: BASE, keyFor, timeoutMs: 1000, fetch: f });
+const build = (f: typeof fetch, keyFor: GatewayKeyResolver = async () => "gw_key") => new GatewayGenerator({ baseUrl: BASE, keyFor, timeoutMs: 1000, fetch: f });
 
 describe("GatewayGenerator", () => {
   it("sends_system_then_messages_as_openai_chat", async () => {

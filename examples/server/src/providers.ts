@@ -1,4 +1,15 @@
-import { AnthropicGenerator, ClaudeDecider, FailoverDecider, FailoverGenerator, FtsRetriever, TypeSafeDecider, withModel } from "@understudy/providers";
+import {
+  AnthropicGenerator,
+  ClaudeDecider,
+  envKeyResolver,
+  FailoverDecider,
+  FailoverGenerator,
+  FtsRetriever,
+  GatewayDecider,
+  GatewayGenerator,
+  TypeSafeDecider,
+  withModel,
+} from "@understudy/providers";
 import type { ConfigPort, Decider, EngineDb, Generator, Retriever } from "@understudy/engine";
 import { FakeDecider, FakeGenerator, type Scripted } from "@understudy/engine/fakes";
 import type { ServerEnv } from "./env";
@@ -16,10 +27,16 @@ async function row<T>(config: ConfigPort, key: string): Promise<T> {
 }
 
 /**
- * Claude drafts and decides; Jev decides first only when its key is set. Each entry sits behind its own breaker.
- * Retrieval is Postgres full text, which needs no embedding key.
+ * Claude drafts and decides; Jev decides first only when its key is set, and llm-gateway goes ahead of both when its
+ * switch row is on and `GATEWAY_URL` is set. Each entry sits behind its own breaker. Retrieval is Postgres full text,
+ * which needs no embedding key. `source` is where the gateway key variables are read from.
  */
-export async function realProviders(db: EngineDb, env: ServerEnv, config: ConfigPort): Promise<Providers> {
+export async function realProviders(
+  db: EngineDb,
+  env: ServerEnv,
+  config: ConfigPort,
+  source: Record<string, string | undefined> = process.env,
+): Promise<Providers> {
   const claudeToken = env.claudeKey ?? "";
   const breaker = {
     failures: await row<number>(config, "breaker.failures"),
@@ -27,7 +44,19 @@ export async function realProviders(db: EngineDb, env: ServerEnv, config: Config
     cooldownMs: await row<number>(config, "breaker.cooldown_ms"),
     clock: { now: () => Date.now(), sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)) },
   };
+  const gatewayGenerate = (await row<boolean>(config, "gateway.generate.enabled")) === true;
+  const gatewayDecide = (await row<boolean>(config, "gateway.decide.enabled")) === true;
+  const gateway = (gatewayGenerate || gatewayDecide) && env.gatewayUrl ? env.gatewayUrl : null;
+  if ((gatewayGenerate || gatewayDecide) && !gateway) console.warn("gateway: switched on but GATEWAY_URL is not set, using the direct providers");
+  const keyFor = envKeyResolver(config, source);
+  const gatewayTimeoutMs = gateway ? await row<number>(config, "gateway.timeout_ms") : 0;
   const deciders = [];
+  if (gateway && gatewayDecide) {
+    deciders.push({
+      name: "gateway",
+      decider: new GatewayDecider({ baseUrl: gateway, keyFor, model: await row<string>(config, "gateway.decide_model"), timeoutMs: gatewayTimeoutMs }),
+    });
+  }
   if (env.typesafeKey) {
     deciders.push({
       name: "jev",
@@ -39,15 +68,17 @@ export async function realProviders(db: EngineDb, env: ServerEnv, config: Config
     decider: new ClaudeDecider({ authToken: claudeToken, model: await row<string>(config, "model.decide_fallback"), timeoutMs: 20_000 }),
   });
   const claude = new AnthropicGenerator({ authToken: claudeToken, timeoutMs: 30_000, maxRetries: 1 });
+  const generators = [];
+  if (gateway && gatewayGenerate) {
+    generators.push({ name: "gateway", generator: new GatewayGenerator({ baseUrl: gateway, keyFor, timeoutMs: gatewayTimeoutMs }) });
+  }
+  generators.push(
+    { name: "claude", generator: claude },
+    { name: "claude-fallback", generator: withModel(claude, await row<string>(config, "model.generate_fallback")) },
+  );
   return {
     decider: new FailoverDecider(deciders, breaker),
-    generator: new FailoverGenerator(
-      [
-        { name: "claude", generator: claude },
-        { name: "claude-fallback", generator: withModel(claude, await row<string>(config, "model.generate_fallback")) },
-      ],
-      breaker,
-    ),
+    generator: new FailoverGenerator(generators, breaker),
     retriever: new FtsRetriever(db),
   };
 }

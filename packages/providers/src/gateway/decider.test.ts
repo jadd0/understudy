@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DeciderUnavailable, type Question } from "@understudy/engine";
 import { GatewayDecider } from "./decider";
-import { envKeyResolver } from "./keys";
+import { envKeyResolver, type GatewayKeyResolver } from "./keys";
 
 const BASE = "http://gateway.test";
 const QUESTIONS: Question[] = [
@@ -51,7 +51,7 @@ function fakeFetch(reply: (n: number) => Response) {
   return { f, seen };
 }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
-const build = (f: typeof fetch, keyFor = async () => "gw_key" as string | null) =>
+const build = (f: typeof fetch, keyFor: GatewayKeyResolver = async () => "gw_key") =>
   new GatewayDecider({ baseUrl: BASE, keyFor, model: "gpt-5-mini", timeoutMs: 1000, fetch: f });
 
 describe("GatewayDecider", () => {
