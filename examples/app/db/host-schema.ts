@@ -121,6 +121,8 @@ export const catalogueItems = pgTable(
     teaser: text("teaser"),
     priceCents: integer("price_cents").notNull(),
     active: boolean("active").notNull().default(true),
+    /** The creator's own order in the console list and offer picker; ties fall back to title. */
+    position: integer("position").notNull().default(0),
   },
   (t) => [check("catalogue_items_price_positive", sql`${t.priceCents} > 0`)],
 );
