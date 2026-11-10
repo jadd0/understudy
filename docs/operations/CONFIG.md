@@ -181,4 +181,6 @@ How many messages a sim fan sends is not a config row: it is the number of messa
 | `SWEEP_START_BUDGET_MS` | `35_000` | the sweep starts no new conversation after this, inside its 60 s function | `packages/engine/src/conversation/sweep.ts` |
 | `DRIVE_MS` | `50_000` | how long a Spawn on /admin/sim drives its runs before the tick takes over | `examples/app/app/admin/sim/actions.ts` |
 | `TICK_MS` | `15_000` | how long each /admin/sim page tick advances a live run | `examples/app/app/admin/sim/actions.ts` |
+| `EXPORT_ENTRY_MAX_BYTES` | `268_435_456` | the largest single file the Instagram export reader will inflate from a zip | `packages/persona/src/export/zip.mjs` |
+| `MIN_MARKER_TEXTS` | `30` | replies her voice-marker rates need before `init` stores them with the card | `examples/app/scripts/persona/init.ts` |
 | `EVERY_MS` | `6_000` | gap between /admin/sim page ticks | `examples/app/app/admin/sim/live-ticker.tsx` |
