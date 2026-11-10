@@ -18,6 +18,12 @@ describe("server env", () => {
     }
   });
 
+  test("the gateway url is optional and read only when set", () => {
+    expect(readEnv(MINIMAL).gatewayUrl).toBeNull();
+    expect(readEnv({ ...MINIMAL, GATEWAY_URL: "http://gateway.test" }).gatewayUrl).toBe("http://gateway.test");
+    expect(readEnv({ ...MINIMAL, GATEWAY_URL: "  " }).gatewayUrl).toBeNull();
+  });
+
   test("HOST overrides the listen address", () => {
     expect(readEnv({ ...MINIMAL, HOST: "0.0.0.0" }).host).toBe("0.0.0.0");
   });

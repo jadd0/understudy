@@ -51,7 +51,7 @@ export async function composeReply(
   picked: { route: Route; offerItem: ShortlistItem | null },
   thread: JevIn["thread"],
 ): Promise<PassResult> {
-  const { ctx, cfg, card, acc } = s;
+  const { ctx, cfg, card, acc, lease } = s;
   const { clock, decider } = ctx.deps;
   let { route, offerItem } = picked;
   let draft = "";
@@ -104,6 +104,7 @@ export async function composeReply(
         messages: built.messages,
         maxTokens: cfg.maxTokens,
         model: cfg.generateModel,
+        creatorId: lease.creatorId,
       });
       acc.msGen = (acc.msGen ?? 0) + (clock.now() - t0);
       // Priced at the model that served, not the one asked for: a failover answers from its fallback at that model's rows.
@@ -126,6 +127,7 @@ export async function composeReply(
           paid: b.facts.hasUnlocked,
           offer: offerItem,
           boundary: route.name === "boundary",
+          creatorId: lease.creatorId,
         },
         () => clock.now(),
       );

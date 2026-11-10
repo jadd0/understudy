@@ -21,7 +21,7 @@ export async function chooseOffer(s: TurnState, b: Batch, route: Route): Promise
     const shortlist =
       unowned.length > 0 ? unowned : affordable(await buildOwnedShortlist(host, lease.creatorId, lease.fanId, lease.conversationId, route.offerKinds));
     const t0 = s.ctx.deps.clock.now();
-    const pick = await pickOffer(s.ctx.deps.decider, shortlist, b.jevState);
+    const pick = await pickOffer(s.ctx.deps.decider, shortlist, b.jevState, lease.creatorId);
     acc.msJevIn = (acc.msJevIn ?? 0) + (s.ctx.deps.clock.now() - t0);
     if (pick.usage) s.addCost("offer_pick", cfg.prices[cfg.jevModel], pick.usage);
     offerItem = pick.item;

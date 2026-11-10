@@ -10,6 +10,13 @@ export interface BreakerOptions {
   readonly clock: { now(): number };
 }
 
+/**
+ * Failure codes that describe one creator's situation (no key, gateway budget spent, gateway rate limited), not the
+ * provider's health. The gateway adapters raise the last two under their own codes, so a direct Anthropic or Jev 402/429
+ * (`http_402`, `http_429`) still counts against that entry's breaker.
+ */
+export const PER_CREATOR_CODES: ReadonlySet<string> = new Set(["not_configured", "gateway_budget", "gateway_rate_limited"]);
+
 type State = "closed" | "open" | "half_open";
 
 export class Breaker {

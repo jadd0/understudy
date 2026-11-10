@@ -4,6 +4,8 @@ export interface ServerEnv {
   apiKey: string;
   claudeKey: string | null;
   typesafeKey: string | null;
+  /** The llm-gateway origin, without `/v1`. The gateway rows in the config switch it on; without this it stays off. */
+  gatewayUrl: string | null;
   webhookUrl: string | null;
   webhookSecret: string | null;
   port: number;
@@ -38,6 +40,7 @@ export function readEnv(source: Record<string, string | undefined> = process.env
     apiKey: source.UNDERSTUDY_API_KEY!,
     claudeKey: opt(source.CLAUDE_SECRET_KEY),
     typesafeKey: opt(source.TYPESAFE_SECRET_KEY),
+    gatewayUrl: opt(source.GATEWAY_URL),
     webhookUrl,
     webhookSecret: webhookUrl ? webhookSecret : null,
     port,

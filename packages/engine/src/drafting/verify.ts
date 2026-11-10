@@ -131,6 +131,8 @@ export async function verifyDraft(
     boundary?: boolean;
     /** The item the card will show, on an offer route: Jev checks the draft leads into it. */
     offer?: { title: string; teaser: string | null } | null;
+    /** Whose chat the draft is for, passed to the decider so a per-creator adapter can attribute the call. */
+    creatorId?: string;
   },
   now: () => number,
 ): Promise<VerifyOutcome> {
@@ -144,7 +146,10 @@ export async function verifyDraft(
   const questions = withOffer ? [...base, LEADS_TO_OFFER_QUESTION] : base;
   const state = { draft: input.draft, fan_message: input.fanMessage, earlier_messages: input.earlier };
   const offerItem = withOffer ? `${withOffer.title}${withOffer.teaser ? `: ${withOffer.teaser}` : ""}` : null;
-  const result = await decider.ask(questions, { state: offerItem ? { ...state, offer_item: offerItem } : state });
+  const result = await decider.ask(questions, {
+    state: offerItem ? { ...state, offer_item: offerItem } : state,
+    creatorId: input.creatorId,
+  });
   const failures = jevChecks(result, input.route, input.boundary === true);
   return {
     ok: failures.length === 0,
