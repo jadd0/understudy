@@ -30,8 +30,14 @@ export interface DeciderResult {
 /** JSON the model reads. Whatever the engine puts here is what the provider sees; the fence tests pin it. */
 export type DeciderState = string | Readonly<Record<string, unknown>> | readonly unknown[];
 
+/** What a question is asked about, and for whom: an adapter that can attribute a call to a creator uses `creatorId`, the rest ignore it. */
+export interface DeciderContext {
+  readonly state: DeciderState;
+  readonly creatorId?: string;
+}
+
 export interface Decider {
-  ask(questions: readonly Question[], context: { readonly state: DeciderState }): Promise<DeciderResult>;
+  ask(questions: readonly Question[], context: DeciderContext): Promise<DeciderResult>;
 }
 
 export class DeciderUnavailable extends Error {

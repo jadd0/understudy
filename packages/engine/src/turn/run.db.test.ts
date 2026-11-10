@@ -145,6 +145,22 @@ describe("a reply turn", () => {
   });
 });
 
+describe("the creator id on provider calls", () => {
+  test("every_generate_and_ask_carries_the_creator_id", async () => {
+    const w = await world({ "pitch.min_gap_rounds": 0 });
+    // An offer turn with two items fires every call kind: classify, offer pick, compose, verify and memory.
+    const r = rig({ script: { offer_pick: "o2" }, replies: ["ooh you should see what i have locked for you"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "replied" });
+    const askedKeys = r.decider.calls.flatMap((c) => c.keys);
+    expect(askedKeys).toContain("offer_pick");
+    expect(r.decider.calls.length).toBeGreaterThanOrEqual(3);
+    expect(r.generator.calls.some(isMemoryCall)).toBe(true);
+    expect(r.generator.calls.length).toBeGreaterThanOrEqual(2);
+    expect(r.decider.calls.map((c) => c.creatorId)).toEqual(r.decider.calls.map(() => w.creator.id));
+    expect(r.generator.calls.map((c) => c.creatorId)).toEqual(r.generator.calls.map(() => w.creator.id));
+  });
+});
+
 describe("offers", () => {
   test("an offer turn copies the price from the catalogue, never shows it to the model, and records the offer", async () => {
     const w = await world({ "pitch.min_gap_rounds": 0 });

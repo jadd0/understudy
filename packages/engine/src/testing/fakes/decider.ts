@@ -2,6 +2,7 @@ import {
   DeciderUnavailable,
   type Answer,
   type Decider,
+  type DeciderContext,
   type DeciderResult,
   type DeciderState,
   type Question,
@@ -23,16 +24,16 @@ export interface FakeDeciderOptions {
 }
 
 export class FakeDecider implements Decider {
-  readonly calls: { keys: string[]; state: DeciderState }[] = [];
+  readonly calls: { keys: string[]; state: DeciderState; creatorId?: string }[] = [];
   script: Record<string, Scripted>;
 
   constructor(private readonly options: FakeDeciderOptions = {}) {
     this.script = { ...(options.script ?? {}) };
   }
 
-  async ask(questions: readonly Question[], context: { readonly state: DeciderState }): Promise<DeciderResult> {
+  async ask(questions: readonly Question[], context: DeciderContext): Promise<DeciderResult> {
     const keys = questions.map((q) => q.key);
-    this.calls.push({ keys, state: context.state });
+    this.calls.push({ keys, state: context.state, creatorId: context.creatorId });
     const call = this.calls.length;
     await this.options.latch?.(call, keys);
     const failure = this.options.failOn?.[call];

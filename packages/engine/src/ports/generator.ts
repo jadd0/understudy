@@ -9,6 +9,8 @@ export interface GenerateInput {
   readonly messages: readonly GenerateMessage[];
   readonly maxTokens: number;
   readonly model: string;
+  /** Who the call is for. An adapter that can attribute a call to a creator (a per-creator key, budget or log) uses it; the rest ignore it. */
+  readonly creatorId?: string;
 }
 
 export interface GenerateUsage {
