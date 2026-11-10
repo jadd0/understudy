@@ -18,17 +18,17 @@ describe("the understudy bin", () => {
   });
 
   test("init --help exits 0 and prints the usage", () => {
-    const run = spawnSync(process.execPath, [BIN, "init", "--help"], { encoding: "utf8", env: { PATH: process.env.PATH } });
+    const run = spawnSync(process.execPath, [BIN, "init", "--help"], { encoding: "utf8", env: process.env });
     expect(run.status).toBe(0);
     expect(run.stdout).toContain("npx understudy init (--instagram-export");
     expect(run.stdout).toContain("--publish <dir>");
   });
 
   test("any other command exits 2 with the usage", () => {
-    const run = spawnSync(process.execPath, [BIN, "bogus"], { encoding: "utf8", env: { PATH: process.env.PATH } });
+    const run = spawnSync(process.execPath, [BIN, "bogus"], { encoding: "utf8", env: process.env });
     expect(run.status).toBe(2);
     expect(run.stderr).toContain('unknown command "bogus"');
-    const bare = spawnSync(process.execPath, [BIN], { encoding: "utf8", env: { PATH: process.env.PATH } });
+    const bare = spawnSync(process.execPath, [BIN], { encoding: "utf8", env: process.env });
     expect(bare.status).toBe(2);
   });
 

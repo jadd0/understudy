@@ -9,7 +9,7 @@ import { catalogueItems, creators, messages, offers, personaCards, personaChunks
 import { NOW, makeUser } from "@/db/test-helpers";
 import { addMessage, makeConversation, makeFan, makeItem, rig, setEngineConfig, YES } from "@understudy/engine/testing";
 import { NotOwnAccount } from "@understudy/persona";
-import { fakeCardClaude, fixtureFetch, writeZip } from "@understudy/persona/testing";
+import { fakeCardClaude, fixtureFetch, writeZip, type CardCall } from "@understudy/persona/testing";
 import { ensureCreator, initDraft, initPublish, MIN_MARKER_TEXTS, type InitDeps } from "./init";
 import { loadPersona } from "./load";
 
@@ -60,7 +60,7 @@ const newEmail = () => `${randomUUID()}@creator.test`;
 
 function setup() {
   const lines: string[] = [];
-  const calls: { model: string; prompt: string }[] = [];
+  const calls: CardCall[] = [];
   const deps: InitDeps = {
     env: ENV,
     claude: fakeCardClaude({ calls }),
