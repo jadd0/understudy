@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, exists, getTableColumns, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, exists, getTableColumns, inArray, isNotNull, isNull, ne, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/client";
-import { catalogueItems, conversations, creators, creatorSettings, handoffs, messages, offers, turns, users } from "@/db/schema";
+import { catalogueItems, conversations, creators, creatorSettings, handoffs, messages, offers, personaCards, turns, users } from "@/db/schema";
 import type { Role } from "@/lib/auth/guards";
 import { ConfigMissing, getConfig } from "@/lib/config";
 import { dueNote, inboxBadge, type InboxMode } from "@/lib/ui/inbox-badge";
@@ -444,13 +444,16 @@ export async function getSnapshot(viewer: Viewer, conversationId: string): Promi
   return { thread, suggested, labels: Object.fromEntries(labels.map((l) => [l.messageId, turnLabelText(l)])) };
 }
 
+/** The one order a creator's catalogue is listed in: the place she set, then title and id for items that tie. */
+export const catalogueOrder = () => [asc(catalogueItems.position), asc(catalogueItems.title), asc(catalogueItems.id)] as const;
+
 /** The items a creator can offer from the console: active ones, in the order she set (ties by title). */
 export async function offerableItems(creatorId: string) {
   return db
     .select({ id: catalogueItems.id, title: catalogueItems.title, kind: catalogueItems.kind, priceCents: catalogueItems.priceCents })
     .from(catalogueItems)
     .where(and(eq(catalogueItems.creatorId, creatorId), eq(catalogueItems.active, true)))
-    .orderBy(asc(catalogueItems.position), asc(catalogueItems.title), asc(catalogueItems.id));
+    .orderBy(...catalogueOrder());
 }
 
 const creatorWithImage = () =>
@@ -462,20 +465,40 @@ export async function primaryCreator() {
   return row ?? null;
 }
 
-/** The creator with this handle, or null. The handle is only ever bound as a query parameter. */
-export async function creatorByHandle(handle: string) {
-  const [row] = await creatorWithImage().where(eq(creators.handle, handle)).limit(1);
+/** A creator a fan can reach: one whose persona card is published. Without it the engine has no voice to answer in. */
+const hasPublishedCard = () =>
+  exists(db.select({ one: sql`1` }).from(personaCards).where(and(eq(personaCards.creatorId, creators.id), isNotNull(personaCards.publishedAt))));
+
+/** The creator with this handle (any letter case), or null. The handle is only ever bound as a query parameter. */
+export async function creatorByHandle(handle: string, reachableOnly = false) {
+  // Handles are unique by exact text only, so two that differ in case can exist: the exact one wins.
+  const [row] = await creatorWithImage()
+    .where(and(sql`lower(${creators.handle}) = lower(${handle})`, reachableOnly ? hasPublishedCard() : undefined))
+    .orderBy(desc(sql`${creators.handle} = ${handle}`), asc(creators.handle))
+    .limit(1);
   return row ?? null;
 }
 
 /**
- * The creator a fan is talking to: the one named by `handle`, or the default creator when none is named, or null
- * for a handle nobody has. The handle comes from the fan's URL, so it only chooses whom the fan writes to; the
- * conversation is still found from the session's own user id.
+ * The creator a fan is talking to, or null when there is nobody to talk to. With a `handle` it is that creator (any
+ * letter case); an unknown handle names nobody. Without one it is the creator of the fan's most recently active
+ * conversation, and for a fan with no conversation yet the first creator by handle. Only creators with a published
+ * persona card count. The handle comes from the fan's URL, so it only chooses whom the fan writes to; the conversation
+ * is still found from the session's own user id.
  */
-export async function fanCreator(handle?: string | null) {
-  if (handle === undefined || handle === null) return primaryCreator();
-  return creatorByHandle(handle);
+export async function fanCreator(fanId: string, handle?: string | null) {
+  if (handle !== undefined && handle !== null) return creatorByHandle(handle, true);
+  const [recent] = await creatorWithImage()
+    .innerJoin(conversations, and(eq(conversations.creatorId, creators.id), eq(conversations.fanId, fanId)))
+    .where(hasPublishedCard())
+    .orderBy(
+      desc(sql`coalesce((select max(${messages.createdAt}) from ${messages} where ${messages.conversationId} = ${conversations.id}), ${conversations.createdAt})`),
+      asc(creators.handle),
+    )
+    .limit(1);
+  if (recent) return recent;
+  const [first] = await creatorWithImage().where(hasPublishedCard()).orderBy(asc(creators.handle)).limit(1);
+  return first ?? null;
 }
 
 /**
@@ -483,7 +506,7 @@ export async function fanCreator(handle?: string | null) {
  * first message there is no conversation row, so the snapshot is empty (conversation id "") and the page still renders.
  */
 export async function getFanSnapshot(fanId: string, handle?: string | null): Promise<{ snapshot: Snapshot; creator: { id: string; displayName: string; handle: string; image: string | null } } | null> {
-  const creator = await fanCreator(handle);
+  const creator = await fanCreator(fanId, handle);
   if (!creator) return null;
   const [conv] = await db
     .select({ id: conversations.id })

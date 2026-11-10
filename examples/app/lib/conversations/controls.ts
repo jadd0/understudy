@@ -1,13 +1,13 @@
 import { and, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
 import { db, withTx } from "@/db/client";
-import { catalogueItems, catalogueKindEnum, conversations, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
+import { catalogueItems, catalogueKindEnum, conversations, creators, handoffs, messages, offers, personaCards, sessions, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
 import { chatter, chatterWithEvents } from "@/lib/host/deps";
 import type { Events } from "@understudy/engine";
 import { defaultEvents } from "@/providers/pusher/events";
 import { InvalidAmount } from "@/lib/wallet/errors";
 import { handBack, humanActorOf, takeover, TakeoverRefused } from "./actions";
-import { assertVisible, consoleCreatorFor, ConversationNotFound, creatorFor, type Viewer } from "./read";
+import { assertVisible, catalogueOrder, consoleCreatorFor, ConversationNotFound, creatorFor, type Viewer } from "./read";
 
 /** The viewer's role does not allow this action on this row. Pages answer it with a 404. */
 export class Forbidden extends Error {
@@ -155,18 +155,34 @@ export async function addItem(
   const teaser = String(input.teaser ?? "").trim();
   if (teaser.length > MAX_ITEM_TEASER_CHARS) throw new InvalidInput("teaser");
   if (!Number.isSafeInteger(input.cents) || input.cents <= 0 || input.cents > MAX_PRICE_CENTS) throw new InvalidAmount();
-  const [row] = await db
-    .insert(catalogueItems)
-    .values({
-      creatorId: creator.id,
-      kind,
-      title,
-      teaser: teaser || null,
-      priceCents: input.cents,
-      position: sql`coalesce((select max(${catalogueItems.position}) from ${catalogueItems} where ${catalogueItems.creatorId} = ${creator.id}), -1) + 1`,
-    })
-    .returning({ id: catalogueItems.id });
-  return row.id;
+  return withTx(async (tx) => {
+    // The same lock a move takes, so the next place is read after any add or move ahead of this one has committed.
+    await lockCatalogue(tx, creator.id);
+    const [row] = await tx
+      .insert(catalogueItems)
+      .values({
+        creatorId: creator.id,
+        kind,
+        title,
+        teaser: teaser || null,
+        priceCents: input.cents,
+        position: sql`coalesce((select max(${catalogueItems.position}) from ${catalogueItems} where ${catalogueItems.creatorId} = ${creator.id}), -1) + 1`,
+      })
+      .returning({ id: catalogueItems.id });
+    return row.id;
+  });
+}
+
+type Tx = Parameters<Parameters<typeof withTx>[0]>[0];
+
+/**
+ * Serialises everything that numbers a creator's catalogue (adding an item, moving one). The creator row is taken
+ * first, so two adds to an empty shelf queue too, then her item rows in id order. Each statement after the lock is
+ * its own, so it sees what the transaction ahead of it committed.
+ */
+async function lockCatalogue(tx: Tx, creatorId: string): Promise<void> {
+  await tx.select({ id: creators.id }).from(creators).where(eq(creators.id, creatorId)).for("no key update");
+  await tx.select({ id: catalogueItems.id }).from(catalogueItems).where(eq(catalogueItems.creatorId, creatorId)).orderBy(catalogueItems.id).for("no key update");
 }
 
 /**
@@ -195,12 +211,12 @@ export async function moveItem(viewer: Viewer, itemId: string, direction: "up" |
   if (direction !== "up" && direction !== "down") throw new InvalidInput("direction");
   await withTx(async (tx) => {
     // The ordered read comes after the lock, as its own statement, so it sees what a move that held the lock committed.
-    await tx.select({ id: catalogueItems.id }).from(catalogueItems).where(eq(catalogueItems.creatorId, creator.id)).orderBy(catalogueItems.id).for("no key update");
+    await lockCatalogue(tx, creator.id);
     const rows = await tx
       .select({ id: catalogueItems.id, position: catalogueItems.position, active: catalogueItems.active })
       .from(catalogueItems)
       .where(eq(catalogueItems.creatorId, creator.id))
-      .orderBy(catalogueItems.position, catalogueItems.title, catalogueItems.id);
+      .orderBy(...catalogueOrder());
     const at = rows.findIndex((r) => r.id === itemId);
     if (at === -1) throw new Forbidden();
     const order = rows.map((r) => r.id);

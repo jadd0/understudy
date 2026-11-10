@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { catalogueItems, personaCards } from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Skeleton, SkeletonGroup, SkeletonLine } from "@/components/ui/skeleton"
 import { formatCents } from "@/lib/wallet/money";
 import { Field } from "@/components/ui/field";
 import { MAX_ITEM_TEASER_CHARS, MAX_ITEM_TITLE_CHARS } from "@/lib/conversations/controls";
+import { catalogueOrder } from "@/lib/conversations/read";
 import { addItemAction, moveItemAction, restoreItemAction, retireItemAction, saveNeverList, savePrice } from "../actions";
 
 /*
@@ -110,7 +111,7 @@ export async function CatalogueEditor({ creatorId }: { creatorId: string }) {
     .select()
     .from(catalogueItems)
     .where(eq(catalogueItems.creatorId, creatorId))
-    .orderBy(asc(catalogueItems.position), asc(catalogueItems.title), asc(catalogueItems.id));
+    .orderBy(...catalogueOrder());
   const live = items.filter((i) => i.active);
   const retired = items.filter((i) => !i.active);
   return (
@@ -118,8 +119,8 @@ export async function CatalogueEditor({ creatorId }: { creatorId: string }) {
       {live.length === 0 ? <p className="text-[14px] text-muted">No items yet. Add one below.</p> : null}
       <ul className="flex flex-col gap-2">
         {live.map((i, n) => (
-          <li key={i.id}>
-            <form action={savePrice} className="flex flex-wrap items-center gap-3 rounded-row border border-line px-4 py-3">
+          <li key={i.id} className="flex flex-col gap-3 rounded-row border border-line px-4 py-3">
+            <form action={savePrice} className="flex flex-wrap items-center gap-3">
               <input type="hidden" name="itemId" value={i.id} />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-[15px] font-medium">{i.title}</span>
@@ -139,18 +140,28 @@ export async function CatalogueEditor({ creatorId }: { creatorId: string }) {
                 className="h-11 w-24 rounded-field border border-transparent bg-surface px-3 text-[16px] tabular-nums outline-none focus:border-line-focus focus:bg-ground md:text-[15px]"
               />
               <Button variant="secondary">Save</Button>
-              <span className="flex basis-full flex-wrap items-center gap-2">
-                <Button variant="quiet" type="submit" formAction={moveItemAction} name="direction" value="up" disabled={n === 0} aria-label={`Move ${i.title} up`}>
+            </form>
+            {/* Their own forms, outside the price form: a price typed but not saved is not posted, so a move cannot lose it. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <form action={moveItemAction}>
+                <input type="hidden" name="itemId" value={i.id} />
+                <Button variant="quiet" name="direction" value="up" disabled={n === 0} aria-label={`Move ${i.title} up`}>
                   Up
                 </Button>
-                <Button variant="quiet" type="submit" formAction={moveItemAction} name="direction" value="down" disabled={n === live.length - 1} aria-label={`Move ${i.title} down`}>
+              </form>
+              <form action={moveItemAction}>
+                <input type="hidden" name="itemId" value={i.id} />
+                <Button variant="quiet" name="direction" value="down" disabled={n === live.length - 1} aria-label={`Move ${i.title} down`}>
                   Down
                 </Button>
-                <Button variant="quiet" type="submit" formAction={retireItemAction} aria-label={`Retire ${i.title}`}>
+              </form>
+              <form action={retireItemAction}>
+                <input type="hidden" name="itemId" value={i.id} />
+                <Button variant="quiet" aria-label={`Retire ${i.title}`}>
                   Retire
                 </Button>
-              </span>
-            </form>
+              </form>
+            </div>
           </li>
         ))}
       </ul>
@@ -182,28 +193,33 @@ export async function CatalogueEditor({ creatorId }: { creatorId: string }) {
   );
 }
 
-/** The new-item form; it needs no data, so it renders at once beside the streaming list. */
-export function AddItemForm() {
+/**
+ * The new-item form; it needs no data, so it renders at once beside the streaming list. `disabled` is the inert copy
+ * the loading screen shows: same size, nothing to type into and nothing to submit before the page is live.
+ */
+export function AddItemForm({ disabled = false }: { disabled?: boolean }) {
   return (
-    <form action={addItemAction} className="flex flex-col gap-3 rounded-row border border-line px-4 py-4">
-      <h3 className="text-[15px] font-semibold">Add item</h3>
-      <label htmlFor="item-kind" className="flex flex-col gap-1.5">
-        <span className="text-[13px] font-medium text-ink-2">Kind</span>
-        <select
-          id="item-kind"
-          name="kind"
-          defaultValue="ppv"
-          className="h-11 rounded-field border border-transparent bg-surface px-3 text-[16px] outline-none focus:border-line-focus focus:bg-ground md:text-[15px]"
-        >
-          <option value="ppv">ppv</option>
-          <option value="bundle">bundle</option>
-          <option value="personal">personal</option>
-        </select>
-      </label>
-      <Field id="item-title" name="title" label="Title" required maxLength={MAX_ITEM_TITLE_CHARS} autoComplete="off" />
-      <Field id="item-teaser" name="teaser" label="Teaser (optional)" maxLength={MAX_ITEM_TEASER_CHARS} autoComplete="off" />
-      <Field id="item-price" name="price" label="Price in dollars" inputMode="decimal" required placeholder="9.99" autoComplete="off" />
-      <Button className="w-fit">Add item</Button>
+    <form action={disabled ? undefined : addItemAction} className="rounded-row border border-line px-4 py-4">
+      <fieldset disabled={disabled} className="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
+        <h3 className="text-[15px] font-semibold">Add item</h3>
+        <label htmlFor="item-kind" className="flex flex-col gap-1.5">
+          <span className="text-[13px] font-medium text-ink-2">Kind</span>
+          <select
+            id="item-kind"
+            name="kind"
+            defaultValue="ppv"
+            className="h-11 rounded-field border border-transparent bg-surface px-3 text-[16px] outline-none focus:border-line-focus focus:bg-ground md:text-[15px]"
+          >
+            <option value="ppv">ppv</option>
+            <option value="bundle">bundle</option>
+            <option value="personal">personal</option>
+          </select>
+        </label>
+        <Field id="item-title" name="title" label="Title" required maxLength={MAX_ITEM_TITLE_CHARS} autoComplete="off" />
+        <Field id="item-teaser" name="teaser" label="Teaser (optional)" maxLength={MAX_ITEM_TEASER_CHARS} autoComplete="off" />
+        <Field id="item-price" name="price" label="Price in dollars" inputMode="decimal" required placeholder="9.99" autoComplete="off" />
+        <Button className="w-fit">Add item</Button>
+      </fieldset>
     </form>
   );
 }

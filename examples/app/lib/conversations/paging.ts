@@ -124,14 +124,19 @@ export async function getChanges(viewer: Viewer, conversationId: string, since: 
 
 // ---- the fan's one thread, found from the session ----------------------------------------------------------------
 
-async function fanThread(fanId: string, handle?: string | null) {
-  const creator = await fanCreator(handle);
-  if (!creator) return null;
+type FanCreator = NonNullable<Awaited<ReturnType<typeof fanCreator>>>;
+
+async function threadWith(fanId: string, creator: FanCreator) {
   const [conv] = await db
     .select({ id: conversations.id })
     .from(conversations)
     .where(and(eq(conversations.creatorId, creator.id), eq(conversations.fanId, fanId)));
   return { creator, conversationId: conv?.id ?? null };
+}
+
+async function fanThread(fanId: string, handle?: string | null) {
+  const creator = await fanCreator(fanId, handle);
+  return creator ? threadWith(fanId, creator) : null;
 }
 
 /** Before his first message a fan has no conversation row: an empty thread, as `getFanSnapshot` shows it. */
@@ -144,14 +149,12 @@ function emptyFanMeta(fanId: string, creator: { id: string; displayName: string;
   };
 }
 
-/** The windowed form of `getFanSnapshot`. */
+/** The windowed form of `getFanSnapshot`, for a creator the caller has already found with `fanCreator`. */
 export async function getFanWindowedSnapshot(
   fanId: string,
-  handle?: string | null,
-): Promise<{ snapshot: WindowedSnapshot; creator: { id: string; displayName: string; handle: string; image: string | null } } | null> {
-  const found = await fanThread(fanId, handle);
-  if (!found) return null;
-  const { creator, conversationId } = found;
+  creator: FanCreator,
+): Promise<{ snapshot: WindowedSnapshot; creator: { id: string; displayName: string; handle: string; image: string | null } }> {
+  const { conversationId } = await threadWith(fanId, creator);
   const info = { id: creator.id, displayName: creator.displayName, handle: creator.handle, image: creator.image };
   if (conversationId) return { snapshot: await getWindowedSnapshot({ id: fanId, role: "fan" }, conversationId), creator: info };
   return {

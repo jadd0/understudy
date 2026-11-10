@@ -17,13 +17,16 @@ export async function startTopup(
   amountCents: number,
   baseUrl: string,
   provider: StripeProvider = stripeProvider(),
+  /** The handle of the chat the fan came from, already checked by the caller; the wallet's way back keeps it. */
+  chatHandle?: string,
 ): Promise<{ id: string; url: string }> {
   await assertTopupAmount(amountCents);
+  const chat = chatHandle ? `&c=${encodeURIComponent(chatHandle)}` : "";
   return provider.createTopupSession({
     fanId,
     amountCents,
-    successUrl: `${baseUrl}/wallet?topup=processing`,
-    cancelUrl: `${baseUrl}/wallet?topup=cancelled`,
+    successUrl: `${baseUrl}/wallet?topup=processing${chat}`,
+    cancelUrl: `${baseUrl}/wallet?topup=cancelled${chat}`,
   });
 }
 

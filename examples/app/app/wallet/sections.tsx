@@ -25,11 +25,12 @@ const KIND: Record<string, string> = { topup: "Top-up", unlock: "Unlock", tip: "
 const when = (d: Date) => <LocalTime iso={d.toISOString()} />;
 const signed = (cents: number) => `${cents < 0 ? "−" : "+"}${formatCents(Math.abs(cents))}`;
 
-export function WalletFrame({ children }: { children: ReactNode }) {
+/** `chatHref` is the chat the fan came from (`/chat?c=<handle>`); the wallet page validates the handle before passing it. */
+export function WalletFrame({ children, chatHref = "/chat" }: { children: ReactNode; chatHref?: string }) {
   return (
     <main className="mx-auto flex w-full max-w-[480px] flex-col gap-6 px-4 py-6 md:py-10">
       <header className="flex flex-col gap-3">
-        <Link href="/chat" className="inline-flex h-11 w-fit items-center gap-1 text-[14px] font-medium text-muted-2 hover:text-ink">
+        <Link href={chatHref} className="inline-flex h-11 w-fit items-center gap-1 text-[14px] font-medium text-muted-2 hover:text-ink">
           <IconBack /> Messages
         </Link>
         <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Wallet</h1>
@@ -77,7 +78,8 @@ export function BalanceSkeleton() {
   );
 }
 
-export async function TopUpForms() {
+/** `handle` is the chat the fan came from, already checked by the page; the forms post it back so the way home survives. */
+export async function TopUpForms({ handle }: { handle?: string } = {}) {
   if (!stripeConfigured()) return <p className="text-[14px] text-muted-2">Top-ups are off on this install.</p>;
   const [presets, min, max] = await Promise.all([
     getConfig<number[]>("wallet.topup_options_cents"),
@@ -87,6 +89,7 @@ export async function TopUpForms() {
   return (
     <>
       <form action={topUp} className="grid grid-cols-3 gap-2">
+        {handle ? <input type="hidden" name="c" value={handle} /> : null}
         {presets.map((c) => (
           <Button key={c} name="preset" value={c} variant="secondary" className="px-0">
             {formatCents(c)}
@@ -94,6 +97,7 @@ export async function TopUpForms() {
         ))}
       </form>
       <form action={topUp} className="flex items-end gap-2">
+        {handle ? <input type="hidden" name="c" value={handle} /> : null}
         <div className="flex-1">
           <Field id="custom" name="custom" label="Custom amount ($)" inputMode="decimal" placeholder={String(min / 100)} required hint={`${formatCents(min)} to ${formatCents(max)}`} />
         </div>
@@ -129,7 +133,7 @@ export function TopUpSkeleton() {
   );
 }
 
-export async function SpendingLimit({ fanId }: { fanId: string }) {
+export async function SpendingLimit({ fanId, handle }: { fanId: string; handle?: string }) {
   const [capMin, cap] = await Promise.all([getConfig<number>("wallet.cap_min_cents"), getFanCap(fanId)]);
   return (
     <>
@@ -142,6 +146,7 @@ export async function SpendingLimit({ fanId }: { fanId: string }) {
         </p>
       ) : null}
       <form action={changeCap} className="flex items-end gap-2">
+        {handle ? <input type="hidden" name="c" value={handle} /> : null}
         <div className="flex-1">
           <Field id="cap" name="cap" label="New limit ($)" inputMode="decimal" placeholder={String(capMin / 100)} required hint="Lowering applies now. Raising applies after 24 hours." />
         </div>

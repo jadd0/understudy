@@ -209,6 +209,58 @@ describe("a move waits for a mover that is already running", () => {
   });
 });
 
+describe("adding waits for whatever else numbers the catalogue", () => {
+  test("adds at once to an empty shelf and to a full one never repeat a position", async () => {
+    const fresh = await makeCreator();
+    const titlesIn = Array.from({ length: 6 }, (_, i) => `Fresh ${i}`);
+    await Promise.all(titlesIn.map((title) => addItem(creatorOf(fresh), input({ title }))));
+    const rows = await listed(fresh.id);
+    expect(rows).toHaveLength(6);
+    expect(rows.map((r) => r.position)).toEqual([0, 1, 2, 3, 4, 5]);
+
+    const w = await shelf();
+    await moveItem(w.viewer, w.a.id, "up");
+    await Promise.all(["P", "Q", "R", "S"].map((title) => addItem(w.viewer, input({ title }))));
+    expect((await listed(w.creator.id)).map((r) => r.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  test("an add that starts during a move numbers after it, and the other way round", async () => {
+    // the migration leaves every existing row at 0, so an add that ignored a running move would reuse a place it hands out
+    for (const order of ["move first", "add first"]) {
+      const w = await shelf();
+      const calls = order === "move first" ? [() => moveItem(w.viewer, w.c.id, "up"), () => addItem(w.viewer, input({ title: "Late" }))] : [() => addItem(w.viewer, input({ title: "Late" })), () => moveItem(w.viewer, w.c.id, "up")];
+      await Promise.all(calls.map((call) => call()));
+      const rows = await listed(w.creator.id);
+      expect(rows).toHaveLength(4);
+      expect(isPermutation(rows.map((r) => r.position))).toBe(true);
+    }
+  });
+
+  test("an add that starts while another transaction holds the creator's rows waits for it", async () => {
+    const w = await shelf();
+    let release!: () => void;
+    const hold = new Promise<void>((r) => (release = r));
+    let locked!: () => void;
+    const holding = new Promise<void>((r) => (locked = r));
+    // Another tab's move: it takes the rows, renumbers A, C, B to 0, 1, 2, and holds.
+    const other = withTx(async (tx) => {
+      await tx.select({ id: catalogueItems.id }).from(catalogueItems).where(eq(catalogueItems.creatorId, w.creator.id)).orderBy(catalogueItems.id).for("no key update");
+      for (const [i, item] of [w.a, w.c, w.b].entries()) await tx.update(catalogueItems).set({ position: i }).where(eq(catalogueItems.id, item.id));
+      locked();
+      await hold;
+    });
+    await holding;
+    let settled = false;
+    const mine = addItem(w.viewer, input({ title: "Waited" })).then(() => void (settled = true));
+    await new Promise((r) => setTimeout(r, 400));
+    expect(settled).toBe(false);
+    release();
+    await Promise.all([other, mine]);
+    // numbered after what the mover committed: one place past the last, not past the old ties at 0
+    expect((await listed(w.creator.id)).map((r) => [r.title, r.position])).toEqual([["A", 0], ["C", 1], ["B", 2], ["Waited", 3]]);
+  });
+});
+
 describe("other creators and admins", () => {
   test("other_creators_item_is_forbidden_for_every_write", async () => {
     const mine = await shelf();

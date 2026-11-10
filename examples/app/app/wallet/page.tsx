@@ -13,6 +13,7 @@ import {
   TopUpSkeleton,
   WalletFrame,
 } from "./sections";
+import { cameFrom, chatHrefFor } from "./chat-link";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +35,16 @@ export default async function WalletPage({ searchParams }: { searchParams: Promi
   const user = await requireAdultFan();
   const fanId = user.id;
   const params = await searchParams;
-  const entries = Object.entries(params).map(([k, v]) => `${k}=${v}`);
+  // `?c=<handle>` is the chat the fan came from. It is checked here as the chat page checks it: a handle nobody can
+  // reach, or a repeated one, sends the fan back to plain `/chat`.
+  const { c } = params as Record<string, string | string[] | undefined>;
+  const handle = (await cameFrom(fanId, c)) ?? undefined;
+  const entries = Object.entries(params).filter(([k]) => k !== "c").map(([k, v]) => `${k}=${v}`);
   const notice = entries.map((e) => NOTICES[e]).find(Boolean);
   const problem = entries.map((e) => ERRORS[e]).find(Boolean);
 
   return (
-    <WalletFrame>
+    <WalletFrame chatHref={chatHrefFor(handle)}>
       {notice ? (
         <p role="status" className="rounded-field bg-surface px-3 py-2 text-[14px]">
           {notice}
@@ -53,13 +58,13 @@ export default async function WalletPage({ searchParams }: { searchParams: Promi
 
       <Section title="Top up">
         <Suspense fallback={<TopUpSkeleton />}>
-          <TopUpForms />
+          <TopUpForms handle={handle} />
         </Suspense>
       </Section>
 
       <Section title="Daily spending limit">
         <Suspense fallback={<SpendingLimitSkeleton />}>
-          <SpendingLimit fanId={fanId} />
+          <SpendingLimit fanId={fanId} handle={handle} />
         </Suspense>
       </Section>
 

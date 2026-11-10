@@ -57,7 +57,7 @@ export async function sendMessage(handle: string | null, clientMsgId: string, bo
   if (typeof clientMsgId !== "string" || clientMsgId.length < 8 || clientMsgId.length > 64 || typeof body !== "string") {
     return { ok: false, error: REFUSALS.empty };
   }
-  const creator = await fanCreator(handle);
+  const creator = await fanCreator(user!.id!, handle);
   if (!creator) return { ok: false, error: REFUSALS.no_creator };
   try {
     const sent = await sendFanMessage(user!.id!, creator.id, body, clientMsgId);
@@ -81,7 +81,7 @@ export async function sendMessage(handle: string | null, clientMsgId: string, bo
 /** The fan's composer pings this while keys are pressed, so the engine waits for him to finish. Errors are ignored: it is a hint. */
 export async function pingTyping(handle: string | null): Promise<void> {
   const user = await requireAdultFan();
-  const creator = await fanCreator(handle);
+  const creator = await fanCreator(user!.id!, handle);
   if (!creator) return;
   await markFanTyping(user!.id!, creator.id).catch(() => undefined);
 }
@@ -120,7 +120,7 @@ export async function tipAction(handle: string | null, idempotencyKey: string, a
   if (!Number.isSafeInteger(amountCents) || amountCents < minCents) {
     return { ok: false, error: `The smallest tip is ${formatCents(minCents)}.` };
   }
-  const creator = await fanCreator(handle);
+  const creator = await fanCreator(user!.id!, handle);
   if (!creator) return { ok: false, error: REFUSALS.no_creator };
   const [conv] = await db
     .select({ id: conversations.id })

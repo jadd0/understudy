@@ -20,7 +20,7 @@ export default function Loading() {
       </Section>
       <Section title="Catalogue" hint={HINTS.catalogue}>
         <CatalogueEditorSkeleton />
-        <AddItemForm />
+        <AddItemForm disabled />
       </Section>
       <Section title="Persona card" hint={HINTS.card}>
         <PersonaCardSkeleton />
