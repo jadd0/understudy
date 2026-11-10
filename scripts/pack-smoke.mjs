@@ -9,6 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Pool } from "@neondatabase/serverless";
 import { baseDatabase, recreateDisposable } from "./test-db.mjs";
+import { sortDiagnostics } from "./pack-smoke/diagnostics.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PACKAGES = ["@jadd0/understudy-engine", "@jadd0/understudy-providers", "@jadd0/understudy-persona"];
@@ -46,8 +47,16 @@ console.log(`pack-smoke: scratch directory ${scratch}`);
 try {
   const tarballs = path.join(scratch, "tarballs");
   mkdirSync(tarballs);
-  const packed = run("npm", ["pack", "--json", "--pack-destination", tarballs, ...PACKAGES.flatMap((p) => ["-w", p])], { cwd: root });
-  const files = JSON.parse(packed.stdout).map((entry) => path.join(tarballs, entry.filename));
+  // The build above is the one that counts: `--ignore-scripts` keeps each package's `prepack` rebuild (and its tsc
+  // output) out of the JSON on stdout.
+  const packed = run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", tarballs, ...PACKAGES.flatMap((p) => ["-w", p])], { cwd: root });
+  let entries;
+  try {
+    entries = JSON.parse(packed.stdout);
+  } catch {
+    throw new Error(`npm pack did not print JSON:\n${packed.stdout}${packed.stderr}`);
+  }
+  const files = entries.map((entry) => path.join(tarballs, entry.filename));
   if (files.length !== PACKAGES.length) throw new Error(`expected ${PACKAGES.length} tarballs, got ${files.length}`);
 
   const project = path.join(scratch, "project");
@@ -69,7 +78,7 @@ try {
   url.pathname = `/${name}`;
 
   copyFileSync(path.join(root, "scripts/pack-smoke/quickstart.mjs"), path.join(project, "quickstart.mjs"));
-  copyFileSync(path.join(root, "scripts/pack-smoke/config.json"), path.join(project, "config.json"));
+  copyFileSync(path.join(root, "examples/server/config.json"), path.join(project, "config.json"));
   console.log(`pack-smoke: quick start against ${name}`);
   const quick = run("node", ["quickstart.mjs"], { cwd: project, env: { ...process.env, DATABASE_URL: url.toString() } });
   process.stdout.write(quick.stdout);
@@ -85,25 +94,34 @@ try {
   run("npx", ["--no-install", "understudy-persona", "--help"], { cwd: project, stdio: "ignore" });
   console.log("understudy-persona --help: exit 0");
 
-  // The declarations compile for a consumer on strict NodeNext.
+  // The declarations compile for a consumer on strict NodeNext. `skipLibCheck` is off, so the shipped `.d.ts` files
+  // (and the third-party declarations they pull in) are checked too.
   writeFileSync(
     path.join(project, "check.ts"),
     [
       'import { createUnderstudy, type Understudy, type UnderstudyOptions } from "@jadd0/understudy-engine";',
-      'import { FtsRetriever, noopEvents } from "@jadd0/understudy-providers";',
+      'import { envKeyResolver, FailoverGenerator, FtsRetriever, GatewayDecider, GatewayGenerator, noopEvents } from "@jadd0/understudy-providers";',
       'import { build } from "@jadd0/understudy-persona";',
       "declare const options: UnderstudyOptions;",
       "export const understudy: Understudy = createUnderstudy(options);",
-      "export const parts = [FtsRetriever, noopEvents, build];",
+      "export const parts = [FtsRetriever, noopEvents, build, GatewayGenerator, GatewayDecider, FailoverGenerator, envKeyResolver];",
       "",
     ].join("\n"),
   );
   writeFileSync(
     path.join(project, "tsconfig.json"),
-    JSON.stringify({ compilerOptions: { strict: true, module: "nodenext", moduleResolution: "nodenext", noEmit: true, skipLibCheck: true, types: [] }, include: ["check.ts"] }),
+    JSON.stringify({ compilerOptions: { strict: true, module: "nodenext", moduleResolution: "nodenext", noEmit: true, skipLibCheck: false, types: [] }, include: ["check.ts"] }),
   );
-  run("node", [path.join(root, "node_modules/typescript/bin/tsc"), "-p", "tsconfig.json"], { cwd: project });
-  console.log("types ok");
+  const tsc = run("node", [path.join(root, "node_modules/typescript/bin/tsc"), "-p", "tsconfig.json", "--pretty", "false"], { cwd: project, allowFailure: true });
+  const output = `${tsc.stdout ?? ""}${tsc.stderr ?? ""}`;
+  const { own, other } = sortDiagnostics(output);
+  // Some of drizzle-orm's declarations for dialects the packages never use do not compile on the TypeScript this
+  // repository uses; those are not the packages' to fix. Anything in check.ts or in a shipped `.d.ts` fails the run.
+  if (own.length > 0 || (tsc.status !== 0 && other.length === 0)) {
+    process.stderr.write(output);
+    throw new Error(`the consumer type check failed: ${own.length} diagnostics in the consumer or the shipped declarations`);
+  }
+  console.log(`types ok (${other.length} third-party declaration errors ignored)`);
 } finally {
   if (keep) console.log(`pack-smoke: kept ${scratch}`);
   else rmSync(scratch, { recursive: true, force: true });

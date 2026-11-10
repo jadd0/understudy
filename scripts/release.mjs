@@ -14,10 +14,25 @@ export const PUBLISH_ARGS = ["publish", "--dry-run", ...SCOPE_ARGS];
 
 const step = (cmd, args, opts = {}) => spawnSync(cmd, args, { cwd: root, encoding: "utf8", stdio: "inherit", ...opts });
 
+/**
+ * What `git status --porcelain` says about the tree: its output, or the reason it could not be read. A git that
+ * failed to run or exited non-zero says nothing about the tree, so it is never read as clean.
+ */
+export function treeStatus(run = spawnSync) {
+  const r = run("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" });
+  if (r.error) return { ok: false, reason: `git could not run (${r.error.code ?? r.error.name})` };
+  if (r.status !== 0) return { ok: false, reason: `git status exited ${r.status}: ${(r.stderr ?? "").trim()}` };
+  return { ok: true, dirty: (r.stdout ?? "").trim() };
+}
+
 function main() {
-  const dirty = spawnSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }).stdout.trim();
-  if (dirty) {
-    console.error(`release: the working tree is not clean, commit or stash first:\n${dirty}`);
+  const tree = treeStatus();
+  if (!tree.ok) {
+    console.error(`release: cannot tell whether the working tree is clean: ${tree.reason}`);
+    process.exit(1);
+  }
+  if (tree.dirty) {
+    console.error(`release: the working tree is not clean, commit or stash first:\n${tree.dirty}`);
     process.exit(1);
   }
 

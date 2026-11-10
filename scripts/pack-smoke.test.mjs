@@ -95,3 +95,37 @@ test("the tsconfig paths agree with workspace-sources.json", () => {
     assert.deepEqual(appPaths[name], [expected], `app tsconfig ${name}`);
   }
 });
+
+test("the consumer type check fails on a shipped declaration or on check.ts and tolerates only third-party ones", async () => {
+  const { sortDiagnostics } = await import("./pack-smoke/diagnostics.mjs");
+  const output = [
+    "node_modules/drizzle-orm/sqlite-core/query-builders/select.d.ts(233,247): error TS2344: Type 'string' does not satisfy",
+    "  Type 'string' is not assignable to type 'keyof this & string'.",
+    "node_modules/@jadd0/understudy-engine/dist/index.d.ts(3,10): error TS2305: Module has no exported member",
+    "check.ts(2,1): error TS2307: Cannot find module",
+    "../elsewhere/node_modules/@jadd0/understudy-providers/dist/index.d.ts(1,1): error TS1005: ';' expected.",
+    "",
+  ].join("\n");
+  const { own, other } = sortDiagnostics(output);
+  assert.equal(other.length, 1);
+  assert.match(other[0], /drizzle-orm/);
+  assert.equal(own.length, 3);
+  assert.deepEqual(sortDiagnostics("").own, []);
+});
+
+test("the providers build builds the engine first when its declarations are missing", () => {
+  const { prebuild, build } = json("packages/providers/package.json").scripts;
+  assert.match(prebuild, /engine\/dist\/index\.d\.ts/);
+  assert.match(prebuild, /--prefix \.\.\/engine run build/);
+  assert.match(build, /tsc -p tsconfig\.build\.json/);
+});
+
+test("pack-smoke packs without scripts, checks library declarations, ships no config copy and imports the gateway adapters", () => {
+  const source = read("scripts/pack-smoke.mjs");
+  assert.match(source, /"pack", "--json", "--ignore-scripts"/);
+  assert.match(source, /skipLibCheck: false/);
+  assert.doesNotMatch(source, /skipLibCheck: true/);
+  assert.match(source, /examples\/server\/config\.json/);
+  assert.equal(existsSync(path.join(root, "scripts/pack-smoke/config.json")), false);
+  for (const name of ["GatewayGenerator", "GatewayDecider", "envKeyResolver", "FailoverGenerator"]) assert.match(source, new RegExp(`import \\{[^}]*\\b${name}\\b`), name);
+});
