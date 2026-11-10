@@ -6,6 +6,7 @@
 // stories and likes are listed in the archive but never opened.
 import { lstatSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { HANDLE, SYNTHETIC_HANDLES } from "../lib/handles.mjs";
 import { sha16, writeJson } from "../lib/io.mjs";
 import { isoSeconds, tagsOf } from "../scrape/record.mjs";
 import { NotOwnAccount } from "../scrape/whoami.mjs";
@@ -18,10 +19,6 @@ export class ExportError extends Error {
     this.name = "ExportError";
   }
 }
-
-const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
-// The committed synthetic creators. An export never writes over them.
-const SYNTHETIC = ["junovale", "junofilm"];
 
 const PROFILE_FILE = /(^|\/)personal_information\.json$/;
 const POSTS_FILE = /(^|\/)(content|media)\/posts(_\d+)?\.json$/;
@@ -66,6 +63,12 @@ function walkFolder(root) {
   return names.sort();
 }
 
+/**
+ * Direct messages sit under a `messages` folder; the patterns above would also match a file of that shape
+ * inside it, so nothing under such a folder is listed, and so nothing there can be opened.
+ */
+const isReadable = (name) => !name.split("/").some((segment) => segment.toLowerCase() === "messages");
+
 /** Opens a zip or an unpacked folder. `reads` lists every file whose contents were opened. */
 export function openExport(path) {
   let stat;
@@ -79,7 +82,7 @@ export function openExport(path) {
   let readBuffer;
   let close = () => {};
   if (stat.isDirectory()) {
-    names = walkFolder(path);
+    names = walkFolder(path).filter(isReadable);
     const listed = new Set(names);
     readBuffer = (name) => {
       if (!listed.has(name)) throw new ExportError(`no file named ${JSON.stringify(name)} in the export`);
@@ -90,7 +93,7 @@ export function openExport(path) {
     };
   } else {
     const zip = openZip(path);
-    names = [...zip.names].sort();
+    names = [...zip.names].filter(isReadable).sort();
     readBuffer = (name) => zip.read(name);
     close = () => zip.close();
   }
@@ -132,8 +135,10 @@ function postFrom(entry, { reel, used }) {
   if (time === undefined) return null;
   const uri = media[0].uri;
   const digits = /^(\d+)_/.exec(basename(uri))?.[1];
-  let shortcode = digits ? `exp_${digits}` : `exp_${sha16(uri)}`;
-  if (used.has(shortcode)) return null;
+  // Two posts can share the digit group of their first file name; the later one gets a numbered suffix, never dropped.
+  const base = digits ? `exp_${digits}` : `exp_${sha16(uri)}`;
+  let shortcode = base;
+  for (let n = 2; used.has(shortcode); n++) shortcode = `${base}_${n}`;
   used.add(shortcode);
   const type = reel ? "reel" : media.length > 1 ? "carousel" : /\.mp4$/i.test(uri) ? "video" : "photo";
   return { shortcode, type, time, caption: fixText(media[0].title || entry.title || "") };
@@ -231,14 +236,14 @@ function renderNotes({ username, capturedAt, counts }) {
 
 /**
  * Writes the raw layout for the export's own account. `handle`, when given, must be that account:
- * nothing is written for any other.
+ * nothing is written for any other. `data` is the result of `readInstagramExport(input)` when the caller
+ * already has it, so the download is read once.
  */
-export function exportToRaw({ input, rawRoot, handle, now = () => new Date() }) {
-  const data = readInstagramExport(input);
+export function exportToRaw({ input, data = readInstagramExport(input), rawRoot, handle, now = () => new Date() }) {
   const { username } = data.profile;
-  if (handle !== undefined && handle.toLowerCase() !== username.toLowerCase()) throw new NotOwnAccount(username, handle);
-  if (SYNTHETIC.includes(username.toLowerCase())) {
-    throw new ExportError(`refusing to write into a synthetic creator's directory (${SYNTHETIC.join(", ")})`);
+  if (handle !== undefined && handle.toLowerCase() !== username.toLowerCase()) throw new NotOwnAccount(username, handle, "export");
+  if (SYNTHETIC_HANDLES.includes(username.toLowerCase())) {
+    throw new ExportError(`refusing to write into a synthetic creator's directory (${SYNTHETIC_HANDLES.join(", ")})`);
   }
 
   const posts = data.posts.slice().sort((a, b) => a.time - b.time || (a.shortcode < b.shortcode ? -1 : 1));
@@ -262,6 +267,8 @@ export function exportToRaw({ input, rawRoot, handle, now = () => new Date() }) 
 
   const counts = { posts: records.length, comments: 0, gif: 0, other_accounts: 0, duplicates: 0 };
   const seen = new Set();
+  const postTimes = records.map((record) => Date.parse(record.date));
+  let next = 0;
   const own = data.comments.filter((c) => c.owner.toLowerCase() === username.toLowerCase());
   counts.other_accounts = data.comments.length - own.length;
   for (const comment of own.sort((a, b) => a.time - b.time)) {
@@ -271,9 +278,11 @@ export function exportToRaw({ input, rawRoot, handle, now = () => new Date() }) 
       continue;
     }
     seen.add(key);
-    // The post it was written under is not in the download: the latest post at or before the comment stands in.
-    let target = records[0];
-    for (const record of records) if (Date.parse(record.date) <= comment.time * 1000) target = record;
+    // The post it was written under is not in the download: the latest post at or before the comment stands in,
+    // and a comment before every post goes to the earliest. Both lists are sorted by time, so one pass over the
+    // posts serves every comment.
+    while (next < records.length && postTimes[next] <= comment.time * 1000) next++;
+    const target = records[Math.max(0, next - 1)];
     target.her_comments.push({
       kind: "top_level",
       date: isoSeconds(comment.time),

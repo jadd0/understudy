@@ -103,8 +103,8 @@ test("normalise accepts the output and every comment stays unpaired", () => {
 });
 
 test("direct messages are never opened and never appear in the output", () => {
-  const archive = openExport(FIXTURE);
-  assert.ok(archive.names.some((n) => n.startsWith("messages/")), "the fixture holds a DM thread");
+  assert.ok(filesUnder(FIXTURE).some((n) => n.startsWith("messages/")), "the fixture holds a DM thread");
+  assert.ok(openExport(FIXTURE).names.every((n) => !n.startsWith("messages/")), "the reader never lists it");
   const data = readInstagramExport(FIXTURE);
   assert.ok(data.filesRead.length > 0);
   assert.ok(data.filesRead.every((name) => !name.startsWith("messages/")), data.filesRead.join(", "));
@@ -143,7 +143,7 @@ test("a handle that is not the export's account is refused and nothing is writte
   const out = join(scratch, "raw-mismatch");
   assert.throws(() => exportToRaw({ input: FIXTURE, rawRoot: out, handle: "someone.else", now: NOW }), (error) => {
     assert.ok(error instanceof NotOwnAccount);
-    assert.match(error.message, /belongs to @wren\.fixture; refusing @someone\.else/);
+    assert.match(error.message, /^the export belongs to @wren\.fixture; refusing @someone\.else$/);
     return true;
   });
   assert.throws(() => statSync(out), /ENOENT/);
@@ -166,4 +166,67 @@ test("a symlink in a folder export is not followed", () => {
     symlinkSync(target, join(root, "media/linked.json"));
   });
   assert.ok(!openExport(dir).names.includes("media/linked.json"));
+});
+
+test("two posts whose first files share a digit group both survive, the later one numbered", () => {
+  const dir = copyFixture("collision", (root) => {
+    const file = join(root, "media/posts_1.json");
+    const posts = JSON.parse(readFileSync(file, "utf8"));
+    posts.push(
+      { media: [{ uri: "media/posts/202404/1001_x_n.jpg", creation_timestamp: 1711900000, title: "same digits again" }] },
+      { media: [{ uri: "media/posts/202405/1001_y_n.jpg", creation_timestamp: 1714500000, title: "and a third" }] },
+    );
+    writeFileSync(file, JSON.stringify(posts));
+  });
+  const { posts } = readInstagramExport(dir);
+  assert.equal(posts.length, 7);
+  const codes = posts.map((p) => p.shortcode);
+  assert.equal(new Set(codes).size, 7);
+  assert.deepEqual(codes.filter((c) => c.startsWith("exp_1001")), ["exp_1001", "exp_1001_2", "exp_1001_3"]);
+  assert.deepEqual(posts.filter((p) => p.shortcode.startsWith("exp_1001")).map((p) => p.caption), [
+    "first light on the pier before anyone else was awake", "same digits again", "and a third",
+  ]);
+});
+
+test("a lookalike comments or posts file under messages/ is never listed or read, in a folder or a zip", () => {
+  const canary = (root) => {
+    const decoy = join(root, "messages/inbox/mothfan_1/comments");
+    mkdirSync(decoy, { recursive: true });
+    writeFileSync(
+      join(decoy, "post_comments_1.json"),
+      JSON.stringify([{ string_map_data: { Comment: { value: "CANARY dm text" }, "Media Owner": { value: "wren.fixture" }, Time: { timestamp: 1709400000 } } }]),
+    );
+    const media = join(root, "messages/inbox/mothfan_1/media");
+    mkdirSync(media, { recursive: true });
+    writeFileSync(join(media, "posts_1.json"), JSON.stringify([{ media: [{ uri: "media/posts/9999_z.jpg", creation_timestamp: 1709400000, title: "CANARY dm post" }] }]));
+  };
+  const dir = copyFixture("messages-canary", canary);
+  assert.ok(filesUnder(dir).includes("messages/inbox/mothfan_1/comments/post_comments_1.json"), "the canary exists on disk");
+  const zip = zipOf(dir, join(scratch, "canary.zip"));
+  for (const input of [dir, zip]) {
+    const archive = openExport(input);
+    assert.ok(archive.names.length > 0 && archive.names.every((n) => !n.split("/").includes("messages")), input);
+    const data = readInstagramExport(input);
+    assert.ok(data.filesRead.length > 0);
+    assert.ok(data.filesRead.every((n) => !n.split("/").includes("messages")), data.filesRead.join(", "));
+    assert.equal(data.posts.length, 5);
+    assert.equal(data.comments.length, 7);
+    assert.ok(![...data.posts.map((p) => p.caption), ...data.comments.map((c) => c.text)].some((t) => t.includes("CANARY")));
+  }
+});
+
+test("a comment lands on the latest post at or before it, and one before every post on the earliest", () => {
+  const dir = copyFixture("attribution", (root) => {
+    const file = join(root, "comments/post_comments_1.json");
+    const at = (value, timestamp) => ({ string_map_data: { Comment: { value }, "Media Owner": { value: "wren.fixture" }, Time: { timestamp } } });
+    // Post 1001 is at 1704110400 and 1002 at 1706788800: a comment on each post's own second and one just before 1002.
+    writeFileSync(file, JSON.stringify([at("before all", 1), at("on first", 1704110400), at("just before second", 1706788799), at("on second", 1706788800)]));
+  });
+  const out = join(scratch, "raw-attribution");
+  exportToRaw({ input: dir, rawRoot: out, now: NOW });
+  const posts = readFileSync(join(out, "wren.fixture", "posts.jsonl"), "utf8").trim().split("\n").map((line) => JSON.parse(line));
+  const placed = posts.flatMap((p) => p.her_comments.map((c) => [p.shortcode, c.text]));
+  assert.deepEqual(placed.filter(([, text]) => /before all|on first|just before second|on second/.test(text)), [
+    ["exp_1001", "before all"], ["exp_1001", "on first"], ["exp_1001", "just before second"], ["exp_1002", "on second"],
+  ]);
 });

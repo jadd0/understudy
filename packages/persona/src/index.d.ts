@@ -177,6 +177,8 @@ export interface ScrapeOptions {
   client: InstagramClient;
   /** Optional; when given it must be the session's own account. */
   handle?: string;
+  /** The session's account when the caller already resolved it with `resolveOwnHandle` on this client; not asked twice. */
+  own?: { username: string; pk: string };
   out?: string;
   caps?: ScrapeCaps;
   maxPosts?: number;
@@ -244,7 +246,7 @@ export interface DraftPersonaOptions {
 }
 export interface DraftPersonaResult {
   counts: Record<string, number>;
-  /** Exact train reply pairs found; under 15 the card is drafted from her own lines. */
+  /** Exact train reply pairs found; under `MIN_PAIRS` the card is drafted from her own lines. */
   pairs: number;
   chunks: number;
   /** Replies the voice-marker rates were measured on. */
@@ -253,6 +255,12 @@ export interface DraftPersonaResult {
   warnings: string[];
   tokens: number;
 }
+/** Reply pairs the card needs before it is drafted from pairs; fewer and it is drafted from her own lines. */
+export const MIN_PAIRS: number;
+/** What Instagram allows in a username. */
+export const HANDLE: RegExp;
+/** The committed synthetic creators. */
+export const SYNTHETIC_HANDLES: readonly string[];
 /** Normalises, splits, measures and chunks the raw records, then drafts `card/v1.md`. No evaluation, no database. */
 export function draftPersona(options: DraftPersonaOptions): Promise<DraftPersonaResult>;
 
@@ -269,6 +277,8 @@ export function readInstagramExport(path: string): InstagramExport;
 
 export interface ExportToRawOptions {
   input: string;
+  /** The result of `readInstagramExport(input)`, when the caller already read it; the download is then not read again. */
+  data?: InstagramExport;
   rawRoot: string;
   /** When given, must be the export's own account. */
   handle?: string;
@@ -287,7 +297,8 @@ export function exportToRaw(options: ExportToRawOptions): {
 export class ZipError extends Error {}
 /** Raised when a handle other than the session's (or the export's) own account is asked for. */
 export class NotOwnAccount extends Error {
-  constructor(owner: string, requested: string);
+  /** `source` is "session" (the default) or "export", and words the message. */
+  constructor(owner: string, requested: string, source?: "session" | "export");
   owner: string;
   requested: string;
 }

@@ -9,15 +9,13 @@
 // people's comments and stays out of git. Run with --help for the flags.
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { HANDLE, SYNTHETIC_HANDLES } from "../lib/handles.mjs";
 import { isMain, loadEnvFile, parseArgs, writeJson } from "../lib/io.mjs";
 import { ENDPOINTS, InstagramError, createClient } from "./instagram.mjs";
 import { NotOwnAccount, resolveOwnHandle } from "./whoami.mjs";
 import { pairReply } from "./pairing.mjs";
 import { mapHerComment, mapPost, mapProfile, toThreadComment } from "./record.mjs";
 
-// The committed synthetic creators. A scrape never writes over them.
-const SYNTHETIC = ["junovale", "junofilm"];
-const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
 
 export { NotOwnAccount };
 
@@ -53,8 +51,8 @@ Reads are GET-only, one at a time. A post that hits a cap is marked more_left_un
 function cleanDir(out, handle) {
   if (!HANDLE.test(handle) || /^\.+$/.test(handle)) throw new Error("--handle must be an Instagram username");
   const dir = resolve(out, handle);
-  if (SYNTHETIC.includes(handle.toLowerCase()) || SYNTHETIC.includes(resolve(out).split("/").pop().toLowerCase())) {
-    throw new Error(`refusing to write into a synthetic creator's directory (${SYNTHETIC.join(", ")})`);
+  if (SYNTHETIC_HANDLES.includes(handle.toLowerCase()) || SYNTHETIC_HANDLES.includes(resolve(out).split("/").pop().toLowerCase())) {
+    throw new Error(`refusing to write into a synthetic creator's directory (${SYNTHETIC_HANDLES.join(", ")})`);
   }
   return dir;
 }
@@ -151,14 +149,15 @@ function renderNotes({ handle, capturedAt, caps, counts, stoppedBy }) {
 
 /**
  * Runs one scrape of the account the session belongs to. `client` is the GET-only transport. `handle`, when
- * given, must be that account. posts.jsonl is appended one post at a time, so a run that stops on a 401 or
+ * given, must be that account. `own`, when the caller has already asked Instagram who the session is
+ * (`resolveOwnHandle(client)` on this same client), is used instead of asking again. posts.jsonl is appended one post at a time, so a run that stops on a 401 or
  * 429 keeps what it had written. Nothing is written until the account has been identified and its profile
  * id matches the session's.
  */
-export async function scrape({ client, handle: requested, out = DEFAULTS.out, caps = {}, maxPosts = Infinity, now = () => new Date() }) {
+export async function scrape({ client, handle: requested, own: resolvedOwn, out = DEFAULTS.out, caps = {}, maxPosts = Infinity, now = () => new Date() }) {
   const limits = { ...DEFAULTS, ...caps };
   if (requested !== undefined) cleanDir(out, requested);
-  const own = await resolveOwnHandle(client);
+  const own = resolvedOwn ?? (await resolveOwnHandle(client));
   if (requested !== undefined && requested.toLowerCase() !== own.username.toLowerCase()) throw new NotOwnAccount(own.username, requested);
   // From here on the account is the session's, spelled as Instagram spells it.
   const handle = own.username;

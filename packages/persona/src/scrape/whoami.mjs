@@ -1,12 +1,11 @@
 // Who a session belongs to. Every own-account path asks this before it writes or reads anything else.
+import { HANDLE } from "../lib/handles.mjs";
 import { ENDPOINTS, InstagramError } from "./instagram.mjs";
 
-const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
-
-/** Raised when a handle other than the signed-in account's (or the export's) is asked for. */
+/** Raised when a handle other than the signed-in account's (or the export's) is asked for. `source` names which: "session" or "export". */
 export class NotOwnAccount extends Error {
-  constructor(owner, requested) {
-    super(`the session belongs to @${owner}; refusing @${requested}`);
+  constructor(owner, requested, source = "session") {
+    super(`the ${source} belongs to @${owner}; refusing @${requested}`);
     this.name = "NotOwnAccount";
     this.owner = owner;
     this.requested = requested;
