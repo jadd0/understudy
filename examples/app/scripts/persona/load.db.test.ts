@@ -6,7 +6,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { creators, personaCards, personaChunks } from "@/db/schema";
-import { loadPersona, neverList, neverTerms } from "@/scripts/persona/load";
+import { loadPersona, MIN_MARKER_TEXTS, neverList, neverTerms, readMarkers } from "@/scripts/persona/load";
 import { makeUser } from "@/db/test-helpers";
 
 const CARD = "## Identity\nhi\n\n## Never\n- Never give contact details.\n- Never meet up.\n\n## Selling voice\nx\n";
@@ -168,5 +168,26 @@ describe("persona load", () => {
     const cards = await db.select().from(personaCards).where(eq(personaCards.creatorId, creatorId));
     expect(cards).toHaveLength(1);
     expect(both.filter((r) => r.cardInserted)).toHaveLength(1);
+  });
+
+  test("voice markers measured on fewer than MIN_MARKER_TEXTS replies are not read, loaded or stored; at the threshold they are", async () => {
+    const styled = (n: number) => {
+      const dir = fixture();
+      writeFileSync(path.join(dir, "bank", "style.json"), JSON.stringify({ markers: { n, lowercase_rate: 0.9 } }));
+      return dir;
+    };
+    const few = styled(MIN_MARKER_TEXTS - 1);
+    expect(readMarkers(few)).toBeNull();
+    const fewCreator = await mkCreator();
+    await loadPersona({ creatorId: fewCreator, dir: few, embedDocuments: null });
+    const [fewCard] = await db.select().from(personaCards).where(eq(personaCards.creatorId, fewCreator));
+    expect(fewCard.markers).toBeNull();
+
+    const enough = styled(MIN_MARKER_TEXTS);
+    expect(readMarkers(enough)).toEqual({ n: MIN_MARKER_TEXTS, lowercase_rate: 0.9 });
+    const enoughCreator = await mkCreator();
+    await loadPersona({ creatorId: enoughCreator, dir: enough, embedDocuments: null });
+    const [enoughCard] = await db.select().from(personaCards).where(eq(personaCards.creatorId, enoughCreator));
+    expect(enoughCard.markers).toEqual({ n: MIN_MARKER_TEXTS, lowercase_rate: 0.9 });
   });
 });

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { and, asc, count, eq } from "drizzle-orm";
@@ -10,8 +10,8 @@ import { NOW, makeUser } from "@/db/test-helpers";
 import { addMessage, makeConversation, makeFan, makeItem, rig, setEngineConfig, YES } from "@understudy/engine/testing";
 import { NotOwnAccount } from "@understudy/persona";
 import { fakeCardClaude, fixtureFetch, writeZip, type CardCall } from "@understudy/persona/testing";
-import { ensureCreator, initDraft, initPublish, MIN_MARKER_TEXTS, type InitDeps } from "./init";
-import { loadPersona } from "./load";
+import { ensureCreator, initDraft, initPublish, type InitDeps } from "./init";
+import { loadPersona, MIN_MARKER_TEXTS } from "./load";
 
 const FIXTURE = path.resolve(import.meta.dirname, "../../../../packages/persona/fixtures/instagram-export");
 const CAPTION_FROM_FIXTURE = "first light on the pier before anyone else was awake";
@@ -69,6 +69,8 @@ function setup() {
     log: (line) => void lines.push(line),
     scrapeDelayMs: 0,
     embedDocuments: fakeEmbed,
+    // The platform row is shared with other test files, so the strategy is read from here, not written to the table.
+    retrievalStrategy: async () => "fts",
   };
   return { deps, lines, calls, tree: deps.leakTree! };
 }
@@ -235,7 +237,9 @@ describe("npx understudy init", () => {
     const { deps, calls } = setup();
     const out = path.join(tmp("out"), "bank");
     const handle = newHandle();
-    await expect(initDraft(draftOf(exportFor(handle), { out, handle: "somebody.else" }), deps)).rejects.toBeInstanceOf(NotOwnAccount);
+    await expect(initDraft(draftOf(exportFor(handle), { out, handle: "somebody.else" }), deps)).rejects.toSatisfy(
+      (error: Error) => error instanceof NotOwnAccount && error.message === `the export belongs to @${handle}; refusing @somebody.else`,
+    );
     expect(calls).toHaveLength(0);
     expect(existsSync(out)).toBe(false);
   });
@@ -268,8 +272,11 @@ describe("npx understudy init", () => {
     const out = path.join(tmp("out"), "bank");
     const email = newEmail();
     const opts = { kind: "draft" as const, source: { kind: "scrape" as const }, email, cardModel: "m", out };
-    const drafted = await initDraft(opts, { ...deps, fetch: fixtureFetch() });
+    const requests: { url: string }[] = [];
+    const drafted = await initDraft(opts, { ...deps, fetch: fixtureFetch({ log: requests }) });
     expect(drafted.handle).toBe("fixturecreator");
+    // The session is asked who it belongs to once; the scrape is handed the answer.
+    expect(requests.filter((r) => r.url.includes("current_user"))).toHaveLength(1);
     expect(calls).toHaveLength(1);
     expect(existsSync(path.join(out, "raw", "fixturecreator", "posts.jsonl"))).toBe(true);
     expect(JSON.parse(readFileSync(path.join(out, "init.json"), "utf8"))).toMatchObject({ source: "scrape-own", handle: "fixturecreator", display_name: "Fixture Creator", email });
@@ -280,12 +287,56 @@ describe("npx understudy init", () => {
 
   test("no Voyage key: the chunks are stored with null embeddings and the log says so", async () => {
     const { deps, lines } = setup();
+    await setEngineConfig({});
     const drafted = await initDraft(draftOf(exportFor(newHandle())), deps);
-    const published = await initPublish(drafted.out, { ...deps, embedDocuments: null });
+    // No injected strategy here: the platform row, pinned to full text by the test helpers, is read.
+    const published = await initPublish(drafted.out, { ...deps, embedDocuments: null, retrievalStrategy: undefined });
     const rows = await db.select().from(personaChunks).where(eq(personaChunks.creatorId, published.creatorId));
     expect(rows).toHaveLength(5);
     expect(rows.every((r) => r.embedding === null)).toBe(true);
     expect(lines.some((line) => line.includes("no embeddings"))).toBe(true);
+  });
+
+  test("no Voyage key while retrieval reads vectors is refused before any write, naming both remedies", async () => {
+    const email = newEmail();
+    const handle = newHandle();
+    const { deps } = setup();
+    const drafted = await initDraft(draftOf(exportFor(handle), { email }), deps);
+    for (const strategy of ["vector", "hybrid"]) {
+      await expect(initPublish(drafted.out, { ...deps, embedDocuments: null, retrievalStrategy: async () => strategy })).rejects.toSatisfy(
+        (error: Error) => error.name === "InitError" && error.message.includes(`"${strategy}"`) && error.message.includes("VOYAGE_API_KEY") && error.message.includes('"fts"'),
+      );
+      expect(await userRows(email)).toHaveLength(0);
+      expect(await creatorRows(handle)).toHaveLength(0);
+    }
+    // With a key the same strategy publishes.
+    const published = await initPublish(drafted.out, { ...deps, retrievalStrategy: async () => "vector" });
+    expect((await db.select().from(personaChunks).where(eq(personaChunks.creatorId, published.creatorId))).every((c) => c.embedding !== null)).toBe(true);
+  });
+
+  test("a phase 1 failure after the directory is filled says it holds a partial run and prints the command that removes it", async () => {
+    const { deps, lines } = setup();
+    const out = path.join(tmp("out"), "bank");
+    const failing = { complete: async () => { throw new Error("model down"); } } as unknown as NonNullable<InitDeps["claude"]>;
+    await expect(initDraft(draftOf(exportFor(newHandle()), { out }), { ...deps, claude: failing })).rejects.toThrow(/model down/);
+    expect(existsSync(path.join(out, "raw"))).toBe(true);
+    expect(lines).toContain(`${out} holds a partial run (her data is in it); remove it before running again:`);
+    expect(lines).toContain(`  rm -rf ${out}`);
+    // The directory is not deleted for her, and running again is refused until she does.
+    await expect(initDraft(draftOf(exportFor(newHandle()), { out }), deps)).rejects.toThrow(/not empty/);
+    // A refusal before anything is written prints no such hint.
+    const before = lines.length;
+    await expect(initDraft(draftOf(exportFor(newHandle()), { out: tmp("busy") }), { ...deps, env: {} })).rejects.toThrow(/CLAUDE_SECRET_KEY/);
+    expect(lines.slice(before)).toEqual([]);
+  });
+
+  test("--publish with raw/ deleted says the leak check needs it, before any write", async () => {
+    const email = newEmail();
+    const { deps } = setup();
+    const drafted = await initDraft(draftOf(exportFor(newHandle()), { email }), deps);
+    rmSync(path.join(drafted.out, "raw"), { recursive: true });
+    await expect(initPublish(drafted.out, deps)).rejects.toThrow(/raw.*is missing: the leak check reads it/);
+    expect(await userRows(email)).toHaveLength(0);
   });
 
   test("under 30 marker texts the published card stores no markers; at 30 or more it does", async () => {
@@ -329,6 +380,19 @@ describe("npx understudy init", () => {
     await db.insert(creators).values({ userId: other.id, handle, displayName: "Other" });
     await expect(initPublish(drafted.out, deps)).rejects.toThrow(/belongs to another user/);
     expect(await userRows(email)).toHaveLength(0);
+  });
+
+  test("a handle taken between the phases in another letter case is refused too, and no second creator appears", async () => {
+    const handle = newHandle();
+    const email = newEmail();
+    const { deps } = setup();
+    const drafted = await initDraft(draftOf(exportFor(handle), { email }), deps);
+    const other = await makeUser({ role: "creator" });
+    await db.insert(creators).values({ userId: other.id, handle: handle.toUpperCase(), displayName: "Other" });
+    await expect(initPublish(drafted.out, deps)).rejects.toThrow(/belongs to another user/);
+    expect(await userRows(email)).toHaveLength(0);
+    expect(await creatorRows(handle)).toHaveLength(0);
+    expect(await creatorRows(handle.toUpperCase())).toHaveLength(1);
   });
 });
 

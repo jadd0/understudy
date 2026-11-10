@@ -17,6 +17,9 @@ type BankChunk = {
   text: string;
 };
 
+/** Replies the voice-marker rates need before they are kept; below this a card is stored with no draw. */
+export const MIN_MARKER_TEXTS = 30;
+
 // Voyage accounts without a payment method get 3 requests and 10K tokens a minute.
 export const UNBILLED_LIMITS = { batchSize: 100, intervalMs: 21_000, retries: 5, retryDelayMs: 30_000 };
 
@@ -152,12 +155,17 @@ export async function loadPersona(input: LoadInput): Promise<LoadResult> {
   });
 }
 
-/** The voice-marker rates the persona build measured (`bank/style.json`), or null when the bank has none. */
+/**
+ * The voice-marker rates the persona build measured (`bank/style.json`), or null when the bank has none or
+ * measured them on fewer than `MIN_MARKER_TEXTS` replies. Every writer of a card's markers reads them here, so
+ * load, publish and init agree.
+ */
 export function readMarkers(dir: string): Record<string, unknown> | null {
   const file = path.join(dir, "bank", "style.json");
   if (!existsSync(file)) return null;
   const markers = (JSON.parse(readFileSync(file, "utf8")) as { markers?: Record<string, unknown> }).markers;
-  return markers ?? null;
+  if (!markers || typeof markers.n !== "number" || markers.n < MIN_MARKER_TEXTS) return null;
+  return markers;
 }
 
 async function main() {

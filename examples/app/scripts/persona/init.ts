@@ -18,8 +18,11 @@ import { creators, users } from "@/db/schema";
 import { getConfig } from "@/lib/config";
 import { embed, type EmbedResult } from "@understudy/providers";
 import {
+  HANDLE,
+  MIN_PAIRS,
   NotOwnAccount,
   SECTIONS,
+  SYNTHETIC_HANDLES,
   TokenBudget,
   createClaude,
   createClient,
@@ -34,16 +37,9 @@ import {
 import { latestCardVersion, loadPersona, readMarkers, UNBILLED_LIMITS } from "./load";
 import { publishCard } from "./publish-card";
 
-/** Replies the voice-marker rates need before they are kept; below this the card is published with no draw. */
-const MIN_MARKER_TEXTS = 30;
 const REPO_ROOT = path.resolve(fileURLToPath(new URL("../../../..", import.meta.url)));
-// The committed synthetic creators. A real creator never takes their handles.
-const SYNTHETIC_HANDLES = ["junovale", "junofilm"];
-const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATE_FILE = "init.json";
-
-export { MIN_MARKER_TEXTS };
 
 /** A refusal with a message written for the operator. */
 export class InitError extends Error {
@@ -179,6 +175,8 @@ export type InitDeps = {
   env: Record<string, string | undefined>;
   /** Phase 2: embeds the chunk texts, or `null` to store them without embeddings. */
   embedDocuments?: ((texts: string[]) => Promise<EmbedResult>) | null;
+  /** Reads the platform's `retrieval.strategy`; defaults to the config table. */
+  retrievalStrategy?: () => Promise<string>;
   /** The tree the leak check scans; defaults to this repository. */
   leakTree?: string;
   now?: () => Date;
@@ -203,6 +201,8 @@ type State = {
   creator_id: string | null;
 };
 
+/** A path quoted for a POSIX shell, so the remove command printed to the operator can be pasted. */
+const shellQuote = (value: string) => (/^[A-Za-z0-9_\/.@%+=:,-]+$/.test(value) ? value : `'${value.replaceAll("'", `'\\''`)}'`);
 const sha256 = (text: string) => createHash("sha256").update(text).digest("hex");
 const normaliseEmail = (email: string) => email.trim().toLowerCase();
 
@@ -211,7 +211,9 @@ const normaliseEmail = (email: string) => email.trim().toLowerCase();
  * stops the run; a file that only names an account found in her data is a warning.
  */
 function checkLeaks(dir: string, tree: string, log: (line: string) => void) {
-  const report = leakCheck(path.join(dir, "raw"), tree);
+  const raw = path.join(dir, "raw");
+  if (!existsSync(raw)) throw new InitError(`${raw} is missing: the leak check reads it, so keep raw/ in the directory until the card is published (or run phase 1 again)`);
+  const report = leakCheck(raw, tree);
   const copied: string[] = [];
   for (const [file, hits] of report.perFile) {
     if (hits.some((hit) => hit.startsWith("text["))) copied.push(file);
@@ -237,17 +239,24 @@ export async function initDraft(opts: DraftOptions, deps: InitDeps) {
   const email = normaliseEmail(opts.email);
 
   // Whose account it is comes first: every refusal below happens before a directory exists or a model is called.
+  // The export is read once and the session asked once; the build below is handed what they returned.
   let username: string;
+  let exported: ReturnType<typeof readInstagramExport> | null = null;
   let client: ReturnType<typeof createClient> | null = null;
+  let own: Awaited<ReturnType<typeof resolveOwnHandle>> | null = null;
   if (opts.source.kind === "export") {
-    username = readInstagramExport(opts.source.input).profile.username;
+    exported = readInstagramExport(opts.source.input);
+    username = exported.profile.username;
   } else {
     const sessionId = deps.env.IG_SESSIONID;
     if (!sessionId) throw new InitError("IG_SESSIONID is not set: export your instagram.com sessionid cookie as IG_SESSIONID");
     client = createClient({ fetch: deps.fetch ?? globalThis.fetch, sessionId, delayMs: deps.scrapeDelayMs ?? 1500 });
-    username = (await resolveOwnHandle(client)).username;
+    own = await resolveOwnHandle(client);
+    username = own.username;
   }
-  if (opts.handle !== undefined && opts.handle.toLowerCase() !== username.toLowerCase()) throw new NotOwnAccount(username, opts.handle);
+  if (opts.handle !== undefined && opts.handle.toLowerCase() !== username.toLowerCase()) {
+    throw new NotOwnAccount(username, opts.handle, opts.source.kind === "export" ? "export" : "session");
+  }
   const handle = username;
   if (SYNTHETIC_HANDLES.includes(handle.toLowerCase())) throw new InitError(`@${handle} is a committed synthetic creator`);
 
@@ -263,50 +272,54 @@ export async function initDraft(opts: DraftOptions, deps: InitDeps) {
   const out = opts.out ?? path.join(deps.homedir ?? os.homedir(), ".understudy", handle);
   assertOutsideRepo(out);
   emptyDirectory(out);
-  mkdirSync(out, { recursive: true });
   const rawRoot = path.join(out, "raw");
+  mkdirSync(out, { recursive: true });
 
-  if (opts.source.kind === "export") {
-    exportToRaw({ input: opts.source.input, rawRoot, handle, now });
-  } else {
-    try {
-      await scrape({ client: client!, handle, out: rawRoot, now });
-    } catch (error) {
-      log(`the scrape stopped early; ${out} holds a partial copy: delete it before running again`);
-      throw error;
+  // From here `out` holds her data; a failure leaves it behind, so the operator is told how to clear it.
+  let cardPath: string;
+  let drafted: Awaited<ReturnType<typeof draftPersona>>;
+  try {
+    if (opts.source.kind === "export") {
+      exportToRaw({ input: opts.source.input, data: exported!, rawRoot, handle, now });
+    } else {
+      await scrape({ client: client!, handle, own: own!, out: rawRoot, now });
     }
+
+    const profilePath = path.join(rawRoot, handle, "profile.json");
+    const profile = JSON.parse(readFileSync(profilePath, "utf8")) as { display_name?: string | null };
+    const displayName = opts.displayName ?? profile.display_name ?? handle;
+    writeFileSync(profilePath, JSON.stringify({ ...profile, display_name: displayName }, null, 2) + "\n");
+
+    const posts = readFileSync(path.join(rawRoot, handle, "posts.jsonl"), "utf8").split("\n").filter(Boolean);
+    if (!posts.some((line) => String((JSON.parse(line) as { caption?: unknown }).caption ?? "").trim() !== "")) {
+      throw new InitError("none of her posts has a caption: there is nothing to build a persona from");
+    }
+
+    const claude = deps.claude ?? createClaude({ apiKey: deps.env.CLAUDE_SECRET_KEY });
+    drafted = await draftPersona({ dir: out, handle, claude, cardModel: opts.cardModel, budget: new TokenBudget() });
+    checkLeaks(out, deps.leakTree ?? REPO_ROOT, log);
+
+    cardPath = path.join(out, "card", "v1.md");
+    const state: State = {
+      format: 1,
+      source: opts.source.kind === "export" ? "instagram-export" : "scrape-own",
+      handle,
+      display_name: displayName,
+      email,
+      card_model: opts.cardModel,
+      card_sha256: sha256(readFileSync(cardPath, "utf8")),
+      drafted_at: now().toISOString(),
+      published_at: null,
+      creator_id: null,
+    };
+    writeFileSync(path.join(out, STATE_FILE), JSON.stringify(state, null, 2) + "\n");
+  } catch (error) {
+    log(`${out} holds a partial run (her data is in it); remove it before running again:`);
+    log(`  rm -rf ${shellQuote(out)}`);
+    throw error;
   }
 
-  const profilePath = path.join(rawRoot, handle, "profile.json");
-  const profile = JSON.parse(readFileSync(profilePath, "utf8")) as { display_name?: string | null };
-  const displayName = opts.displayName ?? profile.display_name ?? handle;
-  writeFileSync(profilePath, JSON.stringify({ ...profile, display_name: displayName }, null, 2) + "\n");
-
-  const posts = readFileSync(path.join(rawRoot, handle, "posts.jsonl"), "utf8").split("\n").filter(Boolean);
-  if (!posts.some((line) => String((JSON.parse(line) as { caption?: unknown }).caption ?? "").trim() !== "")) {
-    throw new InitError("none of her posts has a caption: there is nothing to build a persona from");
-  }
-
-  const claude = deps.claude ?? createClaude({ apiKey: deps.env.CLAUDE_SECRET_KEY });
-  const drafted = await draftPersona({ dir: out, handle, claude, cardModel: opts.cardModel, budget: new TokenBudget() });
-  checkLeaks(out, deps.leakTree ?? REPO_ROOT, log);
-
-  const cardPath = path.join(out, "card", "v1.md");
-  const state: State = {
-    format: 1,
-    source: opts.source.kind === "export" ? "instagram-export" : "scrape-own",
-    handle,
-    display_name: displayName,
-    email,
-    card_model: opts.cardModel,
-    card_sha256: sha256(readFileSync(cardPath, "utf8")),
-    drafted_at: now().toISOString(),
-    published_at: null,
-    creator_id: null,
-  };
-  writeFileSync(path.join(out, STATE_FILE), JSON.stringify(state, null, 2) + "\n");
-
-  log(`bank: ${drafted.chunks} chunks from her captions; ${drafted.pairs} reply pairs${drafted.pairs < 15 ? " (the card is drafted from her own lines)" : ""}`);
+  log(`bank: ${drafted.chunks} chunks from her captions; ${drafted.pairs} reply pairs${drafted.pairs < MIN_PAIRS ? " (the card is drafted from her own lines)" : ""}`);
   log(`card: ${cardPath}`);
   log("Read it, edit it, then run:");
   log(`  npx understudy init --publish ${out}`);
@@ -347,11 +360,28 @@ export async function ensureCreator(tx: Tx, input: { email: string; handle: stri
   if (!user) throw new InitError("the user row could not be created");
   if (user.role !== "creator") throw new InitError("that email already belongs to a fan or admin account");
 
+  // Handles are compared without regard to case, as phase 1 does; the unique index alone would let @Alice sit beside @alice.
+  const sameHandle = sql`lower(${creators.handle}) = ${input.handle.toLowerCase()}`;
+  const [held] = await tx.select({ userId: creators.userId }).from(creators).where(sameHandle);
+  if (held && held.userId !== user.id) throw new InitError(`the handle @${input.handle} belongs to another user`);
   await tx.insert(creators).values({ userId: user.id, handle: input.handle, displayName: input.displayName }).onConflictDoNothing();
-  const [creator] = await tx.select({ id: creators.id, userId: creators.userId }).from(creators).where(eq(creators.handle, input.handle)).for("update");
+  const [creator] = await tx.select({ id: creators.id, userId: creators.userId }).from(creators).where(sameHandle).for("update");
   if (!creator) throw new InitError("that email already belongs to a creator with another handle");
   if (creator.userId !== user.id) throw new InitError(`the handle @${input.handle} belongs to another user`);
   return { userId: user.id, creatorId: creator.id };
+}
+
+/**
+ * Chunks stored without embeddings are found by full text only. When the platform's retrieval strategy reads
+ * vectors, publishing them would leave her with a bank that retrieval cannot see, so it is refused first.
+ */
+async function requireFullTextRetrieval(readStrategy: () => Promise<string>) {
+  const strategy = await readStrategy();
+  if (strategy === "fts") return;
+  throw new InitError(
+    `retrieval.strategy is ${JSON.stringify(strategy)}, which reads embeddings, and VOYAGE_API_KEY is not set, so her chunks would be stored without any. ` +
+      `Either set VOYAGE_API_KEY and run --publish again, or set the retrieval.strategy config row to "fts" (full text) first.`,
+  );
 }
 
 /** Phase 2. Safe to run again: every step finds what an earlier run left. */
@@ -366,13 +396,12 @@ export async function initPublish(dir: string, deps: InitDeps) {
   // Everything that can refuse comes before the first write.
   checkSections(body);
   checkLeaks(dir, deps.leakTree ?? REPO_ROOT, log);
+  if (!deps.embedDocuments) await requireFullTextRetrieval(deps.retrievalStrategy ?? (() => getConfig<string>("retrieval.strategy")));
 
   const { creatorId } = await db.transaction((tx) => ensureCreator(tx, { email: state.email, handle: state.handle, displayName: state.display_name }));
 
   const loaded = await loadPersona({ creatorId, dir, embedDocuments: deps.embedDocuments ?? null });
-  const bankMarkers = readMarkers(dir);
-  const markerTexts = typeof bankMarkers?.n === "number" ? bankMarkers.n : 0;
-  const published = await publishCard(creatorId, body, markerTexts >= MIN_MARKER_TEXTS ? bankMarkers : null);
+  const published = await publishCard(creatorId, body, readMarkers(dir));
 
   const edited = sha256(body) !== state.card_sha256;
   writeFileSync(
@@ -387,7 +416,7 @@ export async function initPublish(dir: string, deps: InitDeps) {
 
 // Errors whose messages are written for the operator. Anything else is reported by class and code only: a
 // database or parser message can quote a row or a line of her data.
-const OPERATOR_ERRORS = new Set(["InitError", "UsageError", "NotOwnAccount", "ZipError", "ExportError", "InstagramError", "ClaudeError", "BudgetExceeded"]);
+const OPERATOR_ERRORS = new Set(["InitError", "UsageError", "NotOwnAccount", "ZipError", "ExportError", "InstagramError", "ClaudeError", "BudgetExceeded", "ConfigMissing"]);
 
 export async function main(argv: string[], env: Record<string, string | undefined> = process.env): Promise<number> {
   try {
