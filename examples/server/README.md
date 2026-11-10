@@ -8,13 +8,13 @@ a signed webhook. There is no UI, no wallet and no user table: it exists to show
 
 ```bash
 npm install
-export DATABASE_URL=... UNDERSTUDY_API_KEY=... CLAUDE_SECRET_KEY=...   # a Postgres with pgvector; any long random key
+export DATABASE_URL=... UNDERSTUDY_API_KEY=... CLAUDE_SECRET_KEY=...   # a Neon database, or Postgres with pgvector behind Neon's WebSocket proxy (docker-compose.yml runs one); any long random key
 npm run --workspace @understudy/example-server migrate                 # the engine's tables and the server's own
 npm run --workspace @understudy/example-server seed                    # Juno's published card and chunks (full-text retrieval)
 npm run server:dev                                                     # http://127.0.0.1:8787
 ```
 
-Without a Claude key, start it with `--fake` for scripted replies. The fifth command is a request:
+Without a Claude key, start it with `--fake` for scripted replies. A `DATABASE_URL` on `localhost` is reached through the compose proxy (port 4454, or `NEON_LOCAL_PROXY_PORT`); any other host is a Neon database. The fifth command is a request:
 `curl -H "authorization: Bearer $UNDERSTUDY_API_KEY" -d '{...}'` against `POST /v1/messages` (see below).
 
 Play the scripted conversation without a UI:

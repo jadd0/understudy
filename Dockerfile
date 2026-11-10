@@ -1,4 +1,4 @@
-# The headless server (examples/server) against any Postgres with pgvector.
+# The headless server (examples/server) against a Neon database, or Postgres behind Neon's WebSocket proxy (docker-compose.yml runs one).
 #   docker build -t understudy-server .
 #   docker run -e DATABASE_URL=... -e UNDERSTUDY_API_KEY=... -e CLAUDE_SECRET_KEY=... -p 8787:8787 understudy-server
 # Secrets are passed at run time with -e; none is baked into the image.
