@@ -550,8 +550,10 @@ describe("routing outcomes", () => {
     // nothing reaches the fan; the failed line waits for Juno as one blocked suggestion
     const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
     expect(ai).toMatchObject([{ body: "sure, it's $20 for the video", suggested: true, status: "blocked" }]);
-    // a money failure is not retried: a second Claude call on a hold is made only for a refusal
-    expect(r.generator.calls.filter((c) => !isMemoryCall(c))).toHaveLength(1);
+    // a money failure is written again, and the second attempt is told what it got wrong
+    const gens = r.generator.calls.filter((c) => !isMemoryCall(c));
+    expect(gens).toHaveLength(2);
+    expect(gens[1].system.turn).toContain("It mentioned money, a price or something being free.");
     expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
     expect(await handoffsOf(w.conv.id)).toMatchObject([{ reason: "custom_request" }]);
   });
@@ -584,6 +586,35 @@ describe("routing outcomes", () => {
     const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
     expect(ai).toMatchObject([{ body: "saw this one, i'll come back to you on it", status: "sent", suggested: false }]);
     expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "custom_request" }]);
+  });
+
+  test("a filler that was refused and also failed another check is retried with every reason", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { ...CUSTOM, is_refusal: refusalOn("can't"), promises_price_or_free: refusalOn("can't") },
+      replies: ["sorry, i can't do custom videos", "saw this one, i'll come back to you on it"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
+    const [t] = await turnsOf(w.conv.id);
+    expect(t.jevOut).toMatchObject([{ filler: true, attempt: 1, failures: ["refusal", "promises_price_or_free"] }, { filler: true, attempt: 2, failures: [] }]);
+    const gens = r.generator.calls.filter((c) => !isMemoryCall(c));
+    expect(gens[1].system.turn).toContain(HOLD_REFUSAL_LINE);
+    expect(gens[1].system.turn).toContain("It promised content, a price or something free.");
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toMatchObject([{ body: "saw this one, i'll come back to you on it", status: "sent" }]);
+  });
+
+  test("a filler that only points to the bio link is a quality failure and is sent", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({ script: CUSTOM, replies: ["saw this one, my link in bio has more while you wait"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
+    const gens = r.generator.calls.filter((c) => !isMemoryCall(c));
+    // written again with the bio line, and the draft that stayed quality-only goes out
+    expect(gens).toHaveLength(2);
+    expect(gens[1].system.turn).toContain("sent him to the link in your bio");
+    expect(gens[1].system.turn).not.toContain("rejected by a safety check");
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toMatchObject([
+      { body: "saw this one, my link in bio has more while you wait", status: "sent", suggested: false },
+    ]);
   });
 
   test("a hold whose filler fails every attempt keeps the last draft as Juno's suggestion", async () => {

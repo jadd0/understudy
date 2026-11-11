@@ -1,4 +1,4 @@
-import type { VerifyFailure } from "../drafting/verify.js";
+import { qualityOnly, type VerifyFailure } from "../drafting/verify.js";
 
 export const RETRY_NOTE = "\n\n## Retry\nYour previous draft was rejected by a safety check. Write a different reply that follows every rule above.";
 export const REASK_LINE =
@@ -48,3 +48,14 @@ export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
   marker_echo: "It copied a time marker from the chat.",
   offer_unsetup: "It never led into the locked item the app shows next.",
 };
+
+/**
+ * The retry note for a hold filler or a boundary line after `previous` failed. Quality failures alone get their own
+ * lines; any safety failure gets the generic note and one line per failure. A refusal gets the hold line in place of
+ * the reply route's advice, which is about a buy and would pull the filler off "i saw it, i'll come back to you".
+ */
+export function fillerRetryNote(previous: readonly VerifyFailure[]): string {
+  if (qualityOnly(previous)) return qualityNote(previous);
+  const reasons = [...previous.filter((f) => f !== "refusal").map((f) => RETRY_REASONS[f]), previous.includes("refusal") ? HOLD_REFUSAL_LINE : undefined].filter(Boolean);
+  return RETRY_NOTE + (reasons.length ? `\n${reasons.join("\n")}` : "");
+}
