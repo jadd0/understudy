@@ -482,6 +482,16 @@ describe("routing outcomes", () => {
     expect(await getConversation(w2.conv.id)).toMatchObject({ mode: "handoff_ts" });
   });
 
+  test("a threat's boundary line gets one attempt: a failing line is not retried before the stop commits", async () => {
+    const w = await world({}, "i know where you live");
+    const r = rig({ script: { threat: YES, on_persona: "no" }, replies: ["not okay. this chat ends here", "still not okay"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hard_stop", outcome: "hard_stop" });
+    expect(r.generator.calls.filter((c) => !isMemoryCall(c))).toHaveLength(1);
+    expect((await turnsOf(w.conv.id))[0].jevOut).toMatchObject([{ boundary: true, failures: ["off_persona"] }]);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender !== "fan")).toHaveLength(0);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_ts" });
+  });
+
   test("hard_stop_supersedes_pending_bubbles", async () => {
     const w = await world({}, "im 15, where do you live?");
     const pending = await addMessage(w.conv.id, "ai", "an older bubble, not delivered yet");
@@ -651,6 +661,18 @@ describe("routing outcomes", () => {
     expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "verify_failed" }]);
     expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toHaveLength(0);
     expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+  });
+
+  test("a blank last attempt does not wipe the earlier draft: the creator still gets it as a suggestion", async () => {
+    const w = await world();
+    const r = rig({
+      script: { explicitness: (state) => ((state as { draft?: string }).draft === "hey you" ? "explicit" : "flirty") },
+      replies: ["hey you", ""],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "reply", outcome: "suggested" });
+    expect(r.generator.calls.filter((c) => !isMemoryCall(c))).toHaveLength(2);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toMatchObject([{ body: "hey you", suggested: true, status: "blocked" }]);
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "verify_failed" }]);
   });
 
   test("a generator error on the filler still holds the chat", async () => {

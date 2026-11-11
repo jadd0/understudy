@@ -50,12 +50,17 @@ export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
 };
 
 /**
- * The retry note for a hold filler or a boundary line after `previous` failed. Quality failures alone get their own
- * lines; any safety failure gets the generic note and one line per failure. A refusal gets the hold line in place of
- * the reply route's advice, which is about a buy and would pull the filler off "i saw it, i'll come back to you".
+ * The retry note after `previous` failed. Quality failures alone get their own lines; any safety failure gets the
+ * generic note and one line per failure, then the draw's own lines. `refusalLine` replaces the reply route's advice on a
+ * refusal, which is about a buy and would pull a filler off "i saw it, i'll come back to you".
  */
-export function fillerRetryNote(previous: readonly VerifyFailure[]): string {
-  if (qualityOnly(previous)) return qualityNote(previous);
-  const reasons = [...previous.filter((f) => f !== "refusal").map((f) => RETRY_REASONS[f]), previous.includes("refusal") ? HOLD_REFUSAL_LINE : undefined].filter(Boolean);
+export function retryNote(previous: readonly VerifyFailure[], draw: DrawNote = {}, refusalLine?: string): string {
+  if (qualityOnly(previous)) return qualityNote(previous, draw);
+  const overridden = refusalLine !== undefined && previous.includes("refusal");
+  const reasons = [
+    ...previous.filter((f) => !(overridden && f === "refusal")).map((f) => RETRY_REASONS[f]),
+    overridden ? refusalLine : undefined,
+    ...drawReasons(previous, draw),
+  ].filter(Boolean);
   return RETRY_NOTE + (reasons.length ? `\n${reasons.join("\n")}` : "");
 }

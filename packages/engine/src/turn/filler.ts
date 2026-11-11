@@ -3,7 +3,7 @@ import { dropRepeatedEmoji, recentEmoji } from "../drafting/emoji.js";
 import { EMPTY_PROFILE } from "../drafting/memory.js";
 import { ownAccounts, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify.js";
 import type { JevIn, Route } from "../types.js";
-import { fillerRetryNote } from "./draft.js";
+import { HOLD_REFUSAL_LINE, retryNote } from "./draft.js";
 import { describeError } from "./result.js";
 import type { Batch, TurnState } from "./state.js";
 
@@ -18,7 +18,7 @@ export interface Filler {
 /**
  * One short line written outside the reply loop: the filler a held chat sends while the creator is away, or the
  * boundary line before a threat is flagged. The same verify as any reply (a boundary line may refuse), and nothing is
- * sent unless every safety check passes. A draft that fails is written again, within `genAttempts`, with a note naming
+ * sent unless every safety check passes. A hold filler whose draft fails is written again, within `genAttempts`, with a note naming
  * each failure (a refusal is told not to turn him down). A draft whose only failures are quality ones is still safe: it
  * is sent if no later attempt does better, as a reply is. A provider error ends the pass and keeps what is in hand.
  * When no line is safe, `held` carries the last non-empty draft.
@@ -50,11 +50,13 @@ export async function draftFiller(s: TurnState, b: Batch, route: Route, thread: 
   // The latest draft that failed only quality checks: safe to send when nothing better follows.
   let safe: string | null = null;
   let previous: VerifyFailure[] = [];
-  for (let attempt = 1; attempt <= cfg.genAttempts; attempt++) {
+  // A boundary line gets one attempt: a threat goes to Trust & Safety whether or not a line passes, so no retry delays it.
+  const attempts = boundary ? 1 : cfg.genAttempts;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
       const t0 = clock.now();
       const gen = await ctx.deps.generator.generate({
-        system: attempt === 1 ? built.system : { cached: built.system.cached, turn: `${built.system.turn}${fillerRetryNote(previous)}` },
+        system: attempt === 1 ? built.system : { cached: built.system.cached, turn: `${built.system.turn}${retryNote(previous, {}, HOLD_REFUSAL_LINE)}` },
         messages: built.messages,
         maxTokens: cfg.maxTokens,
         model: cfg.generateModel,
