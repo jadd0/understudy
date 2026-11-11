@@ -5,8 +5,8 @@ import { createPool, localProxy } from "./db";
 const LOCAL = { wsProxy: "localhost:4454/v2", useSecureWebSocket: false, pipelineTLS: false, pipelineConnect: false };
 
 describe("localProxy", () => {
-  it.each(["localhost", "127.0.0.1", "[::1]"])("points the driver at the compose proxy for %s", (host) => {
-    expect(localProxy(`postgres://postgres:postgres@${host}:5437/understudy`, {})).toEqual(LOCAL);
+  it.each(["localhost", "127.0.0.1", "[::1]"])("points the driver at the compose proxy on the URL's own host %s", (host) => {
+    expect(localProxy(`postgres://postgres:postgres@${host}:5437/understudy`, {})).toEqual({ ...LOCAL, wsProxy: `${host}:4454/v2` });
   });
 
   it("leaves a hosted Neon URL on the driver's defaults", () => {
@@ -44,7 +44,7 @@ describe("createPool", () => {
     const local = createPool("postgres://postgres:postgres@127.0.0.1:5437/understudy", {});
     const hosted = createPool("postgres://u:p@ep-cool-name-123456.us-east-2.aws.neon.tech/neondb?sslmode=require", {});
     const url = "postgres://u:p@127.0.0.1:5437/d";
-    expect(settings(new local.Client({ connectionString: url }) as never)).toEqual(LOCAL);
+    expect(settings(new local.Client({ connectionString: url }) as never)).toEqual({ ...LOCAL, wsProxy: "127.0.0.1:4454/v2" });
     // a hosted pool created after a local one, in the same process, keeps the driver's defaults
     const h = settings(new hosted.Client({ connectionString: "postgres://u:p@h.neon.tech/d" }) as never);
     expect(h.useSecureWebSocket).toBe(neonConfig.defaults.useSecureWebSocket);

@@ -9,13 +9,14 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
 /**
  * The driver settings that reach a local Postgres through Neon's WebSocket proxy (docker-compose.yml runs one on
- * port 4454, or `NEON_LOCAL_PROXY_PORT`, an empty value counting as unset), or `null` for any other host, which
+ * port 4454, or `NEON_LOCAL_PROXY_PORT`, an empty value counting as unset), on the URL's own host (so a `127.0.0.1` or `[::1]` URL is not redirected to `localhost`), or `null` for any other host, which
  * keeps the driver's defaults.
  */
 export function localProxy(url: string, env: Record<string, string | undefined> = process.env) {
-  if (!LOCAL_HOSTS.has(new URL(url).hostname)) return null;
+  const { hostname } = new URL(url);
+  if (!LOCAL_HOSTS.has(hostname)) return null;
   return {
-    wsProxy: `localhost:${env.NEON_LOCAL_PROXY_PORT?.trim() || 4454}/v2`,
+    wsProxy: `${hostname}:${env.NEON_LOCAL_PROXY_PORT?.trim() || 4454}/v2`,
     useSecureWebSocket: false,
     pipelineTLS: false,
     pipelineConnect: false,
