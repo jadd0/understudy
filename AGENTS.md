@@ -11,7 +11,7 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 - `npm run typecheck | lint | test`
 - `npm run db:generate` (builds the packages, then drizzle-kit, writes `packages/engine/drizzle/` then `examples/app/drizzle/`), `npm run db:migrate` (engine migrations, then the host's), `npm run db:seed`
 - `bash scripts/gate.sh` runs typecheck, lint, test, build, the persona and env checks, the codemap and the public-files check
-- `npm run check` runs the same steps without the private steps file, and stops at the first failure
+- `npm run check` runs the same steps in the same order without the private steps file, plus the README check the gate lacks, on its own test database (`TEST_DB_SCOPE=check` unless you set one), and stops at the first failure
 
 ## Rules
 
