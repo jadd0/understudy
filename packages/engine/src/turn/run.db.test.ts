@@ -605,7 +605,7 @@ describe("routing outcomes", () => {
     const r = rig({
       script: { ...CUSTOM, is_refusal: YES },
       replies: ["sorry, i can't do custom videos"],
-      generator: { failOn: { 3: "overloaded" } },
+      generator: { failOn: { 2: "overloaded" } },
     });
     await runTurn(r.ctx, w.conv.id);
     const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
