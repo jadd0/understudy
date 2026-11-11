@@ -599,6 +599,7 @@ A malformed `intent` or `explicitness` raises `DeciderUnavailable("malformed")`,
 | [`floor.safety.payment_dispute`](../operations/CONFIG.md#floors-jev-confidence-and-pitching) | 0.6 | p ≥ 0.6 |
 | [`floor.safety.hardship`](../operations/CONFIG.md#floors-jev-confidence-and-pitching) | 0.5 | p ≥ 0.5 (never a hard stop; see below) |
 | `floor.intent` | 0.5 | The chosen intent's probability below 0.5 is "unsure" |
+| `floor.offplatform_on_buy` | 0.8 | A confident buy ask read off-platform below 0.8 is offered to instead of struck; at or above it strikes |
 
 Floors and [`platform.*`](../operations/CONFIG.md#engine-rounds-timing-delivery) keys are **platform-only**: [`loadEngineConfig`](../../packages/engine/src/config/load.ts) ignores a creator's
 row for them, so a creator can tune voice and pacing but never loosen safety.
@@ -631,7 +632,7 @@ out. The order is the policy: Trust & Safety first, then Juno's queue, then the 
 4. `ai_question` → `ai_disclosure`: an honest answer in her voice. `manipulation` → `deflect`.
 5. `explicit_request`, or explicitness `explicit` → a **ppv** offer if pacing allows, else `deflect`. The model never
    writes explicit text; the explicit moment becomes a paid unlock.
-6. `buy_intent` → a ppv or bundle offer if pacing allows, else a plain reply. A `smalltalk` or `flirt` read whose
+6. `buy_intent` → a ppv or bundle offer if pacing allows, else a plain reply. A confident buy ask (not a promoted read) is also offered to, not struck, when its off-platform probability is below [`floor.offplatform_on_buy`](../operations/CONFIG.md#floors-jev-confidence-and-pitching) (0.8); the draft still goes through the off-platform verify check. A `smalltalk` or `flirt` read whose
    second-place `buy_intent` probability is at or above
    [`floor.buy_intent_runner_up`](../operations/CONFIG.md#floors-jev-confidence-and-pitching) (1, so off:) is read as `buy_intent` before routing
    and routed here (or by rule 2's buy branch when its top probability is unsure); the turn records it as
@@ -978,7 +979,7 @@ A hold is not silent and does not wait forever.
 
 - **Hold filler.** On a `hold_creator` route the turn drafts one short line in her voice with the `hold_creator`
   instruction (quoted in [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)), runs the same verify as any reply, and sends it only if every
-  check passes. One attempt: a failed check, a Claude error or a Jev error sends nothing and the chat is held as before. The
+  check passes. A draft that reads as a refusal is written again (within `engine.gen_attempts`) with a note not to turn him down; any other failed check, a Claude error or a Jev error sends nothing and the chat is held as before. When no attempt passes, the last non-empty draft is stored as a blocked suggestion for the creator (never sent to the fan); a Trust & Safety stop stores none. The
   filler is an ordinary AI message committed with the hold, so a takeover that wins the race supersedes it.
 - **Due time.** Every handoff opened carries `due_at`: [`escalation.creator_sla_minutes`](../operations/CONFIG.md#engine-rounds-timing-delivery)
   (30) for the creator queue, `escalation.ts_sla_minutes` (15) for Trust & Safety. A creator's queue row shows

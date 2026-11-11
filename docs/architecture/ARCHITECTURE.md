@@ -52,11 +52,11 @@ One turn (`packages/engine/src/turn/run.ts`):
 8. **Draft.** Haiku writes the reply from the cached persona prefix plus a per-turn suffix (route instruction, the
    `## The chat right now` block, retrieved chunks, fan memory, the offer's title and teaser) and the last
    `engine.history_rounds` rounds of history. It never sees a price.
-9. **Verify.** Code checks (money fence, never-list, empty, `marker_echo`, `asks_media`: a request for him to send a pic, video or voice note) then Jev checks (`on_persona`,
+9. **Verify.** Code checks (money fence, never-list, empty, `marker_echo`, `asks_media`: a request for him to send a pic, video or voice note, and `bio_link`: a pointer to "the link in my bio") then Jev checks (`on_persona`,
    `explicitness`, `offplatform_or_meetup`, `is_refusal`, `admits_ai`, `promises_price_or_free`, `reasks`, and on an offer route `leads_to_offer`) on the
-   state `{ draft, fan_message, earlier_messages }` (plus `offer_item` on an offer route). A failed draft is regenerated, up to `engine.gen_attempts`.
+   state `{ draft, fan_message, earlier_messages }` (plus `offer_item` on an offer route, and `her_accounts`: the `@handle`s on the persona card's Identity lines, so naming her own account is not read as sending him to a private one). A failed draft is regenerated, up to `engine.gen_attempts`.
    `reasks` is a quality check: a draft whose only failure is `reasks` is regenerated once with the re-ask note and
-   is still sent if no attempt does better. `offer_unsetup` (the offer draft never leads into the item) is quality
+   is still sent if no attempt does better. `bio_link` is quality only too (her sets are unlocked in this chat, but saying where she posts is allowed): retried with its own reason, and a draft that fails only quality checks still goes to Jev, whose safety checks judge every draft that can be sent. Retrieved chunks that point to her bio link are dropped before the prompt is built. `offer_unsetup` (the offer draft never leads into the item) is quality
    only too: retried with a note, and if no attempt leads in, the draft is sent as the route's fallback without the card. The turn remembers the latest draft that passed every safety check; only
    a turn with no such draft saves the last draft as a suggestion and hands the conversation to the creator
    (`verify_failed`).
@@ -154,7 +154,9 @@ commit, 200 to 785 micro-dollars per turn (the first turn pays the 3,776-token c
 | A Claude or Jev error on a later attempt or a fold-in pass, after a draft passed safety | the earlier safe draft is committed for its own batch; the error is kept in the trail; no error turn |
 | Offer pick fails | the route's fallback: a plain reply for a pitch, a deflect for an explicit request |
 | Retrieval fails | reply without retrieved chunks |
-| Verify fails twice on safety, with no earlier draft that passed | suggestion for the creator, handoff `verify_failed` |
+| Verify fails twice on safety, with no earlier draft that passed | suggestion for the creator, handoff `verify_failed`; a blank draft stores no suggestion |
+| A hold filler reads as a refusal | rewritten within `engine.gen_attempts` with the hold-refusal line; if no attempt passes, the last non-empty draft is stored as a blocked suggestion for the creator and nothing reaches the fan |
+| `bio_link` fails (quality only) | one regeneration with the bio-link reason, then the draft is sent anyway if Jev's checks pass; never a handoff |
 | `reasks` fails (quality only) | one regeneration with the re-ask note, then the draft is sent anyway; never a handoff |
 | `too_long` or `pet_disallowed` (quality only, from the style draw: a reply over max(2 x its drawn length, her p90) characters, or naming her pet when the draw kept it out) | one regeneration with a reason line ("Shorter: one line, about N characters." / "Do not mention <pet>."), then the draft is sent anyway, after the edge clean-up; never a handoff |
 | `leads_to_offer` fails on every attempt (quality only) | the safe draft is sent as the route's fallback, with no offer card |
@@ -169,7 +171,7 @@ Errors are logged as class and code only.
 
 - A crisis message that arrives while a reply is being generated is classified before the reply is sent when a fold-in is allowed (`engine.fold_in_max`, turn budget); past the budget it lands after that reply commits and the next turn hard-stops.
 - Fan messages in a chat held for Juno or taken over by a human are not classified for safety; a person reads them.
-- `hold_creator` sends the fan nothing: the conversation goes quiet until Juno answers.
+- `hold_creator` sends the fan only a short filler that passed verify; when none does the conversation goes quiet until Juno answers, with the last draft waiting as her suggestion.
 - A message that arrives after commit but before her bubbles are due (up to `engine.typing_max_ms`) gets a second turn, which sees her undelivered bubbles in the history.
 - Nothing about time of day reaches Claude, only gaps between messages.
 - A composer ping that lands after the fan has sent holds the next turn for up to the ping window (3 s); `debounce_max_ms` still bounds it.
@@ -204,7 +206,7 @@ before them, oldest first, without `system` rows. A `time` entry (`— 38 minute
 **Scoring** (`packages/engine/src/routing/route.ts`). The six yes/no questions are safety triggers: a category fires when Jev's probability
 for `yes` is at or above its floor `floor.safety.<key>` (a lower floor is stricter). `intent` is the only confidence
 floor: if the chosen intent's probability is below `floor.intent`, the message goes to Juno as `unsure`, unless the best guess is `buy_intent` and pacing allows a pitch, in which case it is offered. Before routing, a `smalltalk` or `flirt` read whose `buy_intent` probability is at or above `floor.buy_intent_runner_up` (1, so switched off) is routed as `buy_intent` (`promoteBuyRunnerUp`); `jev_in.parsed` carries `intent: "buy_intent"`, `buyIntentP` and `promotedFrom`, while `jev_in.answers.intent` keeps Jev's raw pick. No other intent is ever promoted. Order: hard
-stops (minor, self_harm, threat, payment_dispute), then a meetup or off-platform ask (route `boundary`: her line and a numbered warning, a `hard_stop` with the paused notice when it is the strike that reaches `ts.max_strikes`), then `unsure`, then `live_chat` and
+stops (minor, self_harm, threat, payment_dispute), then a meetup or off-platform ask (not struck when the read is a confident, unpromoted `buy_intent` whose off-platform probability is below `floor.offplatform_on_buy`; that turn is routed as a buy, and verify still refuses any off-app payment line) (route `boundary`: her line and a numbered warning, a `hard_stop` with the paused notice when it is the strike that reaches `ts.max_strikes`), then `unsure`, then `live_chat` and
 `custom_request` (Juno), `ai_question` (disclosure), `manipulation` (deflect), `explicit_request` or `explicit`
 (ppv offer or deflect), hardship (supportive reply, no offer), then buy intent and small talk (offer if pacing allows,
 else reply). `offer_response` is asked only when an unexpired offer is open; `declines` marks it declined.
@@ -517,6 +519,7 @@ export const REASK_LINE =
   "Your previous draft asked him something he already answered, or handed his own question back to him. Answer what he asked and use what he told you. Do not write wbu or ask what he is up to. End with a different hook.";
 export const OFFER_LINE =
   "Your previous draft never led into the locked item. The app shows its card right after your message, so after answering him, tease that item: say what it is or why he would want it.";
+export const BIO_LINK_LINE = "It sent him to the link in your bio. Your sets are unlocked right here: tease the item instead.";
 /** What the draw's limits need to say in a retry: the length it drew and the pet it kept out of the reply. */
 export interface DrawNote {
   targetChars?: number;
@@ -536,10 +539,13 @@ export function qualityNote(failures: readonly VerifyFailure[], note: DrawNote =
   const lines = [
     failures.includes("reasks") ? REASK_LINE : "",
     failures.includes("offer_unsetup") ? OFFER_LINE : "",
+    failures.includes("bio_link") ? BIO_LINK_LINE : "",
     ...drawReasons(failures, note),
   ].filter(Boolean);
   return `\n\n## Retry\n${lines.join("\n")}`;
 }
+/** The retry line for a hold filler that read as a refusal. */
+export const HOLD_REFUSAL_LINE = "It turned him down. Do not say no or what you won't do; say you saw it and will come back to him on it.";
 export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
   money: "It mentioned money, a price or something being free.",
   never_list: "It used a word she never uses.",
@@ -549,7 +555,8 @@ export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
   asks_media: "It asked him to send a photo, video or voice note, which this chat cannot carry.",
   off_persona: "It did not sound like her.",
   refusal:
-    "It read as a refusal. If he asked for a lower price or something free, do not say no or can't, and do not repeat discount, deal or free: tease him for trying and tell him why it is worth it.",
+    "It read as a refusal. If he asked for a lower price or something free, do not say no or can't, and do not repeat discount, deal or free: tease him for trying and tell him why it is worth it. If he asked to buy, see or get something, never tell him what you won't send or don't do: tease what you do have.",
+  bio_link: BIO_LINK_LINE,
   promises_price_or_free: "It promised content, a price or something free.",
   marker_echo: "It copied a time marker from the chat.",
   offer_unsetup: "It never led into the locked item the app shows next.",
@@ -602,7 +609,7 @@ export const VERIFY_QUESTIONS: Question[] = [
   },
   yesNo(
     "offplatform_or_meetup",
-    "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine.",
+    "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
   ),
   yesNo(
     "is_refusal",
@@ -628,7 +635,7 @@ export const VERIFY_QUESTIONS_PAID: Question[] = VERIFY_QUESTIONS.map((q) =>
   q.key === "offplatform_or_meetup"
     ? yesNo(
         "offplatform_or_meetup",
-        "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine.",
+        "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
       )
     : q,
 );
@@ -712,6 +719,7 @@ more often). Hard stops are checked before anything else (`packages/engine/src/r
 | `floor.safety.payment_dispute` | 0.6 | hard stop, handed to Trust & Safety |
 | `floor.safety.hardship` | 0.5 | no hard stop; sets `no_pitch_until` for `pitch.hardship_cooldown_hours` (72) |
 | `floor.intent` | 0.5 | the only intent floor: below it the message goes to Juno as `unsure` |
+| `floor.offplatform_on_buy` | 0.8 | a confident, unpromoted buy ask read off-platform below this is offered to, not struck; 0.5 strikes every confident off-platform read |
 
 ### Explicitness ceiling
 
@@ -767,7 +775,7 @@ ceiling rules out.
 
 ## Config rows the engine reads
 
-All are `config` rows (platform row, `creator_id` null; a creator's own row wins, except `floor.intent`, `floor.safety.*`
+All are `config` rows (platform row, `creator_id` null; a creator's own row wins, except `floor.intent`, `floor.offplatform_on_buy`, `floor.safety.*`
 and `platform.*`, which `loadEngineConfig` reads from platform rows only so a creator cannot loosen safety). There are no code defaults: a missing
 row throws `ConfigMissing`, which ends the turn as an `error` (no reply, `failed_turns` + 1; see the failure table).
 Defaults below are the seed values in `examples/app/db/seed.ts` (`ENGINE_CONFIG`) and are starting points to tune on the evaluation bank.
@@ -801,6 +809,7 @@ Defaults below are the seed values in `examples/app/db/seed.ts` (`ENGINE_CONFIG`
 | `floor.safety.hardship` | 0.5 | same; starts the no-pitch cooldown |
 | `platform.support_email` | `support@understudy.example` | Address in the `minor_notice` template; platform row only |
 | `floor.intent` | 0.5 | The only confidence floor; below it the message goes to Juno as `unsure` |
+| `floor.offplatform_on_buy` | 0.8 | A confident, unpromoted buy ask whose off-platform probability is below this is offered to instead of struck; platform row only |
 | `pitch.min_gap_rounds` | 5 | Rounds since the last offer before an AI-initiated pitch (an explicit buy intent or an explicit request skips it) |
 | `pitch.fit_floor` | 0.58 | Minimum `pitch_fit` p(yes) for an AI-initiated pitch |
 | `pitch.decline_window_minutes`, `pitch.max_declines` | 20, 2 | This many declines in the window stop pitching |
