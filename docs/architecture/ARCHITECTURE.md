@@ -708,7 +708,7 @@ more often). Hard stops are checked before anything else (`packages/engine/src/r
 | `floor.safety.payment_dispute` | 0.6 | hard stop, handed to Trust & Safety |
 | `floor.safety.hardship` | 0.5 | no hard stop; sets `no_pitch_until` for `pitch.hardship_cooldown_hours` (72) |
 | `floor.intent` | 0.5 | the only intent floor: below it the message goes to Juno as `unsure` |
-| `floor.offplatform_on_buy` | 0.8 | a confident, unpromoted buy ask read off-platform below this is offered to, not struck; 0.5 strikes every confident off-platform read |
+| `floor.offplatform_on_buy` | 0.8 | a confident, unpromoted buy ask read off-platform below this is offered to, not struck, unless his own words name a payment app, a messaging app, a contact or a meetup; a value at or below `floor.safety.location_offplatform` strikes every confident off-platform read |
 
 ### Explicitness ceiling
 
