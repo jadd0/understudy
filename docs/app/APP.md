@@ -1001,7 +1001,7 @@ The lifecycle is drawn in [`escalation.html`](../safety/escalation.html).
 |---|---|---|
 | `minor` | The platform notice, sender `system`: "Hi — we think this account may belong to someone under 18, so messaging is turned off. You can still read this chat. If we've got this wrong, contact {support_email}." | Flagged `minor_in_chat`: sessions kept, `/chat` read-only, every send refused |
 | `self_harm` | A crisis reply in her voice with 988 and findahelpline.com | Not flagged |
-| `threat` | One line in her voice, written under its own instruction and checked like a reply; nothing if no line passes | Flagged `threat`; the fan lands on `/blocked`, which shows that line |
+| `threat` | One line in her voice, written under its own instruction and checked like a reply, in one attempt; nothing if that line does not pass | Flagged `threat`; the fan lands on `/blocked`, which shows that line |
 | `location_offplatform` | Not a hard stop until the last strike: strikes 1 and 2 are a boundary line and "Warning n of 3" with the AI still chatting; the last is "Warning 3 of 3: this chat is paused for a safety review. You can still read it." If no boundary line passes its checks the fixed text "i keep my chats here, so i can't meet up, share where i am or move to another app…" goes instead | Not flagged |
 | `payment_dispute` | "i'm sorry about that, i hear you. i've passed this to the support team…" | Not flagged |
 
