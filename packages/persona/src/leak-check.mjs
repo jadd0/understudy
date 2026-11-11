@@ -8,10 +8,11 @@
 // and a hit prints at most its 6-word shingle.
 // LEAK_CHECK_NAMES names a second private file: one term per line (a company, a creator, anything that must not
 // appear in a public file; `#` starts a comment, terms under 3 characters are ignored, a leading ~/ is the home
-// directory). The tree's file contents and paths are matched against it, case-insensitively and on word
-// boundaries, with a space or hyphen inside a term optional. A hit prints file:line and the matched text's length,
+// directory; a line with no letter or digit is ignored). The tree's file contents and paths are matched against it,
+// case-insensitively and on word boundaries; between the words of a term any run of whitespace, `.`, `_`, `/` or `-`,
+// or nothing, is allowed, and a match may span lines. A hit prints file:line and the matched text's length,
 // never the term (a path that holds one is printed with the match starred out). Both checks need their variable to run unless --require is given: then an unset or empty input
-// (no raw directory, no names file, no terms, no shingles) exits 2 instead of passing.
+// (no raw directory, no names file, no terms, no shingles, no scannable file in the tree) exits 2 instead of passing.
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
@@ -110,24 +111,30 @@ export function expandHome(path, home = homedir()) {
 }
 
 const MIN_TERM = 3;
+const HAS_WORD_CHAR = /[\p{L}\p{N}]/u;
+// What may sit between the words of a term in a file: whitespace (a hard-wrapped line included) and separators.
+const TERM_SEPARATORS = /[\s._/-]+/;
 
-/** The terms in a names file: one per line, `#` comments and blank lines dropped, short terms ignored. */
+/** The terms in a names file: one per line, `#` comments and blank lines dropped, short and letterless terms ignored. */
 export function loadNames(file) {
   return readFileSync(file, "utf8")
     .split("\n")
     .map((l) => l.replace(/#.*/, "").trim())
-    .filter((t) => t.length >= MIN_TERM);
+    .filter((t) => t.length >= MIN_TERM && HAS_WORD_CHAR.test(t));
 }
 
-/** One regex for all terms: word-bounded, case-insensitive, a space or hyphen inside a term optional. */
+/** One regex for all terms: word-bounded, case-insensitive, any run of separators (or none) between a term's words. */
 export function nameRegex(terms) {
-  const alt = terms.map((t) =>
-    t
-      .split(/[\s-]+/)
-      .filter(Boolean)
-      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .join("[\\s-]?"),
-  );
+  const alt = terms
+    .filter((t) => HAS_WORD_CHAR.test(t))
+    .map((t) =>
+      t
+        .split(TERM_SEPARATORS)
+        .filter(Boolean)
+        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("[\\s._/-]*"),
+    );
+  if (alt.length === 0) return /(?!)/u;
   return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alt.join("|")})(?![\\p{L}\\p{N}])`, "iu");
 }
 
@@ -137,21 +144,42 @@ export function maskNames(text, terms) {
   return text.replace(new RegExp(re.source, "giu"), (m) => "*".repeat(m.length));
 }
 
-/** The files to scan for names: the tracked files when `tree` is a git checkout, else a walk. Never `.env*`. */
+/**
+ * The files to scan for names: the tracked files when `tree` is a git checkout (so an untracked .env never appears),
+ * else a walk, which cannot tell tracked from untracked and so skips every `.env*` except the public `.env.example`.
+ */
 function namedFiles(tree) {
-  const files = existsSync(join(tree, ".git"))
-    ? execFileSync("git", ["ls-files", "-z"], { cwd: tree, encoding: "utf8", maxBuffer: 1 << 28 }).split("\0").filter(Boolean)
-    : walk(tree, new Set()).map((f) => relative(tree, f));
-  return files.filter((f) => !basename(f).startsWith(".env"));
+  if (existsSync(join(tree, ".git"))) {
+    return execFileSync("git", ["ls-files", "-z"], { cwd: tree, encoding: "utf8", maxBuffer: 1 << 28 }).split("\0").filter(Boolean);
+  }
+  return walk(tree, new Set())
+    .map((f) => relative(tree, f))
+    .filter((f) => basename(f) === ".env.example" || !basename(f).startsWith(".env"));
+}
+
+/** 1-based line number of `offset` in `text`, given the offsets at which each line starts. */
+function lineAt(starts, offset) {
+  let lo = 0;
+  let hi = starts.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (starts[mid] <= offset) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo + 1;
 }
 
 /**
  * Scans the contents and paths of `tree`'s files for the terms in `terms`.
- * Returns { files, hits, perFile } where each hit is { line, length } (line 0 for a path).
+ * Returns { files, hits, scanned, perFile }: `scanned` is how many files' contents were read, `perFile` maps a file
+ * to its hits, each { line, length } (line 0 for a path; one hit per line; a match across a wrapped line counts on
+ * the line where it starts).
  */
 export function nameCheck(terms, tree) {
   const re = nameRegex(terms);
+  const globalRe = new RegExp(re.source, "giu");
   const perFile = new Map();
+  let scanned = 0;
   for (const f of namedFiles(tree)) {
     const hits = [];
     const inPath = f.match(re);
@@ -164,16 +192,22 @@ export function nameCheck(terms, tree) {
         // deleted but still indexed, or unreadable: nothing to scan
       }
       if (text !== null && !text.includes("\0")) {
-        text.split("\n").forEach((line, i) => {
-          const m = line.match(re);
-          if (m) hits.push({ line: i + 1, length: m[0].length });
-        });
+        scanned++;
+        const starts = [0];
+        for (let i = text.indexOf("\n"); i !== -1; i = text.indexOf("\n", i + 1)) starts.push(i + 1);
+        let last = 0;
+        for (const m of text.matchAll(globalRe)) {
+          const line = lineAt(starts, m.index);
+          if (line === last) continue;
+          last = line;
+          hits.push({ line, length: m[0].length });
+        }
       }
     }
     if (hits.length) perFile.set(f, hits);
   }
   const total = [...perFile.values()].reduce((n, h) => n + h.length, 0);
-  return { files: perFile.size, hits: total, perFile };
+  return { files: perFile.size, hits: total, scanned, perFile };
 }
 
 /**
@@ -218,7 +252,10 @@ export function main(env, tree, summary, out = console.log, home = homedir(), { 
       for (const h of hits.slice(0, 5)) out(h.line === 0 ? `${maskNames(f, terms)} (path, ${h.length} chars)` : `${f}:${h.line} (${h.length} chars)`);
     }
     out(`names: ${r.hits} hits`);
-    if (r.hits > 0 && code === 0) code = 1;
+    if (require && r.scanned === 0) {
+      out("names: the tree holds no scannable file, so the check proved nothing");
+      code = 2;
+    } else if (r.hits > 0 && code === 0) code = 1;
   }
   return code;
 }

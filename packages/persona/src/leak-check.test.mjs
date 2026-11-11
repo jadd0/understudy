@@ -157,10 +157,71 @@ test("an untracked file is never name-scanned, and neither is .env.local", () =>
   assert.equal(r.files, 0);
 });
 
-test("a tracked .env file is skipped and a tracked file named with the term is caught by its path", () => {
-  const dir = repo({ ".env.example": "OWNER=Zorbleton\n", "docs/zorbleton-notes.md": "clean body\n" });
+test("a tracked .env.example is scanned, and a tracked file named with the term is caught by its path", () => {
+  const dir = repo({ "examples/app/.env.example": "x\nOWNER=Zorbleton\n", "docs/zorbleton-notes.md": "clean body\n" });
   const r = nameCheck(["Zorbleton"], dir);
-  assert.deepEqual(r.perFile, new Map([["docs/zorbleton-notes.md", [{ line: 0, length: 9 }]]]));
+  assert.deepEqual(
+    r.perFile,
+    new Map([
+      ["docs/zorbleton-notes.md", [{ line: 0, length: 9 }]],
+      ["examples/app/.env.example", [{ line: 2, length: 9 }]],
+    ]),
+  );
+});
+
+test("a walked tree skips an .env.local but still scans its .env.example", () => {
+  const dir = tree({ ".env.local": "Zorbleton", "app/.env.example": "Zorbleton" });
+  assert.deepEqual([...nameCheck(["Zorbleton"], dir).perFile.keys()], ["app/.env.example"]);
+});
+
+test("a term made only of separators is dropped and cannot match everywhere", () => {
+  assert.deepEqual(loadNames(namesFile("----\n...\n___\nZorbleton\n")), ["Zorbleton"]);
+  const dir = repo({ "a.md": "plain text, nothing private -- here\n" });
+  const r = nameCheck(["----", "...", "Zorbleton"], dir);
+  assert.equal(r.hits, 0);
+  assert.equal(r.scanned, 1);
+  assert.equal(nameCheck(["----"], dir).hits, 0);
+});
+
+test("a two-word term matches across underscores, dots, slashes, repeated spaces and a hard line wrap", () => {
+  const dir = repo({
+    "a.md": "quillan_fenwick\n",
+    "b.md": "mail quillan.fenwick@example.org\n",
+    "c.md": "Quillan  Fenwick\n",
+    "d.md": "see quillan/fenwick\n",
+    "e.md": "first\nthe founder Quillan\nFenwick wrote it\n",
+    "f.md": "Quillan\n\n  - Fenwick\n",
+    "clean.md": "Quillan wrote it. Fenwick is a street.\n",
+    "solid.md": "Quillanfenwickian\n",
+  });
+  const r = nameCheck(["Quillan Fenwick"], dir);
+  assert.deepEqual([...r.perFile.keys()].sort(), ["a.md", "b.md", "c.md", "d.md", "e.md", "f.md"]);
+  assert.deepEqual(r.perFile.get("e.md"), [{ line: 2, length: "Quillan\nFenwick".length }]);
+  assert.deepEqual(r.perFile.get("b.md"), [{ line: 1, length: 15 }]);
+});
+
+test("two matches on one line count as one hit on that line", () => {
+  const dir = repo({ "a.md": "Zorbleton and Zorbleton\nZorbleton\n" });
+  assert.deepEqual(nameCheck(["Zorbleton"], dir).perFile.get("a.md"), [
+    { line: 1, length: 9 },
+    { line: 2, length: 9 },
+  ]);
+});
+
+test("--require exits 2 when the tree holds nothing to scan, a git init directory included", () => {
+  const names = namesFile(TERMS);
+  const emptyRepo = mkdtempSync(join(tmpdir(), "leak-empty-repo-"));
+  execFileSync("git", ["init", "-q"], { cwd: emptyRepo });
+  const emptyDir = mkdtempSync(join(tmpdir(), "leak-empty-dir-"));
+  const onlyBinary = tree({ "logo.png": "Zorbleton" });
+  for (const dir of [emptyRepo, emptyDir, onlyBinary]) {
+    const strict = run({ LEAK_CHECK_RAW: RAW, LEAK_CHECK_NAMES: names }, dir, { require: true });
+    assert.equal(strict.code, 2, strict.lines.join("\n"));
+    assert.ok(strict.lines.includes("names: 0 hits"), strict.lines.join("\n"));
+    assert.match(strict.lines.at(-1), /^names: the tree holds no scannable file/);
+    const lax = run({ LEAK_CHECK_RAW: RAW, LEAK_CHECK_NAMES: names }, dir);
+    assert.equal(lax.code, 0, "without --require an empty tree only passes");
+  }
 });
 
 test("a tree that is not a git checkout is walked, still without .env files and node_modules", () => {
