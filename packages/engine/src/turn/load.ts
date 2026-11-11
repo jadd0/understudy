@@ -2,6 +2,7 @@ import { eventJevLines, loadEvents } from "../conversation/events.js";
 import { openOfferId } from "../conversation/offer.js";
 import { JUST_UNLOCKED_LINE, jevLines, sessionGapMs } from "../drafting/thread.js";
 import { hardStopOf } from "../routing/route.js";
+import { offPlatformSignal } from "../routing/offplatform.js";
 import { canPitch } from "../routing/pacing.js";
 import type { Facts } from "../types.js";
 import { classifyInbound } from "./classify.js";
@@ -49,7 +50,7 @@ export async function readBatch(s: TurnState): Promise<Read> {
     const history = await loadHistory(ctx, lease.conversationId, cfg.historyRounds);
     const loaded = await loadFacts(ctx, lease.conversationId, lease.fanId, lease.creatorId, cfg);
     const sessionGap = sessionGapMs(history, inboundIds, cfg.gapMarkerMinutes);
-    const facts: Facts = { ...loaded, sessionStart: sessionGap !== null };
+    const facts: Facts = { ...loaded, sessionStart: sessionGap !== null, fanOffPlatform: offPlatformSignal(batchText) };
     // In a hardship cooldown she does not thank him for spending: the events are left unstamped and age out.
     const reacting = facts.noPitchActive ? [] : s.pending;
     if (eventOnly && reacting.length === 0) return { kind: "idle" };

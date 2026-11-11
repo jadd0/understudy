@@ -1140,6 +1140,17 @@ describe("boundary strikes", () => {
     expect((await handoffsOf(w.conv.id)).filter((h) => h.queue === "ts")).toHaveLength(0);
   });
 
+  test.each(["i'll pay you $500 to meet me tonight", "can i pay on cashapp for a set"])(
+    "a buy ask that names a meetup or a payment app strikes even at 0.7: %s",
+    async (text) => {
+      const w = await world({}, text);
+      const r = rig({ script: { ...BUY, location_offplatform: { value: "yes", probabilities: { yes: 0.7, no: 0.3 } } }, replies: ["i keep my chats right here babe"] });
+      expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "boundary", outcome: "replied" });
+      expect(await strikesOf(w.conv.id)).toHaveLength(1);
+      expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(0);
+    },
+  );
+
   test("a buy ask read off-platform at 0.95 still strikes", async () => {
     const w = await world({}, "can i buy sets if i pay u on cashapp");
     const r = rig({ script: { ...BUY, ...ASK }, replies: ["i keep my chats right here babe"] });
@@ -1149,7 +1160,7 @@ describe("boundary strikes", () => {
   });
 
   test("an exempted buy ask whose draft moves the payment off the app is still refused by verify", async () => {
-    const w = await world({}, "can i buy sets if i pay u on cashapp");
+    const w = await world({}, BUY_TEXT);
     const r = rig({
       script: { ...BUY, location_offplatform: { value: "yes", probabilities: { yes: 0.65, no: 0.35 } }, offplatform_or_meetup: YES },
       replies: ["sure just cashapp me"],

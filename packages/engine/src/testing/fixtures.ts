@@ -51,6 +51,7 @@ export function facts(over: Partial<Facts> = {}): Facts {
     hasUnlocked: false,
     justUnlocked: false,
     sessionStart: false,
+    fanOffPlatform: false,
     strikesSoFar: 0,
     ...over,
   };

@@ -96,6 +96,8 @@ export interface Facts extends PitchFacts {
   justUnlocked: boolean;
   /** Her silence before this batch is at least `engine.gap_marker_minutes`: the fan is starting a new session. */
   sessionStart: boolean;
+  /** The fan's new messages carry an off-platform signal by `offPlatformSignal`: a payment app, a messaging app, a contact ask or a meetup. */
+  fanOffPlatform: boolean;
   /** Boundary strikes this fan already has with this creator inside `ts.strike_window_days`. */
   strikesSoFar: number;
 }

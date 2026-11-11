@@ -89,6 +89,12 @@ describe("route: the routing matrix", () => {
       expect(route(buy(0.65), facts(), old)).toMatchObject({ name: "boundary", strike: true });
     });
 
+    test("his own words naming a payment app, a messaging app, a contact or a meetup keep the strike", () => {
+      expect(r(buy(0.7), facts({ fanOffPlatform: true }))).toMatchObject({ name: "boundary", strike: true });
+      expect(r(buy(0.7), facts({ fanOffPlatform: false }))).toMatchObject({ name: "offer" });
+      expect(r(buy(0.7), facts({ ...PITCHABLE, fanOffPlatform: true, strikesSoFar: CFG.maxStrikes - 1 }))).toMatchObject({ name: "hard_stop", strike: true });
+    });
+
     test("another intent scored off-platform below the buy row still strikes", () => {
       expect(r(jev({ intent: "smalltalk", p: { location_offplatform: 0.65 } }))).toMatchObject({ name: "boundary", strike: true });
     });
