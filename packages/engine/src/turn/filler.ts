@@ -68,7 +68,6 @@ export async function draftFiller(s: TurnState, b: Batch, route: Route, thread: 
           route: route.name,
           neverList: card.neverList,
           stopReason: gen.stopReason,
-          paid: b.facts.hasUnlocked,
           boundary,
           creatorId: s.lease.creatorId,
           ownAccounts: ownAccounts(card.body),

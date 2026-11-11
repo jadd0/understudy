@@ -1,5 +1,6 @@
 import { answerOf, type Decider, type DeciderResult } from "../ports/decider.js";
-import { LEADS_TO_OFFER_QUESTION, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "../routing/questions.js";
+import { namesMessagingApp, namesPaymentApp } from "../routing/offplatform.js";
+import { LEADS_TO_OFFER_QUESTION, VERIFY_QUESTIONS } from "../routing/questions.js";
 import { MARKER_PATTERN, type JevLine } from "./thread.js";
 import { namesPet, type StyleDraw, type StyleRates } from "./style-draw.js";
 import type { RouteName } from "../types.js";
@@ -8,6 +9,7 @@ export type VerifyFailure =
   | "empty"
   | "refusal_stop"
   | "money"
+  | "off_app_payment"
   | "never_list"
   | "off_persona"
   | "explicit"
@@ -77,10 +79,15 @@ export function pointsToBioLink(text: string): boolean {
   return BIO_LINK.test(text);
 }
 
+/** An Identity line about a private way to reach her: a messaging app, or a private, personal, DM or contact account. */
+const PRIVATE_CHANNEL = /(?<![a-z0-9])(?:private|personal|dms?|contact)(?![a-z0-9])/i;
+
 /**
- * The accounts the persona card names as hers: the `@handle`s on the lines of its Identity section. An `@` that follows
- * a word character (an email address) and the placeholder `@user` are not accounts. Other sections only mention handles
- * in rules ("never start a reply with an @mention"), so they are not read.
+ * The accounts the persona card names as hers: the `@handle`s on the lines of its Identity section, which ends at the
+ * next heading of any level. An `@` that follows a word character (an email address) and the placeholder `@user` are
+ * not accounts, and neither is a handle on a line that names a messaging app or calls the account private, personal,
+ * a DM or a contact: naming that one would be inviting him to talk off the app. Other sections only mention handles in
+ * rules ("never start a reply with an @mention"), so they are not read.
  */
 export function ownAccounts(cardBody: string): string[] {
   const lines = cardBody.split("\n");
@@ -88,7 +95,8 @@ export function ownAccounts(cardBody: string): string[] {
   if (start === -1) return [];
   const found: string[] = [];
   for (const line of lines.slice(start + 1)) {
-    if (/^##\s/.test(line)) break;
+    if (/^#{1,6}\s/.test(line)) break;
+    if (namesMessagingApp(line) || PRIVATE_CHANNEL.test(line)) continue;
     for (const m of line.matchAll(/(?<![\w@])@([A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*)/g)) {
       if (m[1].toLowerCase() !== "user" && !found.includes(m[0])) found.push(m[0]);
     }
@@ -101,6 +109,8 @@ export function codeChecks(draft: string, neverList: readonly string[]): VerifyF
   const failures: VerifyFailure[] = [];
   if (draft.trim().length === 0) failures.push("empty");
   if (mentionsMoney(draft)) failures.push("money");
+  // Paying her outside the app is a safety failure, like a price: no quality fallback sends it.
+  if (namesPaymentApp(draft)) failures.push("off_app_payment");
   if (MARKER_PATTERN.test(draft)) failures.push("marker_echo");
   if (asksForMedia(draft)) failures.push("asks_media");
   if (pointsToBioLink(draft)) failures.push("bio_link");
@@ -156,7 +166,6 @@ export async function verifyDraft(
     route: RouteName;
     neverList: readonly string[];
     stopReason: string | null;
-    paid?: boolean;
     /** The draft is a boundary line: a refusal is expected and is not failed as one. */
     boundary?: boolean;
     /** The item the card will show, on an offer route: Jev checks the draft leads into it. */
@@ -176,8 +185,7 @@ export async function verifyDraft(
   if (early.some((f) => !QUALITY.includes(f))) return { ok: false, failures: early, jevOut: null, usage: null, ms: now() - started };
 
   const withOffer = input.route === "offer" && input.offer ? input.offer : null;
-  const base = input.paid ? VERIFY_QUESTIONS_PAID : VERIFY_QUESTIONS;
-  const questions = withOffer ? [...base, LEADS_TO_OFFER_QUESTION] : base;
+  const questions = withOffer ? [...VERIFY_QUESTIONS, LEADS_TO_OFFER_QUESTION] : VERIFY_QUESTIONS;
   const accounts = input.ownAccounts ?? [];
   const state = {
     draft: input.draft,

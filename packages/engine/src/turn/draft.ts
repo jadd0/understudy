@@ -34,6 +34,7 @@ export function qualityNote(failures: readonly VerifyFailure[], note: DrawNote =
 export const HOLD_REFUSAL_LINE = "It turned him down. Do not say no or what you won't do; say you saw it and will come back to him on it.";
 export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
   money: "It mentioned money, a price or something being free.",
+  off_app_payment: "It named a payment app or asked him to pay her outside this chat. Every sale happens in the app.",
   never_list: "It used a word she never uses.",
   explicit: "It was sexually explicit.",
   offplatform_or_meetup:

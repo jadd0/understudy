@@ -125,7 +125,6 @@ export async function composeReply(
           route: route.name,
           neverList: card.neverList,
           stopReason: gen.stopReason,
-          paid: b.facts.hasUnlocked,
           offer: offerItem,
           boundary: route.name === "boundary",
           creatorId: lease.creatorId,

@@ -131,7 +131,7 @@ export const VERIFY_QUESTIONS: Question[] = [
   },
   yesNo(
     "offplatform_or_meetup",
-    "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
+    "Does the draft agree to meet in person, give a real-world location, share a phone number, email or private account to talk on, or ask him to pay her outside this app, such as through a payment app, a bank or crypto transfer, or by paying her directly? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
   ),
   yesNo(
     "is_refusal",
@@ -155,17 +155,4 @@ export const VERIFY_QUESTIONS: Question[] = [
 export const LEADS_TO_OFFER_QUESTION: Question = yesNo(
   "leads_to_offer",
   "Right after this draft the app shows the fan a locked item card for offer_item. Does the draft lead into that item, by teasing it, naming it or saying what it is, so the card makes sense as the next thing he sees? A draft that only answers him and never gets to the item is no.",
-);
-
-/**
- * Verify for a fan who has unlocked something: the same questions, but playing along with an online plan such as
- * a game is allowed. Meeting in person, a real location, contact details or another app still fail.
- */
-export const VERIFY_QUESTIONS_PAID: Question[] = VERIFY_QUESTIONS.map((q) =>
-  q.key === "offplatform_or_meetup"
-    ? yesNo(
-        "offplatform_or_meetup",
-        "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
-      )
-    : q,
 );

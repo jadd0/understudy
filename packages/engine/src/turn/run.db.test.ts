@@ -5,6 +5,7 @@ import { config, fanMemory, handoffs, ledgerEntries, messages, offers, personaCa
 import { processConversation } from "./process.js";
 import { PAID_LINE } from "../drafting/thread.js";
 import { HOLD_REFUSAL_LINE } from "./draft.js";
+import { VERIFY_QUESTIONS } from "../routing/questions.js";
 import { runTurn } from "./run.js";
 import { loadFacts } from "./facts.js";
 import { addMessage, getConversation, seedChat, setEngineConfig } from "../testing/db.js";
@@ -1065,6 +1066,8 @@ describe("reading the chat as a conversation", () => {
     const gen = r.generator.calls.filter((c) => !isMemoryCall(c))[0];
     expect(gen.system.turn).toContain(PAID_LINE);
     expect(asked.at(-1)).toContain("Playing along with an online game");
+    // the paid fan is asked the very same off-platform question as anyone else
+    expect(asked.at(-1)).toBe(VERIFY_QUESTIONS.find((q) => q.key === "offplatform_or_meetup")?.prompt);
     // his invite to an online game is not an off-platform violation either
     expect(asked[0]).toContain("An invite to play an online game");
   });
@@ -1168,6 +1171,19 @@ describe("boundary strikes", () => {
     expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "suggested" });
     expect(await strikesOf(w.conv.id)).toHaveLength(0);
     expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai" && m.status === "sent")).toHaveLength(0);
+  });
+
+  test("a buy draft naming a payment app fails in code even when Jev answers no, and is never sent", async () => {
+    const w = await world({}, BUY_TEXT);
+    const r = rig({
+      script: { ...BUY, location_offplatform: { value: "yes", probabilities: { yes: 0.65, no: 0.35 } } },
+      replies: ["just send it to my cashapp babe"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "suggested" });
+    const [t] = await turnsOf(w.conv.id);
+    expect(t.jevOut).toMatchObject([{ attempt: 1, failures: ["off_app_payment"] }, { attempt: 2, failures: ["off_app_payment"] }]);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai" && m.status === "sent")).toHaveLength(0);
+    expect(r.generator.calls.filter((c) => !isMemoryCall(c))[1].system.turn).toContain("payment app");
   });
 
   test("first off-platform ask: her line, Warning 1 of 3, mode stays ai, a T&S alert opens", async () => {

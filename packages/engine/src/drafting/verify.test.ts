@@ -29,8 +29,8 @@ describe("money fence", () => {
     for (const t of clean) expect(mentionsMoney(t), t).toBe(false);
   });
   test("never_list_blocks_snapchat_draft: whole words, any case, a plural counts", () => {
-    const never = ["snapchat", "phone number", "meet up", "Cash App", "address"];
-    for (const d of ["add me on Snapchat", "SNAPCHAT?", "my phone number is", "my phone numbers", "lets meetup", "lets meet  up", "use cashapp", "whats ur address", "your addresses"]) {
+    const never = ["snapchat", "phone number", "meet up", "address"];
+    for (const d of ["add me on Snapchat", "SNAPCHAT?", "my phone number is", "my phone numbers", "lets meetup", "lets meet  up", "whats ur address", "your addresses"]) {
       expect(codeChecks(d, never), d).toEqual(["never_list"]);
     }
     for (const d of ["my phone died", "i'm addressing it", "snapchatty", "meeting up soon", "hey you"]) {
@@ -42,6 +42,25 @@ describe("money fence", () => {
     expect(codeChecks("my ex was awful", ["My Ex"])).toEqual(["never_list"]);
     expect(codeChecks("  ", [])).toContain("empty");
     expect(codeChecks("hey you", ["", "  "])).toEqual([]);
+  });
+});
+
+describe("paying her outside the app", () => {
+  test("a draft naming a payment app fails in code, and never reaches Jev", async () => {
+    expect(codeChecks("just send it to my cashapp babe", [])).toEqual(["off_app_payment"]);
+    expect(codeChecks("you can pay me direct", [])).toEqual(["off_app_payment"]);
+    expect(codeChecks("venmo me", [])).toEqual(["off_app_payment"]);
+    expect(codeChecks("that's a wise choice", [])).toEqual([]);
+    const { out, decider } = await verify("just send it to my cashapp babe");
+    expect(out.failures).toEqual(["off_app_payment"]);
+    expect(decider.calls).toHaveLength(0);
+    expect(qualityOnly(out.failures)).toBe(false);
+  });
+
+  test("a payment app is a safety failure even when Jev answers no to the off-platform question", async () => {
+    const { out } = await verify("just send it to my cashapp babe", { offplatform_or_meetup: "no" });
+    expect(out.ok).toBe(false);
+    expect(out.failures).toEqual(["off_app_payment"]);
   });
 });
 
@@ -98,6 +117,26 @@ describe("her own accounts and her bio link", () => {
     "## Voice rules",
     "- Never start a reply with an @mention or the fan's handle, like @someone.",
   ].join("\n");
+
+  test("ownAccounts skips a handle on a line that names a messaging app or calls the account private", () => {
+    const card = [
+      "## Identity",
+      "- Your film photos go on @junofilm.",
+      "- snap: @juno.priv",
+      "- Your private account is @juno_priv.",
+      "- You take personal chats on @juno_pers.",
+      "- DM her on @juno_dm.",
+      "- Contact her at @juno_contact.",
+      "- Telegram is @juno_tg and WhatsApp too.",
+    ].join("\n");
+    expect(ownAccounts(card)).toEqual(["@junofilm"]);
+  });
+
+  test("ownAccounts stops at a heading of any level", () => {
+    for (const h of ["#", "###", "####"]) {
+      expect(ownAccounts(`## Identity\n- Film photos on @junofilm.\n${h} Other\n- Hers: @later`)).toEqual(["@junofilm"]);
+    }
+  });
 
   test("ownAccounts reads the handles on the Identity lines only", () => {
     expect(ownAccounts(CARD)).toEqual(["@junofilm"]);

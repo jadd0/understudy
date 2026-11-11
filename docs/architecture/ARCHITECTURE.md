@@ -54,7 +54,7 @@ One turn (`packages/engine/src/turn/run.ts`):
    `engine.history_rounds` rounds of history. It never sees a price.
 9. **Verify.** Code checks (money fence, never-list, empty, `marker_echo`, `asks_media`: a request for him to send a pic, video or voice note, and `bio_link`: a pointer to "the link in my bio") then Jev checks (`on_persona`,
    `explicitness`, `offplatform_or_meetup`, `is_refusal`, `admits_ai`, `promises_price_or_free`, `reasks`, and on an offer route `leads_to_offer`) on the
-   state `{ draft, fan_message, earlier_messages }` (plus `offer_item` on an offer route, and `her_accounts`: the `@handle`s on the persona card's Identity lines, so naming her own account is not read as sending him to a private one). A failed draft is regenerated, up to `engine.gen_attempts`.
+   state `{ draft, fan_message, earlier_messages }` (plus `offer_item` on an offer route, and `her_accounts`: the `@handle`s on the persona card's Identity lines, up to the next heading, leaving out any line that names a messaging app or calls the account private, personal, a DM or a contact; so naming her own public account is not read as sending him to a private one). A failed draft is regenerated, up to `engine.gen_attempts`.
    `reasks` is a quality check: a draft whose only failure is `reasks` is regenerated once with the re-ask note and
    is still sent if no attempt does better. `bio_link` is quality only too (her sets are unlocked in this chat, but saying where she posts is allowed): retried with its own reason, and a draft that fails only quality checks still goes to Jev, whose safety checks judge every draft that can be sent. Retrieved chunks that point to her bio link are dropped before the prompt is built. `offer_unsetup` (the offer draft never leads into the item) is quality
    only too: retried with a note, and if no attempt leads in, the draft is sent as the route's fallback without the card. The turn remembers the latest draft that passed every safety check; only
@@ -206,7 +206,7 @@ before them, oldest first, without `system` rows. A `time` entry (`— 38 minute
 **Scoring** (`packages/engine/src/routing/route.ts`). The six yes/no questions are safety triggers: a category fires when Jev's probability
 for `yes` is at or above its floor `floor.safety.<key>` (a lower floor is stricter). `intent` is the only confidence
 floor: if the chosen intent's probability is below `floor.intent`, the message goes to Juno as `unsure`, unless the best guess is `buy_intent` and pacing allows a pitch, in which case it is offered. Before routing, a `smalltalk` or `flirt` read whose `buy_intent` probability is at or above `floor.buy_intent_runner_up` (1, so switched off) is routed as `buy_intent` (`promoteBuyRunnerUp`); `jev_in.parsed` carries `intent: "buy_intent"`, `buyIntentP` and `promotedFrom`, while `jev_in.answers.intent` keeps Jev's raw pick. No other intent is ever promoted. Order: hard
-stops (minor, self_harm, threat, payment_dispute), then a meetup or off-platform ask (not struck when the read is a confident, unpromoted `buy_intent` whose off-platform probability is below `floor.offplatform_on_buy`; that turn is routed as a buy, and verify still refuses any off-app payment line) (route `boundary`: her line and a numbered warning, a `hard_stop` with the paused notice when it is the strike that reaches `ts.max_strikes`), then `unsure`, then `live_chat` and
+stops (minor, self_harm, threat, payment_dispute), then a meetup or off-platform ask (not struck when the read is a confident, unpromoted `buy_intent` whose off-platform probability is below `floor.offplatform_on_buy`; that turn is routed as a buy, and verify still refuses any off-app payment line); the exemption also needs his own words to carry no off-platform signal (`offPlatformSignal`: a payment app, a messaging app, a contact ask such as "number" or "add me", or a meetup such as "meet", "tonight", "address", matched as whole words), so "i'll pay you to meet me tonight" is struck (route `boundary`: her line and a numbered warning, a `hard_stop` with the paused notice when it is the strike that reaches `ts.max_strikes`), then `unsure`, then `live_chat` and
 `custom_request` (Juno), `ai_question` (disclosure), `manipulation` (deflect), `explicit_request` or `explicit`
 (ppv offer or deflect), hardship (supportive reply, no offer), then buy intent and small talk (offer if pacing allows,
 else reply). `offer_response` is asked only when an unexpired offer is open; `declines` marks it declined.
@@ -548,6 +548,7 @@ export function qualityNote(failures: readonly VerifyFailure[], note: DrawNote =
 export const HOLD_REFUSAL_LINE = "It turned him down. Do not say no or what you won't do; say you saw it and will come back to him on it.";
 export const RETRY_REASONS: Partial<Record<VerifyFailure, string>> = {
   money: "It mentioned money, a price or something being free.",
+  off_app_payment: "It named a payment app or asked him to pay her outside this chat. Every sale happens in the app.",
   never_list: "It used a word she never uses.",
   explicit: "It was sexually explicit.",
   offplatform_or_meetup:
@@ -609,7 +610,7 @@ export const VERIFY_QUESTIONS: Question[] = [
   },
   yesNo(
     "offplatform_or_meetup",
-    "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
+    "Does the draft agree to meet in person, give a real-world location, share a phone number, email or private account to talk on, or ask him to pay her outside this app, such as through a payment app, a bank or crypto transfer, or by paying her directly? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
   ),
   yesNo(
     "is_refusal",
@@ -627,23 +628,11 @@ export const VERIFY_QUESTIONS: Question[] = [
 ];
 ```
 
-For a fan who has unlocked something (`facts.hasUnlocked`) the same questions are asked with this one swapped. Because off-platform talk is loosened for every fan, its text is byte-identical to the unpaid question, so the swap changes nothing; `PAID_LINE` is the only live paid difference:
-
-<!-- prompt-src: packages/engine/src/routing/questions.ts -->
-```text
-export const VERIFY_QUESTIONS_PAID: Question[] = VERIFY_QUESTIONS.map((q) =>
-  q.key === "offplatform_or_meetup"
-    ? yesNo(
-        "offplatform_or_meetup",
-        "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
-      )
-    : q,
-);
-```
+Every fan is asked the same questions: off-platform talk is loosened for everyone, so a fan who has unlocked something differs only by `PAID_LINE`.
 
 **Scoring** (`packages/engine/src/drafting/verify.ts`), pass only when all hold: code checks pass first (no currency symbol (`$ € £ ¥ ₹ ₩`),
 currency word (including `cents` and `bux`) beside a number, no `\d%`, no price with two decimals (`9.99`), none of
-"on the house", "no charge", "for free", "gratis"; no never-list term (short terms such as "snapchat" or "cash app" in
+"on the house", "no charge", "for free", "gratis"; no payment app or off-app payment (`off_app_payment`: cashapp, venmo, paypal, zelle, revolut, bank or wire transfer, crypto, "pay you direct", `namesPaymentApp` in `routing/offplatform.ts`; a safety failure, never sent); no never-list term (short terms such as "snapchat" or "cash app" in
 `persona_cards.never_list`, derived from the card's Never bullets by `neverTerms` in `examples/app/scripts/persona/load.ts`, matched
 case-insensitively on word boundaries, a plural counts); not empty; the model did not stop with `refusal`); then `on_persona` is `yes` (except on `ai_disclosure`),
 `explicitness` is not `explicit`, `offplatform_or_meetup` is `no`, `is_refusal` is `no`, `promises_price_or_free` is `no`,
