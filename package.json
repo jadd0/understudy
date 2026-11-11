@@ -17,6 +17,7 @@
     "start": "next start examples/app",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "check": "bash scripts/check.sh",
     "build:packages": "npm run build -w @jadd0/understudy-engine && npm run build -w @jadd0/understudy-providers",
     "pack:smoke": "node scripts/pack-smoke.mjs",
     "release:dry-run": "node scripts/release.mjs",

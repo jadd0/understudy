@@ -1,4 +1,5 @@
-# The headless server (examples/server) against any Postgres with pgvector.
+# The headless server (examples/server) against a Neon database. Inside a container a localhost DATABASE_URL is the
+# container itself, so the compose Postgres (docker-compose.yml) serves running from source, not this image.
 #   docker build -t understudy-server .
 #   docker run -e DATABASE_URL=... -e UNDERSTUDY_API_KEY=... -e CLAUDE_SECRET_KEY=... -p 8787:8787 understudy-server
 # Secrets are passed at run time with -e; none is baked into the image.

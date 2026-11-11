@@ -11,6 +11,9 @@ The build contract is `AGENTS.md`.
 3. `npm run check:env` checks the file. `npm run db:migrate` applies the engine's migrations and then `examples/app/drizzle/` to `DATABASE_URL` (Neon `neondb`).
 4. `npm run db:seed` creates the creator (from `SEED_CREATOR_EMAIL`) and admins (`SEED_ADMIN_EMAILS`),
    idempotently; each is skipped with a message if its variable is unset.
+   Then load and publish Juno's persona: `npm run persona:load -- --creator junovale` and
+   `npm run persona:publish -- --creator junovale --card-version 2` ([APP.md](../app/APP.md#running-it-locally), step 4).
+   Only a creator with a published card can be reached, so without them `/chat?c=junovale` is a 404.
 5. `npm run dev`. Run the Next scripts from the repository root: the app reads `data/` and `docs/quality/evals/` relative to the working directory, and the root scripts start Next with the repository root as that directory.
 
 ## Minimal setup
@@ -72,6 +75,13 @@ the files in `gate_inputs` (`examples/app/.env.local`, `node_modules/.package-lo
 
 Add a check as a new line in the gate-steps file, never by editing `gate.sh`.
 
+The steps file is private to the maintainers. Without it, `npm run check` ([check.sh](../../scripts/check.sh)) runs the
+same steps in the same order from the public tree, with no lock, stamp or
+logs, and stops at the first failure. Its test step uses its own database, `TEST_DB_SCOPE=check` unless you set one, so a
+hand run or the gate on the same branch never shares it. Its
+leak step reads `LEAK_CHECK_RAW` and `LEAK_CHECK_NAMES` and skips what an unset one would check;
+`npm run persona:leak -- --require` fails instead.
+
 ## Worktrees
 
 Each PR is built on its own branch in a worktree under `.claude/worktrees/<branch>` (gitignored):
@@ -89,3 +99,5 @@ superseded rather than rewriting it.
 
 Dev and demo use the hosted Postgres in `DATABASE_URL`; tests and the gate use a local one, a database per branch
 (`docker compose up -d` first; [DATA-MODEL.md](../architecture/DATA-MODEL.md#test-database)).
+The compose project is pinned to the name `understudy`, so every checkout and worktree shares one set of containers and
+one data volume: `docker compose down -v` in any of them deletes the database for all of them.
