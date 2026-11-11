@@ -2,7 +2,7 @@ import { and, asc, eq, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversations, messages, offers, wallets } from "@/db/schema";
 import { getConfig } from "@/lib/config";
-import type { Decider, GenerateUsage } from "@understudy/engine";
+import type { Decider, GenerateUsage } from "@jadd0/understudy-engine";
 import { simCallMicros } from "./cost";
 import type { SimDeps } from "./deps";
 import { guard } from "./guard";

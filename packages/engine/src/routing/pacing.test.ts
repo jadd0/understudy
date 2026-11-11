@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { canPitch } from "./pacing";
-import { CFG, facts, PITCHABLE } from "../testing/fixtures";
+import { canPitch } from "./pacing.js";
+import { CFG, facts, PITCHABLE } from "../testing/fixtures.js";
 
 const can = (f = facts(PITCHABLE), intent: Parameters<typeof canPitch>[2] = "smalltalk") => canPitch(f, CFG, intent);
 

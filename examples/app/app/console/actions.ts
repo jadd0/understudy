@@ -12,7 +12,7 @@ import { getEvents } from "@/lib/conversations/events";
 import { getSnapshot, type Viewer } from "@/lib/conversations/read";
 import { getChanges, getOlderMessages } from "@/lib/conversations/paging";
 import { toResult, windowRead } from "@/lib/conversations/result";
-import { chatter } from "@/lib/host/deps";
+import { understudy } from "@/lib/host/deps";
 import { dollarsToCents } from "@/lib/wallet/money";
 
 /**
@@ -52,7 +52,7 @@ export async function handBackAction(conversationId: string) {
   return toResult(async () => {
     await handBackConversation(v, conversationId, getEvents());
     // Fan messages after the creator's last reply are answered now, not at the next sweep.
-    after(async () => (await chatter()).processConversation(conversationId));
+    after(async () => (await understudy()).processConversation(conversationId));
   });
 }
 
@@ -61,7 +61,7 @@ export async function releaseAction(conversationId: string) {
   const v = await viewer();
   return toResult(async () => {
     await releaseConversation(v, conversationId, getEvents());
-    after(async () => (await chatter()).processConversation(conversationId));
+    after(async () => (await understudy()).processConversation(conversationId));
   });
 }
 

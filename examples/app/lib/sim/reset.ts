@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { withTx } from "@/db/client";
-import type { Events } from "@understudy/engine";
+import type { Events } from "@jadd0/understudy-engine";
 import { defaultEvents } from "@/providers/pusher/events";
 import { loadSeats, type Seats } from "./humans";
 import { applyRunUndo, stopRuns } from "./run";

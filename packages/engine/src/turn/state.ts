@@ -1,16 +1,16 @@
 import { and, desc, eq, isNotNull } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import { ConfigMissing } from "../ports/config";
-import { personaCards } from "../db/schema";
-import type { EngineCfg } from "../config/load";
-import type { Lease } from "../conversation/lease";
-import type { PendingEvent } from "../conversation/events";
-import { CostLedger } from "./cost";
-import type { WaitStats, InboundState } from "./debounce";
-import type { loadInbound } from "./inbound";
-import type { TurnRecord } from "./plan";
-import type { ChatMessage, jevLines } from "../drafting/thread";
-import type { Facts, JevIn } from "../types";
+import type { EngineCtx } from "../ctx.js";
+import { ConfigMissing } from "../ports/config.js";
+import { personaCards } from "../db/schema.js";
+import type { EngineCfg } from "../config/load.js";
+import type { Lease } from "../conversation/lease.js";
+import type { PendingEvent } from "../conversation/events.js";
+import { CostLedger } from "./cost.js";
+import type { WaitStats, InboundState } from "./debounce.js";
+import type { loadInbound } from "./inbound.js";
+import type { TurnRecord } from "./plan.js";
+import type { ChatMessage, jevLines } from "../drafting/thread.js";
+import type { Facts, JevIn } from "../types.js";
 
 /** The persona card the turn speaks for. */
 export type Card = typeof personaCards.$inferSelect;

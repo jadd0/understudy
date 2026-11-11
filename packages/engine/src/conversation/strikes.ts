@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { EngineTx } from "../ports/db";
+import type { EngineTx } from "../ports/db.js";
 
 export interface StrikeScope {
   creatorId: string;

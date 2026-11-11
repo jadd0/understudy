@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { strikeNotice, template, unrepeatedTemplate } from "./templates";
+import { strikeNotice, template, unrepeatedTemplate } from "./templates.js";
 
 describe("unrepeatedTemplate", () => {
   const offPlatform = template("location_offplatform", "help@example.com");

@@ -1,6 +1,6 @@
-import type { Events } from "../ports/events";
-import type { CommitResult } from "./plan";
-import { describeError } from "./result";
+import type { Events } from "../ports/events.js";
+import type { CommitResult } from "./plan.js";
+import { describeError } from "./result.js";
 
 /** Tells the fan's channel about the messages a commit stored for delivery; a failed emit is logged, never thrown. */
 export async function emitDelivery(events: Events, conversationId: string, result: Pick<CommitResult, "messageIds" | "deliverInMs">) {

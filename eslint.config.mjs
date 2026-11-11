@@ -6,5 +6,5 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   { settings: { next: { rootDir: "examples/app" } } },
-  globalIgnores(["**/.next/**", "**/out/**", "**/build/**", "**/next-env.d.ts", ".claude/**", "**/drizzle/**", "gate-logs/**"]),
+  globalIgnores(["**/dist/**", "**/.next/**", "**/out/**", "**/build/**", "**/next-env.d.ts", ".claude/**", "**/drizzle/**", "gate-logs/**"]),
 ]);

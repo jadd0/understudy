@@ -9,9 +9,9 @@ import {
   GatewayGenerator,
   TypeSafeDecider,
   withModel,
-} from "@understudy/providers";
-import type { ConfigPort, Decider, EngineDb, Generator, Retriever } from "@understudy/engine";
-import { FakeDecider, FakeGenerator, type Scripted } from "@understudy/engine/fakes";
+} from "@jadd0/understudy-providers";
+import type { ConfigPort, Decider, EngineDb, Generator, Retriever } from "@jadd0/understudy-engine";
+import { FakeDecider, FakeGenerator, type Scripted } from "@jadd0/understudy-engine/fakes";
 import type { ServerEnv } from "./env";
 
 export interface Providers {

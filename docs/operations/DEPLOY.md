@@ -17,7 +17,7 @@ a file in git.
 vercel link        # pick the scope, create or select the project, accept the detected Next.js preset
 ```
 
-In the project's settings set **Root Directory** to `examples/app` and leave "Include source files outside of the Root Directory in the Build Step" on (the default): the app builds from the workspace packages under `packages/`. `examples/app/vercel.json` is already in the repo: the cron and the Stripe webhook's function limit (section 8), and its function paths are relative to that root directory.
+In the project's settings set **Root Directory** to `examples/app` and leave "Include source files outside of the Root Directory in the Build Step" on (the default): the app builds from the workspace packages under `packages/`, and its `build` script compiles the engine and providers packages to `dist/` first. `examples/app/vercel.json` is already in the repo: the cron and the Stripe webhook's function limit (section 8), and its function paths are relative to that root directory.
 
 The app reads `data/sim/personas/` and `docs/quality/evals/` relative to its working directory. Both sit outside the root directory, so check `/admin/sim` and `/analytics` on the first deploy: the sim page lists its personas and the dashboard reads its evals only if those files are traced into the deployment.
 

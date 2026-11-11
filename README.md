@@ -111,6 +111,11 @@ const { process } = await understudy.handleMessage({ creatorId, fanId, body, cli
 await process(); // answer now, or later from a queue
 ```
 
+`packages/engine` and `packages/providers` build to ES modules with declarations (`npm run build:packages`, plain `tsc`);
+`packages/persona` is plain ES modules. All three are set up to publish as `@jadd0/understudy-engine`,
+`@jadd0/understudy-providers` and `@jadd0/understudy-persona`. `npm run pack:smoke` installs their packed tarballs into a
+scratch project and runs the headless quick start; `npm run release:dry-run` rehearses the publish and never publishes.
+
 [packages/engine/README.md](packages/engine/README.md) lists the ports, the tables the engine owns and the
 migrations it applies itself; [examples/server](examples/server/README.md) is a complete host in a few hundred lines.
 

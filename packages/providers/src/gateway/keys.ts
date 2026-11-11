@@ -1,5 +1,5 @@
-import type { ConfigPort } from "@understudy/engine";
-import { GatewayHttpError } from "./http";
+import type { ConfigPort } from "@jadd0/understudy-engine";
+import { GatewayHttpError } from "./http.js";
 
 /**
  * The gateway key for a creator, or null when there is none. A creator id of `undefined` is a call that belongs to no

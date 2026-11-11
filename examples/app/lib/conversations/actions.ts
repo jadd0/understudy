@@ -1,12 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
+import { understudy } from "@/lib/host/deps";
 import { creators, users } from "@/db/schema";
-import { handBack as engineHandBack, takeOver, TakeoverRefused, type HumanActor } from "@understudy/engine";
+import { TakeoverRefused, type HumanActor } from "@jadd0/understudy-engine";
 
 export { TakeoverRefused };
 
-/** Gives a conversation back to the AI. Needs only the database: no providers, no settings. */
-export const handBack = (conversationId: string, opts?: { allWaiting?: boolean }) => engineHandBack({ db }, conversationId, opts);
+/** Gives a conversation back to the AI. The engine's providers resolve lazily, so this reads no provider key and no model setting. */
+export const handBack = async (conversationId: string, opts?: { allWaiting?: boolean }) => (await understudy()).handBack(conversationId, opts);
 
 /** A creator no one owns: holds no conversation, so an actor who is neither admin nor creator is refused after the lookup. */
 const NO_CREATOR = "00000000-0000-0000-0000-000000000000";
@@ -25,5 +26,5 @@ export async function humanActorOf(userId: string): Promise<HumanActor> {
  * admin may take over nothing else. The transaction is the engine's.
  */
 export async function takeover(conversationId: string, actorUserId: string): Promise<void> {
-  await takeOver({ db }, conversationId, await humanActorOf(actorUserId));
+  await (await understudy()).takeOver(conversationId, await humanActorOf(actorUserId));
 }

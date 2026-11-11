@@ -5,7 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { config, creators, personaCards, personaChunks } from "@/db/schema";
-import { makeCreator, makePersona } from "@understudy/engine/testing";
+import { makeCreator, makePersona } from "@jadd0/understudy-engine/testing";
 // @ts-expect-error -- plain ESM script without types
 import { dump, restore } from "./backup-engine-data.mjs";
 

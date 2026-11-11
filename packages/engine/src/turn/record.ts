@@ -1,7 +1,7 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import type { EngineTx } from "../ports/db";
-import { messages } from "../db/schema";
-import type { TurnRecord } from "./plan";
+import type { EngineTx } from "../ports/db.js";
+import { messages } from "../db/schema.js";
+import type { TurnRecord } from "./plan.js";
 
 export function turnValues(conversationId: string, rec: TurnRecord, outcome: string) {
   return {

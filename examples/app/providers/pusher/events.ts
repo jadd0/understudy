@@ -1,6 +1,6 @@
 import Pusher from "pusher";
-import type { Events } from "@understudy/engine";
-import { noopEvents } from "@understudy/providers";
+import type { Events } from "@jadd0/understudy-engine";
+import { noopEvents } from "@jadd0/understudy-providers";
 import { EVENT_RENAMES, toPusherChannel } from "./channels";
 
 /** The slice of the Pusher server SDK this adapter uses, so tests inject a fake. */

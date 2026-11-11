@@ -1,15 +1,15 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import type { HostPort } from "../ports/host";
-import type { EngineTx } from "../ports/db";
-import { conversations, messages, offers, turns } from "../db/schema";
-import { deliverOffsets, splitBubbles } from "../drafting/bubbles";
-import { openHandoff } from "../conversation/handoff";
-import { elapsedSinceFirstInbound, lastHerBody, msTotalOf, turnValues } from "./record";
-import type { Lease } from "../conversation/lease";
-import type { CommitPlan, CommitResult } from "./plan";
-import { recordStrike } from "../conversation/strikes";
-import { strikeNotice, unrepeatedTemplate } from "../drafting/templates";
+import type { EngineCtx } from "../ctx.js";
+import type { HostPort } from "../ports/host.js";
+import type { EngineTx } from "../ports/db.js";
+import { conversations, messages, offers, turns } from "../db/schema.js";
+import { deliverOffsets, splitBubbles } from "../drafting/bubbles.js";
+import { openHandoff } from "../conversation/handoff.js";
+import { elapsedSinceFirstInbound, lastHerBody, msTotalOf, turnValues } from "./record.js";
+import type { Lease } from "../conversation/lease.js";
+import type { CommitPlan, CommitResult } from "./plan.js";
+import { recordStrike } from "../conversation/strikes.js";
+import { strikeNotice, unrepeatedTemplate } from "../drafting/templates.js";
 
 /**
  * AI bubbles the fan has not seen yet (`deliver_at` still ahead) are superseded, and an open offer one of them

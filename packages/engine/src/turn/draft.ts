@@ -1,4 +1,4 @@
-import type { VerifyFailure } from "../drafting/verify";
+import type { VerifyFailure } from "../drafting/verify.js";
 
 export const RETRY_NOTE = "\n\n## Retry\nYour previous draft was rejected by a safety check. Write a different reply that follows every rule above.";
 export const REASK_LINE =

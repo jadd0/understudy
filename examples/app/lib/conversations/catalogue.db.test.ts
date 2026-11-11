@@ -8,7 +8,7 @@ import { dbHost } from "@/lib/host/engine-host";
 import { InvalidAmount } from "@/lib/wallet/errors";
 import { unlockOffer } from "@/lib/wallet/unlock";
 import { fund } from "@/lib/wallet/test-helpers";
-import { makeItem, setEngineConfig } from "@understudy/engine/testing";
+import { makeItem, setEngineConfig } from "@jadd0/understudy-engine/testing";
 import { addItem, Forbidden, InvalidInput, moveItem, sendOfferAsCreator, setItemActive, setItemPrice } from "./controls";
 import { offerableItems, primaryCreator } from "./read";
 import { asViewer, makeAdmin, makeConversation, makeCreator, makeFan, setMode } from "./test-helpers";

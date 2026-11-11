@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import { msTotalOf, turnValues } from "../turn/record";
-import type { TurnRecord } from "../turn/plan";
-import { conversations, handoffs, messages, turns } from "../db/schema";
-import { openHandoff, type HandoffSla } from "./handoff";
+import type { EngineCtx } from "../ctx.js";
+import { msTotalOf, turnValues } from "../turn/record.js";
+import type { TurnRecord } from "../turn/plan.js";
+import { conversations, handoffs, messages, turns } from "../db/schema.js";
+import { openHandoff, type HandoffSla } from "./handoff.js";
 
 export interface Lease {
   conversationId: string;

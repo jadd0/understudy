@@ -6,9 +6,10 @@ Next.js 16 App Router, TypeScript (strict), Tailwind 4, Drizzle ORM on `@neondat
 (WebSocket `Pool`, so transactions are interactive), Auth.js v5 (`next-auth@beta`) with the Resend
 provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 
-- `npm run dev | build | start` (the Next app in `examples/app/`; run from the repository root)
+- `npm run dev | build | start` (the Next app in `examples/app/`; run from the repository root; `dev` and `build` build the packages first, because the app resolves them to their `dist`)
+- `npm run build:packages` builds `packages/engine` and `packages/providers` to ES modules with declarations (plain `tsc`); `npm run pack:smoke` installs the three packed tarballs into a scratch project and runs the headless quick start; `npm run release:dry-run` rehearses the publish and never publishes
 - `npm run typecheck | lint | test`
-- `npm run db:generate` (drizzle-kit, writes `packages/engine/drizzle/` then `examples/app/drizzle/`), `npm run db:migrate` (engine migrations, then the host's), `npm run db:seed`
+- `npm run db:generate` (builds the packages, then drizzle-kit, writes `packages/engine/drizzle/` then `examples/app/drizzle/`), `npm run db:migrate` (engine migrations, then the host's), `npm run db:seed`
 - `bash scripts/gate.sh` runs typecheck, lint, test, build, the persona and env checks, the codemap and the public-files check
 - `npm run check` runs the same steps without the private steps file, and stops at the first failure
 
@@ -23,7 +24,7 @@ provider and the Drizzle adapter, Cloudflare Turnstile, vitest. npm only.
 - **No literals for model ids, prices or floors.** They live in `config` rows read through
   `getConfig(key, creatorId?)`, which throws `ConfigMissing` rather than fall back to a code default. Every row and every code timing constant is listed in `docs/operations/CONFIG.md`; `examples/app/db/config-doc.test.ts` fails the gate when one is missing or its default differs.
 - **Providers** (Jev, Claude, Voyage, Stripe, Pusher) are reached through one adapter each, injected into the code
-  that uses them, and faked in tests. The engine's adapters live in `packages/providers` (`@understudy/providers`);
+  that uses them, and faked in tests. The engine's adapters live in `packages/providers` (`@jadd0/understudy-providers`);
   Stripe and Pusher, which serve the app's wallet and realtime, stay in `examples/app/providers/`.
 - **Auth is Auth.js only.** Never hand-roll sessions, tokens or password handling.
 - Comments say what the code does and why. They never cite a decision, finding or PR number.
@@ -84,9 +85,9 @@ Every module lives in a domain folder; nothing sits loose in `examples/app/lib/`
 | `examples/app/lib/config/` | `getConfig` over the `config` table (fail closed) and `dbConfigPort`, the engine's view of it |
 | `examples/app/lib/env/` | validated environment |
 | `examples/app/lib/wallet/` | ledger, top-up, unlock, tip, cap, high-value score, money parsing |
-| `packages/engine/` | the engine as a workspace package (`@understudy/engine`): the message turn, its ports, retrieval over persona chunks, and the fakes behind `@understudy/engine/testing`. The app imports only the package entry |
-| `packages/providers/` | the adapters behind the engine's ports as a workspace package (`@understudy/providers`): Claude, Jev, failover, Postgres full-text and Voyage retrieval, a no-op event sink. It imports nothing from the app; retrievers take their database as a constructor argument |
-| `examples/server/` | the engine's second host (`@understudy/example-server`): a Fastify API with server-sent replies, takeover, hand-back and a signed webhook, no wallet and no UI. Same rules as any other consumer: it imports only the package entries |
+| `packages/engine/` | the engine as a workspace package (`@jadd0/understudy-engine`): the message turn, its ports, retrieval over persona chunks, and the fakes behind `@jadd0/understudy-engine/testing`. The app imports the package entries, plus the workspace-only `@jadd0/understudy-engine/internal` in its sim, evals, host and script code (built, never published) |
+| `packages/providers/` | the adapters behind the engine's ports as a workspace package (`@jadd0/understudy-providers`): Claude, Jev, failover, Postgres full-text and Voyage retrieval, a no-op event sink. It imports nothing from the app; retrievers take their database as a constructor argument |
+| `examples/server/` | the engine's second host (`@jadd0/understudy-example-server`): a Fastify API with server-sent replies, takeover, hand-back and a signed webhook, no wallet and no UI. Same rules as any other consumer: it imports only the package entries |
 | `examples/app/lib/host/` | the app's side of the engine's `HostPort` (`packages/engine/src/ports/host.ts`): the database-backed `dbHost` over wallet, ledger, catalogue, unlocks and users |
 | `examples/app/lib/conversations/` | conversation reads and human actions: takeover, hand-back, release |
 | `examples/app/lib/ui/` | pure view logic shared by components (message grouping) |

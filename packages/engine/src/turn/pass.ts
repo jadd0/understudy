@@ -1,7 +1,7 @@
-import type { EventRecord, PendingEvent } from "../conversation/events";
-import type { ShortlistItem } from "../conversation/offer";
-import type { CommitPlan } from "./plan";
-import type { JevIn, Route } from "../types";
+import type { EventRecord, PendingEvent } from "../conversation/events.js";
+import type { ShortlistItem } from "../conversation/offer.js";
+import type { CommitPlan } from "./plan.js";
+import type { JevIn, Route } from "../types.js";
 
 /**
  * What the turn read: Jev's parsed answers (null on a turn that only reacts to a tip or an unlock, which asks Jev

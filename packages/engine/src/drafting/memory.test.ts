@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { sanitizeProfile } from "./memory";
+import { sanitizeProfile } from "./memory.js";
 
 describe("sanitizeProfile", () => {
   test("drops planted promises, including the ones the money fence cannot see", () => {

@@ -1,4 +1,4 @@
-import { retrieveFts, type Chunk, type EngineDb, type Retriever } from "@understudy/engine";
+import { retrieveFts, type Chunk, type EngineDb, type Retriever } from "@jadd0/understudy-engine";
 
 /** The engine's default retriever: the Postgres full-text strategy of `retrieve` in the engine package, behind the retriever port. */
 export class FtsRetriever implements Retriever {

@@ -1,13 +1,13 @@
 import { eq, sql } from "drizzle-orm";
-import { turns } from "../db/schema";
-import { extractMemory } from "../drafting/memory";
-import type { Route } from "../types";
-import { commitTurn } from "./commit";
-import { costMicros } from "./cost";
-import { emitDelivery } from "./deliver";
-import type { CommitPlan } from "./plan";
-import { describeError, type TurnResult } from "./result";
-import type { TurnState } from "./state";
+import { turns } from "../db/schema.js";
+import { extractMemory } from "../drafting/memory.js";
+import type { Route } from "../types.js";
+import { commitTurn } from "./commit.js";
+import { costMicros } from "./cost.js";
+import { emitDelivery } from "./deliver.js";
+import type { CommitPlan } from "./plan.js";
+import { describeError, type TurnResult } from "./result.js";
+import type { TurnState } from "./state.js";
 
 /** Commits the plan, tells the console and the fan's screen what changed, and learns from what the fan wrote. */
 export async function finishTurn(s: TurnState, p: CommitPlan, r: Route, text: string): Promise<TurnResult> {

@@ -1,5 +1,5 @@
 {
-  "name": "@understudy/example-server",
+  "name": "@jadd0/understudy-example-server",
   "version": "0.1.0",
   "description": "A headless Fastify host for the Understudy engine: HTTP in, server-sent replies out, human takeover, a signed webhook.",
   "private": true,
@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
-    "@understudy/engine": "*",
-    "@understudy/providers": "*",
+    "@jadd0/understudy-engine": "*",
+    "@jadd0/understudy-providers": "*",
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.8",
     "ws": "^8.22.1"

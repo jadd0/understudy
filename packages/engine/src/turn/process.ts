@@ -1,7 +1,7 @@
-import type { EngineCtx } from "../ctx";
-import { runTurn } from "./run";
-import { hasPendingWork } from "./inbound";
-import { describeError } from "./result";
+import type { EngineCtx } from "../ctx.js";
+import { runTurn } from "./run.js";
+import { hasPendingWork } from "./inbound.js";
+import { describeError } from "./result.js";
 
 /** A fan who keeps writing could keep one invocation busy forever; the sweep picks up whatever is left. */
 const MAX_TURNS_PER_RUN = 5;

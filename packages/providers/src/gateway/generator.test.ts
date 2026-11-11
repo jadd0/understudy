@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { GeneratorError, type GenerateInput } from "@understudy/engine";
-import { GatewayGenerator } from "./generator";
-import { envKeyResolver, type GatewayKeyResolver } from "./keys";
+import { GeneratorError, type GenerateInput } from "@jadd0/understudy-engine";
+import { GatewayGenerator } from "./generator.js";
+import { envKeyResolver, type GatewayKeyResolver } from "./keys.js";
 
 const BASE = "http://gateway.test";
 const INPUT: GenerateInput = {

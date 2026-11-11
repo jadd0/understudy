@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { getConfig } from "../config/load";
-import type { EngineCtx } from "../ctx";
-import type { JevLine } from "../drafting/thread";
+import { getConfig } from "../config/load.js";
+import type { EngineCtx } from "../ctx.js";
+import type { JevLine } from "../drafting/thread.js";
 
 /** The client message id prefix of the system row a tip leaves in the chat (`tip:<fan>:<key>`). */
 export const TIP_ROW_PREFIX = "tip:";

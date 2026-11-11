@@ -1,10 +1,10 @@
-import { applyRunnerUp } from "./classify";
-import { composeReply, loadDraftInputs } from "./compose";
-import { readBatch } from "./load";
-import { chooseOffer } from "./offer";
-import type { PassResult } from "./pass";
-import { chooseRoute, stopPass } from "./route";
-import type { TurnState } from "./state";
+import { applyRunnerUp } from "./classify.js";
+import { composeReply, loadDraftInputs } from "./compose.js";
+import { readBatch } from "./load.js";
+import { chooseOffer } from "./offer.js";
+import type { PassResult } from "./pass.js";
+import { chooseRoute, stopPass } from "./route.js";
+import type { TurnState } from "./state.js";
 
 /** One read of the chat: wait for the fan to settle, classify, route, and (when the route speaks) draft and verify. */
 export async function runPass(s: TurnState): Promise<PassResult> {

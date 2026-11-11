@@ -1,5 +1,5 @@
 import path from "node:path";
-import { loadEngineConfig } from "@understudy/engine";
+import { loadEngineConfig } from "@jadd0/understudy-engine/internal";
 import { describe, expect, test } from "vitest";
 import { ENGINE_CONFIG, RETRIEVAL_CONFIG, WALLET_CONFIG } from "@/db/seed";
 import { jsonConfigPort, readConfigFile } from "./config";

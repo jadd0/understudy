@@ -3,9 +3,9 @@
 // control address is GATEWAY_MOCK_URL (default http://127.0.0.1:9000).
 //   LIVE=1 GATEWAY_URL=http://127.0.0.1:8080 GATEWAY_KEY=gw_... npx vitest run --config vitest.live.config.mts packages/providers/src/gateway/gateway.live.test.ts
 import { describe, expect, test } from "vitest";
-import { DeciderUnavailable, GeneratorError, type Question } from "@understudy/engine";
-import { GatewayDecider } from "./decider";
-import { GatewayGenerator } from "./generator";
+import { DeciderUnavailable, GeneratorError, type Question } from "@jadd0/understudy-engine";
+import { GatewayDecider } from "./decider.js";
+import { GatewayGenerator } from "./generator.js";
 
 const URL_ = process.env.GATEWAY_URL ?? "";
 const MOCK = process.env.GATEWAY_MOCK_URL ?? "http://127.0.0.1:9000";

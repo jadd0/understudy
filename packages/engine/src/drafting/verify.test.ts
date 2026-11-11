@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { FakeDecider } from "../testing/fakes/decider";
-import { codeChecks, drawFailures, enforceDraw, mentionsMoney, qualityOnly, verifyDraft } from "./verify";
-import type { StyleRates } from "./style-draw";
-import type { RouteName } from "../types";
+import { FakeDecider } from "../testing/fakes/decider.js";
+import { codeChecks, drawFailures, enforceDraw, mentionsMoney, qualityOnly, verifyDraft } from "./verify.js";
+import type { StyleRates } from "./style-draw.js";
+import type { RouteName } from "../types.js";
 
 const GOOD = { reasks: "no", on_persona: "yes", explicitness: "flirty", offplatform_or_meetup: "no", is_refusal: "no", admits_ai: "no", promises_price_or_free: "no" };
 

@@ -1,7 +1,7 @@
 import { and, eq, ne, sql } from "drizzle-orm";
-import type { EngineTx } from "../ports/db";
-import { handoffs } from "../db/schema";
-import type { HandoffQueue, HandoffReason } from "../types";
+import type { EngineTx } from "../ports/db.js";
+import { handoffs } from "../db/schema.js";
+import type { HandoffQueue, HandoffReason } from "../types.js";
 
 /** Minutes from opening to the due time, per queue (config `escalation.*_sla_minutes`). */
 export interface HandoffSla {

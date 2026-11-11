@@ -1,4 +1,4 @@
-import type { ChatMessage } from "./thread";
+import type { ChatMessage } from "./thread.js";
 
 /**
  * Emoji variety. Left alone the model leans on the same two or three emoji and copies them from its own earlier

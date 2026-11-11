@@ -1,5 +1,5 @@
-import type { Question } from "../ports/decider";
-import { EXPLICITNESS, INTENTS, SAFETY_KEYS, THREADS, TOGGLEABLE_CHECKS, type SafetyKey, type ToggleableCheck } from "../types";
+import type { Question } from "../ports/decider.js";
+import { EXPLICITNESS, INTENTS, SAFETY_KEYS, THREADS, TOGGLEABLE_CHECKS, type SafetyKey, type ToggleableCheck } from "../types.js";
 
 const yesNo = (key: string, prompt: string): Question => ({
   key,

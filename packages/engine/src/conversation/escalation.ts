@@ -1,10 +1,10 @@
 import { and, asc, eq, inArray, lt, sql } from "drizzle-orm";
-import { getConfig } from "../config/load";
-import type { EngineCtx } from "../ctx";
-import { processConversation } from "../turn/process";
-import { conversations, handoffs } from "../db/schema";
-import { describeError } from "../turn/result";
-import type { HandoffReason } from "../types";
+import { getConfig } from "../config/load.js";
+import type { EngineCtx } from "../ctx.js";
+import { processConversation } from "../turn/process.js";
+import { conversations, handoffs } from "../db/schema.js";
+import { describeError } from "../turn/result.js";
+import type { HandoffReason } from "../types.js";
 
 export interface EscalationResult {
   autoResolved: number;

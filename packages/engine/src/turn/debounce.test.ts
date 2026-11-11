@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { waitForMore, waitForQuiet, type InboundState, type WaitStats } from "./debounce";
+import { waitForMore, waitForQuiet, type InboundState, type WaitStats } from "./debounce.js";
 
 /** A scripted fan: `states[i]` is what the i-th load (0 = the first) reads. The last repeats. */
 function fan(states: InboundState[]) {

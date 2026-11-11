@@ -4,7 +4,7 @@ import { FormAlert } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { requireConsole } from "@/lib/auth/guards";
 import { consoleCreatorFor } from "@/lib/conversations/read";
-import { chatter } from "@/lib/host/deps";
+import { understudy } from "@/lib/host/deps";
 import { saveGlobalAi } from "../actions";
 import {
   AddItemForm,
@@ -46,7 +46,7 @@ export default async function ConsoleSettingsPage({ searchParams }: { searchPara
   const user = await requireConsole();
   const creator = await consoleCreatorFor({ id: user.id, role: user.role });
   if (!creator) notFound();
-  const aiEnabled = await (await chatter()).creatorAi(creator.id);
+  const aiEnabled = await (await understudy()).creatorAi(creator.id);
   const p = await searchParams;
   // Started once, awaited by the two sections that read it.
   const card = latestCard(creator.id);

@@ -11,8 +11,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
-import { createChatter, retrieveFts, retrieveVector } from "@understudy/engine";
-import { messages, personaCards } from "@understudy/engine/schema";
+import { retrieveFts, retrieveVector, type Deps } from "@jadd0/understudy-engine";
+import { loadFacts } from "@jadd0/understudy-engine/internal";
+import { messages, personaCards } from "@jadd0/understudy-engine/schema";
 import { Client, Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 import { assertTestDatabase } from "./seed-volume";
@@ -103,8 +104,7 @@ async function main() {
   const out = process.argv.includes("--out") ? process.argv[process.argv.indexOf("--out") + 1] : "docs/operations/scaling/explain.json";
 
   const { db } = await import("@/db/client");
-  const { dbConfigPort } = await import("@/lib/config");
-  const { dbHost } = await import("@/lib/host/engine-host");
+  const { engineCtxFor, understudyFor } = await import("@/lib/host/deps");
   const { listInbox } = await import("@/lib/conversations/read");
   const { getHandoffs } = await import("@/lib/analytics/handoffs");
   const { makeQuery } = await import("@/lib/analytics/query");
@@ -122,12 +122,8 @@ async function main() {
   // The sweep reads the clock once to start and again before each conversation: the second read is past the start
   // budget, so it scans for work and processes none.
   let reads = 0;
-  const chatter = createChatter({
-    db,
-    config: dbConfigPort,
-    host: dbHost,
-    deps: { clock: { now: () => (reads++ === 0 ? 0 : 1e9), sleep: async () => undefined } },
-  } as unknown as Parameters<typeof createChatter>[0]);
+  const deps = { clock: { now: () => (reads++ === 0 ? 0 : 1e9), sleep: async () => undefined } } as unknown as Deps;
+  const understudy = understudyFor(deps);
   const vector = Array.from({ length: 1024 }, (_, i) => Math.sin(i));
   const retrieveDeps = { db, embedQuery: async () => vector };
 
@@ -145,7 +141,7 @@ async function main() {
     {
       name: "facts",
       source: "loadFacts (packages/engine/src/turn/facts.ts)",
-      run: () => chatter.loadFacts(convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60, strikeWindowDays: 90 }),
+      run: () => loadFacts(engineCtxFor(deps), convBusy, fanBusy, creatorId, { declineWindowMinutes: 60, velocityWindowMinutes: 60, strikeWindowDays: 90 }),
       pick: (c) => /no_pitch_active/.test(c.text),
     },
     {
@@ -172,7 +168,7 @@ async function main() {
     {
       name: "sweep scan",
       source: "sweep (packages/engine/src/conversation/sweep.ts), run with a clock past its start budget so it scans and processes nothing",
-      run: () => chatter.sweep(),
+      run: () => understudy.sweep(),
       pick: (c) => /group by c\.id/.test(c.text),
     },
     { name: "creator inbox page", source: "listInbox (lib/conversations/read.ts)", run: () => listInbox({ id: creatorUserId, role: "creator" }), pick: (c) => /from "conversations"/.test(c.text) },

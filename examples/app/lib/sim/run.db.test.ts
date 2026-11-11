@@ -2,8 +2,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, ledgerEntries, messages, offers, personaCards, simRuns, turns, unlocks, users, wallets } from "@/db/schema";
-import { deferred, YES, FakeGenerator } from "@understudy/engine/testing";
-import { chatter } from "@/lib/host/deps";
+import { deferred, YES, FakeGenerator } from "@jadd0/understudy-engine/testing";
+import { understudy } from "@/lib/host/deps";
 import { assertBalanceEqualsLedger } from "@/lib/wallet/test-helpers";
 import { personaBySlug, type Beat, type Persona } from "./persona";
 import { advanceRun, beatResults, stopRuns } from "./run";
@@ -357,7 +357,7 @@ describe("advanceRun", () => {
     expect(card.neverList).toEqual(["my ex"]);
     const conv = await convOf(s.fanId);
     expect(conv.aiEnabled).toBe(true);
-    expect(await (await chatter()).creatorAi(w.creator.id)).toBe(true);
+    expect(await (await understudy()).creatorAi(w.creator.id)).toBe(true);
   });
 
   test("content_blocked_line_is_never_sent", async () => {
@@ -442,7 +442,7 @@ describe("advanceRun", () => {
     expect(FakeGenerator).toBeDefined();
   });
 
-  const aiOn = async (creatorId: string) => (await chatter()).creatorAi(creatorId);
+  const aiOn = async (creatorId: string) => (await understudy()).creatorAi(creatorId);
 
   test("stop_mid_run_restores_global_ai", async () => {
     const w = await simWorld();
@@ -477,7 +477,7 @@ describe("advanceRun", () => {
     const persona = testPersona([freeBeat()]);
     const s = await start(w, persona);
     await db.update(simRuns).set({ status: "running", variant: { undo: [{ label: "global_ai_off", priorOn: true }] } }).where(eq(simRuns.id, s.runId));
-    await (await chatter()).setCreatorAi(w.creator.id, false);
+    await (await understudy()).setCreatorAi(w.creator.id, false);
     expect(await stopRuns(s.runId, "stopped_by_user", { seats: w.seats, events: simRig().deps.engine.events })).toBe(1);
     expect(await aiOn(w.creator.id)).toBe(true);
   });
@@ -514,7 +514,7 @@ describe("advanceRun", () => {
 
   test("global_ai_off_restores_prior_false", async () => {
     const w = await simWorld();
-    await (await chatter()).setCreatorAi(w.creator.id, false);
+    await (await understudy()).setCreatorAi(w.creator.id, false);
     const r = simRig();
     const persona = testPersona([{ kind: "human", action: "global_ai_off" }, { kind: "human", action: "global_ai_on" }]);
     const s = await start(w, persona);
@@ -540,6 +540,6 @@ describe("advanceRun", () => {
     );
     expect(seenBeforeChange).toEqual([true]);
     expect(await aiOn(w.creator.id)).toBe(false);
-    await (await chatter()).setCreatorAi(w.creator.id, true);
+    await (await understudy()).setCreatorAi(w.creator.id, true);
   });
 });

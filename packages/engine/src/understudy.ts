@@ -1,20 +1,18 @@
 import { and, eq } from "drizzle-orm";
-import type { EngineCtx, Deps } from "./ctx";
-import { loadFacts, type FactsCfg, type LoadedFacts } from "./turn/facts";
-import type { HostPort } from "./ports/host";
-import { creatorAi, setCreatorAi } from "./conversation/creator-settings";
-import { handBack } from "./conversation/lease";
-import { supersedeUnseenBubbles } from "./turn/commit";
-import { migrateEngine } from "./db/migrate";
-import { expireOffers } from "./conversation/offer";
-import type { ConfigPort } from "./ports/config";
-import type { EngineDb, EngineTx } from "./ports/db";
-import { processConversation } from "./turn/process";
-import { conversations, messages } from "./db/schema";
-import { sweep, type SweepResult } from "./conversation/sweep";
-import { humanReply, takeOver, type HumanActor } from "./conversation/takeover";
-import { runTurn } from "./turn/run";
-import type { TurnResult } from "./turn/result";
+import type { EngineCtx, Deps } from "./ctx.js";
+import type { HostPort } from "./ports/host.js";
+import { creatorAi, setCreatorAi } from "./conversation/creator-settings.js";
+import { handBack } from "./conversation/lease.js";
+import { migrateEngine } from "./db/migrate.js";
+import { expireOffers } from "./conversation/offer.js";
+import type { ConfigPort } from "./ports/config.js";
+import type { EngineDb } from "./ports/db.js";
+import { processConversation } from "./turn/process.js";
+import { conversations, messages } from "./db/schema.js";
+import { sweep, type SweepResult } from "./conversation/sweep.js";
+import { humanReply, takeOver, type HumanActor } from "./conversation/takeover.js";
+import { runTurn } from "./turn/run.js";
+import type { TurnResult } from "./turn/result.js";
 
 export const MAX_MESSAGE_CHARS = 2000;
 
@@ -49,7 +47,7 @@ export interface HandledMessage {
   process: () => Promise<void>;
 }
 
-export interface Chatter {
+export interface Understudy {
   /** Creates or updates the engine's tables. Run it before the host's own migrations, which point at them. */
   migrate(): Promise<void>;
   /** Switches the AI on or off for every conversation of one creator. */
@@ -74,15 +72,11 @@ export interface Chatter {
   takeOver(conversationId: string, actor: HumanActor): Promise<void>;
   /** Stores a human's message in a conversation the actor holds, and returns its id. */
   humanReply(conversationId: string, actor: HumanActor, body: string, opts?: { clientMsgId?: string | null }): Promise<string>;
-  /** Supersedes AI bubbles the fan has not seen yet, inside the caller's transaction. */
-  supersedeUnseenBubbles(tx: EngineTx, conversationId: string): Promise<void>;
   /** Marks open offers past their expiry; returns how many. */
   expireOffers(): Promise<number>;
-  /** What routing and pacing read about one conversation. */
-  loadFacts(conversationId: string, fanId: string, creatorId: string, cfg: FactsCfg): Promise<LoadedFacts>;
 }
 
-export interface ChatterOptions {
+export interface UnderstudyOptions {
   /** A drizzle client over the Neon WebSocket pool. The host's own transactions and the engine's share it. */
   db: EngineDb;
   /** Reads the `config` rows. The engine fails closed on a missing row. */
@@ -94,7 +88,7 @@ export interface ChatterOptions {
 }
 
 /** Builds the engine over the database, settings, host and providers it is handed. Nothing is read from the environment. */
-export function createChatter(opts: ChatterOptions): Chatter {
+export function createUnderstudy(opts: UnderstudyOptions): Understudy {
   const ctx: EngineCtx = { db: opts.db, config: opts.config, host: opts.host, deps: opts.deps };
   return {
     migrate: () => migrateEngine(ctx.db),
@@ -107,9 +101,7 @@ export function createChatter(opts: ChatterOptions): Chatter {
     handBack: (id, o) => handBack(ctx, id, o),
     takeOver: (id, actor) => takeOver(ctx, id, actor),
     humanReply: (id, actor, body, o) => humanReply(ctx, id, actor, body, o),
-    supersedeUnseenBubbles,
     expireOffers: () => expireOffers(ctx),
-    loadFacts: (conversationId, fanId, creatorId, cfg) => loadFacts(ctx, conversationId, fanId, creatorId, cfg),
   };
 }
 

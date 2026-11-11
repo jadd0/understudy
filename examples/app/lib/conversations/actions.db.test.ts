@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { handoffs, messages, offers, turns, users } from "@/db/schema";
-import { addMessage, getConversation, makeConversation, makeCreator, makeFan, deferred, rig, world } from "@understudy/engine/testing";
+import { addMessage, getConversation, makeConversation, makeCreator, makeFan, deferred, rig, world } from "@jadd0/understudy-engine/testing";
 import { handBack, takeover, TakeoverRefused } from "./actions";
 
 async function admin() {
@@ -89,7 +89,7 @@ describe("takeover", () => {
         },
       },
     });
-    const running = r.chatter.runTurn(w.conv.id);
+    const running = r.understudy.runTurn(w.conv.id);
     await reached.promise;
     await takeover(w.conv.id, w.creator.userId);
     gate.resolve();

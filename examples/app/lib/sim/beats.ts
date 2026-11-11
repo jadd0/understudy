@@ -3,7 +3,8 @@ import { db, withTx } from "@/db/client";
 import { offers, wallets } from "@/db/schema";
 import { sendFanMessage, SendRefused } from "@/lib/chat/send";
 import { getConfig } from "@/lib/config";
-import { chatterFor } from "@/lib/host/deps";
+import { engineCtxFor, understudyFor } from "@/lib/host/deps";
+import { loadFacts } from "@jadd0/understudy-engine/internal";
 import { setFanCap } from "@/lib/wallet/cap";
 import { ledgerSum } from "@/lib/wallet/ledger";
 import { tip } from "@/lib/wallet/tip";
@@ -136,7 +137,7 @@ export async function messageBeat(env: BeatEnv, index: number, beat: Kind<"say" 
   const sends = texts.map(async (text, k) => {
     if (k > 0) await deps.sleep(gap * k);
     try {
-      const sent = await sendFanMessage(env.fanId, env.creatorId, text, `${env.runId}:${index}:${k}`, () => {}, async () => chatterFor(deps.engine));
+      const sent = await sendFanMessage(env.fanId, env.creatorId, text, `${env.runId}:${index}:${k}`, () => {}, async () => understudyFor(deps.engine));
       conversationId = sent.conversationId;
     } catch (e) {
       if (e instanceof SendRefused) refused = true;
@@ -152,10 +153,10 @@ export async function messageBeat(env: BeatEnv, index: number, beat: Kind<"say" 
     velocityWindowMinutes: await getConfig<number>("pitch.velocity_window_minutes"),
     strikeWindowDays: await getConfig<number>("ts.strike_window_days"),
   };
-  const facts = refused ? null : await chatterFor(deps.engine).loadFacts(convId, env.fanId, env.creatorId, factsCfg);
+  const facts = refused ? null : await loadFacts(engineCtxFor(deps.engine), convId, env.fanId, env.creatorId, factsCfg);
   let engineErrorLine: string | null = null;
   if (!refused) {
-    const run = await captureEngineErrors(() => chatterFor(deps.engine).processConversation(convId));
+    const run = await captureEngineErrors(() => understudyFor(deps.engine).processConversation(convId));
     engineErrorLine = run.lines.at(-1) ?? null;
   }
 
@@ -218,7 +219,7 @@ export async function moneyBeat(env: BeatEnv, index: number, beat: Kind<"topup" 
       }
       if (conversationId) {
         const convId = conversationId;
-        await captureEngineErrors(() => chatterFor(env.deps.engine).processConversation(convId));
+        await captureEngineErrors(() => understudyFor(env.deps.engine).processConversation(convId));
       }
       const mismatch = await assertBalanceEqualsLedger(env.fanId);
       return mismatch ? bad(beat, ...mismatch) : { result: result(index, beat, "done") };
@@ -232,7 +233,7 @@ export async function moneyBeat(env: BeatEnv, index: number, beat: Kind<"topup" 
       if (conversationId) {
         await db.update(offers).set({ expiresAt: sql`now() - interval '1 second'` }).where(and(eq(offers.conversationId, conversationId), eq(offers.status, "open")));
       }
-      const n = await chatterFor(env.deps.engine).expireOffers();
+      const n = await understudyFor(env.deps.engine).expireOffers();
       return { result: result(index, beat, "done", { note: `clock_nudge: ${n} expired` }) };
     }
     case "unlock": {
@@ -246,7 +247,7 @@ export async function moneyBeat(env: BeatEnv, index: number, beat: Kind<"topup" 
         const r = await unlockInChat(env.fanId, offer.id, () => {});
         got = r.alreadyUnlocked ? "already" : "unlocked";
         // A real purchase gets her check-in, run here rather than after a response.
-        if (!r.alreadyUnlocked) await captureEngineErrors(() => chatterFor(env.deps.engine).processConversation(r.conversationId));
+        if (!r.alreadyUnlocked) await captureEngineErrors(() => understudyFor(env.deps.engine).processConversation(r.conversationId));
       } catch (e) {
         const code = CODE[(e as Error).name];
         if (!code) throw e;

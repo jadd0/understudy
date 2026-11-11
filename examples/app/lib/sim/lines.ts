@@ -3,7 +3,7 @@ import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { withTx } from "@/db/client";
 import { simLines } from "@/db/schema";
-import type { EmbedResult } from "@understudy/providers";
+import type { EmbedResult } from "@jadd0/understudy-providers";
 
 export const LineSchema = z.object({ persona: z.string().min(1), intent: z.string().min(1), lang: z.enum(["en", "es"]), text: z.string().min(1).max(300) }).strict();
 export type Line = z.infer<typeof LineSchema>;

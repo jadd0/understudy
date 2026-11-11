@@ -1,20 +1,47 @@
 {
-  "name": "@understudy/engine",
+  "name": "@jadd0/understudy-engine",
   "version": "0.1.0",
   "description": "The conversation engine: the message turn, the ports it talks through and the fakes that stand in for them in tests.",
   "type": "module",
-  "private": true,
   "license": "MIT",
-  "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/db/schema.ts",
-    "./migrate": "./src/db/migrate.ts",
-    "./testing": "./src/testing.ts",
-    "./fakes": "./src/fakes.ts"
+  "engines": {
+    "node": ">=22"
   },
-  "types": "./src/index.ts",
-  "files": ["src", "drizzle", "README.md"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jadd0/understudy.git",
+    "directory": "packages/engine"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/db/schema.d.ts",
+      "default": "./dist/db/schema.js"
+    },
+    "./fakes": {
+      "types": "./dist/fakes.d.ts",
+      "default": "./dist/fakes.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/internal.*",
+    "drizzle"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  },
   "peerDependencies": {
-    "drizzle-orm": "*"
+    "drizzle-orm": "^0.45.4",
+    "@neondatabase/serverless": "^1.2.0"
   }
 }

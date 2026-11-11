@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { CFG, facts, jev, PITCHABLE } from "../testing/fixtures";
-import type { PendingEvent } from "../conversation/events";
-import { adjustRoute } from "./route";
+import { CFG, facts, jev, PITCHABLE } from "../testing/fixtures.js";
+import type { PendingEvent } from "../conversation/events.js";
+import { adjustRoute } from "./route.js";
 
 const TIP: PendingEvent = { kind: "tip", id: "t1" };
 const opts = (over: Partial<Parameters<typeof adjustRoute>[3]> = {}) => ({ eventOnly: false, openOffer: null, reacting: [TIP], ...over });

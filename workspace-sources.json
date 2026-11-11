@@ -1,0 +1,8 @@
+{
+  "@jadd0/understudy-engine": "packages/engine/src/index.ts",
+  "@jadd0/understudy-engine/schema": "packages/engine/src/db/schema.ts",
+  "@jadd0/understudy-engine/fakes": "packages/engine/src/fakes.ts",
+  "@jadd0/understudy-engine/testing": "packages/engine/src/testing.ts",
+  "@jadd0/understudy-engine/internal": "packages/engine/src/internal.ts",
+  "@jadd0/understudy-providers": "packages/providers/src/index.ts"
+}

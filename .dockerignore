@@ -11,3 +11,4 @@ gate-logs
 examples/app/.next
 **/.next
 *.pdf
+**/dist

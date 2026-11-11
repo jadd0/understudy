@@ -1,4 +1,4 @@
-import type { TemplateKey } from "../types";
+import type { TemplateKey } from "../types.js";
 
 /**
  * Fixed replies for the cases a model must not improvise: sent verbatim, never generated, never checked

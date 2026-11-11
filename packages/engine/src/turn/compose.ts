@@ -1,17 +1,17 @@
-import { ConfigMissing } from "../ports/config";
-import { loadOfferOutcomes } from "../conversation/events";
-import { ownsEverything, type ShortlistItem } from "../conversation/offer";
-import { dropRepeatedEmoji, recentEmoji } from "../drafting/emoji";
-import { loadProfile } from "../drafting/memory";
-import { buildPrompt } from "../drafting/prompt";
-import { drawFailures, enforceDraw, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify";
-import { drawStyle, parseRates } from "../drafting/style-draw";
-import type { JevIn, Route } from "../types";
-import { RETRY_NOTE, RETRY_REASONS, drawReasons, qualityNote } from "./draft";
-import type { PassResult } from "./pass";
-import { describeError } from "./result";
-import type { Routed } from "./route";
-import type { Batch, TurnState } from "./state";
+import { ConfigMissing } from "../ports/config.js";
+import { loadOfferOutcomes } from "../conversation/events.js";
+import { ownsEverything, type ShortlistItem } from "../conversation/offer.js";
+import { dropRepeatedEmoji, recentEmoji } from "../drafting/emoji.js";
+import { loadProfile } from "../drafting/memory.js";
+import { buildPrompt } from "../drafting/prompt.js";
+import { drawFailures, enforceDraw, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify.js";
+import { drawStyle, parseRates } from "../drafting/style-draw.js";
+import type { JevIn, Route } from "../types.js";
+import { RETRY_NOTE, RETRY_REASONS, drawReasons, qualityNote } from "./draft.js";
+import type { PassResult } from "./pass.js";
+import { describeError } from "./result.js";
+import type { Routed } from "./route.js";
+import type { Batch, TurnState } from "./state.js";
 
 /** What the reply is written from besides the chat itself: the fan's memory, retrieved chunks, offer history. */
 export type DraftInputs = {

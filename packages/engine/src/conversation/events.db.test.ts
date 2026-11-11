@@ -3,12 +3,12 @@ import { asc, eq, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, ledgerEntries, messages, offers, turns, unlocks } from "@/db/schema";
-import { loadEvents, loadOfferOutcomes, TIP_ROW_PREFIX } from "./events";
-import { processConversation } from "../turn/process";
-import { EVENT_ONLY_INSTRUCTION, OWNED_ITEM_LINE, OWNS_ALL_LINE, TIP_LINE, unlockLine } from "../drafting/prompt";
-import { addMessage, getConversation, makeItem } from "../testing/db";
-import { isMemoryCall, rig, world } from "../testing/harness";
-import { runTurn } from "../turn/run";
+import { loadEvents, loadOfferOutcomes, TIP_ROW_PREFIX } from "./events.js";
+import { processConversation } from "../turn/process.js";
+import { EVENT_ONLY_INSTRUCTION, OWNED_ITEM_LINE, OWNS_ALL_LINE, TIP_LINE, unlockLine } from "../drafting/prompt.js";
+import { addMessage, getConversation, makeItem } from "../testing/db.js";
+import { isMemoryCall, rig, world } from "../testing/harness.js";
+import { runTurn } from "../turn/run.js";
 
 const turnsOf = (conversationId: string) =>
   db.select().from(turns).where(eq(turns.conversationId, conversationId)).orderBy(asc(turns.createdAt), asc(turns.id));

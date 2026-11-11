@@ -1,7 +1,7 @@
-import { buildOwnedShortlist, buildShortlist, pickOffer, type ShortlistItem } from "../conversation/offer";
-import { DeciderUnavailable } from "../ports/decider";
-import type { Route } from "../types";
-import type { Batch, TurnState } from "./state";
+import { buildOwnedShortlist, buildShortlist, pickOffer, type ShortlistItem } from "../conversation/offer.js";
+import { DeciderUnavailable } from "../ports/decider.js";
+import type { Route } from "../types.js";
+import type { Batch, TurnState } from "./state.js";
 
 /**
  * The offer route's catalogue pick: the item the reply will lead into, or none (and the route falls back to words

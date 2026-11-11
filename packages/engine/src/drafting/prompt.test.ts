@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { EMPTY_PROFILE } from "./memory";
-import { ANSWER_FIRST_LINE, buildPrompt, type PromptInput } from "./prompt";
-import type { StyleDraw } from "./style-draw";
+import { EMPTY_PROFILE } from "./memory.js";
+import { ANSWER_FIRST_LINE, buildPrompt, type PromptInput } from "./prompt.js";
+import type { StyleDraw } from "./style-draw.js";
 
 const base: PromptInput = {
   cardBody: "card",

@@ -1,4 +1,4 @@
-import type { Intent, PitchFacts, RouteCfg } from "../types";
+import type { Intent, PitchFacts, RouteCfg } from "../types.js";
 
 export type PitchDecision = { ok: true } | { ok: false; why: "no_pitch_until" | "declines" | "cap" | "velocity" | "gap" };
 

@@ -1,15 +1,15 @@
-import { eventJevLines, loadEvents } from "../conversation/events";
-import { openOfferId } from "../conversation/offer";
-import { JUST_UNLOCKED_LINE, jevLines, sessionGapMs } from "../drafting/thread";
-import { hardStopOf } from "../routing/route";
-import { canPitch } from "../routing/pacing";
-import type { Facts } from "../types";
-import { classifyInbound } from "./classify";
-import { waitForMore, waitForQuiet, type InboundState, type WaitDeps } from "./debounce";
-import { loadFacts } from "./facts";
-import { loadHistory, loadInbound, loadTyping } from "./inbound";
-import { NO_FAN_TEXT } from "./pass";
-import type { Batch, Classified, TurnState } from "./state";
+import { eventJevLines, loadEvents } from "../conversation/events.js";
+import { openOfferId } from "../conversation/offer.js";
+import { JUST_UNLOCKED_LINE, jevLines, sessionGapMs } from "../drafting/thread.js";
+import { hardStopOf } from "../routing/route.js";
+import { canPitch } from "../routing/pacing.js";
+import type { Facts } from "../types.js";
+import { classifyInbound } from "./classify.js";
+import { waitForMore, waitForQuiet, type InboundState, type WaitDeps } from "./debounce.js";
+import { loadFacts } from "./facts.js";
+import { loadHistory, loadInbound, loadTyping } from "./inbound.js";
+import { NO_FAN_TEXT } from "./pass.js";
+import type { Batch, Classified, TurnState } from "./state.js";
 
 /** What one read of the chat settled on: the batch, and Jev's read of it. */
 export type Read = { kind: "idle" } | { kind: "read"; batch: Batch; classified: Classified };

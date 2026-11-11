@@ -20,4 +20,4 @@ COPY --from=build --chown=node:node /app/packages ./packages
 COPY --from=build --chown=node:node /app/examples/server ./examples/server
 USER node
 EXPOSE 8787
-CMD ["npm", "run", "start", "--workspace", "@understudy/example-server"]
+CMD ["npm", "run", "start", "--workspace", "@jadd0/understudy-example-server"]

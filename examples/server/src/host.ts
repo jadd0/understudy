@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { and, eq, gt } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-import type { EngineDb, EngineTx, HostPort, ShortlistKind } from "@understudy/engine";
-import { offers } from "@understudy/engine/schema";
+import type { EngineDb, EngineTx, HostPort, ShortlistKind } from "@jadd0/understudy-engine";
+import { offers } from "@jadd0/understudy-engine/schema";
 
 export interface CatalogueItem {
   id: string;

@@ -1,4 +1,4 @@
-import type { Facts, JevIn, RouteCfg } from "../types";
+import type { Facts, JevIn, RouteCfg } from "../types.js";
 
 export const CFG: RouteCfg = {
   enabled: { minor: true, self_harm: true, threat: true, location_offplatform: true, payment_dispute: true },

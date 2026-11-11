@@ -38,11 +38,20 @@ your `.env.local`. The headless server is `npm run server:dev` (`examples/server
 
 | command | does |
 |---|---|
-| `npm run dev`, `build`, `start` | Next.js, the app in `examples/app/` |
+| `npm run dev` | builds the packages once, then runs `tsc -w` on `packages/engine` and `packages/providers` next to `next dev` (`scripts/dev.mjs`; no extra dependency, one Ctrl-C stops all three), so an engine edit reaches the running app. Arguments after `--` go to `next dev` |
+| `npm run watch:packages` | the build and the two `tsc -w` watchers alone, for a `next dev` you start yourself |
+| `npm run build`, `start` | Next.js, the app in `examples/app/` (`build` runs `build:packages` first: the app resolves the workspace packages to their built `dist`) |
+| `npm run build:packages` | `tsc` builds `packages/engine` then `packages/providers` into their `dist/` (ES modules and declarations, no bundler). Building the providers alone builds the engine first when its `dist` is missing |
+| `npm run pack:smoke` | packs the three packages, installs the tarballs into a scratch project outside the repository and runs the headless quick start against them (needs the npm registry and Postgres; not part of the gate) |
+| `npm run release:dry-run` | clean tree, build, `pack:smoke`, then `npm publish --dry-run` for the three packages; it publishes nothing |
 | `npm run typecheck`, `lint`, `test` | `tsc --noEmit`, ESLint, vitest (against the per-branch test database, [DATA-MODEL.md](../architecture/DATA-MODEL.md#test-database)) |
-| `npm run db:generate` | drizzle-kit writes a migration to `packages/engine/drizzle/` from the engine schema, then one to `examples/app/drizzle/` from `examples/app/db/host-schema.ts` |
+| `npm run db:generate` | builds the packages, then drizzle-kit writes a migration to `packages/engine/drizzle/` from the engine schema, then one to `examples/app/drizzle/` from `examples/app/db/host-schema.ts` |
 | `npm run db:migrate`, `db:seed` | apply migrations; seed creator and admins |
 | `bash scripts/gate.sh` | the gate |
+
+**Do not run `build`, `build:packages`, `pack:smoke`, `release:dry-run` or the gate while `npm run dev` is up.** Each package build starts with
+`rm -rf dist`, so the running app (and its watchers) lose the packages until the build finishes, and `next dev` can be left holding a
+stale module graph; restart `npm run dev` afterwards.
 | `npx understudy-persona build --creator junovale --card-model <id> --gen-model <id> --jev-model <id>` | persona build; see [PERSONA-PIPELINE.md](../persona/PERSONA-PIPELINE.md#running-it) |
 | `npx understudy init (--instagram-export <zip\|folder> \| --scrape-own) --email <address> --card-model <id>`, then `npx understudy init --publish <dir>` | onboard a creator from her own Instagram; see [PERSONA-PIPELINE.md](../persona/PERSONA-PIPELINE.md#onboarding-a-creator-npx-understudy-init) |
 | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` | persona tests only |
@@ -61,6 +70,7 @@ the files in `gate_inputs` (`examples/app/.env.local`, `node_modules/.package-lo
 | lint | `npm run --silent lint` |
 | test | `npm run --silent test` |
 | build | `npm run --silent build` |
+| packages | `npm run --silent build:packages && node --test scripts/pack-smoke.test.mjs scripts/release.test.mjs`: the packages build, and their manifests and tarball contents are right (offline) |
 | persona | `node --test 'packages/persona/src/**/*.test.mjs' scripts/persona/*.test.mjs` (includes the split-hygiene tests over committed data) |
 
 Add a check as a new line in the gate-steps file, never by editing `gate.sh`.

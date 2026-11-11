@@ -29,7 +29,7 @@ raw export (synthetic here)
    -> queries     30 labelled fan questions for the retrieval eval
 ```
 
-Everything lives in the `@understudy/persona` package (`packages/persona/`) and writes under `data/persona/`; the database-bound scripts stay in `scripts/persona/`. One command runs it all
+Everything lives in the `@jadd0/understudy-persona` package (`packages/persona/`) and writes under `data/persona/`; the database-bound scripts stay in `scripts/persona/`. One command runs it all
 (see [Running it](#running-it)). Each stage skips when its output exists, and a stage never reads a
 split it must not see. That second property is the point of the design: an evaluation on contaminated
 data proves nothing.

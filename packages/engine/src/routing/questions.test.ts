@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { disabledChecks, inboundQuestions, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "./questions";
+import { disabledChecks, inboundQuestions, VERIFY_QUESTIONS, VERIFY_QUESTIONS_PAID } from "./questions.js";
 
 const prompt = (qs: { key: string; prompt: string }[], key: string) => qs.find((q) => q.key === key)?.prompt ?? "";
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { EngineDb } from "@understudy/engine";
+import type { EngineDb } from "@jadd0/understudy-engine";
 import { ServerHost } from "./host";
 
 const host = (cap: number) => new ServerHost({} as EngineDb, [], cap);

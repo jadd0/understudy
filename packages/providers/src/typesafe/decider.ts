@@ -6,7 +6,7 @@
  * 429 and 529 retry once after `backoffMs`; every other non-2xx fails at once. A choice outside its
  * question's options, a missing answer or an unparseable body is `malformed`, never defaulted.
  */
-import { DeciderUnavailable, TypeSafeNotConfigured, type Answer, type Decider, type DeciderResult, type DeciderState, type Question } from "@understudy/engine";
+import { DeciderUnavailable, TypeSafeNotConfigured, type Answer, type Decider, type DeciderResult, type DeciderState, type Question } from "@jadd0/understudy-engine";
 
 const ENDPOINT = "https://api.typesafe.ai/v1/systemone";
 

@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { config } from "@/db/schema";
 import { ENGINE_CONFIG, RETRIEVAL_CONFIG, SIM_CONFIG, WALLET_CONFIG } from "@/db/seed";
 import { makeAdmin } from "@/lib/conversations/test-helpers";
-import { makeCreator, makeItem, makePersona, rig, type Rig, FakeGenerator } from "@understudy/engine/testing";
+import { makeCreator, makeItem, makePersona, rig, type Rig, FakeGenerator } from "@jadd0/understudy-engine/testing";
 import type { SimDeps } from "./deps";
 import type { Beat, Persona } from "./persona";
 import { FakeSimStripe } from "./stripe";

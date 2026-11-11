@@ -1,15 +1,15 @@
 import { eq } from "drizzle-orm";
-import type { EngineCtx } from "../ctx";
-import { conversations } from "../db/schema";
-import { getConfig, loadEngineConfig, loadSla, type EngineCfg } from "../config/load";
-import { acquireLease, recordFailure, releaseLease, type Lease } from "../conversation/lease";
-import { finishTurn } from "./finish";
-import { newWorkSince } from "./inbound";
-import { tipRowIds, type Candidate, type PassResult } from "./pass";
-import { runPass } from "./pass-run";
-import { basePlan, unsafePlan, type TurnRecord } from "./plan";
-import { describeError, type TurnResult } from "./result";
-import { openTurnState } from "./state";
+import type { EngineCtx } from "../ctx.js";
+import { conversations } from "../db/schema.js";
+import { getConfig, loadEngineConfig, loadSla, type EngineCfg } from "../config/load.js";
+import { acquireLease, recordFailure, releaseLease, type Lease } from "../conversation/lease.js";
+import { finishTurn } from "./finish.js";
+import { newWorkSince } from "./inbound.js";
+import { tipRowIds, type Candidate, type PassResult } from "./pass.js";
+import { runPass } from "./pass-run.js";
+import { basePlan, unsafePlan, type TurnRecord } from "./plan.js";
+import { describeError, type TurnResult } from "./result.js";
+import { openTurnState } from "./state.js";
 
 /**
  * One turn: lease, wait out the debounce, classify, route, (pick an offer, draft, verify), commit. Provider calls

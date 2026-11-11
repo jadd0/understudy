@@ -7,7 +7,7 @@ import { getEvents } from "@/lib/conversations/events";
 import { assertVisible, getSnapshot, type Viewer } from "@/lib/conversations/read";
 import { getChanges, getOlderMessages } from "@/lib/conversations/paging";
 import { toResult, windowRead } from "@/lib/conversations/result";
-import { chatter } from "@/lib/host/deps";
+import { understudy } from "@/lib/host/deps";
 
 /** The signed-in admin. The id and role come from the session, never from an argument. */
 async function viewer(): Promise<Viewer> {
@@ -57,7 +57,7 @@ export async function releaseAction(conversationId: string) {
   return toResult(async () => {
     await releaseConversation(v, conversationId, getEvents());
     // Fan messages sent while the chat was paused are answered now, not at the next sweep.
-    after(async () => (await chatter()).processConversation(conversationId));
+    after(async () => (await understudy()).processConversation(conversationId));
   });
 }
 

@@ -45,14 +45,14 @@ describe("the providers package boundary", () => {
     expect(offenders).toEqual([]);
   });
 
-  test("it reaches the engine only through @understudy/engine and @understudy/engine/schema", () => {
+  test("it reaches the engine only through @jadd0/understudy-engine and @jadd0/understudy-engine/schema", () => {
     const files = sourceFiles();
     const offenders: string[] = [];
     let viaEntry = 0;
     for (const f of files) {
       for (const spec of specifiersOf(readFileSync(join(ROOT, f), "utf8"))) {
-        if (spec === "@understudy/engine" || spec === "@understudy/engine/schema") viaEntry++;
-        else if (spec.startsWith("@understudy/engine/") || spec.includes("packages/engine")) offenders.push(`${f}: ${spec}`);
+        if (spec === "@jadd0/understudy-engine" || spec === "@jadd0/understudy-engine/schema") viaEntry++;
+        else if (spec.startsWith("@jadd0/understudy-engine/") || spec.includes("packages/engine")) offenders.push(`${f}: ${spec}`);
       }
     }
     expect(viaEntry).toBeGreaterThan(5);
@@ -66,8 +66,8 @@ describe("the providers package boundary", () => {
     let viaEntry = 0;
     for (const f of files) {
       for (const spec of specifiersOf(readFileSync(join(ROOT, f), "utf8"))) {
-        if (spec === "@understudy/providers") viaEntry++;
-        else if (spec.startsWith("@understudy/providers/") || spec.includes("packages/providers")) offenders.push(`${f}: ${spec}`);
+        if (spec === "@jadd0/understudy-providers") viaEntry++;
+        else if (spec.startsWith("@jadd0/understudy-providers/") || spec.includes("packages/providers")) offenders.push(`${f}: ${spec}`);
         else if (spec.startsWith(".") && relative(ROOT, join(ROOT, f, "..", spec)).startsWith("packages/providers")) offenders.push(`${f}: ${spec}`);
       }
     }
