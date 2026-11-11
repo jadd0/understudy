@@ -37,3 +37,7 @@ test(".dockerignore keeps secrets and process files out of the build context", (
   const ignored = read(".dockerignore").split("\n").map((l) => l.trim());
   for (const entry of [".env*", ".product", "node_modules", ".claude"]) assert.ok(ignored.includes(entry), entry);
 });
+
+test("docker-compose.yml pins the project name, so a worktree or clone in any directory shares the gate's containers and volume", () => {
+  assert.match(read("docker-compose.yml"), /^name: understudy$/m);
+});

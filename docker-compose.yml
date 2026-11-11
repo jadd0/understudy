@@ -2,6 +2,8 @@
 # Postgres 18 (the hosted project's major) with pgvector, and Neon's WebSocket proxy in front of it so the
 # @neondatabase/serverless driver the code uses works unchanged (scripts/neon-local.mjs points it here).
 #   docker compose up -d
+# A fixed project name, so a worktree or a clone in any directory shares one database, port and volume with the gate.
+name: understudy
 services:
   postgres:
     image: pgvector/pgvector:0.8.1-pg18

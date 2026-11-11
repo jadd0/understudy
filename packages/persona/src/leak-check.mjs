@@ -1,14 +1,22 @@
 // Flags any text in a tree that comes from a private raw scrape: 6-word shingles of captions, the
 // creator's comments, the comments she replied to and descriptions, plus every handle seen in it.
 // The repo is public, so a copied sentence with no name on it must still be caught.
-//   understudy-persona leak-check [--summary]
+//   understudy-persona leak-check [--summary] [--require]
 // LEAK_CHECK_RAW (read from the environment or .env.local; a leading ~/ is the home directory) names the private raw directory, one
 // folder per handle with profile.json and posts.jsonl. Unset or missing: the step skips and exits 0
 // so a clone without the scrape still gates. The tree is the current directory. Nothing is written,
 // and a hit prints at most its 6-word shingle.
+// LEAK_CHECK_NAMES names a second private file: one term per line (a company, a creator, anything that must not
+// appear in a public file; `#` starts a comment, terms under 3 characters are ignored, a leading ~/ is the home
+// directory; a line with no letter or digit is ignored). The tree's file contents and paths are matched against it,
+// case-insensitively and on word boundaries; between the words of a term any run of whitespace, `.`, `_`, `/` or `-`,
+// or nothing, is allowed, and a match may span lines. A hit prints file:line and the matched text's length,
+// never the term (a path that holds one is printed with the match starred out). Both checks need their variable to run unless --require is given: then an unset or empty input
+// (no raw directory, no names file, no terms, no shingles, no scannable file in the tree) exits 2 instead of passing.
+import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, relative, resolve } from "node:path";
+import { basename, join, relative, resolve } from "node:path";
 import { isMain, loadEnvFile } from "./lib/io.mjs";
 
 const N = 6;
@@ -102,28 +110,165 @@ export function expandHome(path, home = homedir()) {
   return path.startsWith("~/") ? join(home, path.slice(2)) : path;
 }
 
-/** Runs the check as the gate step does; returns the exit code. */
-export function main(env, tree, summary, out = console.log, home = homedir()) {
+const MIN_TERM = 3;
+const HAS_WORD_CHAR = /[\p{L}\p{N}]/u;
+// What may sit between the words of a term in a file: whitespace (a hard-wrapped line included) and separators.
+const TERM_SEPARATORS = /[\s._/-]+/;
+
+/** The terms in a names file: one per line, `#` comments and blank lines dropped, short and letterless terms ignored. */
+export function loadNames(file) {
+  return readFileSync(file, "utf8")
+    .split("\n")
+    .map((l) => l.replace(/#.*/, "").trim())
+    .filter((t) => t.length >= MIN_TERM && HAS_WORD_CHAR.test(t));
+}
+
+/** One regex for all terms: word-bounded, case-insensitive, any run of separators (or none) between a term's words. */
+export function nameRegex(terms) {
+  const alt = terms
+    .filter((t) => HAS_WORD_CHAR.test(t))
+    .map((t) =>
+      t
+        .split(TERM_SEPARATORS)
+        .filter(Boolean)
+        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("[\\s._/-]*"),
+    );
+  if (alt.length === 0) return /(?!)/u;
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alt.join("|")})(?![\\p{L}\\p{N}])`, "iu");
+}
+
+/** `text` with every match of a term replaced by asterisks of the same length, so a path can be printed safely. */
+export function maskNames(text, terms) {
+  const re = nameRegex(terms);
+  return text.replace(new RegExp(re.source, "giu"), (m) => "*".repeat(m.length));
+}
+
+const isEnvFile = (f) => basename(f).startsWith(".env") && basename(f) !== ".env.example";
+
+/**
+ * The files to scan for names: when `tree` is a git checkout, the tracked files plus the untracked files git does not
+ * ignore (a new file is scanned before it is ever committed); an untracked `.env*` other than `.env.example` is
+ * skipped even then. Else a walk, which cannot tell tracked from untracked and so skips every such `.env*`.
+ */
+function namedFiles(tree) {
+  if (existsSync(join(tree, ".git"))) {
+    const ls = (...args) =>
+      execFileSync("git", ["ls-files", "-z", ...args], { cwd: tree, encoding: "utf8", maxBuffer: 1 << 28 }).split("\0").filter(Boolean);
+    const tracked = ls("--cached");
+    const seen = new Set(tracked);
+    return [...tracked, ...ls("--others", "--exclude-standard").filter((f) => !seen.has(f) && !isEnvFile(f))];
+  }
+  return walk(tree, new Set())
+    .map((f) => relative(tree, f))
+    .filter((f) => !isEnvFile(f));
+}
+
+/** 1-based line number of `offset` in `text`, given the offsets at which each line starts. */
+function lineAt(starts, offset) {
+  let lo = 0;
+  let hi = starts.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (starts[mid] <= offset) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo + 1;
+}
+
+/**
+ * Scans the contents and paths of `tree`'s files for the terms in `terms`.
+ * Returns { files, hits, scanned, perFile }: `scanned` is how many files' contents were read, `perFile` maps a file
+ * to its hits, each { line, length } (line 0 for a path; one hit per line; a match across a wrapped line counts on
+ * the line where it starts).
+ */
+export function nameCheck(terms, tree) {
+  const re = nameRegex(terms);
+  const globalRe = new RegExp(re.source, "giu");
+  const perFile = new Map();
+  let scanned = 0;
+  for (const f of namedFiles(tree)) {
+    const hits = [];
+    const inPath = f.match(re);
+    if (inPath) hits.push({ line: 0, length: inPath[0].length });
+    if (!BINARY.test(f) && !SKIP_FILES.has(basename(f))) {
+      let text = null;
+      try {
+        text = readFileSync(join(tree, f), "utf8");
+      } catch {
+        // deleted but still indexed, or unreadable: nothing to scan
+      }
+      if (text !== null && !text.includes("\0")) {
+        scanned++;
+        const starts = [0];
+        for (let i = text.indexOf("\n"); i !== -1; i = text.indexOf("\n", i + 1)) starts.push(i + 1);
+        let last = 0;
+        for (const m of text.matchAll(globalRe)) {
+          const line = lineAt(starts, m.index);
+          if (line === last) continue;
+          last = line;
+          hits.push({ line, length: m[0].length });
+        }
+      }
+    }
+    if (hits.length) perFile.set(f, hits);
+  }
+  const total = [...perFile.values()].reduce((n, h) => n + h.length, 0);
+  return { files: perFile.size, hits: total, scanned, perFile };
+}
+
+/**
+ * Runs the check as the gate step does; returns the exit code: 0 clean or skipped, 1 a hit, 2 a missing input
+ * under `require`.
+ */
+export function main(env, tree, summary, out = console.log, home = homedir(), { require = false } = {}) {
+  let code = 0;
+
   const raw = env.LEAK_CHECK_RAW;
+  const rawDir = raw ? resolve(expandHome(raw, home)) : null;
+  const rawUsable = rawDir !== null && existsSync(rawDir) && statSync(rawDir).isDirectory();
   if (!raw) {
-    out("leak: skipped (LEAK_CHECK_RAW is not set)");
-    return 0;
+    out(require ? "leak: LEAK_CHECK_RAW is not set" : "leak: skipped (LEAK_CHECK_RAW is not set)");
+    if (require) code = 2;
+  } else if (!rawUsable) {
+    out(require ? "leak: LEAK_CHECK_RAW does not point at a directory" : "leak: skipped (LEAK_CHECK_RAW does not point at a directory)");
+    if (require) code = 2;
+  } else {
+    const r = leakCheck(rawDir, tree);
+    for (const [f, hits] of [...r.perFile].sort((a, b) => b[1].length - a[1].length)) {
+      out(`${String(hits.length).padStart(5)}  ${f}`);
+      if (!summary) for (const h of [...new Set(hits)].slice(0, 5)) out(`         ${h}`);
+    }
+    out(`leak: files=${r.files} hits=${r.hits} handles=${r.handles} shingles=${r.shingles}`);
+    if (require && r.shingles === 0) {
+      out("leak: the raw directory holds no text, so the check proved nothing");
+      code = 2;
+    } else if (r.hits > 0) code = 1;
   }
-  const rawDir = resolve(expandHome(raw, home));
-  if (!existsSync(rawDir) || !statSync(rawDir).isDirectory()) {
-    out("leak: skipped (LEAK_CHECK_RAW does not point at a directory)");
-    return 0;
+
+  const names = env.LEAK_CHECK_NAMES;
+  const namesFile = names ? resolve(expandHome(names, home)) : null;
+  const terms = namesFile !== null && existsSync(namesFile) && statSync(namesFile).isFile() ? loadNames(namesFile) : [];
+  if (terms.length === 0) {
+    const why = !names ? "LEAK_CHECK_NAMES is not set" : "LEAK_CHECK_NAMES does not name a file with terms";
+    out(require ? `names: ${why}` : `names: skipped (${why})`);
+    if (require) code = 2;
+  } else {
+    const r = nameCheck(terms, tree);
+    for (const [f, hits] of [...r.perFile].sort((a, b) => b[1].length - a[1].length)) {
+      for (const h of hits.slice(0, 5)) out(h.line === 0 ? `${maskNames(f, terms)} (path, ${h.length} chars)` : `${maskNames(f, terms)}:${h.line} (${h.length} chars)`);
+    }
+    out(`names: ${r.hits} hits`);
+    if (require && r.scanned === 0) {
+      out("names: the tree holds no scannable file, so the check proved nothing");
+      code = 2;
+    } else if (r.hits > 0 && code === 0) code = 1;
   }
-  const r = leakCheck(rawDir, tree);
-  for (const [f, hits] of [...r.perFile].sort((a, b) => b[1].length - a[1].length)) {
-    out(`${String(hits.length).padStart(5)}  ${f}`);
-    if (!summary) for (const h of [...new Set(hits)].slice(0, 5)) out(`         ${h}`);
-  }
-  out(`leak: files=${r.files} hits=${r.hits} handles=${r.handles} shingles=${r.shingles}`);
-  return r.hits === 0 ? 0 : 1;
+  return code;
 }
 
 if (isMain(import.meta.url)) {
   loadEnvFile(".env.local");
-  process.exit(main(process.env, process.cwd(), process.argv.includes("--summary")));
+  const args = process.argv.slice(2);
+  process.exit(main(process.env, process.cwd(), args.includes("--summary"), console.log, homedir(), { require: args.includes("--require") }));
 }
