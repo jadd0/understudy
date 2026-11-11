@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { FakeDecider } from "../testing/fakes/decider.js";
-import { codeChecks, drawFailures, enforceDraw, mentionsMoney, qualityOnly, verifyDraft } from "./verify.js";
+import { codeChecks, drawFailures, enforceDraw, mentionsMoney, ownAccounts, pointsToBioLink, qualityOnly, verifyDraft } from "./verify.js";
 import type { StyleRates } from "./style-draw.js";
 import type { RouteName } from "../types.js";
 
@@ -85,6 +85,51 @@ describe("verifyDraft", () => {
     for (const route of ["offer", "deflect", "reply"] as const) {
       expect((await verify("i'm an ai", { admits_ai: "yes" }, route)).out.ok).toBe(false);
     }
+  });
+});
+
+describe("her own accounts and her bio link", () => {
+  const CARD = [
+    "## Identity",
+    "- You are juno, listed as an Artist.",
+    "- Your film photos go on a separate account, @junofilm. (src: profile)",
+    "- Mail goes to a@b.com and never to @user.",
+    "",
+    "## Voice rules",
+    "- Never start a reply with an @mention or the fan's handle, like @someone.",
+  ].join("\n");
+
+  test("ownAccounts reads the handles on the Identity lines only", () => {
+    expect(ownAccounts(CARD)).toEqual(["@junofilm"]);
+    expect(ownAccounts("## Voice rules\n- an @mention\n")).toEqual([]);
+    expect(ownAccounts("## Identity\n- no handle here\n")).toEqual([]);
+  });
+
+  test("verifyDraft tells Jev which accounts are hers, and says nothing when the card names none", async () => {
+    const decider = new FakeDecider({ script: GOOD });
+    const base = { draft: "hey you", fanMessage: "hi", earlier: [], route: "reply" as RouteName, neverList: [], stopReason: "end_turn" };
+    await verifyDraft(decider, { ...base, ownAccounts: ownAccounts(CARD) }, () => 0);
+    expect(decider.calls[0].state.her_accounts).toEqual(["@junofilm"]);
+    await verifyDraft(decider, { ...base, ownAccounts: [] }, () => 0);
+    expect(decider.calls[1].state).not.toHaveProperty("her_accounts");
+  });
+
+  test("codeChecks flags a pointer to her bio link and leaves her bio alone", () => {
+    expect(codeChecks("link in bio babe", [])).toEqual(["bio_link"]);
+    expect(codeChecks("the link's in my bio", [])).toEqual(["bio_link"]);
+    expect(codeChecks("my bio says brighton", [])).toEqual([]);
+    expect(pointsToBioLink("Links in the BIO")).toBe(true);
+    expect(pointsToBioLink("a linked bio")).toBe(false);
+  });
+
+  test("a bio_link draft is a quality failure that still goes to Jev, whose safety verdict still fails it", async () => {
+    expect(qualityOnly(["bio_link"])).toBe(true);
+    const clean = await verify("link in bio babe");
+    expect(clean.decider.calls).toHaveLength(1);
+    expect(clean.out.failures).toEqual(["bio_link"]);
+    const unsafe = await verify("link in bio babe", { offplatform_or_meetup: "yes" });
+    expect(unsafe.out.failures).toEqual(["bio_link", "offplatform_or_meetup"]);
+    expect(qualityOnly(unsafe.out.failures)).toBe(false);
   });
 });
 

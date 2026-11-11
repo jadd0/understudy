@@ -18,6 +18,7 @@ export type VerifyFailure =
   | "promises_price_or_free"
   | "marker_echo"
   | "asks_media"
+  | "bio_link"
   | "reasks"
   | "offer_unsetup"
   | "too_long"
@@ -67,6 +68,34 @@ export function asksForMedia(text: string): boolean {
   return ASKS_MEDIA.test(text);
 }
 
+/**
+ * A pointer to her bio link ("link in bio", "the link's in my bio"). Her sets are unlocked in this chat, so sending a fan
+ * off to a bio link undercuts the sale, though saying where she posts is still allowed.
+ */
+const BIO_LINK = /(?<![a-z])links?(?:['’]s)?\s+(?:(?:is|are)\s+)?in\s+(?:(?:my|the|her)\s+)?bio(?![a-z])/i;
+export function pointsToBioLink(text: string): boolean {
+  return BIO_LINK.test(text);
+}
+
+/**
+ * The accounts the persona card names as hers: the `@handle`s on the lines of its Identity section. An `@` that follows
+ * a word character (an email address) and the placeholder `@user` are not accounts. Other sections only mention handles
+ * in rules ("never start a reply with an @mention"), so they are not read.
+ */
+export function ownAccounts(cardBody: string): string[] {
+  const lines = cardBody.split("\n");
+  const start = lines.findIndex((l) => /^##\s+Identity\s*$/i.test(l));
+  if (start === -1) return [];
+  const found: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^##\s/.test(line)) break;
+    for (const m of line.matchAll(/(?<![\w@])@([A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*)/g)) {
+      if (m[1].toLowerCase() !== "user" && !found.includes(m[0])) found.push(m[0]);
+    }
+  }
+  return found;
+}
+
 /** Deterministic checks that need no model. */
 export function codeChecks(draft: string, neverList: readonly string[]): VerifyFailure[] {
   const failures: VerifyFailure[] = [];
@@ -74,6 +103,7 @@ export function codeChecks(draft: string, neverList: readonly string[]): VerifyF
   if (mentionsMoney(draft)) failures.push("money");
   if (MARKER_PATTERN.test(draft)) failures.push("marker_echo");
   if (asksForMedia(draft)) failures.push("asks_media");
+  if (pointsToBioLink(draft)) failures.push("bio_link");
   if (neverList.some((term) => term.trim() !== "" && neverTermPattern(term).test(draft))) failures.push("never_list");
   return failures;
 }
@@ -103,7 +133,7 @@ export function jevChecks(result: DeciderResult, route: RouteName, boundary = fa
 }
 
 /** Failures that cost a regeneration but never make a draft unsafe to send. */
-const QUALITY: readonly VerifyFailure[] = ["reasks", "offer_unsetup", "too_long", "pet_disallowed"];
+const QUALITY: readonly VerifyFailure[] = ["reasks", "offer_unsetup", "too_long", "pet_disallowed", "bio_link"];
 
 /** A draft whose only failures are quality ones is still safe to send: the turn may regenerate, then sends it anyway. */
 export const qualityOnly = (failures: readonly VerifyFailure[]): boolean => failures.length > 0 && failures.every((f) => QUALITY.includes(f));
@@ -133,24 +163,34 @@ export async function verifyDraft(
     offer?: { title: string; teaser: string | null } | null;
     /** Whose chat the draft is for, passed to the decider so a per-creator adapter can attribute the call. */
     creatorId?: string;
+    /** The accounts the card names as hers, told to Jev so naming one is not read as sending him to a private account. */
+    ownAccounts?: readonly string[];
   },
   now: () => number,
 ): Promise<VerifyOutcome> {
   const started = now();
   const early: VerifyFailure[] = [...codeChecks(input.draft, input.neverList)];
   if (input.stopReason === "refusal") early.push("refusal_stop");
-  if (early.length > 0) return { ok: false, failures: early, jevOut: null, usage: null, ms: now() - started };
+  // A draft that fails only a quality check is still safe to send, so it still goes to Jev: the safety checks must
+  // judge every draft that can be sent.
+  if (early.some((f) => !QUALITY.includes(f))) return { ok: false, failures: early, jevOut: null, usage: null, ms: now() - started };
 
   const withOffer = input.route === "offer" && input.offer ? input.offer : null;
   const base = input.paid ? VERIFY_QUESTIONS_PAID : VERIFY_QUESTIONS;
   const questions = withOffer ? [...base, LEADS_TO_OFFER_QUESTION] : base;
-  const state = { draft: input.draft, fan_message: input.fanMessage, earlier_messages: input.earlier };
+  const accounts = input.ownAccounts ?? [];
+  const state = {
+    draft: input.draft,
+    fan_message: input.fanMessage,
+    earlier_messages: input.earlier,
+    ...(accounts.length > 0 ? { her_accounts: accounts } : {}),
+  };
   const offerItem = withOffer ? `${withOffer.title}${withOffer.teaser ? `: ${withOffer.teaser}` : ""}` : null;
   const result = await decider.ask(questions, {
     state: offerItem ? { ...state, offer_item: offerItem } : state,
     creatorId: input.creatorId,
   });
-  const failures = jevChecks(result, input.route, input.boundary === true);
+  const failures = [...early, ...jevChecks(result, input.route, input.boundary === true)];
   return {
     ok: failures.length === 0,
     failures,

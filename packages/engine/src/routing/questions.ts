@@ -131,7 +131,7 @@ export const VERIFY_QUESTIONS: Question[] = [
   },
   yesNo(
     "offplatform_or_meetup",
-    "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine.",
+    "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
   ),
   yesNo(
     "is_refusal",
@@ -165,7 +165,7 @@ export const VERIFY_QUESTIONS_PAID: Question[] = VERIFY_QUESTIONS.map((q) =>
   q.key === "offplatform_or_meetup"
     ? yesNo(
         "offplatform_or_meetup",
-        "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine.",
+        "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
       )
     : q,
 );

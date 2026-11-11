@@ -4,7 +4,7 @@ import { ownsEverything, type ShortlistItem } from "../conversation/offer.js";
 import { dropRepeatedEmoji, recentEmoji } from "../drafting/emoji.js";
 import { loadProfile } from "../drafting/memory.js";
 import { buildPrompt } from "../drafting/prompt.js";
-import { drawFailures, enforceDraw, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify.js";
+import { drawFailures, enforceDraw, ownAccounts, pointsToBioLink, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify.js";
 import { drawStyle, parseRates } from "../drafting/style-draw.js";
 import type { JevIn, Route } from "../types.js";
 import { RETRY_NOTE, RETRY_REASONS, drawReasons, qualityNote } from "./draft.js";
@@ -36,7 +36,8 @@ export async function loadDraftInputs(s: TurnState, b: Batch): Promise<DraftInpu
     loadOfferOutcomes(ctx, lease.conversationId, lease.fanId, cfg.offerHistoryCount),
     ownsEverything(ctx.host, lease.creatorId, lease.fanId),
   ]);
-  return { profile, chunks, offerOutcomes, ownsAll };
+  // A retrieved line that points to her bio link would teach the draft to send him off the app; it is left out.
+  return { profile, chunks: chunks.filter((c) => !pointsToBioLink(c.text)), offerOutcomes, ownsAll };
 }
 
 /**
@@ -128,6 +129,7 @@ export async function composeReply(
           offer: offerItem,
           boundary: route.name === "boundary",
           creatorId: lease.creatorId,
+          ownAccounts: ownAccounts(card.body),
         },
         () => clock.now(),
       );
