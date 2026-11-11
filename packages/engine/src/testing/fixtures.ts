@@ -11,6 +11,7 @@ export const CFG: RouteCfg = {
     hardship: 0.5,
     intent: 0.5,
     buyIntentRunnerUp: 0.3,
+    offplatformOnBuy: 0.8,
   },
   minGapRounds: 8,
   fitFloor: 0.6,

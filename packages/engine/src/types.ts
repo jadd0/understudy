@@ -52,7 +52,12 @@ export interface JevIn {
 export interface RouteCfg {
   /** `safety.<key>.enabled`: a disabled check is neither asked of the decider nor routed on. Hardship is always on. */
   enabled: Record<ToggleableCheck, boolean>;
-  floors: Record<SafetyKey, number> & { intent: number; buyIntentRunnerUp: number };
+  floors: Record<SafetyKey, number> & {
+    intent: number;
+    buyIntentRunnerUp: number;
+    /** A confident, unpromoted buy ask whose off-platform read is below this is routed as a buy, not struck. */
+    offplatformOnBuy: number;
+  };
   minGapRounds: number;
   /** An AI-initiated pitch needs `pitch_fit` at or above this. */
   fitFloor: number;

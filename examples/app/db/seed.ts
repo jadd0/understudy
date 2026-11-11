@@ -86,6 +86,7 @@ export const ENGINE_CONFIG: Record<string, unknown> = {
   "safety.location_offplatform.enabled": true,
   "safety.payment_dispute.enabled": true,
   "floor.buy_intent_runner_up": 1, // off: no probability reaches 1, so nothing is promoted
+  "floor.offplatform_on_buy": 0.8, // a clear buy ask read off-platform below this is offered to, not struck
   "pitch.min_gap_rounds": 5,
   "pitch.fit_floor": 0.58,
   "pitch.decline_window_minutes": 20,

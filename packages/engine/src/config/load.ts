@@ -64,6 +64,7 @@ const KEYS = [
   "escalation.ts_sla_minutes",
   "floor.intent",
   "floor.buy_intent_runner_up",
+  "floor.offplatform_on_buy",
   ...SAFETY_KEYS.map((k) => `floor.safety.${k}`),
   ...TOGGLEABLE_CHECKS.map((k) => `safety.${k}.enabled`),
   "pitch.min_gap_rounds",
@@ -155,7 +156,11 @@ export async function loadEngineConfig(ctx: Pick<EngineCtx, "config">, creatorId
     const complete = [`price.${model}.input_per_mtok`, `price.${model}.output_per_mtok`, ...(cached ? [`price.${model}.cache_read_per_mtok`, `price.${model}.cache_write_per_mtok`] : [])].every((k) => map.has(k));
     if (complete) prices[model] = priceRow(model, cached);
   }
-  const floors = { intent: get<number>("floor.intent"), buyIntentRunnerUp: get<number>("floor.buy_intent_runner_up") } as RouteCfg["floors"];
+  const floors = {
+    intent: get<number>("floor.intent"),
+    buyIntentRunnerUp: get<number>("floor.buy_intent_runner_up"),
+    offplatformOnBuy: get<number>("floor.offplatform_on_buy"),
+  } as RouteCfg["floors"];
   for (const k of SAFETY_KEYS) floors[k] = get<number>(`floor.safety.${k}`);
 
   const enabled = {} as RouteCfg["enabled"];

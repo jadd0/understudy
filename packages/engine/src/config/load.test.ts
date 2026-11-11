@@ -49,6 +49,14 @@ describe("engine config through the port", () => {
     expect(await getConfig({ config: stranger }, "engine.lease_ms", CREATOR)).toBe(7);
   });
 
+  test("floor.offplatform_on_buy is required and platform-only", async () => {
+    const without = platformRows().filter((r) => r.key !== "floor.offplatform_on_buy");
+    await expect(loadEngineConfig({ config: portOver(without) }, CREATOR)).rejects.toMatchObject({ name: "ConfigMissing", key: "floor.offplatform_on_buy" });
+    const rows = [...platformRows(), { key: "floor.offplatform_on_buy", value: 0.01, creatorId: CREATOR }];
+    const cfg = await loadEngineConfig({ config: portOver(rows) }, CREATOR);
+    expect(cfg.route.floors.offplatformOnBuy).toBe(0.8);
+  });
+
   test("a missing key throws ConfigMissing naming the key", async () => {
     const config = portOver([]);
     const err = (await getConfig({ config }, "engine.lease_ms").catch((e) => e)) as ConfigMissing;
