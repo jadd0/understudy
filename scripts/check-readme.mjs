@@ -121,11 +121,12 @@ export function shellFences(text) {
   return fences;
 }
 
-/** Root and workspace manifests: { root, workspaces: Map(name -> manifest) }. */
+/** Root and workspace manifests: { root, workspaces: Map(name -> manifest), byDir: Map(path -> manifest) }. */
 function loadManifests(root) {
   const read = (dir) => JSON.parse(readFileSync(join(root, dir, "package.json"), "utf8"));
   const rootPkg = read(".");
   const workspaces = new Map();
+  const byDir = new Map();
   for (const pattern of rootPkg.workspaces ?? []) {
     const base = pattern.replace(/\/\*$/, "");
     if (!existsSync(join(root, base))) continue;
@@ -133,9 +134,10 @@ function loadManifests(root) {
       if (!existsSync(join(root, base, d, "package.json"))) continue;
       const pkg = read(`${base}/${d}`);
       workspaces.set(pkg.name, pkg);
+      byDir.set(`${base}/${d}`, pkg);
     }
   }
-  return { root: rootPkg, workspaces };
+  return { root: rootPkg, workspaces, byDir };
 }
 
 /** Every dependency name any manifest declares: what `npx <name>` can run from the install. */
@@ -184,8 +186,10 @@ function checkNpmRun(tokens, manifests) {
     else if (t.startsWith("-")) continue;
     else if (i > runAt) script ??= t;
   }
-  if (script === null) return "npm run names no script";
-  const pkg = workspace === null ? manifests.root : manifests.workspaces.get(workspace);
+  // A bare `npm run` lists the scripts; it is not a dead end.
+  if (script === null) return null;
+  // `-w` takes a workspace's name or its path.
+  const pkg = workspace === null ? manifests.root : (manifests.workspaces.get(workspace) ?? manifests.byDir.get(workspace.replace(/^\.\//, "").replace(/\/+$/, "")));
   if (!pkg) return `npm run names workspace ${workspace}, which does not exist`;
   if (!pkg.scripts?.[script]) return `npm run ${script}: ${workspace ?? "the root package.json"} has no such script`;
   return null;
@@ -206,7 +210,12 @@ export function checkReadme(root, { tracked } = {}) {
   let commands = 0;
 
   // Required headings, in order.
-  const headings = text.split("\n").flatMap((l, i) => (/^## /.test(l) ? [{ name: l.slice(3).trim(), line: i + 1 }] : []));
+  // A `## ` line inside a fenced block is part of the example, not a heading.
+  let fenced = false;
+  const headings = text.split("\n").flatMap((l, i) => {
+    if (/^\s*```/.test(l)) fenced = !fenced;
+    return !fenced && /^## /.test(l) ? [{ name: l.slice(3).trim(), line: i + 1 }] : [];
+  });
   let cursor = 0;
   for (const want of REQUIRED_HEADINGS) {
     const at = headings.findIndex((h, i) => i >= cursor && h.name === want);
@@ -222,6 +231,14 @@ export function checkReadme(root, { tracked } = {}) {
       const cmd = [...tokens];
       while (cmd.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(cmd[0])) cmd.shift();
       if (!cmd.length) continue;
+      // A redirect writes a file the command creates, so its target is not a path that must be tracked.
+      for (let i = 0; i < cmd.length; i++) {
+        const m = cmd[i].match(/^\d*>>?(&\d+)?(.*)$/);
+        if (!m) continue;
+        const attached = m[1] || m[2];
+        cmd.splice(i, attached ? 1 : 2);
+        i--;
+      }
       const problem = (message) => problems.push({ line, message });
 
       if (cmd[0] === "npm") {

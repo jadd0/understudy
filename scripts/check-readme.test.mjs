@@ -109,6 +109,29 @@ test("npm resolves the workspace flag before or after run", () => {
   assert.match(messages(fixture("npm run build"))[0], /the root package.json has no such script/);
 });
 
+test("-w accepts a workspace path, with or without ./ and a trailing slash, and a bare npm run lists scripts", () => {
+  assert.deepEqual(messages(fixture("npm run build -w packages/lib")), []);
+  assert.deepEqual(messages(fixture("npm -w ./examples/host/ run demo")), []);
+  assert.deepEqual(messages(fixture("npm run -w examples/host")), []);
+  assert.deepEqual(messages(fixture("npm run")), []);
+  assert.match(messages(fixture("npm run build -w packages/ghost"))[0], /workspace packages\/ghost, which does not exist/);
+  assert.match(messages(fixture("npm run demo -w packages/lib"))[0], /packages\/lib has no such script/);
+});
+
+test("a ## line inside a fenced block is not a heading", () => {
+  const without = REQUIRED_HEADINGS.filter((h) => h !== "Measured");
+  assert.deepEqual(messages(fixture("npm ci\n## Measured", { headings: without })), ['1: missing required heading "## Measured"']);
+});
+
+test("a redirect target is not a path that must be tracked, but the command's own arguments are", () => {
+  assert.deepEqual(messages(fixture("node scripts/real.mjs > docs/out.md")), []);
+  assert.deepEqual(messages(fixture("node scripts/real.mjs >> docs/out.md")), []);
+  assert.deepEqual(messages(fixture("node scripts/real.mjs 2>docs/err.md")), []);
+  assert.deepEqual(messages(fixture("node scripts/real.mjs 2>&1")), []);
+  assert.deepEqual(messages(fixture("node scripts/real.mjs >docs/out.md")), []);
+  assert.deepEqual(messages(fixture("node scripts/ghost.mjs > docs/out.md")), ["6: scripts/ghost.mjs is not a tracked file"]);
+});
+
 test("npx accepts an installed dependency or a workspace bin, and does not take --package's name as the bin", () => {
   assert.deepEqual(messages(fixture("npx vitest run\nnpx --yes lib-cli@1.2 --help\nnpx -y vitest")), []);
   assert.deepEqual(messages(fixture("npx --package some-remote tool --flag\nnpx -p some-remote tool\nnpx -c 'tool --x'")), []);
