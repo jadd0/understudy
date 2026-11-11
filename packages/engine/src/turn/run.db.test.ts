@@ -1,9 +1,10 @@
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
-import { config, fanMemory, handoffs, ledgerEntries, messages, offers, personaCards, sessions, strikes, turns, users, wallets } from "@/db/schema";
+import { config, fanMemory, handoffs, ledgerEntries, messages, offers, personaCards, personaChunks, sessions, strikes, turns, users, wallets } from "@/db/schema";
 import { processConversation } from "./process.js";
 import { PAID_LINE } from "../drafting/thread.js";
+import { HOLD_REFUSAL_LINE } from "./draft.js";
 import { runTurn } from "./run.js";
 import { loadFacts } from "./facts.js";
 import { addMessage, getConversation, seedChat, setEngineConfig } from "../testing/db.js";
@@ -197,6 +198,75 @@ describe("offers", () => {
     const sent = JSON.stringify(r.generator.calls[0]);
     expect(sent).toContain("Lazy Sunday");
     for (const price of ["2888", "28.88", "1777", "17.77"]) expect(sent).not.toContain(price);
+  });
+
+  const ACCOUNT_CARD = "## Identity\n- You are juno.\n- Your film photos go on a separate account, @junofilm. (src: profile)\n\n## Voice rules\n- Lowercase, warm.";
+
+  test("an offer draft naming her own account is offered", async () => {
+    const w = await world({ "pitch.min_gap_rounds": 0 });
+    await db.update(personaCards).set({ body: ACCOUNT_CARD }).where(eq(personaCards.creatorId, w.creator.id));
+    const r = rig({
+      script: {
+        offplatform_or_meetup: (state) => {
+          const st = state as { draft?: string; her_accounts?: string[] };
+          return st.draft?.includes("junofilm") && !st.her_accounts?.includes("@junofilm") ? YES : "no";
+        },
+      },
+      replies: ["my film stuff lives on @junofilm but the good stuff is locked for you here"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "replied" });
+    expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(1);
+    const [t] = await turnsOf(w.conv.id);
+    expect(t.attempts).toBe(1);
+    expect(r.decider.calls.some((c) => c.keys.includes("is_refusal") && (c.state as { her_accounts?: string[] }).her_accounts?.[0] === "@junofilm")).toBe(true);
+  });
+
+  test("a chunk pointing to her bio link never reaches the prompt", async () => {
+    const w = await world({ "pitch.min_gap_rounds": 0 }, "do you post new sets every day");
+    const linked = "juno: new sets every day, link in bio, it's all there";
+    const kept = "juno: new sets every day mostly";
+    await db.insert(personaChunks).values([
+      { creatorId: w.creator.id, source: "caption", text: linked, meta: { chunk_id: "c-linked" } },
+      { creatorId: w.creator.id, source: "caption", text: kept, meta: { chunk_id: "c-kept" } },
+    ]);
+    const r = rig();
+    // both rows are retrieved for this message, so the filter is what keeps the first out
+    const hits = await r.deps.retriever.retrieve(w.creator.id, "do you post new sets every day", 8);
+    expect(hits.map((h) => h.text).sort()).toEqual([linked, kept].sort());
+    await runTurn(r.ctx, w.conv.id);
+    const turn = r.generator.calls.find((c) => !isMemoryCall(c))!.system.turn;
+    expect(turn).toContain(kept);
+    expect(turn).not.toContain("link in bio");
+  });
+
+  test("a bio-link offer draft fails in code and is retried with the bio line; the offer is kept", async () => {
+    const w = await world({ "pitch.min_gap_rounds": 0 });
+    const r = rig({ replies: ["the sets are all in the link in bio babe", "ooh wait til you see what i have locked for you"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "replied" });
+    expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(1);
+    const [t] = await turnsOf(w.conv.id);
+    expect(t.jevOut).toMatchObject([{ attempt: 1, failures: ["bio_link"] }, { attempt: 2, failures: [] }]);
+    const gens = r.generator.calls.filter((c) => !isMemoryCall(c));
+    expect(gens[1].system.turn).toContain("sent him to the link in your bio");
+    expect(gens[1].system.turn).not.toContain("rejected by a safety check");
+    // a quality failure is still judged by Jev: the first draft went through the verify questions too
+    expect(r.decider.calls.filter((c) => c.keys.includes("offplatform_or_meetup"))).toHaveLength(2);
+  });
+
+  test("a buy draft that reads as a refusal is retried with the buy line", async () => {
+    const w = await world({ "pitch.min_gap_rounds": 0 });
+    const r = rig({
+      script: {
+        intent: { value: "buy_intent", probabilities: { buy_intent: 0.95 } },
+        is_refusal: (state) => ((state as { draft?: string }).draft?.includes("not sending") ? YES : "no"),
+      },
+      replies: ["sorry babe i'm not sending those", "ooh i have something locked that you will love"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "replied" });
+    const gens = r.generator.calls.filter((c) => !isMemoryCall(c));
+    expect(gens).toHaveLength(2);
+    expect(gens[1].system.turn).toContain("never tell him what you won't send or don't do: tease what you do have");
+    expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(1);
   });
 
   test("an offer draft that never leads into the item is retried with the offer note, then sent without the card", async () => {
@@ -476,8 +546,10 @@ describe("routing outcomes", () => {
       replies: ["sure, it's $20 for the video"],
     });
     expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
-    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toHaveLength(0);
-    // one attempt only: a second Claude call on a hold is not made
+    // nothing reaches the fan; the failed line waits for Juno as one blocked suggestion
+    const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
+    expect(ai).toMatchObject([{ body: "sure, it's $20 for the video", suggested: true, status: "blocked" }]);
+    // a money failure is not retried: a second Claude call on a hold is made only for a refusal
     expect(r.generator.calls.filter((c) => !isMemoryCall(c))).toHaveLength(1);
     expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
     expect(await handoffsOf(w.conv.id)).toMatchObject([{ reason: "custom_request" }]);
@@ -489,6 +561,62 @@ describe("routing outcomes", () => {
       script: { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } }, promises_price_or_free: YES },
     });
     await runTurn(r.ctx, w.conv.id);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toMatchObject([{ suggested: true, status: "blocked" }]);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai" && m.status === "sent")).toHaveLength(0);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+  });
+
+  const CUSTOM = { intent: { value: "custom_request", probabilities: { custom_request: 0.9 } } };
+  const refusalOn = (needle: string) => (state: unknown) => ((state as { draft?: string }).draft?.includes(needle) ? YES : "no");
+
+  test("a refused hold filler is written again and the second is sent", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { ...CUSTOM, is_refusal: refusalOn("can't") },
+      replies: ["sorry, i can't do custom videos", "saw this one, i'll come back to you on it"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
+    const gens = r.generator.calls.filter((c) => !isMemoryCall(c));
+    expect(gens).toHaveLength(2);
+    expect(gens[0].system.turn).not.toContain(HOLD_REFUSAL_LINE);
+    expect(gens[1].system.turn).toContain(HOLD_REFUSAL_LINE);
+    const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
+    expect(ai).toMatchObject([{ body: "saw this one, i'll come back to you on it", status: "sent", suggested: false }]);
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "custom_request" }]);
+  });
+
+  test("a hold whose filler fails every attempt keeps the last draft as Juno's suggestion", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { ...CUSTOM, is_refusal: YES },
+      replies: ["sorry, i can't do custom videos", "no, i won't do that one"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "hold_creator", outcome: "handoff" });
+    expect(r.generator.calls.filter((c) => !isMemoryCall(c))).toHaveLength(2);
+    const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
+    expect(ai).toMatchObject([{ body: "no, i won't do that one", suggested: true, status: "blocked" }]);
+    expect(ai.filter((m) => m.status === "sent")).toHaveLength(0);
+    expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "custom_request" }]);
+  });
+
+  test("a provider error on the filler retry sends nothing and keeps the first draft", async () => {
+    const w = await world({}, "can you make a video just for me");
+    const r = rig({
+      script: { ...CUSTOM, is_refusal: YES },
+      replies: ["sorry, i can't do custom videos"],
+      generator: { failOn: { 3: "overloaded" } },
+    });
+    await runTurn(r.ctx, w.conv.id);
+    const ai = (await msgsOf(w.conv.id)).filter((m) => m.sender === "ai");
+    expect(ai).toMatchObject([{ body: "sorry, i can't do custom videos", suggested: true, status: "blocked" }]);
+  });
+
+  test("an empty refused draft leaves no blank suggestion", async () => {
+    const w = await world();
+    const r = rig({ replies: [""], generator: { stopReason: "refusal" } });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "reply", outcome: "suggested" });
+    expect(await handoffsOf(w.conv.id)).toMatchObject([{ queue: "creator", reason: "verify_failed" }]);
     expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai")).toHaveLength(0);
     expect(await getConversation(w.conv.id)).toMatchObject({ mode: "handoff_creator" });
   });
@@ -998,6 +1126,38 @@ describe("boundary strikes", () => {
     await addMessage(w.conv.id, "fan", text, { ageSeconds: 5 });
     return { r, result: await runTurn(r.ctx, w.conv.id) };
   };
+
+  const BUY = { intent: { value: "buy_intent", probabilities: { buy_intent: 1 } } };
+  const BUY_TEXT = "the ones that aren't on the feed. got any sets i can buy?";
+
+  test("a clear buy ask Jev reads off-platform at 0.65 gets an offer, no strike, no notice", async () => {
+    const w = await world({}, BUY_TEXT);
+    const r = rig({ script: { ...BUY, location_offplatform: { value: "yes", probabilities: { yes: 0.65, no: 0.35 } } }, replies: ["ooh i have something locked that you will love"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ status: "committed", route: "offer", outcome: "replied" });
+    expect(await db.select().from(offers).where(eq(offers.conversationId, w.conv.id))).toHaveLength(1);
+    expect(await strikesOf(w.conv.id)).toHaveLength(0);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "system")).toHaveLength(0);
+    expect((await handoffsOf(w.conv.id)).filter((h) => h.queue === "ts")).toHaveLength(0);
+  });
+
+  test("a buy ask read off-platform at 0.95 still strikes", async () => {
+    const w = await world({}, "can i buy sets if i pay u on cashapp");
+    const r = rig({ script: { ...BUY, ...ASK }, replies: ["i keep my chats right here babe"] });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "boundary", outcome: "replied" });
+    expect(await strikesOf(w.conv.id)).toHaveLength(1);
+    expect((await herSide(w.conv.id)).at(-1)?.body).toBe(NOTICE_1);
+  });
+
+  test("an exempted buy ask whose draft moves the payment off the app is still refused by verify", async () => {
+    const w = await world({}, "can i buy sets if i pay u on cashapp");
+    const r = rig({
+      script: { ...BUY, location_offplatform: { value: "yes", probabilities: { yes: 0.65, no: 0.35 } }, offplatform_or_meetup: YES },
+      replies: ["sure just cashapp me"],
+    });
+    expect(await runTurn(r.ctx, w.conv.id)).toMatchObject({ route: "offer", outcome: "suggested" });
+    expect(await strikesOf(w.conv.id)).toHaveLength(0);
+    expect((await msgsOf(w.conv.id)).filter((m) => m.sender === "ai" && m.status === "sent")).toHaveLength(0);
+  });
 
   test("first off-platform ask: her line, Warning 1 of 3, mode stays ai, a T&S alert opens", async () => {
     const w = await world({}, "wanna grab a coffee?");
