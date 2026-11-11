@@ -22,6 +22,9 @@ default here differs from the code.
 
 - **New databases:** change the default in `examples/app/db/seed.ts` (the four `*_CONFIG` objects) and in the table below. A re-seed
   never overwrites a row that already exists, so an edited value survives `npm run db:seed`.
+- **A release that adds a row:** the engine reads every row it needs and throws `ConfigMissing` for one that is absent, so a
+  database that predates the row must be seeded before the new engine serves it. `npm run db:seed` adds only the missing rows
+  (the row `floor.offplatform_on_buy` is the latest); run it on each database first, or every turn fails closed.
 - **A code constant:** edit it in the file named in its row, and the row here.
 
 Money is integer cents (`_cents`), costs are integer micro-dollars (`_micros`), prices are micro-dollars per million
@@ -124,6 +127,7 @@ message is treated as not that. The safety floors are read as `floor.safety.<key
 | `safety.payment_dispute.enabled` | `true` | the refund and charge-complaint check: asked and routed to a hard stop; `false` skips both. Platform rows only: a creator row is ignored | `packages/engine/src/config/load.ts`, `packages/engine/src/routing/questions.ts` |
 | `floor.intent` | `0.5` | below this the intent read is "unsure" and the turn goes to Juno, unless the best guess is a buy | `packages/engine/src/config/load.ts` |
 | `floor.buy_intent_runner_up` | `1` | off; at 1 nothing is promoted. Below 1: when Jev picks `smalltalk` or `flirt` but gives `buy_intent` at least this, the read is routed as `buy_intent` (recorded as `jev_in.parsed.promotedFrom`) | `packages/engine/src/config/load.ts`, `packages/engine/src/routing/route.ts` |
+| `floor.offplatform_on_buy` | `0.8` | a confident buy ask (not a promoted read) whose off-platform probability is below this is offered to instead of struck; at or above it strikes as before. The exemption also needs his own words to carry no payment app, messaging app, contact ask or meetup word (a code check, not a row). A value at or below `floor.safety.location_offplatform` (`0.5`) restores the previous behaviour, since a read below that floor never fires; between the two, a value only narrows the exemption. Platform rows only: a creator row is ignored | `packages/engine/src/config/load.ts`, `packages/engine/src/routing/route.ts` |
 | `pitch.min_gap_rounds` | `5` | rounds between AI-started pitches (a buy ask skips it) | `packages/engine/src/config/load.ts` |
 | `pitch.fit_floor` | `0.58` | Jev's "this is a natural moment to pitch" probability needed for an AI-started pitch | `packages/engine/src/config/load.ts` |
 | `pitch.max_declines` | `2` | declines within the window that stop pitching | `packages/engine/src/config/load.ts` |

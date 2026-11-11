@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { describe, expect, test } from "vitest";
 import { db } from "@/db/client";
 import { conversations, ledgerEntries, messages, turns, users, wallets } from "@/db/schema";
@@ -196,8 +196,24 @@ describe("conversation setup", () => {
 
   test("say_later_sends_during_the_turn", async () => {
     const w = await evalWorld();
-    // the generator holds the first reply for a moment so the later message lands while the turn is working
-    const slow = rig({ generator: { latch: async (n) => void (n === 1 && (await new Promise((res) => setTimeout(res, 700)))) } });
+    // The generator holds the first reply until the later message is stored, so it always lands while the turn is
+    // working, however slow the machine is; a fixed pause raced the runner's real 200 ms timer.
+    const email = `eval+${w.runTag}-adhoc-convo@understudy.test`;
+    const laterStored = async () => {
+      const [fan] = await db.select().from(users).where(eq(users.email, email));
+      if (!fan) return false;
+      const rows = await db.select({ id: messages.id }).from(messages).innerJoin(conversations, eq(conversations.id, messages.conversationId)).where(and(eq(conversations.fanId, fan.id), eq(messages.body, "i got a puppy")));
+      return rows.length > 0;
+    };
+    const slow = rig({
+      generator: {
+        latch: async (n) => {
+          if (n !== 1) return;
+          const deadline = Date.now() + 10_000;
+          while (!(await laterStored()) && Date.now() < deadline) await new Promise((res) => setTimeout(res, 25));
+        },
+      },
+    });
     const t = ad({ turns: [{ say: ["guess what"], say_later: [{ after_ms: 200, text: "i got a puppy" }], expect: { queue: "none", turns: 1 } }] });
     const obs = await runThread(t, { ...w, deps: slow.deps });
     expect(obs[0]).toMatchObject({ outcome: "answered", turnsRun: 1 });

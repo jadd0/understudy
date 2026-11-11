@@ -4,10 +4,10 @@ import { ownsEverything, type ShortlistItem } from "../conversation/offer.js";
 import { dropRepeatedEmoji, recentEmoji } from "../drafting/emoji.js";
 import { loadProfile } from "../drafting/memory.js";
 import { buildPrompt } from "../drafting/prompt.js";
-import { drawFailures, enforceDraw, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify.js";
+import { drawFailures, enforceDraw, ownAccounts, pointsToBioLink, qualityOnly, verifyDraft, type VerifyFailure } from "../drafting/verify.js";
 import { drawStyle, parseRates } from "../drafting/style-draw.js";
 import type { JevIn, Route } from "../types.js";
-import { RETRY_NOTE, RETRY_REASONS, drawReasons, qualityNote } from "./draft.js";
+import { retryNote } from "./draft.js";
 import type { PassResult } from "./pass.js";
 import { describeError } from "./result.js";
 import type { Routed } from "./route.js";
@@ -36,7 +36,8 @@ export async function loadDraftInputs(s: TurnState, b: Batch): Promise<DraftInpu
     loadOfferOutcomes(ctx, lease.conversationId, lease.fanId, cfg.offerHistoryCount),
     ownsEverything(ctx.host, lease.creatorId, lease.fanId),
   ]);
-  return { profile, chunks, offerOutcomes, ownsAll };
+  // A retrieved line that points to her bio link would teach the draft to send him off the app; it is left out.
+  return { profile, chunks: chunks.filter((c) => !pointsToBioLink(c.text)), offerOutcomes, ownsAll };
 }
 
 /**
@@ -55,6 +56,8 @@ export async function composeReply(
   const { clock, decider } = ctx.deps;
   let { route, offerItem } = picked;
   let draft = "";
+  // The last draft with text in it: a later blank attempt (a bare refusal) must not wipe what the creator would edit.
+  let lastText = "";
   let ok = false;
   let attempts = 0;
   let chosen: string | null = null;
@@ -62,6 +65,8 @@ export async function composeReply(
   let chosenUnsetup = false;
   let previous: VerifyFailure[] = [];
   const recent = recentEmoji(b.history);
+  // Nothing in the card changes between attempts.
+  const accounts = ownAccounts(card.body);
   // Without stored rates there is no draw and the prompt is unchanged.
   const styleRates = parseRates(card.markers);
   // One draw per reply, kept across retries; the fixed-line routes never draw.
@@ -94,8 +99,7 @@ export async function composeReply(
     });
     // Name what failed, so the second draft drops that part instead of rephrasing it (a lobby invite became a voice-note dare).
     const drawNote = { targetChars: styleDraw?.targetChars, pet: styleRates?.pet };
-    const reasons = [...previous.map((f) => RETRY_REASONS[f]), ...drawReasons(previous, drawNote)].filter(Boolean);
-    const note = attempts === 1 ? "" : qualityOnly(previous) ? qualityNote(previous, drawNote) : RETRY_NOTE + (reasons.length ? `\n${reasons.join("\n")}` : "");
+    const note = attempts === 1 ? "" : retryNote(previous, drawNote);
     let verdict: Awaited<ReturnType<typeof verifyDraft>>;
     try {
       const t0 = clock.now();
@@ -114,6 +118,7 @@ export async function composeReply(
       // An emoji she just used is dropped even if the model repeats it after being told not to.
       draft = dropRepeatedEmoji(gen.text.trim(), recent);
       acc.draft = draft;
+      if (draft !== "") lastText = draft;
 
       verdict = await verifyDraft(
         decider,
@@ -124,10 +129,10 @@ export async function composeReply(
           route: route.name,
           neverList: card.neverList,
           stopReason: gen.stopReason,
-          paid: b.facts.hasUnlocked,
           offer: offerItem,
           boundary: route.name === "boundary",
           creatorId: lease.creatorId,
+          ownAccounts: accounts,
         },
         () => clock.now(),
       );
@@ -155,7 +160,7 @@ export async function composeReply(
   }
 
   const failed = { route, batchText: b.batchText, declineOfferId: r.declineOfferId, record: r.record, events: r.reacting };
-  if (chosen === null) return { kind: "draft", candidate: null, lastDraft: draft, failed };
+  if (chosen === null) return { kind: "draft", candidate: null, lastDraft: lastText, failed };
   if (chosenUnsetup) {
     // An offer card straight after a message that never mentions it reads as a cold sales push: send the words alone.
     route = { ...route, name: route.fallback ?? "reply" };
@@ -176,7 +181,7 @@ export async function composeReply(
       declineOfferId: r.declineOfferId,
       attempts,
     },
-    lastDraft: draft,
+    lastDraft: lastText,
     failed,
   };
 }

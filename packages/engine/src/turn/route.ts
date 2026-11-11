@@ -63,15 +63,18 @@ export async function stopPass(s: TurnState, b: Batch, c: Classified, r: Routed)
       plan.reply = { body: template(route.template, cfg.supportEmail), kind: "sent", sender: templateSender(route.template) };
     } else if (route.boundaryLine) {
       // One line in her voice before the flag. No passing line keeps the silent stop.
-      const line = await draftFiller(s, b, route, c.jevIn.thread, true);
-      if (line) plan.reply = { body: line, kind: "sent" };
+      // A stop for Trust & Safety never stores a suggestion: only a passing line is used.
+      const { sent } = await draftFiller(s, b, route, c.jevIn.thread, true);
+      if (sent) plan.reply = { body: sent, kind: "sent" };
     }
   } else {
     plan.outcome = "handoff";
     plan.setMode = "handoff_creator";
     plan.handoff = { queue: "creator", reason: route.reason! };
-    const filler = await draftFiller(s, b, route, c.jevIn.thread, false);
-    if (filler) plan.reply = { body: filler, kind: "sent" };
+    // A filler that passed goes to the fan; when none did, the last draft waits for her as a suggestion (outcome stays handoff).
+    const { sent, held } = await draftFiller(s, b, route, c.jevIn.thread, false);
+    if (sent) plan.reply = { body: sent, kind: "sent" };
+    else if (held) plan.reply = { body: held, kind: "draft" };
   }
   return { kind: "final", plan, batchText: b.batchText, route };
 }

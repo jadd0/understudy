@@ -599,6 +599,7 @@ A malformed `intent` or `explicitness` raises `DeciderUnavailable("malformed")`,
 | [`floor.safety.payment_dispute`](../operations/CONFIG.md#floors-jev-confidence-and-pitching) | 0.6 | p ≥ 0.6 |
 | [`floor.safety.hardship`](../operations/CONFIG.md#floors-jev-confidence-and-pitching) | 0.5 | p ≥ 0.5 (never a hard stop; see below) |
 | `floor.intent` | 0.5 | The chosen intent's probability below 0.5 is "unsure" |
+| `floor.offplatform_on_buy` | 0.8 | A confident buy ask read off-platform below 0.8 is offered to instead of struck; at or above it strikes |
 
 Floors and [`platform.*`](../operations/CONFIG.md#engine-rounds-timing-delivery) keys are **platform-only**: [`loadEngineConfig`](../../packages/engine/src/config/load.ts) ignores a creator's
 row for them, so a creator can tune voice and pacing but never loosen safety.
@@ -631,7 +632,7 @@ out. The order is the policy: Trust & Safety first, then Juno's queue, then the 
 4. `ai_question` → `ai_disclosure`: an honest answer in her voice. `manipulation` → `deflect`.
 5. `explicit_request`, or explicitness `explicit` → a **ppv** offer if pacing allows, else `deflect`. The model never
    writes explicit text; the explicit moment becomes a paid unlock.
-6. `buy_intent` → a ppv or bundle offer if pacing allows, else a plain reply. A `smalltalk` or `flirt` read whose
+6. `buy_intent` → a ppv or bundle offer if pacing allows, else a plain reply. A confident buy ask (not a promoted read) is also offered to, not struck, when its off-platform probability is below [`floor.offplatform_on_buy`](../operations/CONFIG.md#floors-jev-confidence-and-pitching) (0.8); the draft still goes through the off-platform verify check. A `smalltalk` or `flirt` read whose
    second-place `buy_intent` probability is at or above
    [`floor.buy_intent_runner_up`](../operations/CONFIG.md#floors-jev-confidence-and-pitching) (1, so off:) is read as `buy_intent` before routing
    and routed here (or by rule 2's buy branch when its top probability is unsure); the turn records it as
@@ -819,11 +820,9 @@ Then one Jev call with the state `{ draft, fan_message, earlier_messages }` and 
 | `reasks` | yes: re-asks something he already answered, or hands his question straight back. Quality only |
 | `leads_to_offer` | offer route only, not yes: the draft never leads into the item whose card follows it. Quality only: retried with a note, then sent without the card |
 
-**Paid and unpaid questions.** [`questions.ts`](../../packages/engine/src/routing/questions.ts) still keeps separate
-"paid" variants for the inbound `location_offplatform` question and the verify `offplatform_or_meetup` question, chosen
-when `hasUnlocked` is true. Because the off-platform rule is loosened for every fan, each paid variant has exactly the
-same text as its unpaid twin, so the branch has no effect. The only live difference between a paying and a new fan is
-the paid line in "the chat right now".
+**Paid and unpaid questions.** [`questions.ts`](../../packages/engine/src/routing/questions.ts) asks every fan the same
+inbound and verify questions, whether or not `hasUnlocked` is true. The only live difference between a paying and a new
+fan is the paid line in "the chat right now".
 
 ### 8.12 Retry notes and emoji variety
 
@@ -978,7 +977,7 @@ A hold is not silent and does not wait forever.
 
 - **Hold filler.** On a `hold_creator` route the turn drafts one short line in her voice with the `hold_creator`
   instruction (quoted in [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)), runs the same verify as any reply, and sends it only if every
-  check passes. One attempt: a failed check, a Claude error or a Jev error sends nothing and the chat is held as before. The
+  check passes. A draft that reads as a refusal is written again (within `engine.gen_attempts`) with a note not to turn him down; any other failed check, a Claude error or a Jev error sends nothing and the chat is held as before. When no attempt passes, the last non-empty draft is stored as a blocked suggestion for the creator (never sent to the fan); a Trust & Safety stop stores none. The
   filler is an ordinary AI message committed with the hold, so a takeover that wins the race supersedes it.
 - **Due time.** Every handoff opened carries `due_at`: [`escalation.creator_sla_minutes`](../operations/CONFIG.md#engine-rounds-timing-delivery)
   (30) for the creator queue, `escalation.ts_sla_minutes` (15) for Trust & Safety. A creator's queue row shows
@@ -1002,7 +1001,7 @@ The lifecycle is drawn in [`escalation.html`](../safety/escalation.html).
 |---|---|---|
 | `minor` | The platform notice, sender `system`: "Hi — we think this account may belong to someone under 18, so messaging is turned off. You can still read this chat. If we've got this wrong, contact {support_email}." | Flagged `minor_in_chat`: sessions kept, `/chat` read-only, every send refused |
 | `self_harm` | A crisis reply in her voice with 988 and findahelpline.com | Not flagged |
-| `threat` | One line in her voice, written under its own instruction and checked like a reply; nothing if no line passes | Flagged `threat`; the fan lands on `/blocked`, which shows that line |
+| `threat` | One line in her voice, written under its own instruction and checked like a reply, in one attempt; nothing if that line does not pass | Flagged `threat`; the fan lands on `/blocked`, which shows that line |
 | `location_offplatform` | Not a hard stop until the last strike: strikes 1 and 2 are a boundary line and "Warning n of 3" with the AI still chatting; the last is "Warning 3 of 3: this chat is paused for a safety review. You can still read it." If no boundary line passes its checks the fixed text "i keep my chats here, so i can't meet up, share where i am or move to another app…" goes instead | Not flagged |
 | `payment_dispute` | "i'm sorry about that, i hear you. i've passed this to the support team…" | Not flagged |
 
@@ -1618,12 +1617,6 @@ otherwise. Two sim beats (the filler for a held chat) stay `pending`.
 - **No seat password lockout** beyond Turnstile, a known gap.
 - **Real-email sign-in** and the seat flow in a real browser with Turnstile were covered by mocked tests only.
 - **Settings edits record no actor**, so an admin's change to Juno's never-list or prices is indistinguishable from hers.
-
-### Paid and unpaid variants with identical text
-
-The paid variants of the inbound off-platform question and the verify off-platform question are word-for-word the same
-as the unpaid ones since off-platform talk was loosened for every fan ([`questions.ts`](../../packages/engine/src/routing/questions.ts)). The branch is harmless but misleading;
-removing it, or giving it a real difference, is a decision for the founder.
 
 ### Unused schema
 

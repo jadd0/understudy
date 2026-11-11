@@ -130,7 +130,16 @@ export function route(jev: JevIn, facts: Facts, cfg: RouteCfg): Route {
 
   // A meetup or off-platform ask is a strike: her boundary line and a numbered warning while the AI keeps chatting,
   // and the strike that reaches the maximum pauses the chat for Trust & Safety. Minors and self-harm were decided above.
-  if (fired("location_offplatform")) {
+  // A confident buy ask is the one read Jev scores off-platform on money talk alone, so it is not struck unless the
+  // off-platform read is itself confident or his own words name a payment app, a messaging app, a contact or a meetup;
+  // every such turn still drafts through verify's off-platform check.
+  const buyAsk =
+    !facts.fanOffPlatform &&
+    jev.intent === "buy_intent" &&
+    jev.promotedFrom === null &&
+    jev.intentP >= cfg.floors.intent &&
+    jev.p.location_offplatform < cfg.floors.offplatformOnBuy;
+  if (fired("location_offplatform") && !buyAsk) {
     return facts.strikesSoFar + 1 >= cfg.maxStrikes
       ? { name: "hard_stop", reason: "location_offplatform", strike: true, hardship: false, alert: false }
       : { name: "boundary", strike: true, hardship: false, alert: false };

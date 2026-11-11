@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { FakeDecider } from "../testing/fakes/decider.js";
-import { codeChecks, drawFailures, enforceDraw, mentionsMoney, qualityOnly, verifyDraft } from "./verify.js";
+import { codeChecks, drawFailures, enforceDraw, mentionsMoney, ownAccounts, pointsToBioLink, qualityOnly, verifyDraft } from "./verify.js";
 import type { StyleRates } from "./style-draw.js";
 import type { RouteName } from "../types.js";
 
@@ -29,8 +29,8 @@ describe("money fence", () => {
     for (const t of clean) expect(mentionsMoney(t), t).toBe(false);
   });
   test("never_list_blocks_snapchat_draft: whole words, any case, a plural counts", () => {
-    const never = ["snapchat", "phone number", "meet up", "Cash App", "address"];
-    for (const d of ["add me on Snapchat", "SNAPCHAT?", "my phone number is", "my phone numbers", "lets meetup", "lets meet  up", "use cashapp", "whats ur address", "your addresses"]) {
+    const never = ["snapchat", "phone number", "meet up", "address"];
+    for (const d of ["add me on Snapchat", "SNAPCHAT?", "my phone number is", "my phone numbers", "lets meetup", "lets meet  up", "whats ur address", "your addresses"]) {
       expect(codeChecks(d, never), d).toEqual(["never_list"]);
     }
     for (const d of ["my phone died", "i'm addressing it", "snapchatty", "meeting up soon", "hey you"]) {
@@ -42,6 +42,30 @@ describe("money fence", () => {
     expect(codeChecks("my ex was awful", ["My Ex"])).toEqual(["never_list"]);
     expect(codeChecks("  ", [])).toContain("empty");
     expect(codeChecks("hey you", ["", "  "])).toEqual([]);
+  });
+});
+
+describe("paying her outside the app", () => {
+  test("a draft naming a payment app fails in code, and never reaches Jev", async () => {
+    expect(codeChecks("just send it to my cashapp babe", [])).toEqual(["off_app_payment"]);
+    expect(codeChecks("you can pay me direct", [])).toEqual(["off_app_payment"]);
+    expect(codeChecks("venmo me", [])).toEqual(["off_app_payment"]);
+    expect(codeChecks("that's a wise choice", [])).toEqual([]);
+    const { out, decider } = await verify("just send it to my cashapp babe");
+    expect(out.failures).toEqual(["off_app_payment"]);
+    expect(decider.calls).toHaveLength(0);
+    expect(qualityOnly(out.failures)).toBe(false);
+  });
+
+  test("apple pay and google pay are how a top-up pays in this app, so a draft may say so", () => {
+    expect(codeChecks("yep apple pay works for top ups", [])).toEqual([]);
+    expect(codeChecks("google pay works too", [])).toEqual([]);
+  });
+
+  test("a payment app is a safety failure even when Jev answers no to the off-platform question", async () => {
+    const { out } = await verify("just send it to my cashapp babe", { offplatform_or_meetup: "no" });
+    expect(out.ok).toBe(false);
+    expect(out.failures).toEqual(["off_app_payment"]);
   });
 });
 
@@ -85,6 +109,73 @@ describe("verifyDraft", () => {
     for (const route of ["offer", "deflect", "reply"] as const) {
       expect((await verify("i'm an ai", { admits_ai: "yes" }, route)).out.ok).toBe(false);
     }
+  });
+});
+
+describe("her own accounts and her bio link", () => {
+  const CARD = [
+    "## Identity",
+    "- You are juno, listed as an Artist.",
+    "- Your film photos go on a separate account, @junofilm. (src: profile)",
+    "- Mail goes to a@b.com and never to @user.",
+    "",
+    "## Voice rules",
+    "- Never start a reply with an @mention or the fan's handle, like @someone.",
+  ].join("\n");
+
+  test("ownAccounts skips a handle on a line that names a messaging app or calls the account private", () => {
+    const card = [
+      "## Identity",
+      "- Your film photos go on @junofilm.",
+      "- snap: @juno.priv",
+      "- Your private account is @juno_priv.",
+      "- You take personal chats on @juno_pers.",
+      "- DM her on @juno_dm.",
+      "- Contact her at @juno_contact.",
+      "- Telegram is @juno_tg and WhatsApp too.",
+      "- tg: @juno_tgram",
+      "- Tele: @juno_tele",
+    ].join("\n");
+    expect(ownAccounts(card)).toEqual(["@junofilm"]);
+  });
+
+  test("ownAccounts stops at a heading of any level", () => {
+    for (const h of ["#", "###", "####"]) {
+      expect(ownAccounts(`## Identity\n- Film photos on @junofilm.\n${h} Other\n- Hers: @later`)).toEqual(["@junofilm"]);
+    }
+  });
+
+  test("ownAccounts reads the handles on the Identity lines only", () => {
+    expect(ownAccounts(CARD)).toEqual(["@junofilm"]);
+    expect(ownAccounts("## Voice rules\n- an @mention\n")).toEqual([]);
+    expect(ownAccounts("## Identity\n- no handle here\n")).toEqual([]);
+  });
+
+  test("verifyDraft tells Jev which accounts are hers, and says nothing when the card names none", async () => {
+    const decider = new FakeDecider({ script: GOOD });
+    const base = { draft: "hey you", fanMessage: "hi", earlier: [], route: "reply" as RouteName, neverList: [], stopReason: "end_turn" };
+    await verifyDraft(decider, { ...base, ownAccounts: ownAccounts(CARD) }, () => 0);
+    expect((decider.calls[0].state as { her_accounts?: string[] }).her_accounts).toEqual(["@junofilm"]);
+    await verifyDraft(decider, { ...base, ownAccounts: [] }, () => 0);
+    expect(decider.calls[1].state).not.toHaveProperty("her_accounts");
+  });
+
+  test("codeChecks flags a pointer to her bio link and leaves her bio alone", () => {
+    expect(codeChecks("link in bio babe", [])).toEqual(["bio_link"]);
+    expect(codeChecks("the link's in my bio", [])).toEqual(["bio_link"]);
+    expect(codeChecks("my bio says brighton", [])).toEqual([]);
+    expect(pointsToBioLink("Links in the BIO")).toBe(true);
+    expect(pointsToBioLink("a linked bio")).toBe(false);
+  });
+
+  test("a bio_link draft is a quality failure that still goes to Jev, whose safety verdict still fails it", async () => {
+    expect(qualityOnly(["bio_link"])).toBe(true);
+    const clean = await verify("link in bio babe");
+    expect(clean.decider.calls).toHaveLength(1);
+    expect(clean.out.failures).toEqual(["bio_link"]);
+    const unsafe = await verify("link in bio babe", { offplatform_or_meetup: "yes" });
+    expect(unsafe.out.failures).toEqual(["bio_link", "offplatform_or_meetup"]);
+    expect(qualityOnly(unsafe.out.failures)).toBe(false);
   });
 });
 

@@ -43,10 +43,6 @@ const SAFETY_PROMPTS: Record<SafetyKey, string> = {
     "Do the fan's new messages show financial hardship or distress, such as being unable to afford things, money trouble, or spending that sounds compulsive?",
 };
 
-/** For a fan who has unlocked something: an online plan such as a game is normal chat, not a violation. */
-const LOCATION_OFFPLATFORM_PAID =
-  "Do the fan's new messages ask to meet in person, ask where she lives or her exact location, ask to move the chat to another app or share contact details, or ask to pay her outside this platform? An invite to play an online game or do something online together is not.";
-
 const INTENT_LABELS: Record<(typeof INTENTS)[number], string> = {
   smalltalk: "Small talk, compliments, questions about her life, or anything else ordinary",
   flirt: "Flirting or teasing that stays within suggestive",
@@ -64,7 +60,7 @@ export function disabledChecks(enabled: Record<ToggleableCheck, boolean>): Toggl
 }
 
 /** The first call: one state, every question the router needs. */
-export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boolean; paid?: boolean; disabled?: readonly ToggleableCheck[] }): Question[] {
+export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boolean; disabled?: readonly ToggleableCheck[] }): Question[] {
   const qs: Question[] = [
     {
       key: "intent",
@@ -85,7 +81,7 @@ export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boole
         }[k],
       })),
     },
-    ...SAFETY_KEYS.filter((k) => !(opts.disabled as readonly string[] | undefined)?.includes(k)).map((k) => yesNo(k, k === "location_offplatform" && opts.paid ? LOCATION_OFFPLATFORM_PAID : SAFETY_PROMPTS[k])),
+    ...SAFETY_KEYS.filter((k) => !(opts.disabled as readonly string[] | undefined)?.includes(k)).map((k) => yesNo(k, SAFETY_PROMPTS[k])),
     THREAD_QUESTION,
   ];
   if (opts.pitchFit) qs.push(yesNo("pitch_fit", PITCH_FIT_PROMPT));
@@ -131,7 +127,7 @@ export const VERIFY_QUESTIONS: Question[] = [
   },
   yesNo(
     "offplatform_or_meetup",
-    "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine.",
+    "Does the draft agree to meet in person, give a real-world location, share a phone number, email or private account to talk on, or ask him to pay her outside this app, such as through a payment app, a bank or crypto transfer, or by paying her directly? Playing along with an online game, or saying where she streams or posts, is fine. Naming one of her own accounts listed in her_accounts is fine.",
   ),
   yesNo(
     "is_refusal",
@@ -155,17 +151,4 @@ export const VERIFY_QUESTIONS: Question[] = [
 export const LEADS_TO_OFFER_QUESTION: Question = yesNo(
   "leads_to_offer",
   "Right after this draft the app shows the fan a locked item card for offer_item. Does the draft lead into that item, by teasing it, naming it or saying what it is, so the card makes sense as the next thing he sees? A draft that only answers him and never gets to the item is no.",
-);
-
-/**
- * Verify for a fan who has unlocked something: the same questions, but playing along with an online plan such as
- * a game is allowed. Meeting in person, a real location, contact details or another app still fail.
- */
-export const VERIFY_QUESTIONS_PAID: Question[] = VERIFY_QUESTIONS.map((q) =>
-  q.key === "offplatform_or_meetup"
-    ? yesNo(
-        "offplatform_or_meetup",
-        "Does the draft agree to meet in person, give a real-world location, or share a phone number, email or private account to talk on? Playing along with an online game, or saying where she streams or posts, is fine.",
-      )
-    : q,
 );

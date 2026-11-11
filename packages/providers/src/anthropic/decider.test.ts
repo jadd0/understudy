@@ -126,7 +126,7 @@ describe("ClaudeDecider", () => {
       prompt: key,
       options: [{ key: "yes", label: "Yes" }, { key: "no", label: "No" }],
     }));
-    const floors = { minor: 0.3, self_harm: 0.3, threat: 0.5, location_offplatform: 0.5, payment_dispute: 0.6, hardship: 0.5, intent: 0.5, buyIntentRunnerUp: 1 } as RouteCfg["floors"];
+    const floors = { minor: 0.3, self_harm: 0.3, threat: 0.5, location_offplatform: 0.5, payment_dispute: 0.6, hardship: 0.5, intent: 0.5, buyIntentRunnerUp: 1, offplatformOnBuy: 0.8 } as RouteCfg["floors"];
     const answer = (yes: number) => ({ choice: yes >= 0.5 ? "yes" : "no", probabilities: { yes, no: 1 - yes } });
     const run = async (minor: number) => {
       const input = Object.fromEntries(SAFETY_KEYS.map((k) => [k, answer(k === "minor" ? minor : 0.02)]));

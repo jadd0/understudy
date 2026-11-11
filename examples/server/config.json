@@ -49,6 +49,7 @@
     "safety.location_offplatform.enabled": true,
     "safety.payment_dispute.enabled": true,
     "floor.buy_intent_runner_up": 1,
+    "floor.offplatform_on_buy": 0.8,
     "pitch.min_gap_rounds": 5,
     "pitch.fit_floor": 0.58,
     "pitch.decline_window_minutes": 20,

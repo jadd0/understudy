@@ -32,14 +32,14 @@ There are two human queues: **Juno** (money and relationship) and **Trust & Safe
 1. Every T&S category is a hard stop: the AI sends nothing more in that conversation until a
    human releases it.
 2. Juno handoffs stop the AI: the chat moves to `handoff_creator`; the fan gets one short filler that passed the same
-   verify as any reply and promises nothing, and the AI then sends nothing until she takes over or hands back, or until the
+   verify as any reply and promises nothing (a filler that reads as a refusal is written again; when none passes, the last draft waits for Juno as a blocked suggestion), and the AI then sends nothing until she takes over or hands back, or until the
    handoff is due (`escalation.creator_sla_minutes`) and the sweep settles it by policy and returns the chat to the AI.
    Only a high-value alert leaves the AI replying. A Trust & Safety handoff is never settled by a timer: past
    `escalation.ts_sla_minutes` it is stamped late and announced on the ops channel, and stays open.
 3. When several categories fire, the strictest owner wins: T&S, then Juno, then the AI.
 4. A hard stop is never muted by a race: its template is delivered even if a takeover won the turn's compare-and-set,
    and undelivered AI bubbles are superseded so the template is not followed by an older reply.
-5. Only platform rows set safety floors: a creator's `floor.safety.*` and `floor.intent` rows are ignored.
+5. Only platform rows set safety floors: a creator's `floor.safety.*`, `floor.intent` and `floor.offplatform_on_buy` rows are ignored.
 
 ## Switching a check off
 
@@ -75,7 +75,7 @@ and velocity limits still apply to an explicit request.
 - A threat gets one boundary line in her voice (written under its own instruction and checked like a reply, except that
   a refusal is expected), then flags the account (`flag_reason = 'threat'`; the fan lands on the blocked page, which
   shows that line). If no line passes its checks nothing is sent, as before.
-- A meetup or off-platform ask is a strike, not a stop. She writes a boundary line (the fixed line below if no draft
+- A meetup or off-platform ask is a strike, not a stop. The exception is a confident buy ask (not a promoted read) whose off-platform probability is below `floor.offplatform_on_buy` (0.8): it is offered to, and its draft still fails verify if it moves the payment or the chat off the app: Jev is asked whether the draft agrees to meet, shares contact details or asks him to pay her outside the app, and a code check fails any draft that names a payment app, a bank or crypto transfer or "pay you direct" whatever Jev answers. The exception needs the fan's own words to carry no off-platform signal (a payment app, a messaging app, a contact ask such as "number" or "add me", or a meetup such as "meet", "tonight" or "address", matched as whole words in code): "i'll pay you $500 to meet me tonight" is struck at any off-platform probability at or above the platform floor. Setting the row at or below `floor.safety.location_offplatform` (0.5) strikes every confident off-platform read as before. She writes a boundary line (the fixed line below if no draft
   passes), the platform adds the notice, and a T&S alert opens without changing who owns the chat. The strike that reaches
   `ts.max_strikes` pauses the chat for review with the paused notice and does not flag the account. A minor or
   self-harm signal in the same message outranks it and is a hard stop with no strike. A real address handed over goes

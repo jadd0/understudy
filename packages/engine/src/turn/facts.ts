@@ -2,8 +2,8 @@ import { sql } from "drizzle-orm";
 import type { EngineCtx } from "../ctx.js";
 import type { Facts } from "../types.js";
 
-/** What the database knows about the fan; whether this batch starts a new session depends on the batch and is added by the turn. */
-export type LoadedFacts = Omit<Facts, "sessionStart">;
+/** What the database knows about the fan; what the batch itself says (a new session, an off-platform signal) is added by the turn. */
+export type LoadedFacts = Omit<Facts, "sessionStart" | "fanOffPlatform">;
 
 export interface FactsCfg {
   declineWindowMinutes: number;

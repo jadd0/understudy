@@ -69,6 +69,42 @@ describe("route: the routing matrix", () => {
     expect(r(jev({ p: { location_offplatform: 0.49 } })).name).toBe("reply");
   });
 
+  describe("a confident buy ask the decider also scores off-platform", () => {
+    const buy = (offplatform: number, over: Parameters<typeof jev>[0] = {}) =>
+      jev({ intent: "buy_intent", intentP: 0.9, buyIntentP: 0.9, p: { location_offplatform: offplatform }, ...over });
+
+    test("below the buy row it is offered, not struck", () => {
+      expect(r(buy(0.65))).toMatchObject({ name: "offer", offerKinds: ["ppv", "bundle"] });
+    });
+
+    test("at or above the buy row it strikes as before", () => {
+      expect(r(buy(0.8))).toMatchObject({ name: "boundary", strike: true });
+      expect(r(buy(0.95))).toMatchObject({ name: "boundary", strike: true });
+    });
+
+    test("a promoted buy, an unsure buy and a row at the floor all still strike", () => {
+      expect(r(buy(0.65, { promotedFrom: "flirt" }))).toMatchObject({ name: "boundary", strike: true });
+      expect(r(buy(0.65, { intentP: 0.4 }))).toMatchObject({ name: "boundary", strike: true });
+      const old = { ...CFG, floors: { ...CFG.floors, offplatformOnBuy: 0.5 } };
+      expect(route(buy(0.65), facts(), old)).toMatchObject({ name: "boundary", strike: true });
+    });
+
+    test("his own words naming a payment app, a messaging app, a contact or a meetup keep the strike", () => {
+      expect(r(buy(0.7), facts({ fanOffPlatform: true }))).toMatchObject({ name: "boundary", strike: true });
+      expect(r(buy(0.7), facts({ fanOffPlatform: false }))).toMatchObject({ name: "offer" });
+      expect(r(buy(0.7), facts({ ...PITCHABLE, fanOffPlatform: true, strikesSoFar: CFG.maxStrikes - 1 }))).toMatchObject({ name: "hard_stop", strike: true });
+    });
+
+    test("another intent scored off-platform below the buy row still strikes", () => {
+      expect(r(jev({ intent: "smalltalk", p: { location_offplatform: 0.65 } }))).toMatchObject({ name: "boundary", strike: true });
+    });
+
+    test("a hard stop still outranks the exemption, and the maximum strike is untouched", () => {
+      expect(r(buy(0.65, { p: { location_offplatform: 0.65, minor: 0.9 } }))).toMatchObject({ name: "hard_stop", reason: "minor" });
+      expect(r(buy(0.9), facts({ strikesSoFar: CFG.maxStrikes - 1 }))).toMatchObject({ name: "hard_stop", strike: true });
+    });
+  });
+
   test("the strike that reaches the maximum is a hard stop to Trust & Safety, counted as a strike", () => {
     const out = r(jev({ p: { location_offplatform: 0.9 } }), facts({ strikesSoFar: CFG.maxStrikes - 1 }));
     expect(out).toMatchObject({ name: "hard_stop", reason: "location_offplatform", strike: true });

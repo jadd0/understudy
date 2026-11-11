@@ -98,7 +98,8 @@ export function unsafePlan(s: TurnState, failed: Extract<PassResult, { kind: "dr
     return plan;
   }
   plan.outcome = "suggested";
-  plan.reply = { body: lastDraft, kind: "draft" };
+  // A blank draft (a refused generation) is no suggestion: she gets the handoff alone.
+  plan.reply = lastDraft.trim() === "" ? null : { body: lastDraft, kind: "draft" };
   plan.setMode = "handoff_creator";
   plan.handoff = { queue: "creator", reason: "verify_failed" };
   plan.eventMessageIds = tipRowIds(failed.events);
