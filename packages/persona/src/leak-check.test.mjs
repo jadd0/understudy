@@ -150,11 +150,16 @@ test("a term inside a longer word is not a hit", () => {
   assert.equal(nameCheck(["Zorbleton"], dir).hits, 0);
 });
 
-test("an untracked file is never name-scanned, and neither is .env.local", () => {
-  const dir = repo({ "kept.md": "nothing here\n" }, { "scratch.md": "Zorbleton\n", ".env.local": "OWNER=Zorbleton\n" });
+test("an untracked, not-ignored file is name-scanned, an untracked .env.local is not, and neither is an ignored file", () => {
+  const dir = repo(
+    { "kept.md": "nothing here\n", ".gitignore": "ignored/\n" },
+    { "scratch.md": "Zorbleton\n", "docs/zorbleton-new.md": "clean\n", ".env.local": "OWNER=Zorbleton\n", "ignored/x.md": "Zorbleton\n" },
+  );
   const r = nameCheck(["Zorbleton"], dir);
-  assert.equal(r.hits, 0);
-  assert.equal(r.files, 0);
+  assert.deepEqual(
+    [...r.perFile.keys()].sort(),
+    ["docs/zorbleton-new.md", "scratch.md"],
+  );
 });
 
 test("a tracked .env.example is scanned, and a tracked file named with the term is caught by its path", () => {
@@ -238,6 +243,14 @@ test("a name hit exits 1 and prints file:line and a length, never the term", () 
   assert.equal(out.lines.at(-1), "names: 2 hits");
   assert.ok(!/zorbleton|quillan|fenwick/i.test(out.lines.join("\n")), "a printed line holds a term");
   assert.equal(maskNames("a/Quillan-Fenwick/zorbleton.md", ["Zorbleton", "Quillan Fenwick"]), "a/***************/*********.md");
+});
+
+test("a content hit prints the path masked too, so a term in a directory or file name never reaches the output", () => {
+  const dir = repo({ "docs/zorbleton-notes.md": "x\nQuillan Fenwick was here\n" });
+  const out = run({ LEAK_CHECK_NAMES: namesFile(TERMS) }, dir);
+  assert.equal(out.code, 1);
+  assert.ok(out.lines.includes("docs/*********-notes.md:2 (15 chars)"), out.lines.join("\n"));
+  assert.ok(!/zorbleton|quillan|fenwick/i.test(out.lines.join("\n")), "a printed line holds a term");
 });
 
 test("the names check runs with no raw directory, and a clean tree passes", () => {

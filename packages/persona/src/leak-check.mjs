@@ -144,17 +144,24 @@ export function maskNames(text, terms) {
   return text.replace(new RegExp(re.source, "giu"), (m) => "*".repeat(m.length));
 }
 
+const isEnvFile = (f) => basename(f).startsWith(".env") && basename(f) !== ".env.example";
+
 /**
- * The files to scan for names: the tracked files when `tree` is a git checkout (so an untracked .env never appears),
- * else a walk, which cannot tell tracked from untracked and so skips every `.env*` except the public `.env.example`.
+ * The files to scan for names: when `tree` is a git checkout, the tracked files plus the untracked files git does not
+ * ignore (a new file is scanned before it is ever committed); an untracked `.env*` other than `.env.example` is
+ * skipped even then. Else a walk, which cannot tell tracked from untracked and so skips every such `.env*`.
  */
 function namedFiles(tree) {
   if (existsSync(join(tree, ".git"))) {
-    return execFileSync("git", ["ls-files", "-z"], { cwd: tree, encoding: "utf8", maxBuffer: 1 << 28 }).split("\0").filter(Boolean);
+    const ls = (...args) =>
+      execFileSync("git", ["ls-files", "-z", ...args], { cwd: tree, encoding: "utf8", maxBuffer: 1 << 28 }).split("\0").filter(Boolean);
+    const tracked = ls("--cached");
+    const seen = new Set(tracked);
+    return [...tracked, ...ls("--others", "--exclude-standard").filter((f) => !seen.has(f) && !isEnvFile(f))];
   }
   return walk(tree, new Set())
     .map((f) => relative(tree, f))
-    .filter((f) => basename(f) === ".env.example" || !basename(f).startsWith(".env"));
+    .filter((f) => !isEnvFile(f));
 }
 
 /** 1-based line number of `offset` in `text`, given the offsets at which each line starts. */
@@ -249,7 +256,7 @@ export function main(env, tree, summary, out = console.log, home = homedir(), { 
   } else {
     const r = nameCheck(terms, tree);
     for (const [f, hits] of [...r.perFile].sort((a, b) => b[1].length - a[1].length)) {
-      for (const h of hits.slice(0, 5)) out(h.line === 0 ? `${maskNames(f, terms)} (path, ${h.length} chars)` : `${f}:${h.line} (${h.length} chars)`);
+      for (const h of hits.slice(0, 5)) out(h.line === 0 ? `${maskNames(f, terms)} (path, ${h.length} chars)` : `${maskNames(f, terms)}:${h.line} (${h.length} chars)`);
     }
     out(`names: ${r.hits} hits`);
     if (require && r.scanned === 0) {
