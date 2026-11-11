@@ -8,7 +8,7 @@ a signed webhook. There is no UI, no wallet and no user table: it exists to show
 
 ```bash
 npm install
-export DATABASE_URL=... UNDERSTUDY_API_KEY=... CLAUDE_SECRET_KEY=...   # a Neon database, or Postgres with pgvector behind Neon's WebSocket proxy (docker-compose.yml runs one); any long random key
+export DATABASE_URL=... UNDERSTUDY_API_KEY=... CLAUDE_SECRET_KEY=...   # a Neon database, or (running from source, not in the container) Postgres with pgvector behind Neon's WebSocket proxy (docker-compose.yml runs one); any long random key
 npm run --workspace @jadd0/understudy-example-server migrate                 # the engine's tables and the server's own
 npm run --workspace @jadd0/understudy-example-server seed                    # Juno's published card and chunks (full-text retrieval)
 npm run server:dev                                                     # http://127.0.0.1:8787

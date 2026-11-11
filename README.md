@@ -69,7 +69,8 @@ refused. `npm run check:env -- <file> --production` lists every key a deploy nee
 
 ## Run it in a container
 
-The headless server runs in a container against a Neon database:
+The headless server runs in a container against a Neon database. A `localhost` `DATABASE_URL` inside the container is
+the container itself, so the compose Postgres is for running from source, not for the image:
 
 ```bash
 docker build -t understudy-server .

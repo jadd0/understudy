@@ -97,3 +97,5 @@ superseded rather than rewriting it.
 
 Dev and demo use the hosted Postgres in `DATABASE_URL`; tests and the gate use a local one, a database per branch
 (`docker compose up -d` first; [DATA-MODEL.md](../architecture/DATA-MODEL.md#test-database)).
+The compose project is pinned to the name `understudy`, so every checkout and worktree shares one set of containers and
+one data volume: `docker compose down -v` in any of them deletes the database for all of them.
