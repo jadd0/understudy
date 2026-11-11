@@ -57,6 +57,11 @@ describe("paying her outside the app", () => {
     expect(qualityOnly(out.failures)).toBe(false);
   });
 
+  test("apple pay and google pay are how a top-up pays in this app, so a draft may say so", () => {
+    expect(codeChecks("yep apple pay works for top ups", [])).toEqual([]);
+    expect(codeChecks("google pay works too", [])).toEqual([]);
+  });
+
   test("a payment app is a safety failure even when Jev answers no to the off-platform question", async () => {
     const { out } = await verify("just send it to my cashapp babe", { offplatform_or_meetup: "no" });
     expect(out.ok).toBe(false);
@@ -128,6 +133,8 @@ describe("her own accounts and her bio link", () => {
       "- DM her on @juno_dm.",
       "- Contact her at @juno_contact.",
       "- Telegram is @juno_tg and WhatsApp too.",
+      "- tg: @juno_tgram",
+      "- Tele: @juno_tele",
     ].join("\n");
     expect(ownAccounts(card)).toEqual(["@junofilm"]);
   });
