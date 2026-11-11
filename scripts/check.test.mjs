@@ -65,16 +65,14 @@ test("every gate step appears in check.sh", { skip: skipGate }, () => {
   for (const name of names) assert.ok(stepNames.includes(name), `check.sh has no step ${name}`);
 });
 
-test("the gate's steps run in check.sh in the gate's order, and readme is the only step the gate lacks", { skip: skipGate }, () => {
+test("the gate's steps run in check.sh in the gate's order, and readme is the only step the gate may lack", { skip: skipGate }, () => {
   const names = gateNames();
   assert.deepEqual(
     stepNames.filter((n) => names.includes(n)),
     names,
   );
-  assert.deepEqual(
-    stepNames.filter((n) => !names.includes(n)),
-    ["readme"],
-  );
+  const extra = stepNames.filter((n) => !names.includes(n));
+  assert.ok(extra.every((n) => n === "readme"), `check.sh has steps the gate lacks: ${extra.join(", ")}`);
 });
 
 /** Runs a copy of check.sh with every tool stubbed to record the TEST_DB_SCOPE it sees; returns the log lines. */

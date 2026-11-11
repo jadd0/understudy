@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Every check the repository's gate runs, from the public tree alone: no private steps file, no lock, no stamp, no
-# logs. The steps are the gate's, in the gate's order, and the first failure stops the run. `readme` is the one step
-# the gate does not have; it runs last.
+# logs. The steps are the gate's, in the gate's order, and the first failure stops the run. `readme` runs last.
 # The test step runs on its own database (TEST_DB_SCOPE, `check` unless the caller sets one), so a hand run or the gate
 # on the same branch never shares it.
 #   docker compose up -d --wait   (this script does it)   then   npm run check
