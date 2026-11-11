@@ -5,7 +5,7 @@ const prompt = (qs: { key: string; prompt: string }[], key: string) => qs.find((
 
 describe("engine questions", () => {
   test("asking for anything new or fresh is buy intent", () => {
-    const intent = inboundQuestions({ offerResponse: false, pitchFit: false, paid: false }).find((q) => q.key === "intent");
+    const intent = inboundQuestions({ offerResponse: false, pitchFit: false }).find((q) => q.key === "intent");
     const buy = intent?.options.find((o) => o.key === "buy_intent")?.label ?? "";
     expect(buy).toContain("anything new or fresh");
   });
@@ -18,10 +18,17 @@ describe("engine questions", () => {
     expect(q).toContain("payment app");
     expect(q).toContain("saying where she streams or posts, is fine");
     expect(VERIFY_QUESTIONS.filter((x) => x.key === "offplatform_or_meetup")).toHaveLength(1);
-    const inbound = prompt(inboundQuestions({ offerResponse: false, pitchFit: false, paid: false }), "location_offplatform");
+    const inbound = prompt(inboundQuestions({ offerResponse: false, pitchFit: false }), "location_offplatform");
     expect(inbound).toContain("An invite to play an online game or do something online together is not");
   });
 
+  test("every fan gets the same inbound question set, paid or not", () => {
+    const base = { offerResponse: true, pitchFit: true };
+    const a = inboundQuestions(base);
+    expect(a.length).toBeGreaterThan(0);
+    expect(inboundQuestions({ ...base, paid: true } as Parameters<typeof inboundQuestions>[0])).toEqual(a);
+    expect(prompt(a, "location_offplatform")).toContain("ask to move the chat to another app");
+  });
 
   test("every safety question is asked by default and a disabled check's question is left out", () => {
     const all = inboundQuestions({ offerResponse: false, pitchFit: false }).map((q) => q.key);

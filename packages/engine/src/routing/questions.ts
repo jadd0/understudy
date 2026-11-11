@@ -43,10 +43,6 @@ const SAFETY_PROMPTS: Record<SafetyKey, string> = {
     "Do the fan's new messages show financial hardship or distress, such as being unable to afford things, money trouble, or spending that sounds compulsive?",
 };
 
-/** For a fan who has unlocked something: an online plan such as a game is normal chat, not a violation. */
-const LOCATION_OFFPLATFORM_PAID =
-  "Do the fan's new messages ask to meet in person, ask where she lives or her exact location, ask to move the chat to another app or share contact details, or ask to pay her outside this platform? An invite to play an online game or do something online together is not.";
-
 const INTENT_LABELS: Record<(typeof INTENTS)[number], string> = {
   smalltalk: "Small talk, compliments, questions about her life, or anything else ordinary",
   flirt: "Flirting or teasing that stays within suggestive",
@@ -64,7 +60,7 @@ export function disabledChecks(enabled: Record<ToggleableCheck, boolean>): Toggl
 }
 
 /** The first call: one state, every question the router needs. */
-export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boolean; paid?: boolean; disabled?: readonly ToggleableCheck[] }): Question[] {
+export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boolean; disabled?: readonly ToggleableCheck[] }): Question[] {
   const qs: Question[] = [
     {
       key: "intent",
@@ -85,7 +81,7 @@ export function inboundQuestions(opts: { offerResponse: boolean; pitchFit: boole
         }[k],
       })),
     },
-    ...SAFETY_KEYS.filter((k) => !(opts.disabled as readonly string[] | undefined)?.includes(k)).map((k) => yesNo(k, k === "location_offplatform" && opts.paid ? LOCATION_OFFPLATFORM_PAID : SAFETY_PROMPTS[k])),
+    ...SAFETY_KEYS.filter((k) => !(opts.disabled as readonly string[] | undefined)?.includes(k)).map((k) => yesNo(k, SAFETY_PROMPTS[k])),
     THREAD_QUESTION,
   ];
   if (opts.pitchFit) qs.push(yesNo("pitch_fit", PITCH_FIT_PROMPT));

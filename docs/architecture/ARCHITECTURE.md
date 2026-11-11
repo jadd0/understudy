@@ -252,7 +252,7 @@ const INTENT_LABELS: Record<(typeof INTENTS)[number], string> = {
         }[k],
 ```
 
-The six yes/no safety questions (options `yes` and `no`; the key is the safety category). `LOCATION_OFFPLATFORM_PAID`, asked of a fan who has unlocked something, is byte-identical to `location_offplatform` since off-platform talk was loosened for every fan:
+The six yes/no safety questions (options `yes` and `no`; the key is the safety category). Every fan, paid or not, is asked the same set:
 
 <!-- prompt-src: packages/engine/src/routing/questions.ts -->
 ```text
@@ -270,10 +270,6 @@ const SAFETY_PROMPTS: Record<SafetyKey, string> = {
   hardship:
     "Do the fan's new messages show financial hardship or distress, such as being unable to afford things, money trouble, or spending that sounds compulsive?",
 };
-
-/** For a fan who has unlocked something: an online plan such as a game is normal chat, not a violation. */
-const LOCATION_OFFPLATFORM_PAID =
-  "Do the fan's new messages ask to meet in person, ask where she lives or her exact location, ask to move the chat to another app or share contact details, or ask to pay her outside this platform? An invite to play an online game or do something online together is not.";
 ```
 
 `thread` question (the answer shapes the `## The chat right now` line and gates AI pitches):

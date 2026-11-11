@@ -820,11 +820,9 @@ Then one Jev call with the state `{ draft, fan_message, earlier_messages }` and 
 | `reasks` | yes: re-asks something he already answered, or hands his question straight back. Quality only |
 | `leads_to_offer` | offer route only, not yes: the draft never leads into the item whose card follows it. Quality only: retried with a note, then sent without the card |
 
-**Paid and unpaid questions.** [`questions.ts`](../../packages/engine/src/routing/questions.ts) still keeps separate
-"paid" variants for the inbound `location_offplatform` question and the verify `offplatform_or_meetup` question, chosen
-when `hasUnlocked` is true. Because the off-platform rule is loosened for every fan, each paid variant has exactly the
-same text as its unpaid twin, so the branch has no effect. The only live difference between a paying and a new fan is
-the paid line in "the chat right now".
+**Paid and unpaid questions.** [`questions.ts`](../../packages/engine/src/routing/questions.ts) asks every fan the same
+inbound and verify questions, whether or not `hasUnlocked` is true. The only live difference between a paying and a new
+fan is the paid line in "the chat right now".
 
 ### 8.12 Retry notes and emoji variety
 
@@ -1619,12 +1617,6 @@ otherwise. Two sim beats (the filler for a held chat) stay `pending`.
 - **No seat password lockout** beyond Turnstile, a known gap.
 - **Real-email sign-in** and the seat flow in a real browser with Turnstile were covered by mocked tests only.
 - **Settings edits record no actor**, so an admin's change to Juno's never-list or prices is indistinguishable from hers.
-
-### Paid and unpaid variants with identical text
-
-The paid variants of the inbound off-platform question and the verify off-platform question are word-for-word the same
-as the unpaid ones since off-platform talk was loosened for every fan ([`questions.ts`](../../packages/engine/src/routing/questions.ts)). The branch is harmless but misleading;
-removing it, or giving it a real difference, is a decision for the founder.
 
 ### Unused schema
 
