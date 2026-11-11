@@ -109,7 +109,7 @@ describe("her own accounts and her bio link", () => {
     const decider = new FakeDecider({ script: GOOD });
     const base = { draft: "hey you", fanMessage: "hi", earlier: [], route: "reply" as RouteName, neverList: [], stopReason: "end_turn" };
     await verifyDraft(decider, { ...base, ownAccounts: ownAccounts(CARD) }, () => 0);
-    expect(decider.calls[0].state.her_accounts).toEqual(["@junofilm"]);
+    expect((decider.calls[0].state as { her_accounts?: string[] }).her_accounts).toEqual(["@junofilm"]);
     await verifyDraft(decider, { ...base, ownAccounts: [] }, () => 0);
     expect(decider.calls[1].state).not.toHaveProperty("her_accounts");
   });
