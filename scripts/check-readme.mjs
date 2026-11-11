@@ -1,7 +1,8 @@
 // Fails when README.md would send a stranger down a dead end: a shell command that names an npm script, an npx
 // binary or a repository path that does not exist, a command that needs a private file, or a missing section.
 //   node scripts/check-readme.mjs [root]
-// Only ```bash and ```sh fences are read. Comments are stripped and a line is split on &&, ||, ; and |. Prints one
+// Only ```bash, ```sh, ```shell, ```zsh and ```console fences are read (indented ones too; in a console fence only
+// the lines that start with a `$ ` prompt). Comments are stripped and a line is split on &&, ||, ; and |. Prints one
 // line per problem as README.md:<line>: <what>, then `readme: <n> commands, <k> problems`; exits 1 on a problem.
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -30,6 +31,9 @@ const BANNED = [
   { re: /(^|\/)\.product(\/|$)/, why: "the private planning directory is not in the public tree" },
 ];
 const NPM_VALUE_FLAGS = new Set(["-w", "--workspace"]);
+const SHELL_LANGS = new Set(["bash", "sh", "shell", "zsh", "console"]);
+// npx flags that name the package to fetch or a command line to run: the first word is then not a bin to look up.
+const NPX_REMOTE_FLAGS = new Set(["-p", "--package", "-c", "--call"]);
 
 /**
  * Splits a fenced block into commands. Each is { line, tokens } where `line` is where the command starts.
@@ -44,6 +48,8 @@ export function parseCommands(lines, firstLine) {
     if (word !== null) tokens.push(word);
     word = null;
   };
+  // Open quote, carried across lines: a quoted string may span lines, and `\` ends a line inside double quotes too.
+  let quote = null;
   const endCommand = (at) => {
     endWord();
     if (tokens.length) commands.push({ line: startLine, tokens });
@@ -53,11 +59,12 @@ export function parseCommands(lines, firstLine) {
   lines.forEach((raw, i) => {
     const lineNo = firstLine + i;
     if (!tokens.length && word === null) startLine = lineNo;
-    let quote = null;
+    let continued = false;
     for (let j = 0; j < raw.length; j++) {
       const c = raw[j];
       if (quote) {
-        if (c === quote) quote = null;
+        if (c === "\\" && quote === '"' && j === raw.length - 1) continued = true;
+        else if (c === quote) quote = null;
         else word += c;
         continue;
       }
@@ -83,22 +90,32 @@ export function parseCommands(lines, firstLine) {
         word = (word ?? "") + c;
       }
     }
+    if (quote) {
+      if (!continued) word += "\n";
+      return;
+    }
     endCommand(lineNo + 1);
   });
   endCommand(firstLine + lines.length);
   return commands;
 }
 
-/** The ```bash and ```sh fences of `text`: [{ line (of the first command line), body: string[] }]. */
+/**
+ * The shell fences of `text`: [{ line (of the first command line), body: string[] }]. A fence may be indented (inside
+ * a list); a console fence keeps only its `$ ` prompt lines, with the prompt removed.
+ */
 export function shellFences(text) {
   const lines = text.split("\n");
   const fences = [];
   for (let i = 0; i < lines.length; i++) {
-    const open = lines[i].match(/^```(\w+)\s*$/);
+    const open = lines[i].match(/^\s*```(\w+)(\s.*)?$/);
     if (!open) continue;
-    const end = lines.findIndex((l, k) => k > i && /^```\s*$/.test(l));
+    const end = lines.findIndex((l, k) => k > i && /^\s*```\s*$/.test(l));
     if (end === -1) break;
-    if (open[1] === "bash" || open[1] === "sh") fences.push({ line: i + 2, body: lines.slice(i + 1, end) });
+    if (SHELL_LANGS.has(open[1])) {
+      const body = lines.slice(i + 1, end);
+      fences.push({ line: i + 2, body: open[1] === "console" ? body.map((l) => (/^\s*\$ /.test(l) ? l.replace(/^\s*\$ /, "") : "")) : body });
+    }
     i = end;
   }
   return fences;
@@ -121,6 +138,26 @@ function loadManifests(root) {
   return { root: rootPkg, workspaces };
 }
 
+/** Every dependency name any manifest declares: what `npx <name>` can run from the install. */
+function declaredDeps(manifests) {
+  const names = new Set();
+  for (const pkg of [manifests.root, ...manifests.workspaces.values()]) {
+    for (const group of ["dependencies", "devDependencies", "optionalDependencies"]) for (const n of Object.keys(pkg[group] ?? {})) names.add(n);
+  }
+  return names;
+}
+
+/** Checks one `npx` command; returns a problem string or null. */
+function checkNpx(cmd, root, bins, deps) {
+  const args = cmd.slice(1);
+  if (args.some((t) => NPX_REMOTE_FLAGS.has(t) || t.startsWith("--package=") || t.startsWith("--call="))) return null;
+  const at = args.findIndex((t) => !t.startsWith("-"));
+  if (at === -1) return "npx names no binary";
+  const bin = args[at].replace(/(?<=.)@[^@/]*$/, "");
+  if (bins.has(bin) || deps.has(bin) || existsSync(join(root, "node_modules", ".bin", bin))) return null;
+  return `npx ${bin}: no workspace package declares that bin and it is not an installed dependency`;
+}
+
 function binNames(pkg) {
   if (typeof pkg.bin === "string") return [pkg.name.replace(/^@[^/]+\//, "")];
   return Object.keys(pkg.bin ?? {});
@@ -137,14 +174,15 @@ function checkNpmRun(tokens, manifests) {
   if (runAt === -1) return null;
   let workspace = null;
   let script = null;
-  const args = rest.slice(runAt + 1);
-  for (let i = 0; i < args.length; i++) {
-    const t = args[i];
+  // The workspace flag may come before `run` (`npm -w x run s`) or after the script name.
+  for (let i = 0; i < rest.length; i++) {
+    const t = rest[i];
     if (t === "--") break;
-    if (NPM_VALUE_FLAGS.has(t)) workspace = args[++i];
+    if (i === runAt) continue;
+    if (NPM_VALUE_FLAGS.has(t)) workspace = rest[++i];
     else if (t.startsWith("--workspace=")) workspace = t.slice("--workspace=".length);
     else if (t.startsWith("-")) continue;
-    else script ??= t;
+    else if (i > runAt) script ??= t;
   }
   if (script === null) return "npm run names no script";
   const pkg = workspace === null ? manifests.root : manifests.workspaces.get(workspace);
@@ -163,6 +201,7 @@ export function checkReadme(root, { tracked } = {}) {
   const dirs = new Set([...files].flatMap((f) => f.split("/").slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join("/"))));
   const manifests = loadManifests(root);
   const bins = new Set([...manifests.workspaces.values()].flatMap(binNames));
+  const deps = declaredDeps(manifests);
   const problems = [];
   let commands = 0;
 
@@ -189,9 +228,8 @@ export function checkReadme(root, { tracked } = {}) {
         const p = checkNpmRun(cmd, manifests);
         if (p) problem(p);
       } else if (cmd[0] === "npx") {
-        const bin = cmd.slice(1).find((t) => !t.startsWith("-"));
-        if (bin === undefined) problem("npx names no binary");
-        else if (!bins.has(bin)) problem(`npx ${bin}: no workspace package declares that bin`);
+        const p = checkNpx(cmd, root, bins, deps);
+        if (p) problem(p);
       }
 
       const isCp = cmd[0] === "cp";
